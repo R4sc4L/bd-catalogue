@@ -8519,6 +8519,59 @@ function renderStats(){
 }
 
 // --------- Import / Export ---------
+// ── Sauvegarde auto-suffisante : embarquer les images ───────────────────────
+// En version cloud, les images sont servies par des URL signées valables 7 jours,
+// régénérées à chaque ouverture. L'affichage n'en souffre pas, mais un export qui
+// se contenterait de ces URL deviendrait inutilisable une semaine plus tard.
+// On convertit donc toute image distante en données embarquées : la sauvegarde
+// devient autonome et le délai d'expiration n'a plus aucune portée.
+// (Bénéfice annexe : les images ajoutées par URL, même en local, cessent de
+//  dépendre d'un site tiers qui pourrait disparaître.)
+const _EXPORT_IMG_CACHE = new Map();
+async function _embedImage(url){
+  if(typeof url !== 'string' || !url) return url;
+  if(url.startsWith('data:')) return url;                 // déjà embarquée
+  if(!/^https?:\/\//i.test(url)) return url;              // chemin relatif : on laisse
+  if(_EXPORT_IMG_CACHE.has(url)) return _EXPORT_IMG_CACHE.get(url);
+  const resp = await fetch(url);
+  if(!resp.ok) throw new Error('HTTP ' + resp.status);
+  const blob = await resp.blob();
+  const dataUrl = await new Promise((res,rej)=>{
+    const r = new FileReader(); r.onload = ()=>res(r.result); r.onerror = rej; r.readAsDataURL(blob);
+  });
+  _EXPORT_IMG_CACHE.set(url, dataUrl);
+  return dataUrl;
+}
+// Parcourt œuvres, photos d'auteurs et souhaits ; renvoie le nombre d'images
+// embarquées et la liste des échecs (pour ne jamais laisser croire à une
+// sauvegarde complète qui ne le serait pas).
+async function _embedAllImages(items, authors, meta){
+  const isRemote = u => typeof u==='string' && /^https?:\/\//i.test(u);
+  let done = 0; const failed = [];
+  for(const it of items){
+    if(!Array.isArray(it.images)) continue;
+    for(let i=0;i<it.images.length;i++){
+      if(!isRemote(it.images[i])) continue;
+      try { it.images[i] = await _embedImage(it.images[i]); done++; }
+      catch(e){ failed.push(`${it.titre||'?'} (image ${i+1})`); }
+    }
+  }
+  for(const a of authors){
+    if(!isRemote(a.photoUrl)) continue;
+    try { a.photoUrl = await _embedImage(a.photoUrl); done++; }
+    catch(e){ failed.push(`${authorDisplay(a)||'?'} (portrait)`); }
+  }
+  const wl = meta.find(m=>m.key==='wishlist');
+  if(wl && Array.isArray(wl.value)){
+    for(const w of wl.value){
+      if(!isRemote(w.image)) continue;
+      try { w.image = await _embedImage(w.image); done++; }
+      catch(e){ failed.push(`${w.titre||'?'} (souhait)`); }
+    }
+  }
+  return { done, failed };
+}
+
 // Export complet (v2) : œuvres, auteurs ET tout le magasin « meta » — c'est-à-dire
 // les catégories actives, la Bibliothèque (meubles, étagères, piles), la liste de
 // souhaits et les préférences. Exporter tout le magasin plutôt qu'une liste de clés
@@ -8526,13 +8579,34 @@ function renderStats(){
 async function exportJSON(){
   let meta = [];
   try { meta = await dbAll("meta"); } catch(e){ console.warn('[Export] meta indisponible', e); }
-  const data = { version:2, exportedAt:new Date().toISOString(),
-                 items:cache.items, authors:cache.authors, meta };
-  downloadFile(JSON.stringify(data,null,2), `bd-collection-${new Date().toISOString().slice(0,10)}.json`, "application/json");
+  // Copie profonde : on embarque les images sans altérer les données en mémoire
+  const items   = JSON.parse(JSON.stringify(cache.items||[]));
+  const authors = JSON.parse(JSON.stringify(cache.authors||[]));
+  meta = JSON.parse(JSON.stringify(meta));
+
+  const nRemote = items.reduce((n,it)=>n+(it.images||[]).filter(u=>/^https?:\/\//i.test(u||'')).length,0)
+                + authors.filter(a=>/^https?:\/\//i.test(a.photoUrl||'')).length;
+  if(nRemote) toast(T(`Préparation de la sauvegarde : ${nRemote} image(s) à intégrer…`,
+                      `Preparing backup: embedding ${nRemote} image(s)…`));
+  let res = { done:0, failed:[] };
+  try { res = await _embedAllImages(items, authors, meta); }
+  catch(e){ console.warn('[Export] intégration des images interrompue', e); }
+
+  const data = { version:2, exportedAt:new Date().toISOString(), items, authors, meta };
+  const json = JSON.stringify(data,null,2);
+  downloadFile(json, `bd-collection-${new Date().toISOString().slice(0,10)}.json`, "application/json");
   _markExported();
-  const nMeta = meta.length;
-  toast(T(`Sauvegarde exportée — ${cache.items.length} œuvres, ${cache.authors.length} auteurs, ${nMeta} réglage(s) (catégories, bibliothèque, souhaits)`,
-          `Backup exported — ${cache.items.length} works, ${cache.authors.length} authors, ${nMeta} setting(s) (categories, library, wishlist)`));
+
+  const mo = (json.length/1048576).toFixed(1);
+  let msg = T(`Sauvegarde exportée — ${items.length} œuvres, ${authors.length} auteurs, ${meta.length} réglage(s), ${res.done} image(s) intégrée(s) · ${mo} Mo`,
+              `Backup exported — ${items.length} works, ${authors.length} authors, ${meta.length} setting(s), ${res.done} image(s) embedded · ${mo} MB`);
+  toast(msg);
+  // Une sauvegarde incomplète doit se voir : sinon on croit être protégé sans l'être.
+  if(res.failed.length){
+    console.warn('[Export] images non intégrées :', res.failed);
+    setTimeout(()=>toast(T(`⚠️ ${res.failed.length} image(s) n'ont pas pu être intégrées — voir la console. Ces images ne seront pas restaurables depuis ce fichier.`,
+                           `⚠️ ${res.failed.length} image(s) could not be embedded — see console. They will not be restorable from this file.`),'error'), 1200);
+  }
 }
 
 // ── Sauvegarde automatique : le stockage local (IndexedDB/localStorage) peut être
@@ -8646,8 +8720,23 @@ async function importJSON(e){
     const items   = data.items.map(_sanitizeImportedItem).filter(Boolean);
     const authors = data.authors.map(_sanitizeImportedAuthor).filter(Boolean);
     await dbClear("items"); await dbClear("authors");
-    for(const it of items) await dbPut("items", it);
+    // ⚠️ Les auteurs DOIVENT être enregistrés avant les œuvres : côté cloud, la table
+    // de liaison œuvre↔auteur a une contrainte de clé étrangère sur l'auteur. Insérer
+    // une œuvre d'abord violerait « oeuvre_auteurs_auteur_id_fkey ». (En local,
+    // IndexedDB n'a pas de contraintes : l'ordre y est indifférent.)
     for(const a of authors) await dbPut("authors", a);
+    // Filet de sécurité : un lien vers un auteur absent du fichier ferait échouer
+    // l'import de la même façon. On neutralise ces références orphelines.
+    const knownAuthors = new Set(authors.map(a=>String(a.id)));
+    let orphelins = 0;
+    for(const it of items){
+      if(!Array.isArray(it.auteurs)) continue;
+      const avant = it.auteurs.length;
+      it.auteurs = it.auteurs.filter(a=>a && knownAuthors.has(String(a.auteurId)));
+      orphelins += avant - it.auteurs.length;
+    }
+    for(const it of items) await dbPut("items", it);
+    if(orphelins) console.warn(`[Import] ${orphelins} lien(s) vers un auteur inconnu ont été ignorés.`);
     // Réglages (export v2) : catégories, Bibliothèque, souhaits, préférences.
     // On écrase les clés présentes dans le fichier sans vider le magasin : une
     // donnée absente du fichier n'est pas détruite pour autant.
@@ -8673,6 +8762,10 @@ async function importJSON(e){
       : T(" — fichier ancien : catégories et bibliothèque non incluses", " — old file: categories and library not included");
     toast(T(`Importé : ${items.length} œuvres, ${authors.length} auteurs${detail}`,
             `Imported: ${items.length} works, ${authors.length} authors${detail}`));
+    if(orphelins){
+      setTimeout(()=>toast(T(`⚠️ ${orphelins} lien(s) auteur ignoré(s) : l'auteur ne figurait pas dans la sauvegarde.`,
+                             `⚠️ ${orphelins} author link(s) skipped: the author was not in the backup.`),'error'), 1400);
+    }
     refreshCurrentView();
   } catch(err){
     toast(T("Erreur d'import : ","Import error: ")+err.message, "error");
