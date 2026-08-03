@@ -182,6 +182,12 @@
   .panel.eph-spec{border-color:var(--border-warm);background:linear-gradient(0deg,var(--accent-soft),var(--accent-soft)),var(--bg-panel)}
   .panel.eph-spec h3{color:var(--gold)}
   .tag.cat.eph-type{background:var(--gold);color:var(--on-accent);border-color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  /* Repère local / en ligne : les deux versions ont des bases distinctes, il faut
+     savoir en un coup d'œil où l'on saisit ses données. */
+  #env-badge{margin-left:8px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:2px 8px;border-radius:999px;white-space:nowrap;cursor:help;vertical-align:middle}
+  #env-badge.env-local{background:rgba(217,131,36,.18);color:#e0a458;border:1px solid rgba(217,131,36,.5)}
+  #env-badge.env-cloud{background:rgba(127,174,154,.18);color:#8fc7b0;border:1px solid rgba(127,174,154,.5)}
   /* — Scanner de code-barres — */
   #scanOverlay{position:fixed;inset:0;background:#000;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center}
   #scanOverlay video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
@@ -967,6 +973,7 @@
   </h1>
   <div id="collectionPicker" class="collection-picker" role="menu" aria-label="Collections"></div>
   <small id="app-version" style="font-size:10px;color:var(--ink-soft);margin-left:8px;opacity:0.5">v2026-05-18</small>
+  <span id="env-badge" title=""></span>
   <nav id="nav" aria-label="Navigation principale">
     <button data-view="hub">🏠 Hub</button>
     <button data-view="dashboard" class="active">Tableau de bord</button>
@@ -1122,7 +1129,7 @@
       </div>
       <div class="panel">
         <h3 data-en="📥 Import">📥 Importer</h3>
-        <p class="muted" data-en="Restore a JSON backup or import from a CSV file. JSON import <strong>replaces</strong> existing data; CSV import <strong>adds</strong> to it.">Restaurez une sauvegarde JSON ou importez depuis un fichier CSV. L'import JSON <strong>remplace</strong> les données existantes ; l'import CSV les <strong>ajoute</strong>.</p>
+        <p class="muted" data-en="Restore a JSON backup or import from a CSV file. The JSON backup contains everything: works, authors, categories, library and wishlist. JSON import <strong>replaces</strong> existing data; CSV import <strong>adds</strong> to it.">Restaurez une sauvegarde JSON ou importez depuis un fichier CSV. La sauvegarde JSON contient tout : œuvres, auteurs, catégories, Bibliothèque et souhaits. L'import JSON <strong>remplace</strong> les données existantes ; l'import CSV les <strong>ajoute</strong>.</p>
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           <label class="secondary" style="display:block;cursor:pointer;padding:8px 16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg-panel);color:var(--ink);text-align:center">
             <span data-en="📦 Import JSON (replaces everything)">📦 Importer JSON (remplace tout)</span>
@@ -8512,11 +8519,20 @@ function renderStats(){
 }
 
 // --------- Import / Export ---------
-function exportJSON(){
-  const data = { version:1, exportedAt:new Date().toISOString(), items:cache.items, authors:cache.authors };
+// Export complet (v2) : œuvres, auteurs ET tout le magasin « meta » — c'est-à-dire
+// les catégories actives, la Bibliothèque (meubles, étagères, piles), la liste de
+// souhaits et les préférences. Exporter tout le magasin plutôt qu'une liste de clés
+// garantit qu'une donnée ajoutée plus tard sera sauvegardée sans modifier ce code.
+async function exportJSON(){
+  let meta = [];
+  try { meta = await dbAll("meta"); } catch(e){ console.warn('[Export] meta indisponible', e); }
+  const data = { version:2, exportedAt:new Date().toISOString(),
+                 items:cache.items, authors:cache.authors, meta };
   downloadFile(JSON.stringify(data,null,2), `bd-collection-${new Date().toISOString().slice(0,10)}.json`, "application/json");
   _markExported();
-  toast(T("Sauvegarde exportée","Backup exported"));
+  const nMeta = meta.length;
+  toast(T(`Sauvegarde exportée — ${cache.items.length} œuvres, ${cache.authors.length} auteurs, ${nMeta} réglage(s) (catégories, bibliothèque, souhaits)`,
+          `Backup exported — ${cache.items.length} works, ${cache.authors.length} authors, ${nMeta} setting(s) (categories, library, wishlist)`));
 }
 
 // ── Sauvegarde automatique : le stockage local (IndexedDB/localStorage) peut être
@@ -8632,8 +8648,31 @@ async function importJSON(e){
     await dbClear("items"); await dbClear("authors");
     for(const it of items) await dbPut("items", it);
     for(const a of authors) await dbPut("authors", a);
+    // Réglages (export v2) : catégories, Bibliothèque, souhaits, préférences.
+    // On écrase les clés présentes dans le fichier sans vider le magasin : une
+    // donnée absente du fichier n'est pas détruite pour autant.
+    let nMeta = 0;
+    if(Array.isArray(data.meta)){
+      for(const rec of data.meta){
+        if(!rec || typeof rec.key !== 'string') continue;
+        try { await dbPut("meta", { key:rec.key, value:rec.value }); nMeta++; }
+        catch(e){ console.warn('[Import] réglage ignoré :', rec.key, e); }
+      }
+    }
     await reloadCache();
-    toast(T(`Importé : ${items.length} œuvres, ${authors.length} auteurs`,`Imported: ${items.length} works, ${authors.length} authors`));
+    // Recharger l'état en mémoire à partir des réglages restaurés
+    if(nMeta){
+      try {
+        await loadCategories(); await loadPinsCategories(); await loadModuleCategories(); await loadModulesEnabled();
+        await loadLibraryShelves(); await loadLibraryPiles(); await loadLibraryFurniture();
+        initCollection();
+      } catch(e){ console.warn('[Import] rechargement partiel des réglages', e); }
+    }
+    const detail = nMeta
+      ? T(`, ${nMeta} réglage(s) (catégories, bibliothèque, souhaits)`, `, ${nMeta} setting(s) (categories, library, wishlist)`)
+      : T(" — fichier ancien : catégories et bibliothèque non incluses", " — old file: categories and library not included");
+    toast(T(`Importé : ${items.length} œuvres, ${authors.length} auteurs${detail}`,
+            `Imported: ${items.length} works, ${authors.length} authors${detail}`));
     refreshCurrentView();
   } catch(err){
     toast(T("Erreur d'import : ","Import error: ")+err.message, "error");
@@ -11781,9 +11820,29 @@ function _initStickyHeader(){
   window.addEventListener('resize', set);
 }
 
+// Indique clairement dans quelle version on se trouve : les deux ont des bases
+// de données distinctes (IndexedDB en local, Supabase en ligne) et rien d'autre
+// à l'écran ne permettait de les distinguer.
+function _initEnvBadge(){
+  const b = document.getElementById('env-badge');
+  if(!b) return;
+  if(CLOUD){
+    b.className = 'env-cloud';
+    b.textContent = T('☁ En ligne','☁ Online');
+    b.title = T("Version en ligne — données dans le cloud, synchronisées entre vos appareils.",
+                "Online version — data in the cloud, synced across your devices.");
+  } else {
+    b.className = 'env-local';
+    b.textContent = T('⌂ Local','⌂ Local');
+    b.title = T("Version locale — données dans CE navigateur uniquement, sans lien avec la version en ligne. Toute saisie faite ici n'apparaîtra pas en ligne.",
+                "Local version — data in THIS browser only, unrelated to the online version. Anything entered here will not appear online.");
+  }
+}
+
 async function _initApp(){
   try {
     _initStickyHeader();
+    _initEnvBadge();
     await openDB();
     await reloadCache();
     // Migration : corriger les catégories mal capitalisées
