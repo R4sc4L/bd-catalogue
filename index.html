@@ -199,6 +199,8 @@
     color:#fff;font-size:14px;padding:0 24px;text-shadow:0 1px 4px rgba(0,0,0,.9)}
   #scanOverlay .scan-actions{position:absolute;z-index:3;bottom:calc(env(safe-area-inset-bottom,0px) + 28px);display:flex;gap:10px}
   #scanOverlay .scan-actions button{padding:11px 20px;font-size:15px;min-height:44px}
+  #scanOverlay .scan-actions select{width:auto;max-width:210px;min-height:44px;padding:10px 12px;font-size:14px;
+    background:var(--bg-panel);border:1px solid var(--border-warm);color:var(--ink);border-radius:var(--radius)}
   #scanOverlay .scan-err{position:absolute;z-index:4;inset:0;display:flex;align-items:center;justify-content:center;padding:32px;
     text-align:center;color:var(--ink);background:var(--bg);font-size:15px;line-height:1.6}
   /* — Sélecteur d'album source (« Livré avec l'album ») — */
@@ -9181,6 +9183,53 @@ function _syncScanBtn(){
   if(b) b.style.display = scanDisponible() ? '' : 'none';
 }
 let _scanState = null;
+// ── Choix de la caméra ──────────────────────────────────────────────────────
+// Sur téléphone, la caméra arrière convient d'emblée. Sur Mac en revanche, un
+// iPhone connecté par Continuity Camera apparaît comme un périphérique parmi
+// d'autres : sans sélecteur, le navigateur retiendrait la webcam intégrée.
+const SCAN_CAM_KEY = 'scan_camera_id';
+function _prefCameraId(){ try { return localStorage.getItem(SCAN_CAM_KEY) || ''; } catch(e){ return ''; } }
+function _setPrefCameraId(id){ try { id ? localStorage.setItem(SCAN_CAM_KEY, id) : localStorage.removeItem(SCAN_CAM_KEY); } catch(e){} }
+
+// Ouvre le flux : périphérique mémorisé si possible, caméra arrière par défaut.
+async function _startScanStream(deviceId){
+  if(deviceId){
+    try { return await navigator.mediaDevices.getUserMedia({ video:{ deviceId:{exact:deviceId} } }); }
+    catch(e){ _setPrefCameraId(''); }   // périphérique absent (iPhone déconnecté) : on retombe sur le défaut
+  }
+  return navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'} } });
+}
+
+// Remplit le sélecteur ; masqué s'il n'y a qu'une seule caméra (cas du téléphone).
+async function _remplirListeCameras(ov, video){
+  const sel = ov.querySelector('#scanCamSelect');
+  if(!sel || !navigator.mediaDevices?.enumerateDevices) return;
+  let cams = [];
+  try {
+    cams = (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
+  } catch(e){ return; }
+  if(cams.length < 2) return;                      // un seul appareil : pas de choix à offrir
+  const courant = _scanState?.stream?.getVideoTracks?.()[0]?.getSettings?.().deviceId || '';
+  sel.innerHTML = cams.map((c,i)=>{
+    const nom = c.label || T(`Caméra ${i+1}`,`Camera ${i+1}`);
+    return `<option value="${escapeHTML(c.deviceId)}"${c.deviceId===courant?' selected':''}>${escapeHTML(nom)}</option>`;
+  }).join('');
+  sel.style.display = '';
+  sel.onchange = async ()=>{
+    const id = sel.value;
+    try{
+      // Couper l'ancien flux avant d'en ouvrir un autre
+      _scanState?.stream?.getTracks?.().forEach(t=>t.stop());
+      const s = await _startScanStream(id);
+      video.srcObject = s;
+      if(_scanState) _scanState.stream = s;
+      _setPrefCameraId(id);                        // mémorisé pour les prochains scans
+      toast(T(`Caméra : ${sel.options[sel.selectedIndex].text}`,`Camera: ${sel.options[sel.selectedIndex].text}`));
+    }catch(e){
+      toast(T("Impossible d'utiliser cette caméra","Cannot use this camera"),'error');
+    }
+  };
+}
 // Décodeur : API native si disponible (Chrome/Android), sinon ZXing via CDN (iOS/Safari)
 async function _getBarcodeReader(){
   if('BarcodeDetector' in window){
@@ -9222,6 +9271,7 @@ async function openBarcodeScanner(){
     <div class="scan-hint">${T("Cadrez le code-barres au dos de l'album","Frame the barcode on the back cover")}</div>
     <div class="scan-actions">
       <button class="secondary" id="scanCancel">${T('Annuler','Cancel')}</button>
+      <select id="scanCamSelect" style="display:none" title="${T('Choisir la caméra','Choose camera')}"></select>
       <button id="scanManual">${T('Saisir à la main','Type it in')}</button>
     </div>`;
   document.body.appendChild(ov);
@@ -9232,7 +9282,7 @@ async function openBarcodeScanner(){
 
   let stream;
   try{
-    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'} } });
+    stream = await _startScanStream(_prefCameraId());
   }catch(e){
     fail(T("Accès à la caméra refusé. Autorisez-la dans les réglages du navigateur, puis réessayez.",
            "Camera access denied. Allow it in your browser settings, then try again."));
@@ -9241,6 +9291,9 @@ async function openBarcodeScanner(){
   }
   video.srcObject = stream;
   _scanState = { ov, stream, stop:false };
+  // La liste des caméras n'est nommée qu'une fois l'autorisation accordée :
+  // on la peuple donc après l'ouverture du flux.
+  _remplirListeCameras(ov, video);
   try{
     const dec = await _getBarcodeReader();
     if(dec.kind === 'native'){
