@@ -9534,6 +9534,64 @@ function parseOpenLibraryBook(b, source){
            description:b.description?.value||b.description||"", language:"" };
 }
 
+// ── Auteurs issus des catalogues ────────────────────────────────────────────
+// Les sources n'emploient pas la même forme : la BnF renvoie « Jodorowsky,
+// Alexandro », Google Books « Alejandro Jodorowsky », et parfois un simple
+// pseudonyme (« Moebius »). On analyse les deux formes pour éviter de créer
+// des doublons de ce qui existe déjà.
+const _PARTICULES = ['de','du','des','le','la','van','von','del','della','di','da','dos','al','el'];
+function _analyserNom(nom){
+  const brut = String(nom||'').replace(/\s+/g,' ').trim();
+  if(!brut) return null;
+  if(brut.includes(',')){                      // « Nom, Prénom »
+    const [n, p] = brut.split(',');
+    return { nom:(n||'').trim(), prenom:(p||'').trim() };
+  }
+  const mots = brut.split(' ');
+  if(mots.length === 1) return { nom:brut, prenom:'' };   // pseudonyme (Moebius, Hergé…)
+  // « Prénom Nom » : le nom de famille absorbe les particules qui le précèdent
+  let i = mots.length - 1;
+  while(i > 0 && _PARTICULES.includes(mots[i-1].toLowerCase())) i--;
+  return { prenom: mots.slice(0, i).join(' '), nom: mots.slice(i).join(' ') };
+}
+const _normNom = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+                        .replace(/[^a-z0-9]+/g,' ').trim();
+// Cherche un auteur existant, quel que soit l'ordre prénom/nom ou le pseudonyme
+function _trouverAuteur(nom){
+  const p = _analyserNom(nom);
+  if(!p) return null;
+  const cibles = new Set([
+    _normNom(nom),
+    _normNom(`${p.prenom} ${p.nom}`),
+    _normNom(`${p.nom} ${p.prenom}`),
+  ].filter(Boolean));
+  return cache.authors.find(a=>{
+    const formes = [
+      _normNom(`${a.prenom||''} ${a.nom||''}`),
+      _normNom(`${a.nom||''} ${a.prenom||''}`),
+      _normNom(a.pseudonyme),
+      _normNom(a.nom),
+    ].filter(Boolean);
+    return formes.some(f=>cibles.has(f));
+  }) || null;
+}
+// Crée un auteur minimal à partir du nom fourni par le catalogue
+async function _creerAuteurDepuisNom(nom){
+  const p = _analyserNom(nom);
+  if(!p || !(p.nom||p.prenom)) return null;
+  const obj = {
+    id: uuid(),
+    collectionType: isAllCollection() ? 'bd' : _activeCollection,
+    nom: p.nom, prenom: p.prenom,
+    pseudonyme:'', nationalite:'', dateNaissance:'', dateDeces:'', siteWeb:'',
+    bio:'', roles:[], notes:'', estCollectionne:false, photoUrl:null,
+    createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
+  };
+  await dbPut('authors', obj);
+  await reloadCache();
+  return obj;
+}
+
 // Convertit un ISBN-13 (celui du code-barres) en ISBN-10 (celui des catalogues
 // pour les ouvrages d'avant 2007). Renvoie "" si la conversion n'a pas de sens
 // (préfixe 979, longueur invalide) : ces ISBN n'ont pas d'équivalent à 10 chiffres.
@@ -9605,7 +9663,7 @@ function parseBNFRecord(rec){
            pages, description, serie, category, language, cover };
 }
 
-function applyAutofill(idx){
+async function applyAutofill(idx){
   const r = _autofillResults[idx];
   if(!r) return;
 
@@ -9637,29 +9695,30 @@ function applyAutofill(idx){
     }
   }
 
-  // Authors: try to match with existing, otherwise show a toast hint
+  // Auteurs : rattacher ceux qu'on connaît, CRÉER les autres.
+  // Auparavant un auteur inconnu ne produisait qu'un message d'erreur, sans suite :
+  // il fallait interrompre la saisie pour le créer à la main.
+  let _crees = [];
   if(r.authors && r.authors.length){
     const authorsList = document.getElementById("itemAuthorsList");
     if(!authorsList.innerHTML.trim()){
-      r.authors.forEach(name=>{
-        const found = cache.authors.find(a=>{
-          const full = [a.prenom, a.nom].filter(Boolean).join(" ").toLowerCase();
-          const pseudo = (a.pseudonyme||"").toLowerCase();
-          const n = name.toLowerCase();
-          return full===n || pseudo===n || full.includes(n) || n.includes(full);
-        });
-        if(found) addAuthorRow(found.id);
-      });
+      for(const name of r.authors){
+        let a = _trouverAuteur(name);
+        if(!a){
+          a = await _creerAuteurDepuisNom(name);
+          if(a) _crees.push(authorDisplay(a));
+        }
+        if(a) addAuthorRow(a.id);
+      }
     }
-    const unmatched = r.authors.filter(name=>!cache.authors.find(a=>{
-      const full=[a.prenom,a.nom].filter(Boolean).join(" ").toLowerCase();
-      return full===name.toLowerCase()||(a.pseudonyme||"").toLowerCase()===name.toLowerCase();
-    }));
-    if(unmatched.length) toast(T(`Auteur(s) non trouvé(s) dans votre base : ${unmatched.join(", ")}`,`Author(s) not found in your database: ${unmatched.join(", ")}`), "error");
   }
 
   closeModal("autofillModal");
   toast(T("Fiche pré-remplie ! Vérifiez et complétez les informations.","Form pre-filled! Check and complete the information."));
+  if(_crees.length){
+    setTimeout(()=>toast(T(`${_crees.length} auteur(s) créé(s) : ${_crees.join(", ")} — complétez leur fiche si besoin.`,
+                           `${_crees.length} author(s) created: ${_crees.join(", ")} — complete their record if needed.`)), 1300);
+  }
 }
 
 // ========== SÉLECTION MULTIPLE (mode petite grille) ==========
