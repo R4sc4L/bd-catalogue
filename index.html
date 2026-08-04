@@ -9370,12 +9370,15 @@ async function autofillSearch(){
   try {
     let results = [];
     if(isISBN){
-      const [bnfRes, olRes, gbRes] = await Promise.all([
-        fetchBNF(cleanISBN, true),
-        fetchOpenLibraryISBN(cleanISBN),
-        fetchGoogleBooksISBN(cleanISBN)
-      ]);
-      results = [...bnfRes, ...olRes, ...gbRes];
+      // Les ouvrages antérieurs à 2007 sont catalogués sous leur ISBN-10, alors que
+      // le code-barres encode l'ISBN-13 : deux chaînes différentes. On interroge donc
+      // les deux formes. (Vérifié sur la BnF : « L'Incal noir » est introuvable en
+      // 9782731612790 mais trouvé en 2731612797.)
+      const variantes = [...new Set([cleanISBN, isbn13to10(cleanISBN)].filter(Boolean))];
+      const lots = await Promise.all(variantes.flatMap(v=>[
+        fetchBNF(v, true), fetchOpenLibraryISBN(v), fetchGoogleBooksISBN(v)
+      ]));
+      results = lots.flat();
     } else {
       const [bnfRes, gbRes, olRes] = await Promise.all([
         fetchBNF(query, false),
@@ -9396,7 +9399,23 @@ async function autofillSearch(){
     _autofillResults = results;
 
     if(!results.length){
-      el.innerHTML = `<div class="autofill-loading">${T("Aucun résultat. Essayez avec l'ISBN ou reformulez le titre.","No results. Try the ISBN or rephrase the title.")}</div>`;
+      // Les catalogues bibliographiques couvrent mal la BD, surtout ancienne ou
+      // de petit éditeur. Plutôt qu'une impasse, on ouvre la recherche sur le web :
+      // le titre s'y trouve presque toujours, il suffit de le recopier.
+      const q = encodeURIComponent(cleanISBN || query);
+      el.innerHTML = `
+        <div class="autofill-loading" style="text-align:left">
+          ${T("Aucun résultat dans les catalogues (BnF, Google Books, Open Library).","No results in the catalogues (BnF, Google Books, Open Library).")}
+          ${isISBN?`<div class="muted" style="font-size:12px;margin-top:6px">${T("Les catalogues couvrent mal la BD ancienne ou de petit éditeur.","Catalogues poorly cover older or small-publisher comics.")}</div>`:''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+            <button class="secondary" onclick="window.open('https://www.google.com/search?q=${q}','_blank','noopener')">🌐 ${T("Chercher sur le web","Search the web")}</button>
+            <button class="secondary" onclick="window.open('https://www.google.com/search?q=site%3Abedetheque.com+${q}','_blank','noopener')">📚 ${T("Chercher sur Bédéthèque","Search Bédéthèque")}</button>
+          </div>
+          <div class="muted" style="font-size:12px;margin-top:10px">
+            ${T("Recopiez le titre trouvé dans le champ ci-dessus, puis relancez la recherche : les catalogues répondent souvent bien mieux au titre qu'à l'ISBN.",
+                "Copy the title you find into the field above, then search again: catalogues usually answer far better to a title than to an ISBN.")}
+          </div>
+        </div>`;
     } else {
       const srcColor = {BNF:"#003189", "Google Books":"#ea4335", "Open Library":"#2e7d32"};
       el.innerHTML = results.map((r,i)=>`
@@ -9495,6 +9514,20 @@ function parseOpenLibraryBook(b, source){
            publisher:(b.publishers||[]).map(p=>p.name||"").join(", "),
            year, isbn, cover, pages:"", category:"", serie:"",
            description:b.description?.value||b.description||"", language:"" };
+}
+
+// Convertit un ISBN-13 (celui du code-barres) en ISBN-10 (celui des catalogues
+// pour les ouvrages d'avant 2007). Renvoie "" si la conversion n'a pas de sens
+// (préfixe 979, longueur invalide) : ces ISBN n'ont pas d'équivalent à 10 chiffres.
+function isbn13to10(isbn13){
+  const s = String(isbn13||'').replace(/[^0-9Xx]/g,'');
+  if(s.length !== 13 || !s.startsWith('978')) return '';
+  const corps = s.slice(3, 12);                       // 9 chiffres significatifs
+  let somme = 0;
+  for(let i=0;i<9;i++) somme += Number(corps[i]) * (10 - i);
+  const reste = somme % 11;
+  const cle = (11 - reste) % 11;                      // 10 → « X »
+  return corps + (cle === 10 ? 'X' : String(cle));
 }
 
 // ---- BNF (Bibliothèque nationale de France) ----
