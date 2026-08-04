@@ -9701,7 +9701,12 @@ async function applyAutofill(idx){
   let _crees = [];
   if(r.authors && r.authors.length){
     const authorsList = document.getElementById("itemAuthorsList");
-    if(!authorsList.innerHTML.trim()){
+    // Une fiche neuve contient déjà une ligne d'auteur VIDE : se fier au contenu HTML
+    // ferait croire que l'utilisateur a saisi quelque chose et bloquerait tout.
+    // On regarde donc s'il existe une ligne réellement renseignée.
+    const dejaSaisi = [...authorsList.querySelectorAll('.item-author-select')].some(s=>s.value);
+    if(!dejaSaisi){
+      authorsList.innerHTML = "";        // on retire les lignes vides avant de remplir
       for(const name of r.authors){
         let a = _trouverAuteur(name);
         if(!a){
