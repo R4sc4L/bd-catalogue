@@ -1450,6 +1450,7 @@
             <div class="checkbox-row"><input type="checkbox" id="itemSigned"><label for="itemSigned" style="margin:0" data-en="Signed">Signé</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemDedicaceSignature"><label for="itemDedicaceSignature" style="margin:0" data-en="Dedication (signature)">Dédicace (signature)</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemDedicaceDessin"><label for="itemDedicaceDessin" style="margin:0" data-en="Dedication (drawing)">Dédicace (dessin)</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="itemDedicaceTampon"><label for="itemDedicaceTampon" style="margin:0" data-en="Dedication (stamp)">Dédicace (tampon)</label></div>
             <div class="span-3"><label data-en="Dedication / inscription details">Détail de la dédicace / mention</label><input type="text" id="itemDedication" placeholder="ex: Dessin original en noir, ex-libris numéroté…" data-en-ph="e.g. Original drawing in black, numbered ex-libris…"></div>
           </div>
         </div>
@@ -2937,7 +2938,7 @@ const SB = (() => {
     'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','bandeau','rubanMarquePage',
     'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
     'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite',
-    'paperQuality','pageOrder','informations','etatDetail'];
+    'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon'];
   const CONTENU_KEYS = ['exlibris','exlibrisColle','exlibrisSigne','exlibrisNumerote','exlibrisTirage',
     'tirageInclus','serigraphie','marquePage','timbre','carnetCroquis','autocollant','decalcomanie',
     'cartePostale','objet','objetDesc','objetsAssocies',
@@ -4443,6 +4444,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemSigned").checked = !!it.signe;
     document.getElementById("itemDedicaceSignature").checked = !!(it.dedicaceSignature ?? it.dedicaceCheck);
     document.getElementById("itemDedicaceDessin").checked = !!it.dedicaceDessin;
+    document.getElementById("itemDedicaceTampon").checked = !!it.dedicaceTampon;
     document.getElementById("itemExlibris").checked = !!it.exlibris;
     document.getElementById("itemExlibrisColle").checked = !!it.exlibrisColle;
     document.getElementById("itemExlibrisSigne").checked = !!it.exlibrisSigne;
@@ -4664,7 +4666,7 @@ async function saveItem(e){
     const tagsRaw = document.getElementById("itemTags").value.trim();
     // Cases à cocher : appliquer seulement si non-indéterminées
     const cbIds = [
-      "itemLu","itemFirstEdition","itemSigned","itemDedicaceSignature","itemDedicaceDessin",
+      "itemLu","itemFirstEdition","itemSigned","itemDedicaceSignature","itemDedicaceDessin","itemDedicaceTampon",
       "itemExlibris","itemExlibrisColle","itemExlibrisSigne","itemExlibrisNumerote","itemTirageInclus","itemSerigraphie",
       "itemMarquePage","itemTimbre","itemCarnetCroquis","itemAutocollant","itemDecalcomanie","itemCartePostale",
       "itemObjet","itemEmboitageFourreau","itemEmboitageCoffret","itemEmboitageChemise",
@@ -4676,7 +4678,7 @@ async function saveItem(e){
     ];
     const cbMap = { // id → clé objet
       itemLu:"lu", itemFirstEdition:"editionOriginale", itemSigned:"signe",
-      itemDedicaceSignature:"dedicaceSignature", itemDedicaceDessin:"dedicaceDessin",
+      itemDedicaceSignature:"dedicaceSignature", itemDedicaceDessin:"dedicaceDessin", itemDedicaceTampon:"dedicaceTampon",
       itemExlibris:"exlibris", itemExlibrisColle:"exlibrisColle", itemExlibrisSigne:"exlibrisSigne", itemExlibrisNumerote:"exlibrisNumerote",
       itemTirageInclus:"tirageInclus", itemSerigraphie:"serigraphie",
       itemMarquePage:"marquePage", itemTimbre:"timbre",
@@ -4780,6 +4782,7 @@ async function saveItem(e){
     signe: document.getElementById("itemSigned").checked,
     dedicaceSignature: document.getElementById("itemDedicaceSignature").checked,
     dedicaceDessin: document.getElementById("itemDedicaceDessin").checked,
+    dedicaceTampon: document.getElementById("itemDedicaceTampon").checked,
     exlibris: document.getElementById("itemExlibris").checked,
     exlibrisColle: document.getElementById("itemExlibrisColle").checked,
     exlibrisSigne: document.getElementById("itemExlibrisSigne").checked,
@@ -5382,7 +5385,7 @@ function renderDashboard(){
   const isPins = _activeCollection === 'pins';
   const totalItems = collItems.length;
   const totalAuthors = cache.authors.length;
-  const signedCount = collItems.filter(i=>i.signe||i.dedicaceSignature||i.dedicaceDessin||i.dedicaceCheck).length;
+  const signedCount = collItems.filter(i=>i.signe||i.dedicaceSignature||i.dedicaceDessin||i.dedicaceTampon||i.dedicaceCheck).length;
   const eoCount = isPins ? collItems.filter(i=>i.pinsEditionLimitee).length : collItems.filter(i=>i.editionOriginale).length;
   const totalValue = collItems.reduce((s,i)=>s+(i.cote||i.prixAchat||0),0);
   const categoriesUsed = new Set(collItems.map(i=>i.categorie).filter(Boolean)).size;
@@ -6483,7 +6486,7 @@ function applyFilters(){
           rows.push(`<tr class="${trSel}" ${trClick}>
             ${_bulkMode?`<td class="table-cb-col"><input type="checkbox" class="card-select-cb" ${_selectedItems.has(i.id)?"checked":""} onclick="event.stopPropagation();toggleItemSelect('${i.id}',this)"></td>`:""}
             <td class="table-title-cell"${i.images?.[0]?` data-cover="${escapeHTML(i.images[0])}"`:""} onmouseenter="showCoverTooltip(event,this)" onmouseleave="hideCoverTooltip()"><strong>${isAllCollection()?`<span title="${escapeHTML(moduleById(i.collectionType||'bd').label)}">${moduleById(i.collectionType||'bd').icon}</span> `:""}${escapeHTML(i.titre||"")}</strong>${i.serie?`<div class="muted" style="font-size:12px">${escapeHTML(i.serie)}</div>`:""}</td>
-            <td style="white-space:nowrap">${i.editionOriginale?'<span class="badge-eo">EO</span> ':""} ${i.signe?`<span class="badge-signed">${T('Signé','Signed')}</span> `:""}${(i.dedicaceSignature||i.dedicaceCheck)?`<span class="badge-signed">${T('Déd. sig.','Ded. sig.')}</span> `:""}${i.dedicaceDessin?`<span class="badge-signed">${T('Déd. dessin','Ded. drawing')}</span>`:"" }</td>
+            <td style="white-space:nowrap">${i.editionOriginale?'<span class="badge-eo">EO</span> ':""} ${i.signe?`<span class="badge-signed">${T('Signé','Signed')}</span> `:""}${(i.dedicaceSignature||i.dedicaceCheck)?`<span class="badge-signed">${T('Déd. sig.','Ded. sig.')}</span> `:""}${i.dedicaceDessin?`<span class="badge-signed">${T('Déd. dessin','Ded. drawing')}</span> `:""}${i.dedicaceTampon?`<span class="badge-signed">${T('Déd. tampon','Ded. stamp')}</span>`:"" }</td>
             <td><span class="tag cat">${escapeHTML(i.categorie||"")}</span></td>
             <td style="line-height:1.6">${authors}</td>
             <td style="text-align:center;font-size:18px" title="${escapeHTML(itemLangues(i).join(', '))}">${langFlags(i)}</td>
@@ -6534,6 +6537,7 @@ function cardItemHTML(i, compact=false){
     if(i.signe) badgesBL.push(`<span class="badge-signed">${T('Signé','Signed')}</span>`);
     if(i.dedicaceSignature||i.dedicaceCheck) badgesBL.push(`<span class="badge-signed">${T('Déd. sig.','Ded. sig.')}</span>`);
     if(i.dedicaceDessin) badgesBL.push(`<span class="badge-signed">${T('Déd. dessin','Ded. drawing')}</span>`);
+    if(i.dedicaceTampon) badgesBL.push(`<span class="badge-signed">${T('Déd. tampon','Ded. stamp')}</span>`);
     // Album livré avec un ex-libris intégré (distinct des éphémères autonomes)
     if(i.exlibris && archetypeForCategory(i.categorie).id!=='ephemere') badgesBL.push(`<span class="badge-xlibris" title="${T('Album livré avec un ex-libris intégré','Album delivered with an integrated ex-libris')}">🖼️ ${T('ex-libris','ex-libris')}</span>`);
     // Éphémère lui-même livré avec un album (distinct des éphémères vraiment indépendants)
@@ -8278,8 +8282,15 @@ function renderItemDetail(id, pushHistory=true){
       const rows = [];
       if(it.editionOriginale) rows.push({k:_lang==='en'?'Original Edition':'Édition Originale',p:true});
       if(it.signe) rows.push({k:_lang==='en'?'Signed':'Signé',p:true});
-      if(it.dedicaceSignature||it.dedicaceCheck) rows.push({k:_lang==='en'?'Dedication':'Dédicace',v:_lang==='en'?'Signature'+(it.dedicaceDessin?' + drawing':''):'Signature'+(it.dedicaceDessin?' + dessin':'')});
-      else if(it.dedicaceDessin) rows.push({k:_lang==='en'?'Dedication':'Dédicace',v:_lang==='en'?'Drawing':'Dessin'});
+      // Formes de dédicace cumulables (signature, dessin, tampon illustré)
+      const _ded = [];
+      if(it.dedicaceSignature||it.dedicaceCheck) _ded.push(_lang==='en'?'Signature':'Signature');
+      if(it.dedicaceDessin) _ded.push(_lang==='en'?'drawing':'dessin');
+      if(it.dedicaceTampon) _ded.push(_lang==='en'?'stamp':'tampon');
+      if(_ded.length){
+        _ded[0] = _ded[0].charAt(0).toUpperCase() + _ded[0].slice(1);
+        rows.push({k:_lang==='en'?'Dedication':'Dédicace', v:_ded.join(' + ')});
+      }
       if(it.dedicace) rows.push({k:_lang==='en'?'Inscription detail':'Détail dédicace',v:escapeHTML(it.dedicace)});
       if(it.tirageAnnotations) rows.push({k:_lang==='en'?'Annotations':'Annotations',v:escapeHTML(it.tirageAnnotations)});
       const inclRows = [];
@@ -8380,7 +8391,7 @@ function renderItemDetail(id, pushHistory=true){
             ${x.editionOriginale?'<span class="badge-eo">EO</span>':""}
             ${x.signe?`<span class="badge-signed">${T('Signé','Signed')}</span>`:""}
             ${(x.dedicaceSignature||x.dedicaceCheck)?`<span class="badge-signed">${T('Dédicace sig.','Dedication sig.')}</span>`:""}
-            ${x.dedicaceDessin?`<span class="badge-signed">${T('Dédicace dessin','Dedication drawing')}</span>`:""}
+            ${x.dedicaceDessin?`<span class="badge-signed">${T('Dédicace dessin','Dedication drawing')}</span>`:""}${x.dedicaceTampon?`<span class="badge-signed">${T('Dédicace tampon','Dedication stamp')}</span>`:""}
             ${isManual?`<button class="secondary" style="padding:2px 7px;font-size:11px;margin-top:2px" title="${_lang==='en'?'Remove link':'Supprimer le lien'}" onclick="event.stopPropagation();unlinkEdition('${it.id}','${x.id}')">${t('detail.unlink')}</button>`:""}
           </div>
         </div>`;
@@ -8462,7 +8473,7 @@ function renderAuthorDetail(id, pushHistory=true){
           ${its.map(i=>{
             const role = (i.auteurs||[]).find(au=>au.auteurId===id)?.role||"";
             return `<div class="card" role="button" tabindex="0" aria-label="${escapeHTML(i.titre||'')}" style="position:relative" onclick="renderItemDetail('${i.id}')">
-              ${(i.editionOriginale||i.signe||i.dedicaceSignature||i.dedicaceCheck||i.dedicaceDessin)?`<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap;z-index:2">${i.editionOriginale?'<span class="badge-eo">EO</span>':""}${i.signe?`<span class="badge-signed">${T('Signé','Signed')}</span>`:""}${(i.dedicaceSignature||i.dedicaceCheck)?`<span class="badge-signed">${T('Dédicace sig.','Dedication sig.')}</span>`:""}${i.dedicaceDessin?`<span class="badge-signed">${T('Dédicace dessin','Dedication drawing')}</span>`:""}</div>`:""}
+              ${(i.editionOriginale||i.signe||i.dedicaceSignature||i.dedicaceCheck||i.dedicaceDessin||i.dedicaceTampon)?`<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap;z-index:2">${i.editionOriginale?'<span class="badge-eo">EO</span>':""}${i.signe?`<span class="badge-signed">${T('Signé','Signed')}</span>`:""}${(i.dedicaceSignature||i.dedicaceCheck)?`<span class="badge-signed">${T('Dédicace sig.','Dedication sig.')}</span>`:""}${i.dedicaceDessin?`<span class="badge-signed">${T('Dédicace dessin','Dedication drawing')}</span>`:""}</div>`:""}
               <div class="card-img">${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}">`:"📖"}</div>
               <div class="card-body">
                 <div class="card-title">${escapeHTML(i.titre||"")}</div>
@@ -8486,7 +8497,7 @@ function renderStats(){
   const totalAuthors = cache.authors.length;
   const totalValue = cache.items.reduce((s,i)=>s+(i.cote||0),0);
   const totalPurchased = cache.items.reduce((s,i)=>s+(i.prixAchat||0),0);
-  const signedCount = cache.items.filter(i=>i.signe||i.dedicaceSignature||i.dedicaceDessin||i.dedicaceCheck).length;
+  const signedCount = cache.items.filter(i=>i.signe||i.dedicaceSignature||i.dedicaceDessin||i.dedicaceTampon||i.dedicaceCheck).length;
   const avgYear = cache.items.filter(i=>i.anneeEdition).reduce((s,i,_,a)=>s+i.anneeEdition/a.length,0);
 
   const eoCount = cache.items.filter(i=>i.editionOriginale).length;
@@ -8638,7 +8649,7 @@ function checkAutoBackup(){
 function exportCSV(type){
   let rows, filename;
   if(type==="items"){
-    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","isbn","nbPages","tirage","numeroExemplaire","format","etat","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
+    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","isbn","nbPages","tirage","numeroExemplaire","format","etat","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
     rows = [headers];
     cache.items.forEach(i=>{
       const authors = (i.auteurs||[]).map(a=>{const r=a.roles&&a.roles.length?a.roles:(a.role?[a.role]:[]);return `${authorDisplay(authorById(a.auteurId))||""}${r.length?" ("+r.join(", ")+")":""}`;}).join("; ");
@@ -8648,6 +8659,7 @@ function exportCSV(type){
         if(h==="signe") return i.signe?"oui":"non";
         if(h==="dedicaceSignature") return (i.dedicaceSignature||i.dedicaceCheck)?"oui":"non";
         if(h==="dedicaceDessin") return i.dedicaceDessin?"oui":"non";
+        if(h==="dedicaceTampon") return i.dedicaceTampon?"oui":"non";
         if(h==="emboitageCarton") return i.emboitageCarton?"oui":"non";
         if(h==="emboitageToile") return i.emboitageToile?"oui":"non";
         if(h==="emboitagePlexiglas") return i.emboitagePlexiglas?"oui":"non";
@@ -8835,6 +8847,7 @@ async function importCSV(e, type){
           signe: /^(oui|true|1)$/i.test(obj.signe||""),
           dedicaceSignature: /^(oui|true|1)$/i.test(obj.dedicaceSignature||obj.dedicaceCheck||""),
           dedicaceDessin: /^(oui|true|1)$/i.test(obj.dedicaceDessin||""),
+    dedicaceTampon: /^(oui|true|1)$/i.test(obj.dedicaceTampon||""),
           dedicace: obj.dedicace||"",
           emboitageCarton: /^(oui|true|1)$/i.test(obj.emboitageCarton||""),
           emboitageToile: /^(oui|true|1)$/i.test(obj.emboitageToile||""),
