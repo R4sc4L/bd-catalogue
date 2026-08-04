@@ -1417,6 +1417,7 @@
               <div class="checkbox-row"><input type="checkbox" id="itemFirstEdition"><label for="itemFirstEdition" style="margin:0"><strong>EO</strong> <span style="color:var(--ink-soft);font-size:12px" data-en="Original Edition">Édition Originale</span></label></div>
             </div>
             <div><label data-en="Condition">État</label><select id="itemCondition"><option value="">—</option><option>Neuf</option><option>Très bon</option><option>Bon</option><option>Moyen</option><option>Mauvais</option></select></div>
+            <div class="span-2"><label data-en="Condition details">Précisions sur l'état</label><input type="text" id="itemEtatDetail" placeholder="ex: dos légèrement insolé, coin inférieur frotté, papier jauni…" data-en-ph="e.g. slightly sunned spine, rubbed corner, tanned paper…"></div>
           </div>
         </div>
         <!-- ── PIN'S SECTION (hidden by default) ── -->
@@ -1554,7 +1555,7 @@
           </div>
           <!-- Démarcation discrète : caractéristiques propres aux tirages de tête & portfolios -->
           <div id="formEmboitageSection" style="margin-top:26px;padding-top:14px;border-top:1px dashed var(--border-warm)">
-            <div style="font-size:10px;color:var(--ink-soft);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--space-title)" data-en="Deluxe editions &amp; portfolios">Tirages de tête &amp; portfolios</div>
+            <div style="font-size:10px;color:var(--ink-soft);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--space-title)" data-en="Boxed or sleeved editions">Éditions sous emboîtage</div>
             <!-- Emboîtage : type + qualité (même ligne) puis matière -->
             <div id="formEmboitage" class="char-group">
               <label data-en="Slipcase">Emboîtage</label>
@@ -2550,6 +2551,7 @@ const CATEGORY_ARCHETYPE = {
   'Tirage de tête':'tete',
   'Édition limitée (numérotée)':'tete', // emboîtage (étui/coffret) disponible
   'Édition luxe':'tete',                // legacy : fusionnée dans « Édition limitée »
+  'Intégrale':'tete',                   // emboîtage disponible (coffrets d'intégrales)
   'Travaux publicitaires':'tete',       // emboîtage disponible (PLV, coffrets promo…)
   'Œuvre publicitaire':'tete',          // legacy : ancien nom de « Travaux publicitaires »
   'Éphémères':'ephemere',
@@ -2935,7 +2937,7 @@ const SB = (() => {
     'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','bandeau','rubanMarquePage',
     'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
     'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite',
-    'paperQuality','pageOrder','informations'];
+    'paperQuality','pageOrder','informations','etatDetail'];
   const CONTENU_KEYS = ['exlibris','exlibrisColle','exlibrisSigne','exlibrisNumerote','exlibrisTirage',
     'tirageInclus','serigraphie','marquePage','timbre','carnetCroquis','autocollant','decalcomanie',
     'cartePostale','objet','objetDesc','objetsAssocies',
@@ -4435,6 +4437,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemPaperQuality").value = it.paperQuality||"";
     document.getElementById("itemPageOrder").value = it.pageOrder||"";
     document.getElementById("itemCondition").value = it.etat||"";
+    document.getElementById("itemEtatDetail").value = it.etatDetail||"";
     document.getElementById("itemFirstEdition").checked = !!it.editionOriginale;
     document.getElementById("itemEditionInfo").value = it.editionInfo||"";
     document.getElementById("itemSigned").checked = !!it.signe;
@@ -4638,6 +4641,7 @@ async function saveItem(e){
       tirageAnnotations:  document.getElementById("itemTirageAnnotations").value.trim(),
       format:             document.getElementById("itemFormat").value.trim(),
       etat:               document.getElementById("itemCondition").value,
+      etatDetail:         document.getElementById("itemEtatDetail").value.trim(),
       editionInfo:        document.getElementById("itemEditionInfo").value.trim(),
       jaquetteEtat:       document.getElementById("itemJaquetteEtat").value.trim(),
       dedicace:           document.getElementById("itemDedication").value.trim(),
@@ -4770,6 +4774,7 @@ async function saveItem(e){
     paperQuality: document.getElementById("itemPaperQuality").value.trim(),
     pageOrder: parseInt(document.getElementById("itemPageOrder").value)||null,
     etat: document.getElementById("itemCondition").value,
+    etatDetail: document.getElementById("itemEtatDetail").value.trim(),
     editionOriginale: document.getElementById("itemFirstEdition").checked,
     editionInfo: document.getElementById("itemEditionInfo").value.trim(),
     signe: document.getElementById("itemSigned").checked,
@@ -8213,7 +8218,7 @@ function renderItemDetail(id, pushHistory=true){
     ${it.format?`<dt>${t('detail.format_label')}</dt><dd>${escapeHTML(it.format)}</dd>`:""}
     ${it.paperQuality?`<dt>${_lang==='en'?'Paper':'Papier'}</dt><dd>${escapeHTML(it.paperQuality)}</dd>`:""}
     ${it.editionInfo?`<dt>${t('detail.edition_label')}</dt><dd>${escapeHTML(it.editionInfo)}</dd>`:""}
-    ${it.etat?`<dt>${t('detail.condition_label')}</dt><dd>${escapeHTML(it.etat)}</dd>`:""}
+    ${(it.etat||it.etatDetail)?`<dt>${t('detail.condition_label')}</dt><dd>${escapeHTML(it.etat||'')}${it.etatDetail?`${it.etat?' — ':''}<span class="muted">${escapeHTML(it.etatDetail)}</span>`:''}</dd>`:""}
     ${it.prixAchat?`<dt>${t('detail.price_buy_label')}</dt><dd>${it.prixAchat.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:"currency",currency:"EUR"})}</dd>`:""}
     ${it.cote?`<dt>${t('detail.price_curr_label')}</dt><dd>${it.cote.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:"currency",currency:"EUR"})}</dd>`:""}
     ${it.dateAcquisition?`<dt>${t('detail.acq_date_label')}</dt><dd>${escapeHTML(it.dateAcquisition)}</dd>`:""}
