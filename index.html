@@ -1071,7 +1071,7 @@
       <div class="field adv-filter" id="filterFieldPrete"><label data-en="Lent">Prêté</label><select id="filterPrete"><option value="">Tous</option><option value="true">Prêtés</option><option value="late">En retard</option><option value="false">Non prêtés</option></select></div>
       <div class="field adv-filter"><label data-en="Location">Localisation</label><select id="filterLocation"><option value="">Toutes</option></select></div>
       <div class="field adv-filter" style="display:flex;align-items:center;height:38px;align-self:end"><div class="checkbox-row" style="align-items:center"><input type="checkbox" id="filterCollected"><label for="filterCollected" style="margin:0;text-transform:none;letter-spacing:0;font-weight:600;font-size:13px;color:var(--ink);cursor:pointer"><span data-en="⭐ Collected author">⭐ Auteur collectionné</span></label></div></div>
-      <div class="field"><label data-en="Sort by">Trier par</label><select id="sortBy"><option value="cat_chrono" selected data-en="Category + chronology">Catégorie + chronologie</option><option value="annee_asc" data-en="Year (oldest first)">Année (plus ancien)</option><option value="annee_desc" data-en="Year (newest first)">Année (plus récent)</option><option value="titre" data-en="Title (A-Z)">Titre (A-Z)</option><option value="dessinateur" data-en="Artist (A-Z)">Dessinateur (A-Z)</option><option value="scenariste" data-en="Writer (A-Z)">Scénariste (A-Z)</option><option value="acquisition_desc" data-en="Acquisition (recent)">Acquisition (récente)</option><option value="cote_desc" data-en="Value (highest)">Cote (haute)</option></select></div>
+      <div class="field"><label data-en="Sort by">Trier par</label><select id="sortBy"><option value="cat_chrono" selected data-en="Category + cycle + no.">Catégorie + cycle + n°</option><option value="annee_asc" data-en="Year (oldest first)">Année (plus ancien)</option><option value="annee_desc" data-en="Year (newest first)">Année (plus récent)</option><option value="titre" data-en="Title (A-Z)">Titre (A-Z)</option><option value="dessinateur" data-en="Artist (A-Z)">Dessinateur (A-Z)</option><option value="scenariste" data-en="Writer (A-Z)">Scénariste (A-Z)</option><option value="acquisition_desc" data-en="Acquisition (recent)">Acquisition (récente)</option><option value="cote_desc" data-en="Value (highest)">Cote (haute)</option></select></div>
       <div class="field" style="align-self:end"><button type="button" class="secondary" id="advFiltersToggle" aria-expanded="false" aria-controls="itemFilters" onclick="toggleAdvFilters(this)"><span data-en="More filters">Plus de filtres</span> <span class="caret" aria-hidden="true">▾</span></button></div>
       <div class="field" style="grid-column:-2 / -1;display:flex;justify-content:flex-end;align-self:end"><button class="secondary" onclick="resetFilters()">↺ Réinitialiser les filtres</button></div>
     </div>
@@ -1092,10 +1092,11 @@
       <div class="field"><label data-en="Role">Rôle</label><select id="authorRole"><option value="" data-en="All">Tous</option></select></div>
       <div class="field"><label data-en="Sort by">Trier par</label><select id="authorSort"><option value="collected_first" data-en="⭐ Collected first">⭐ Collectionnés en premier</option><option value="nom" data-en="Name (A-Z)">Nom (A-Z)</option><option value="count_desc" data-en="Number of works">Nombre d'œuvres</option><option value="birth_asc" data-en="Birth (oldest)">Naissance (plus ancien)</option><option value="birth_desc" data-en="Birth (newest)">Naissance (plus récent)</option></select></div>
       <div class="field" style="display:flex;align-items:flex-end;padding-bottom:6px">
-        <div class="checkbox-row" style="margin:0">
-          <input type="checkbox" id="authorFilterCollected" onchange="renderAuthors()">
-          <label for="authorFilterCollected" style="margin:0;text-transform:none;font-size:13px;letter-spacing:0;color:var(--ink)"><span data-en="⭐ Collected only">⭐ Collectionnés uniquement</span></label>
-        </div>
+        <!-- Affichage par défaut : les auteurs collectionnés. Le bouton bascule vers
+             la liste complète — l'état est porté par _authorsViewAll, pas par une case. -->
+        <button type="button" id="authorsScopeBtn" class="secondary" onclick="toggleAuthorsScope()"
+                title="Basculer entre vos auteurs collectionnés et la liste complète"
+                data-en-title="Switch between your collected authors and the full list">👥 Tous les auteurs</button>
       </div>
     </div>
     <div id="authorsContainer" class="grid"></div>
@@ -4534,28 +4535,47 @@ function openItemForm(id=null, opts={}){
   openModal("itemModal");
 }
 
-// Filtre « Auteurs collectionnés » — réduit les candidats du 1er auteur (auteur principal)
-let _authorsCollectedOnly = false;
-// applyFilter : n'applique la réduction qu'à la liste du premier auteur
-function _authorOptionsHTML(selectedId, applyFilter=false){
+// Menu déroulant des auteurs : par défaut, seuls les auteurs collectionnés sont
+// proposés — la liste complète devient vite ingérable. L'entrée « Tous les
+// auteurs » ouvre la liste entière pour la fiche en cours.
+let _authorsCollectedOnly = true;
+function _authorOptionsHTML(selectedId, applyFilter=true){
   let auths = cache.authors.slice();
   if(applyFilter && _authorsCollectedOnly) auths = auths.filter(a=>a.estCollectionne || String(a.id)===String(selectedId));
   auths.sort((a,b)=>authorDisplay(a).localeCompare(authorDisplay(b)));
   const showStars = !(applyFilter && _authorsCollectedOnly);
   return auths.map(a=>`<option value="${a.id}" ${String(a.id)===String(selectedId)?"selected":""}>${escapeHTML(authorDisplay(a))}${(a.estCollectionne && showStars)?' ⭐':''}</option>`).join("");
 }
-function _rebuildFirstAuthorSelect(){
-  const firstSel = document.querySelector("#itemAuthorsList .item-author-select");
-  if(!firstSel) return;
-  const cur = firstSel.value;
-  firstSel.innerHTML = `<option value="">${T("— Choisir un auteur —","— Choose an author —")}</option>
-    <option value="__new__">${T("+ Créer un nouvel auteur","+ Create a new author")}</option>` + _authorOptionsHTML(cur, true);
-  firstSel.value = cur;
+// Entêtes communes à tous les menus d'auteur (création + bascule de portée)
+function _authorSelectHeader(){
+  const nTot = cache.authors.length;
+  return `<option value="">${T("— Choisir un auteur —","— Choose an author —")}</option>
+    <option value="__new__">${T("+ Créer un nouvel auteur","+ Create a new author")}</option>`
+    + (_authorsCollectedOnly
+        ? `<option value="__all__">${T(`👥 Tous les auteurs (${nTot})`,`👥 All authors (${nTot})`)}</option>`
+        : `<option value="__collected__">${T("⭐ Revenir aux collectionnés","⭐ Back to collected")}</option>`);
+}
+// Reconstruit TOUS les menus d'auteur de la fiche (la portée est commune)
+function _rebuildAuthorSelects(){
+  document.querySelectorAll("#itemAuthorsList .item-author-select").forEach(sel=>{
+    const cur = sel.value;
+    sel.innerHTML = _authorSelectHeader() + _authorOptionsHTML(cur, true);
+    sel.value = cur;
+  });
+}
+// Rétrocompatibilité : l'ancien nom est encore appelé ailleurs
+function _rebuildFirstAuthorSelect(){ _rebuildAuthorSelects(); }
+// Bascule collectionnés ⇄ tous, pour la fiche en cours
+function setAuthorsScope(tous){
+  _authorsCollectedOnly = !tous;
+  _rebuildAuthorSelects();
+  toast(tous ? T("Tous les auteurs proposés","All authors listed")
+             : T("Seuls vos auteurs collectionnés sont proposés","Only your collected authors are listed"));
 }
 function toggleAuthorsCollected(){
   const cb = document.getElementById("authorsCollectedToggle");
   _authorsCollectedOnly = cb ? cb.checked : !_authorsCollectedOnly;
-  _rebuildFirstAuthorSelect();
+  _rebuildAuthorSelects();
 }
 function syncAuthorsCollectedToggle(){
   const cb = document.getElementById("authorsCollectedToggle");
@@ -4569,7 +4589,7 @@ function addAuthorRow(auteurId="", roles=[]){
   const row = document.createElement("div");
   row.className = "author-row";
   const rowId = uuid();
-  const authorsOptions = _authorOptionsHTML(auteurId, isFirst);
+  const authorsOptions = _authorOptionsHTML(auteurId, true);   // portée commune à toutes les lignes
   const initialLabel = roles.length ? roles.join(", ") : T("— Rôles —","— Roles —");
   // Rôles standards + rôles non-standards préservés (ex: ancien format)
   const extraRoles = roles.filter(r => !ROLES.includes(r));
@@ -4584,8 +4604,7 @@ function addAuthorRow(auteurId="", roles=[]){
       <div>
         <label>${T("Auteur","Author")}</label>
         <select class="item-author-select">
-          <option value="">${T("— Choisir un auteur —","— Choose an author —")}</option>
-          <option value="__new__">${T("+ Créer un nouvel auteur","+ Create a new author")}</option>
+          ${_authorSelectHeader()}
           ${authorsOptions}
         </select>
       </div>
@@ -4607,13 +4626,16 @@ function addAuthorRow(auteurId="", roles=[]){
   menu.addEventListener("change", ()=>updateRoleLabel(menu));
   const sel = row.querySelector(".item-author-select");
   sel.addEventListener("change", e=>{
+    // Élargir ou restreindre la liste proposée (ce ne sont pas des auteurs)
+    if(e.target.value==="__all__"){       e.target.value=""; setAuthorsScope(true);  return; }
+    if(e.target.value==="__collected__"){ e.target.value=""; setAuthorsScope(false); return; }
     if(e.target.value==="__new__"){
       e.target.value = "";
       closeModal("itemModal");
       openAuthorForm(null,(newId)=>{
         openModal("itemModal");
-        sel.innerHTML = `<option value="">${T("— Choisir un auteur —","— Choose an author —")}</option>
-          <option value="__new__">${T("+ Créer un nouvel auteur","+ Create a new author")}</option>` + _authorOptionsHTML(newId, isFirst);
+        sel.innerHTML = _authorSelectHeader() + _authorOptionsHTML(newId, true);
+        sel.value = newId;
       });
     }
   });
@@ -5473,6 +5495,14 @@ const _normCat = s => (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,
 const _bdAlbumNorms = BD_ALBUM_CATS_LABELS.map(x => _normCat(x.label));
 function isBdAlbumSub(cat){ return _bdAlbumNorms.includes(_normCat(cat)); }
 const BD_ALBUM_CATS = BD_ALBUM_CATS_LABELS.map(x => x.label);
+
+// N° dans le cycle, lu de façon tolérante : le champ est libre et peut contenir
+// « 4 », « 4/6 », « T4 », « 4 bis » ou « HS ». On retient le premier nombre ;
+// sans nombre, l'album est renvoyé en fin de cycle plutôt qu'en tête.
+function _numCycle(i){
+  const m = String(i && i.numeroSerie || '').match(/\d+(?:[.,]\d+)?/);
+  return m ? parseFloat(m[0].replace(',', '.')) : Number.POSITIVE_INFINITY;
+}
 
 // Ordre d'affichage prioritaire des catégories (tri cat_chrono)
 const CAT_DISPLAY_ORDER = [
@@ -6343,6 +6373,17 @@ function applyFilters(){
           const bySub = sa.rank-sb.rank || sa.label.localeCompare(sb.label,"fr");
           if(bySub) return bySub;
         }
+        // Puis par cycle, et à l'intérieur d'un cycle par N° d'épisode.
+        // L'année d'édition ne dit rien de l'ordre de lecture quand on possède
+        // des rééditions : le numéro dans le cycle prime.
+        const cycA = _normCat(a.serie||''), cycB = _normCat(b.serie||'');
+        if(cycA !== cycB){
+          if(!cycA) return 1;            // les albums hors cycle passent après les séries
+          if(!cycB) return -1;
+          return cycA.localeCompare(cycB,"fr");
+        }
+        const nA = _numCycle(a), nB = _numCycle(b);
+        if(nA !== nB) return nA - nB;    // les tomes sans numéro ferment la marche
         return (a.anneeEdition||9999)-(b.anneeEdition||9999)
           || (a.moisEdition||0)-(b.moisEdition||0)
           || (a.titre||"").localeCompare(b.titre||"","fr");
@@ -6708,6 +6749,24 @@ function submitFormSafe(formId){
 }
 
 // --------- Authors view ---------
+// Vue Auteurs : on montre par défaut les auteurs collectionnés — ceux qu'on suit
+// réellement — et le bouton ouvre la liste complète.
+let _authorsViewAll = false;
+function toggleAuthorsScope(){
+  _authorsViewAll = !_authorsViewAll;
+  renderAuthors();
+}
+function _syncAuthorsScopeBtn(nCollected, nTotal){
+  const b = document.getElementById('authorsScopeBtn');
+  if(!b) return;
+  b.textContent = _authorsViewAll
+    ? T(`⭐ Collectionnés (${nCollected})`, `⭐ Collected (${nCollected})`)
+    : T(`👥 Tous les auteurs (${nTotal})`, `👥 All authors (${nTotal})`);
+  b.title = _authorsViewAll
+    ? T("Revenir à vos auteurs collectionnés","Back to your collected authors")
+    : T("Afficher la liste complète des auteurs","Show the full list of authors");
+}
+
 function renderAuthors(){
   const natSel = document.getElementById("authorNationality");
   const nats = [...new Set(cache.authors.map(a=>a.nationalite).filter(Boolean))].sort();
@@ -6747,9 +6806,10 @@ function applyAuthorFilters(){
   const n = document.getElementById("authorNationality").value;
   const role = document.getElementById("authorRole").value;
   const sort = document.getElementById("authorSort").value;
-  const filterCollectedOnly = document.getElementById("authorFilterCollected")?.checked;
+  const filterCollectedOnly = !_authorsViewAll;   // par défaut : uniquement les collectionnés
   if(s) list = list.filter(a=>[a.nom,a.prenom,a.pseudonyme,a.bio,a.notes].join(" ").toLowerCase().includes(s));
   if(n) list = list.filter(a=>a.nationalite===n);
+  _syncAuthorsScopeBtn(list.filter(a=>a.estCollectionne).length, list.length);
   if(filterCollectedOnly) list = list.filter(a=>a.estCollectionne);
 
   // Build role map: auteurId → set of roles in collItems
