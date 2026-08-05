@@ -9571,7 +9571,31 @@ function _analyserNom(nom){
 }
 const _normNom = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
                         .replace(/[^a-z0-9]+/g,' ').trim();
-// Cherche un auteur existant, quel que soit l'ordre prénom/nom ou le pseudonyme
+// Distance d'édition, pour tolérer les variantes de prénom (Alexandro / Alejandro)
+function _distance(a,b){
+  a=String(a); b=String(b);
+  const m=a.length, n=b.length;
+  if(!m||!n) return Math.max(m,n);
+  let prev=Array.from({length:n+1},(_,j)=>j), cur=new Array(n+1);
+  for(let i=1;i<=m;i++){
+    cur[0]=i;
+    for(let j=1;j<=n;j++)
+      cur[j] = a[i-1]===b[j-1] ? prev[j-1] : 1+Math.min(prev[j], cur[j-1], prev[j-1]);
+    [prev,cur]=[cur,prev];
+  }
+  return prev[n];
+}
+// Deux prénoms désignent-ils vraisemblablement la même personne ?
+// (l'un absent, une initiale, un diminutif, ou une variante orthographique)
+function _memePrenom(p1,p2){
+  const a=_normNom(p1), b=_normNom(p2);
+  if(!a || !b) return true;                       // l'un des deux est inconnu
+  if(a===b) return true;
+  if(a.startsWith(b) || b.startsWith(a)) return true;   // « A. » / « Alexandro », « Jean » / « Jean-Claude »
+  return Math.min(a.length,b.length) >= 4 && _distance(a,b) <= 2;   // variante orthographique
+}
+// Cherche un auteur existant, quel que soit l'ordre prénom/nom, le pseudonyme
+// ou une variante de prénom. Objectif : ne jamais recréer ce qui existe déjà.
 function _trouverAuteur(nom){
   const p = _analyserNom(nom);
   if(!p) return null;
@@ -9580,7 +9604,9 @@ function _trouverAuteur(nom){
     _normNom(`${p.prenom} ${p.nom}`),
     _normNom(`${p.nom} ${p.prenom}`),
   ].filter(Boolean));
-  return cache.authors.find(a=>{
+
+  // 1) Correspondance exacte (nom complet dans un sens ou l'autre, ou pseudonyme)
+  const exact = cache.authors.find(a=>{
     const formes = [
       _normNom(`${a.prenom||''} ${a.nom||''}`),
       _normNom(`${a.nom||''} ${a.prenom||''}`),
@@ -9588,11 +9614,25 @@ function _trouverAuteur(nom){
       _normNom(a.nom),
     ].filter(Boolean);
     return formes.some(f=>cibles.has(f));
+  });
+  if(exact) return exact;
+
+  // 2) Même nom de famille et prénom compatible — c'est le cas qui produisait
+  //    des doublons (« Alexandro » vs « Alejandro », « A. » vs le prénom entier).
+  const cibleNom = _normNom(p.nom);
+  if(!cibleNom) return null;
+  return cache.authors.find(a=>{
+    if(_normNom(a.nom) !== cibleNom) return false;
+    return _memePrenom(p.prenom, a.prenom);
   }) || null;
 }
-// Crée un auteur minimal à partir du nom fourni par le catalogue
-async function _creerAuteurDepuisNom(nom){
-  const p = _analyserNom(nom);
+// Crée un auteur minimal à partir du nom fourni par le catalogue.
+// `parts` : découpe fournie par la source ({nom, prenom}) — prioritaire, car
+// bien plus fiable que le redécoupage d'une chaîne recomposée.
+async function _creerAuteurDepuisNom(nom, parts){
+  const p = (parts && (parts.nom||parts.prenom))
+    ? { nom:(parts.nom||'').trim(), prenom:(parts.prenom||'').trim() }
+    : _analyserNom(nom);
   if(!p || !(p.nom||p.prenom)) return null;
   const obj = {
     id: uuid(),
@@ -9648,14 +9688,17 @@ function parseBNFRecord(rec){
   const description = sf("330","a") || sf("300","a");
   const serie    = sf("410","t") || sf("225","a") || sf("461","t");
 
-  // Auteurs : champs 700–703
+  // Auteurs : champs 700–703. La BnF distingue le nom ($a) du prénom ($b) :
+  // on CONSERVE cette découpe (authorsParts) au lieu de la reconstituer plus tard
+  // par approximation. `authors` reste une liste de chaînes pour l'affichage.
   const authors = [];
+  const authorsParts = [];
   ["700","701","702","703"].forEach(tag=>{
     rec.querySelectorAll(`datafield[tag="${tag}"]`).forEach(df=>{
       const nom    = df.querySelector('subfield[code="a"]')?.textContent?.trim()||"";
       const prenom = df.querySelector('subfield[code="b"]')?.textContent?.trim()||"";
       const name   = [prenom, nom].filter(Boolean).join(" ");
-      if(name) authors.push(name);
+      if(name){ authors.push(name); authorsParts.push({ nom, prenom }); }
     });
   });
 
@@ -9674,7 +9717,7 @@ function parseBNFRecord(rec){
   // Couverture via 856
   const cover = sf("856","u");
 
-  return { source:"BNF", title, subtitle, authors, publisher, year, isbn,
+  return { source:"BNF", title, subtitle, authors, authorsParts, publisher, year, isbn,
            pages, description, serie, category, language, cover };
 }
 
@@ -9722,10 +9765,13 @@ async function applyAutofill(idx){
     const dejaSaisi = [...authorsList.querySelectorAll('.item-author-select')].some(s=>s.value);
     if(!dejaSaisi){
       authorsList.innerHTML = "";        // on retire les lignes vides avant de remplir
-      for(const name of r.authors){
+      for(let i=0;i<r.authors.length;i++){
+        const name = r.authors[i];
         let a = _trouverAuteur(name);
         if(!a){
-          a = await _creerAuteurDepuisNom(name);
+          // Si la source a fourni la découpe (BnF : nom $a / prénom $b), on l'utilise
+          // telle quelle plutôt que de redécouper la chaîne par approximation.
+          a = await _creerAuteurDepuisNom(name, r.authorsParts && r.authorsParts[i]);
           if(a) _crees.push(authorDisplay(a));
         }
         if(a) addAuthorRow(a.id);
