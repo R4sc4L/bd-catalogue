@@ -1384,10 +1384,8 @@
         </div>
         <div class="form-section" id="formSection-authors">
           <h3>Auteurs et contributeurs</h3>
-          <div class="checkbox-row" style="margin:0 0 10px">
-            <input type="checkbox" id="authorsCollectedToggle" onchange="toggleAuthorsCollected()">
-            <label for="authorsCollectedToggle" style="margin:0;font-size:13px;color:var(--ink)" title="Limiter les listes d'auteurs aux auteurs collectionnés" data-en-title="Limit author lists to collected authors" data-en="⭐ Collected only">⭐ Collectionnés uniquement</label>
-          </div>
+          <!-- La portée de la liste (collectionnés / tous) se règle directement
+               dans le menu déroulant de chaque ligne : pas de case séparée. -->
           <div id="itemAuthorsList"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
             <button type="button" class="secondary" onclick="addAuthorRow()">+ Ajouter un auteur / rôle</button>
@@ -4289,7 +4287,7 @@ function openBulkEditForm(){
   // Réinitialiser les puces de langues (sinon valeurs obsolètes appliquées en masse)
   initLangTagInput([]);
   initObjetsAssocies([]);
-  syncAuthorsCollectedToggle();
+  resetAuthorsScope();
 
   // Supprimer required sur titre et catégorie
   document.getElementById("itemTitle").removeAttribute("required");
@@ -4342,7 +4340,7 @@ function openItemForm(id=null, opts={}){
   document.getElementById("itemAuthorsList").innerHTML = "";
   document.getElementById("itemImagePreview").innerHTML = "";
   document.getElementById("itemDeleteBtn").style.display = "none";
-  syncAuthorsCollectedToggle();
+  resetAuthorsScope();
   adaptFormToCollection();
 
   // Restaurer required sur titre et catégorie
@@ -4572,15 +4570,9 @@ function setAuthorsScope(tous){
   toast(tous ? T("Tous les auteurs proposés","All authors listed")
              : T("Seuls vos auteurs collectionnés sont proposés","Only your collected authors are listed"));
 }
-function toggleAuthorsCollected(){
-  const cb = document.getElementById("authorsCollectedToggle");
-  _authorsCollectedOnly = cb ? cb.checked : !_authorsCollectedOnly;
-  _rebuildAuthorSelects();
-}
-function syncAuthorsCollectedToggle(){
-  const cb = document.getElementById("authorsCollectedToggle");
-  if(cb) cb.checked = _authorsCollectedOnly;
-}
+// Chaque fiche s'ouvre sur la portée par défaut (auteurs collectionnés) ; la
+// bascule éventuelle faite sur une fiche ne se propage pas à la suivante.
+function resetAuthorsScope(){ _authorsCollectedOnly = true; }
 function addAuthorRow(auteurId="", roles=[]){
   // Compat : si roles est une string (ancien format), convertir
   if(typeof roles === "string") roles = roles ? [roles] : [];
