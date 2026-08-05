@@ -9336,6 +9336,10 @@ async function openBarcodeScanner(){
            `Decoding unavailable: ${e.message}. You can type the ISBN manually.`));
   }
 }
+// Vrai quand la recherche est déclenchée par un scan : un code-barres identifie
+// l'ouvrage sans ambiguïté, donc un résultat unique est appliqué directement —
+// inutile de réclamer un clic de confirmation après avoir visé le code.
+let _autofillFromScan = false;
 function _onBarcodeFound(code){
   const isbn = String(code||'').replace(/[^0-9Xx]/g,'');
   if(!isbn) return;
@@ -9344,6 +9348,7 @@ function _onBarcodeFound(code){
   const q = document.getElementById('autofillQuery');
   if(q){ q.value = isbn; }
   toast(T(`Code lu : ${isbn}`,`Code read: ${isbn}`));
+  _autofillFromScan = true;
   autofillSearch();
 }
 function closeBarcodeScanner(){
@@ -9455,6 +9460,16 @@ async function autofillSearch(){
 
   btn.disabled = false;
   btn.textContent = "Rechercher";
+
+  // Après un scan : un résultat unique est appliqué sans clic supplémentaire.
+  const _viaScan = _autofillFromScan;
+  _autofillFromScan = false;
+  if(_viaScan && _autofillResults.length === 1){
+    applyAutofill(0);
+  } else if(_viaScan && _autofillResults.length > 1){
+    toast(T(`${_autofillResults.length} notices trouvées — choisissez la bonne édition`,
+            `${_autofillResults.length} records found — pick the right edition`));
+  }
 }
 
 async function fetchGoogleBooksISBN(isbn){
