@@ -256,6 +256,13 @@
   .cat-tag-dropdown-item{padding:8px 14px;cursor:pointer;font-size:13px;transition:background .1s}
   .cat-tag-dropdown-item:hover,.cat-tag-dropdown-item.active{background:var(--accent-soft);color:var(--gold)}
   .badge-signed{background:var(--gold-bg);color:var(--on-accent);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700}
+  /* Groupe d'actions « Ajouter » : un seul libellé pour plusieurs contenants,
+     les boutons formant un ensemble visuellement solidaire. */
+  .add-group{display:inline-flex;align-items:stretch;border:1px solid var(--border-warm);border-radius:var(--radius);overflow:hidden;background:var(--surface-tint)}
+  .add-group-label{display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.05em;color:var(--gold);background:var(--accent-soft);white-space:nowrap}
+  .add-group button{border:none;border-radius:0;border-left:1px solid var(--border-warm);background:transparent;color:var(--ink)}
+  .add-group button:hover{background:var(--accent-bg);color:var(--on-accent)}
   .badge-xlibris{background:#7fae9a;color:#0e0d13;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700}
   .grid.grid-sm .badge-xlibris{font-size:9px;padding:1px 4px}
   /* Prêté : état temporaire et actionnable → bien visible (orange) */
@@ -2223,7 +2230,7 @@ async function saveActiveCategories(){
 }
 
 const ROLES = [
-  "Dessinateur","Scénariste","Écrivain","Coloriste","Encreur","Illustrateur","Couverture","Préface","Auteur (texte)","Traducteur","Directeur artistique"
+  "Dessinateur","Scénariste","Écrivain","Coloriste","Encreur","Illustrateur","Couverture","Préface","Auteur (texte)","Journaliste","Traducteur","Directeur artistique"
 ];
 
 const CONDITIONS = ["Neuf","Très bon","Bon","Moyen","Mauvais"];
@@ -4540,9 +4547,11 @@ let _authorsCollectedOnly = true;
 function _authorOptionsHTML(selectedId, applyFilter=true){
   let auths = cache.authors.slice();
   if(applyFilter && _authorsCollectedOnly) auths = auths.filter(a=>a.estCollectionne || String(a.id)===String(selectedId));
-  auths.sort((a,b)=>authorDisplay(a).localeCompare(authorDisplay(b)));
+  // Classement alphabétique par NOM DE FAMILLE (pseudonyme s'il en tient lieu),
+  // et affichage « Nom, Prénom » pour que l'ordre soit lisible d'un coup d'œil.
+  auths.sort((a,b)=>authorSortKey(a).localeCompare(authorSortKey(b),'fr'));
   const showStars = !(applyFilter && _authorsCollectedOnly);
-  return auths.map(a=>`<option value="${a.id}" ${String(a.id)===String(selectedId)?"selected":""}>${escapeHTML(authorDisplay(a))}${(a.estCollectionne && showStars)?' ⭐':''}</option>`).join("");
+  return auths.map(a=>`<option value="${a.id}" ${String(a.id)===String(selectedId)?"selected":""}>${escapeHTML(authorDisplaySurnameFirst(a))}${(a.estCollectionne && showStars)?' ⭐':''}</option>`).join("");
 }
 // Entêtes communes à tous les menus d'auteur (création + bascule de portée)
 function _authorSelectHeader(){
@@ -10384,7 +10393,16 @@ async function renderLibrary(){
   const meuble = _currentMeubleId ? libraryFurniture.find(m=>m.id===_currentMeubleId) : null;
   if(_currentMeubleId && !meuble) _currentMeubleId = null;
   if(meuble){
-    if(actions) actions.innerHTML = `<button class="secondary" onclick="openBackToPlan()">← Plan</button><button onclick="addLibraryShelf()">${T("+ Étagère","+ Shelf")}</button><button class="secondary" onclick="addLibraryPile()">📚 Pile</button><button class="secondary" onclick="addLibraryPile('classeur')">🗂️ ${T("Classeur","Binder")}</button>`;
+    // Les trois actions ajoutent un contenant : on les réunit sous un seul
+    // « Ajouter » plutôt que de répéter un « + » sur chacune.
+    if(actions) actions.innerHTML =
+      `<button class="secondary" onclick="openBackToPlan()">← Plan</button>`
+    + `<span class="add-group">`
+    +   `<span class="add-group-label">+ ${T("Ajouter","Add")}</span>`
+    +   `<button class="secondary" onclick="addLibraryShelf()">🪟 ${T("Étagère","Shelf")}</button>`
+    +   `<button class="secondary" onclick="addLibraryPile()">📚 ${T("Pile","Stack")}</button>`
+    +   `<button class="secondary" onclick="addLibraryPile('classeur')">🗂️ ${T("Classeur","Binder")}</button>`
+    + `</span>`;
     renderMeubleFront(container, meuble);
   } else {
     if(actions) actions.innerHTML = `<button onclick="addMeuble()">${T("+ Nouveau meuble","+ New bookcase")}</button>`
