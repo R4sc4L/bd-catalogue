@@ -1,89 +1,120 @@
 # 📚 Ma Collection — Catalogue de bandes dessinées & collections
 
-Application web **mono-fichier** pour cataloguer, organiser et explorer une collection de bandes dessinées (et d'autres types de collections). Tout tient dans un seul fichier HTML, fonctionne **100 % en local dans le navigateur**, sans serveur ni compte en ligne, et stocke les données sur votre machine via IndexedDB.
+Application web **mono-fichier** pour cataloguer, organiser et explorer une collection de bandes dessinées (et d'autres types de collections). HTML, CSS et JavaScript natif dans un seul fichier : ni framework, ni build, ni dépendance.
 
-> Aucune donnée ne quitte votre ordinateur : pas de backend, pas de cloud, pas de traçage.
+**➡️ Application en ligne : https://r4sc4l.github.io/bd-catalogue/**
+
+---
+
+## Deux variantes, un seul code
+
+Le même fichier fonctionne dans deux modes, choisis automatiquement selon l'adresse d'où il est ouvert.
+
+| | **En ligne** *(référence)* | **Locale** |
+|---|---|---|
+| Ouverture | https://r4sc4l.github.io/bd-catalogue/ | fichier HTML ouvert directement |
+| Stockage | Supabase (Postgres + Storage, région EU) | IndexedDB, dans le navigateur |
+| Accès | compte, depuis n'importe quel appareil | un seul navigateur, une seule machine |
+| Confidentialité | données hébergées, accès restreint par compte | **rien ne quitte l'ordinateur** |
+| Caméra (scanner) | oui | non — nécessite HTTPS |
+
+Depuis **août 2026, la version en ligne fait référence.** La version locale reste utilisable en lecture et pour les sauvegardes, mais ne doit plus recevoir de saisie : les deux bases divergeraient sans possibilité de fusion.
+
+Un repère **⌂ Local / ☁ En ligne** est affiché dans l'en-tête pour lever toute ambiguïté.
 
 ---
 
 ## ✨ Fonctionnalités
 
 ### Hub multi-collections
-Un écran d'accueil présente vos collections sous forme de tuiles (avec compteurs et code couleur), plus une **vue globale** qui agrège toutes les collections. L'architecture repose sur un *Module Registry* déclaratif : ajouter une nouvelle collection = ajouter une entrée, sans toucher au reste du code.
+Un écran d'accueil présente les collections sous forme de tuiles (compteurs, code couleur), plus une **vue globale** qui les agrège. L'architecture repose sur un *Module Registry* déclaratif : ajouter une collection = ajouter une entrée, sans toucher au reste du code.
 
 - **BD** — bandes dessinées & comics (module principal)
 - **Pin's** — pin's & badges
 - **Cartes à jouer** *(à venir)*
 - **Cartes postales** *(à venir)*
 
-Les modules sont **activables/désactivables** par l'utilisateur (état mémorisé).
+Les modules sont activables et désactivables, l'état est mémorisé.
+
+### Fiches adaptées à la catégorie
+La fiche d'une œuvre **change selon sa catégorie** : un moteur d'archétypes n'affiche que les champs pertinents.
+
+- **Standard** — album relié : série, cycle, tirage, ISBN, format…
+- **Portfolio / Tirage de tête / Édition limitée / Intégrale / Travaux publicitaires** — tirage, n° d'exemplaire, section **emboîtage** (étui, coffret, matière — carton, pleine toile, bristol, découpe laser, plexiglas — et qualité)
+- **Planche originale** — technique, dimensions, provenance
+- **Éphémères** — fiche allégée, organisée en six familles : ex-libris et estampes, invitations et cartons, presse, imprimés promotionnels, marque-pages, divers
+
+Les éphémères livrés avec un album sont **rattachés à leur album** de façon réciproque : la fiche indique « toujours en place dans l'album », avec un lien direct, et la localisation est héritée.
 
 ### Gestion des œuvres
-- Fiches détaillées : titre, série/cycle, auteurs et rôles, éditeur, collection, année/mois, ISBN, format, tirage, n° d'exemplaire, état, prix d'achat et cote, localisation…
-- **Langues multiples** par œuvre, avec affichage des **drapeaux** correspondants dans les vues collection (utile pour les catalogues bilingues).
-- Caractéristiques physiques structurées : reliure, couverture et finitions, format ; section dédiée **emboîtage** (étui, coffret, matière, qualité) réservée aux tirages de tête et portfolios.
-- Signatures, dédicaces, ex-libris, et contenus additionnels.
-- **Remplissage automatique** des fiches par recherche ISBN ou titre (sources : BNF, Google Books, Open Library).
+- Titre, série et cycle, auteurs et rôles, éditeur, collection, année, ISBN, format, tirage, n° d'exemplaire, état (avec précisions libres), prix d'achat et cote, localisation.
+- **Langues multiples** par œuvre, avec drapeaux dans les vues collection.
+- Signatures et dédicaces (dont **tampon**), ex-libris, contenus additionnels.
+- **Suivi personnel** : œuvre **lue**, œuvre **prêtée** (à qui, depuis quand) — signalés par des icônes sur les vignettes et sur les rayonnages, avec filtres dédiés et liste des prêts en cours.
+
+### Saisie assistée
+- **Scanner de code-barres** par la caméra (EAN-13), avec choix du périphérique vidéo — utilisable depuis l'iPhone, y compris en caméra de continuité sur Mac.
+- **Remplissage automatique** par ISBN ou par titre : BNF, Google Books, Open Library, interrogés en ISBN-13 comme en ISBN-10.
+- Les **auteurs inconnus sont créés automatiquement**, avec rapprochement tolérant pour éviter les doublons.
+- **Auto-complétion de la liste de souhaits** : saisir une série renseigne l'éditeur, les auteurs et la catégorie d'après les albums déjà possédés.
 
 ### Vues & navigation
-- Trois affichages de la collection : **grille**, **petite grille** et **liste**.
-- Tri (catégorie + chronologie, auteur, cote…), filtres (catégorie, auteur, éditeur, année, état, localisation…) et recherche globale.
-- **Tableau de bord par collection** (statistiques, dernières acquisitions, répartition par catégorie cliquable).
-- Pages dédiées : **Auteurs/Éditeurs**, **Statistiques**, **Catégories**, **Souhaités** (wishlist), **Bibliothèque** (simulation d'étagères).
+- Trois affichages : **grille**, **petite grille**, **liste**.
+- Tris (catégorie + chronologie de cycle, auteur, cote…), filtres (catégorie, auteur, éditeur, année, état, localisation, lu, prêté) et recherche globale.
+- **Tableau de bord** par collection : statistiques, dernières acquisitions, répartition cliquable.
+- Pages dédiées : **Auteurs / Éditeurs** (auteurs collectionnés par défaut, bascule « Tous les auteurs »), **Statistiques**, **Catégories**, **Souhaités**, **Bibliothèque** (meubles, étagères, piles et classeurs, ordre réglable).
 
 ### Sélection multiple & édition groupée
 - Mode sélection avec cases à cocher.
-- **Maj+clic** : sélection par plage (tous les items entre deux).
-- **Ctrl/Cmd+clic** : ajout/retrait d'un item (et entrée automatique en mode sélection).
-- **Ctrl/Cmd+A** : tout sélectionner.
-- **Suppr** : supprimer la sélection (avec confirmation).
+- **Maj+clic** : sélection par plage. **Ctrl/Cmd+clic** : ajout ou retrait. **Ctrl/Cmd+A** : tout sélectionner — y compris les seuls résultats d'une recherche en cours. **Suppr** : supprimer, avec confirmation.
 - Édition groupée de plusieurs œuvres en une fois.
 
 ### Confort & accessibilité
 - Interface **bilingue français / anglais**.
-- En-tête et barre d'outils **collants** (toujours accessibles au défilement).
-- Espacement **normé par tokens** pour un rythme visuel cohérent.
-- Protection par **code PIN** pour les contenus réservés aux adultes.
-- Accès protégé par mot de passe local (avec code de récupération).
+- En-tête et barre d'outils collants.
+- Espacement normé par tokens.
+- **Code PIN** pour les contenus réservés aux adultes ; accès protégé par mot de passe local avec code de récupération (variante locale).
 
 ### Import / Export
-- Export et import **JSON** (sauvegarde complète).
-- Export et import **CSV** (tableur).
-- Sauvegarde recommandée régulière vers votre cloud personnel.
+- Export **JSON complet et auto-suffisant** : œuvres, auteurs, catégories, Bibliothèque, souhaits, préférences — et **images intégrées au fichier**, y compris depuis la version en ligne où elles ne sont autrement que des liens signés temporaires. Une sauvegarde reste donc exploitable des années plus tard.
+- Import JSON en remplacement complet, rejouable autant de fois que nécessaire.
+- Export et import **CSV** pour le tableur.
 
 ---
 
 ## 🚀 Utilisation
 
-Aucune installation, aucune dépendance, aucun build.
+**En ligne** — ouvrez https://r4sc4l.github.io/bd-catalogue/ et connectez-vous. Sur iPhone, ajoutez le site à l'écran d'accueil (Partager → *Sur l'écran d'accueil*) : l'application s'ouvre en un geste, scanner compris.
 
-1. Téléchargez `bd-collection.html`.
-2. Ouvrez-le dans un navigateur moderne (Chrome, Safari, Firefox, Edge).
-3. Créez votre accès local, puis commencez à cataloguer.
-
-> Les données sont stockées dans le navigateur (IndexedDB) **par profil et par navigateur**. Pour transférer votre collection sur une autre machine ou un autre navigateur, utilisez l'**export JSON** puis l'import.
+**En local** — téléchargez `index.html`, ouvrez-le dans un navigateur moderne, créez votre accès. Les données sont alors stockées dans le navigateur, **par profil et par navigateur** ; pour les transférer ailleurs, passez par l'export JSON.
 
 ---
 
 ## 🛠️ Technique
 
 - **Mono-fichier** : HTML + CSS + JavaScript natif, sans framework ni bibliothèque externe.
-- **Stockage** : IndexedDB (base `bdCollectionDB`), `localStorage` pour les préférences.
-- **Zéro backend** : tout s'exécute côté client.
+- **Détection du mode** : le fichier bascule en mode cloud s'il est servi depuis `github.io` (ou avec le paramètre `?cloud`), en mode local sinon.
+- **Stockage local** : IndexedDB (base `bdCollectionDB`), `localStorage` pour les préférences.
+- **Stockage en ligne** : Supabase — Postgres avec RLS par utilisateur, Storage pour les images. Les champs souples sont regroupés en colonnes JSONB, ce qui permet d'ajouter un champ sans migration SQL.
+- **Publication** : `publier-webapp.sh` copie le fichier de travail en `index.html`, montre les changements et demande confirmation avant de pousser sur GitHub Pages.
+
+Le dépôt ne contient qu'un seul fichier d'application, `index.html` : c'est à la fois ce qui est servi en ligne et ce qui se télécharge pour un usage local.
 
 ---
 
-## 💾 Sauvegarde des données
+## 💾 Sauvegarde
 
-Comme les données vivent dans le navigateur, pensez à **exporter régulièrement** (JSON) pour ne rien perdre en cas de réinitialisation du navigateur ou de changement de machine.
+Exportez régulièrement en JSON. Les images étant embarquées dans le fichier, ces exports sont de véritables archives : elles restent lisibles même si l'hébergement disparaissait.
 
 ---
 
 ## 🗺️ Feuille de route
 
+- **Assistant IA** pour l'enrichissement des fiches — spécifié, différé ; validation champ par champ, jamais d'écriture automatique sur les données factuelles sensibles (ISBN, tirage, pagination, cote)
 - Module **Cartes à jouer**
 - Module **Cartes postales**
-- Enrichissement de la vue globale cross-collections
+- Enrichissement de la vue globale entre collections
+- Déclinaisons Mac, iOS, Android
 
 ---
 
@@ -93,4 +124,4 @@ Comme les données vivent dans le navigateur, pensez à **exporter régulièreme
 
 ---
 
-*Projet personnel — catalogue de collection, conçu pour un usage local et privé.*
+*Projet personnel — catalogue de collection, développé et éprouvé sur une collection réelle.*
