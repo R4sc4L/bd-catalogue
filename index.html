@@ -271,14 +271,18 @@
   .grid.grid-sm .badge-pret{font-size:9px;padding:1px 4px}
   /* Lu : attribut permanent et fréquent → pastille discrète, pas de texte */
   /* Lu : pastille en haut à DROITE (le coin gauche est celui du repère de localisation) */
-  .card-lu{position:absolute;top:8px;right:8px;z-index:2;width:26px;height:26px;border-radius:50%;
+  /* Même gabarit que le repère de localisation, pour que les deux coins soient
+     visuellement symétriques (taille, position et rayon identiques). */
+  .card-lu{position:absolute;top:8px;right:8px;z-index:2;width:32px;height:32px;border-radius:50%;
     background:rgba(20,18,12,.82);color:var(--gold);display:flex;align-items:center;justify-content:center;
-    font-size:13px;line-height:1;border:1px solid rgba(226,184,106,.55);pointer-events:none;
-    box-shadow:0 1px 4px rgba(0,0,0,.45);backdrop-filter:blur(3px)}
-  .grid.grid-sm .card-lu{width:20px;height:20px;font-size:10px;top:6px;right:6px}
+    font-size:14px;line-height:1;border:1px solid rgba(226,184,106,.55);pointer-events:none;
+    box-shadow:var(--shadow);backdrop-filter:blur(4px)}
+  .grid.grid-sm .card-lu{width:26px;height:26px;font-size:12px}
   /* En mode sélection, la case à cocher occupe ce coin : on décale la pastille */
-  .bulk-mode .card-lu{right:32px}
-  .bulk-mode .grid.grid-sm .card-lu{right:26px}
+  /* En mode sélection, la case à cocher occupe le coin : on décale la pastille
+     d'une largeur de case + marge, en accord avec sa nouvelle taille. */
+  .bulk-mode .card-lu{right:30px}
+  .bulk-mode .grid.grid-sm .card-lu{right:28px}
   .badge-eo{background:var(--accent-bg);color:var(--on-accent);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px}
   body.theme-light .badge-eo{background:var(--gold-bg)}
   /* Author card */
@@ -340,6 +344,9 @@
   tbody tr:hover{background:var(--surface-tint)}
   /* Modal */
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px;backdrop-filter:blur(2px)}
+  /* Le formulaire auteur peut s'ouvrir par-dessus la fiche œuvre (création à la volée) :
+     il doit alors passer au premier plan. */
+  #authorModal{z-index:120}
   .modal-backdrop.active{display:flex}
   .modal{background:var(--bg-panel);border-radius:var(--radius);max-width:900px;width:100%;box-shadow:var(--shadow-lg);overflow:hidden;margin:auto;border:1px solid var(--border-warm)}
   .modal-header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg-alt)}
@@ -900,7 +907,7 @@
     .card-select-cb{width:26px;height:26px;top:8px;right:8px}
     .table-cb-col input[type=checkbox],.table-cb-col .card-select-cb{width:24px;height:24px}
     .role-check-item input{width:22px;height:22px}
-    .card-edit-btn,.card-locate-btn{width:44px;height:44px}
+    .card-edit-btn,.card-locate-btn,.card-lu{width:44px;height:44px}
     #filterSearchClear{font-size:20px!important;padding:8px 10px!important;right:0!important}
   }
 
@@ -2230,7 +2237,7 @@ async function saveActiveCategories(){
 }
 
 const ROLES = [
-  "Dessinateur","Scénariste","Écrivain","Coloriste","Encreur","Illustrateur","Couverture","Préface","Auteur (texte)","Journaliste","Traducteur","Directeur artistique"
+  "Dessinateur","Scénariste","Idée originale","Écrivain","Coloriste","Encreur","Couverture","Préface","Auteur (texte)","Journaliste","Traducteur","Directeur artistique"
 ];
 
 const CONDITIONS = ["Neuf","Très bon","Bon","Moyen","Mauvais"];
@@ -4632,9 +4639,10 @@ function addAuthorRow(auteurId="", roles=[]){
     if(e.target.value==="__collected__"){ e.target.value=""; setAuthorsScope(false); return; }
     if(e.target.value==="__new__"){
       e.target.value = "";
-      closeModal("itemModal");
+      // Le formulaire auteur s'ouvre PAR-DESSUS la fiche, sans la fermer :
+      // fermer la fiche faisait perdre la saisie en cours si l'on renonçait
+      // à créer l'auteur (le retour n'avait lieu qu'à l'enregistrement).
       openAuthorForm(null,(newId)=>{
-        openModal("itemModal");
         sel.innerHTML = _authorSelectHeader() + _authorOptionsHTML(newId, true);
         sel.value = newId;
       });
