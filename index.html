@@ -1758,10 +1758,11 @@
         <input type="hidden" id="wishId">
         <div class="form-grid">
           <div class="span-2"><label data-en="Title *">Titre *</label><input type="text" id="wishTitle" required></div>
-          <div><label data-en="Author(s)">Auteur(s)</label><input type="text" id="wishAuthors" placeholder="ex: Moebius, Giraud…" data-en-ph="e.g. Moebius, Giraud…"></div>
+          <div><label data-en="Author(s)">Auteur(s)</label><input type="text" id="wishAuthors" list="dl-auteurs" placeholder="ex: Moebius, Giraud…" data-en-ph="e.g. Moebius, Giraud…"></div>
           <div><label data-en="Category">Catégorie</label><select id="wishCategory"></select></div>
-          <div><label data-en="Collection / Series">Collection / Série</label><input type="text" id="wishCollection" placeholder="ex: Les Aventures de Tintin" data-en-ph="e.g. Les Aventures de Tintin"></div>
-          <div><label data-en="Publisher">Éditeur</label><input type="text" id="wishPublisher"></div>
+          <div><label data-en="Collection / Series">Collection / Série <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400;font-size:11px" data-en="(fills in the rest)">(complète le reste)</span></label>
+            <input type="text" id="wishCollection" list="dl-series" placeholder="ex: Les Aventures de Tintin" data-en-ph="e.g. Les Aventures de Tintin" oninput="completerSouhaitDepuisSerie()"></div>
+          <div><label data-en="Publisher">Éditeur</label><input type="text" id="wishPublisher" list="dl-publishers"></div>
           <div><label data-en="Year (approx.)">Année (approx.)</label><input type="number" id="wishYear" min="1800" max="2100"></div>
           <div><label>ISBN</label><input type="text" id="wishIsbn"></div>
           <div><label data-en="Priority">Priorité</label>
@@ -2064,6 +2065,7 @@
 <datalist id="dl-series"></datalist>
 <datalist id="dl-albums"></datalist>
 <datalist id="dl-emprunteurs"></datalist>
+<datalist id="dl-auteurs"></datalist>
 <datalist id="dl-techniques"><option>Lithographie</option><option>Sérigraphie</option><option>Offset</option><option>Gravure</option><option>Héliogravure</option><option>Impression numérique</option><option>Typographie</option></datalist>
 <datalist id="dl-univers"></datalist>
 <datalist id="dl-publishers"></datalist>
@@ -9142,7 +9144,63 @@ function applyWishFilters(items){
   </tbody></table>`;
 }
 
+// ── Souhaits : suggestions tirées de la collection ──────────────────────────
+// Il manque presque toujours un tome d'une série qu'on possède déjà : on
+// alimente donc les listes depuis la collection, et saisir la série renseigne
+// le reste (éditeur, catégorie, auteurs) d'après les albums déjà présents.
+function _remplirListesSouhait(){
+  const set = (id, vals) => {
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = [...new Set(vals.filter(Boolean))]
+      .sort((a,b)=>String(a).localeCompare(String(b),'fr'))
+      .map(v=>`<option>${escapeHTML(v)}</option>`).join('');
+  };
+  set('dl-series',     cache.items.map(i=>i.serie));
+  set('dl-publishers', cache.items.map(i=>i.editeur));
+  set('dl-auteurs',    cache.authors.map(a=>authorDisplay(a)));
+}
+// Valeur la plus fréquente d'un champ parmi les albums d'une série
+function _valeurDominante(items, champ){
+  const compte = {};
+  items.forEach(i=>{ const v=(i[champ]||'').trim(); if(v) compte[v]=(compte[v]||0)+1; });
+  const entrees = Object.entries(compte).sort((a,b)=>b[1]-a[1]);
+  return entrees.length ? entrees[0][0] : '';
+}
+// Complète les champs VIDES à partir de la série saisie (jamais d'écrasement)
+function completerSouhaitDepuisSerie(){
+  const serie = (document.getElementById('wishCollection')?.value||'').trim();
+  if(serie.length < 3) return;
+  const albums = cache.items.filter(i=>_normCat(i.serie||'')===_normCat(serie));
+  if(!albums.length) return;
+
+  const remplirSiVide = (id, val) => {
+    const el = document.getElementById(id);
+    if(el && !el.value.trim() && val) { el.value = val; return true; }
+    return false;
+  };
+  let n = 0;
+  if(remplirSiVide('wishPublisher', _valeurDominante(albums,'editeur'))) n++;
+  // Auteurs : ceux qui reviennent le plus souvent dans la série
+  const freq = {};
+  albums.forEach(i=>(i.auteurs||[]).forEach(a=>{
+    const nom = authorDisplay(authorById(a.auteurId));
+    if(nom && nom!=='—') freq[nom]=(freq[nom]||0)+1;
+  }));
+  const principaux = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+  if(principaux.length && remplirSiVide('wishAuthors', principaux.join(', '))) n++;
+  // Catégorie : seulement si elle existe dans la liste proposée
+  const cat = _valeurDominante(albums,'categorie');
+  const catSel = document.getElementById('wishCategory');
+  if(catSel && !catSel.value && cat){
+    const opt = [...catSel.options].find(o=>_normCat(o.value)===_normCat(cat));
+    if(opt){ catSel.value = opt.value; n++; }
+  }
+  if(n) toast(T(`Complété d'après « ${serie} » (${albums.length} album(s) en collection)`,
+                `Filled from “${serie}” (${albums.length} album(s) owned)`));
+}
+
 function openWishForm(id=null){
+  _remplirListesSouhait();
   document.getElementById("wishForm").reset();
   document.getElementById("wishId").value = "";
   document.getElementById("wishDeleteBtn").style.display = "none";
