@@ -53,7 +53,7 @@ Les éphémères livrés avec un album sont **rattachés à leur album** de faç
 - **Suivi personnel** : œuvre **lue**, œuvre **prêtée** (à qui, depuis quand) — signalés par des icônes sur les vignettes et sur les rayonnages, avec filtres dédiés et liste des prêts en cours.
 
 ### Saisie assistée
-- **Scanner de code-barres** par la caméra (EAN-13), avec choix du périphérique vidéo — utilisable depuis l'iPhone, y compris en caméra de continuité sur Mac.
+- **Scanner de code-barres** par la caméra (EAN-13), avec choix du périphérique vidéo — utilisable depuis l'iPhone, y compris en caméra de continuité sur Mac. Fonctionne sur macOS, iOS, Windows et Android : le décodage passe par l'API du système quand elle existe, sinon par une copie embarquée de ZXing, sans aucun appel réseau.
 - **Remplissage automatique** par ISBN ou par titre : BNF, Google Books, Open Library, interrogés en ISBN-13 comme en ISBN-10.
 - Les **auteurs inconnus sont créés automatiquement**, avec rapprochement tolérant pour éviter les doublons.
 - **Auto-complétion de la liste de souhaits** : saisir une série renseigne l'éditeur, les auteurs et la catégorie d'après les albums déjà possédés.
@@ -92,7 +92,7 @@ Les éphémères livrés avec un album sont **rattachés à leur album** de faç
 
 ## 🛠️ Technique
 
-- **Mono-fichier** : HTML + CSS + JavaScript natif, sans framework ni bibliothèque externe.
+- **Mono-fichier** : HTML + CSS + JavaScript natif, sans framework ni build. Aucune ressource n'est chargée depuis un tiers à l'exécution ; la seule bibliothèque utilisée, le décodeur de codes-barres [ZXing](https://github.com/zxing-js/browser) (Apache-2.0), est embarquée dans le fichier sous forme inerte et n'est évaluée qu'au premier scan.
 - **Détection du mode** : le fichier bascule en mode cloud s'il est servi depuis `github.io` (ou avec le paramètre `?cloud`), en mode local sinon.
 - **Stockage local** : IndexedDB (base `bdCollectionDB`), `localStorage` pour les préférences.
 - **Stockage en ligne** : Supabase — Postgres avec RLS par utilisateur, Storage pour les images. Les champs souples sont regroupés en colonnes JSONB, ce qui permet d'ajouter un champ sans migration SQL.
