@@ -4732,6 +4732,7 @@ async function saveItem(e){
       roles: [...row.querySelectorAll(".role-dropdown-menu input:checked")].map(cb=>cb.value)
     })).filter(a=>a.auteurId);
 
+    let _bulkFailed = 0;
     for(const id of ids){
       const item = cache.items.find(i=>i.id===id);
       if(!item) continue;
@@ -4756,14 +4757,27 @@ async function saveItem(e){
       // Auteurs (seulement si au moins un ajouté)
       if(authorsList.length) item.auteurs = authorsList;
       item.updatedAt = new Date().toISOString();
-      await new Promise((res,rej)=>{ const tx=db.transaction("items","readwrite"); tx.objectStore("items").put(item); tx.oncomplete=res; tx.onerror=rej; });
+      // Un échec sur une œuvre ne doit pas interrompre le lot ni figer l'interface
+      await new Promise((res)=>{
+        try{
+          const tx=db.transaction("items","readwrite");
+          tx.objectStore("items").put(item);
+          tx.oncomplete=res;
+          tx.onerror=()=>{ _bulkFailed++; res(); };
+        }catch(err){ console.error("[édition groupée]", err); _bulkFailed++; res(); }
+      });
     }
-    await reloadCache();
+    try{ await reloadCache(); }catch(err){ console.error("[édition groupée] reloadCache", err); }
     _bulkEditIds = null;
-    toast(T(`${n} œuvre${n>1?"s":" "} mise${n>1?"s":""} à jour`,`${n} work${n>1?"s":""} updated`));
+    const _ok = n - _bulkFailed;
+    if(_bulkFailed){
+      toast(T(`${_ok} œuvre${_ok>1?"s":""} mise${_ok>1?"s":""} à jour, ${_bulkFailed} en échec`,
+              `${_ok} work${_ok>1?"s":""} updated, ${_bulkFailed} failed`), "error");
+    }else{
+      toast(T(`${n} œuvre${n>1?"s":" "} mise${n>1?"s":""} à jour`,`${n} work${n>1?"s":""} updated`));
+    }
     closeModal("itemModal");
-    clearSelection();
-    toggleBulkMode();
+    exitBulkMode();          // sortie explicite et idempotente du mode sélection
     refreshCurrentView();
     return;
   }
@@ -6536,7 +6550,7 @@ function applyFilters(){
           const trSel = _selectedItems.has(i.id) ? " selected" : "";
           const trClick = `onclick="bulkTableRowClick('${i.id}',event)"`;
           rows.push(`<tr class="${trSel}" ${trClick}>
-            ${_bulkMode?`<td class="table-cb-col"><input type="checkbox" class="card-select-cb" ${_selectedItems.has(i.id)?"checked":""} onclick="event.stopPropagation();toggleItemSelect('${i.id}',this)"></td>`:""}
+            ${_bulkMode?`<td class="table-cb-col"><input type="checkbox" class="card-select-cb" ${_selectedItems.has(i.id)?"checked":""} onclick="event.stopPropagation();bulkCheckboxClick('${i.id}',this,event)"></td>`:""}
             <td class="table-title-cell"${i.images?.[0]?` data-cover="${escapeHTML(i.images[0])}"`:""} onmouseenter="showCoverTooltip(event,this)" onmouseleave="hideCoverTooltip()"><strong>${isAllCollection()?`<span title="${escapeHTML(moduleById(i.collectionType||'bd').label)}">${moduleById(i.collectionType||'bd').icon}</span> `:""}${escapeHTML(i.titre||"")}</strong>${i.serie?`<div class="muted" style="font-size:12px">${escapeHTML(i.serie)}</div>`:""}</td>
             <td style="white-space:nowrap">${i.editionOriginale?'<span class="badge-eo">EO</span> ':""} ${i.signe?`<span class="badge-signed">${T('Signé','Signed')}</span> `:""}${(i.dedicaceSignature||i.dedicaceCheck)?`<span class="badge-signed">${T('Déd. sig.','Ded. sig.')}</span> `:""}${i.dedicaceDessin?`<span class="badge-signed">${T('Déd. dessin','Ded. drawing')}</span> `:""}${i.dedicaceTampon?`<span class="badge-signed">${T('Déd. tampon','Ded. stamp')}</span>`:"" }</td>
             <td><span class="tag cat">${escapeHTML(i.categorie||"")}</span></td>
@@ -6607,7 +6621,7 @@ function cardItemHTML(i, compact=false){
     if(i.pinsTheme) badgesBL.push(`<span class="badge-signed" style="background:rgba(122,159,200,.8);color:#0e0d13">${escapeHTML(i.pinsTheme.split('/')[0].trim())}</span>`);
   }
   const selClass = _selectedItems.has(i.id) ? " selected" : "";
-  const selCb = (compact || _bulkMode) ? `<input type="checkbox" class="card-select-cb" ${_selectedItems.has(i.id)?"checked":""} onclick="event.stopPropagation();toggleItemSelect('${i.id}',this)">` : "";
+  const selCb = (compact || _bulkMode) ? `<input type="checkbox" class="card-select-cb" ${_selectedItems.has(i.id)?"checked":""} onclick="event.stopPropagation();bulkCheckboxClick('${i.id}',this,event)">` : "";
   const clickHandler = `onclick="bulkCardClick('${i.id}',event)"`;
   // Localisation effective (héritée de l'album pour un éphémère collé) — même source que la fiche
   const _eloc = effectiveLocation(i);
@@ -7757,7 +7771,8 @@ function applyLang() {
   const addBtn = document.getElementById('addItemBtn');
   if(addBtn) addBtn.textContent = S('coll.btn_add');
   const selBtn = document.getElementById('bulkModeBtn');
-  if(selBtn && !selBtn.classList.contains('active')) selBtn.textContent = S('coll.btn_select');
+  // Ne pas écraser le libellé « ✕ Sélection » tant que le mode sélection est actif
+  if(selBtn && !selBtn.classList.contains('active-filter')) selBtn.textContent = S('coll.btn_select');
   const editBulkBtn = document.getElementById('bulkEditBtn');
   if(editBulkBtn) editBulkBtn.textContent = S('coll.btn_edit_bulk');
 
@@ -9919,8 +9934,9 @@ let _selectedItems = new Set();
 let _bulkMode = false;
 let _selectAnchorId = null;   // ancre pour la sélection par plage (shift-clic)
 
-function toggleBulkMode(){
-  _bulkMode = !_bulkMode;
+// État explicite du mode sélection. Idempotent : appelable sans connaître l'état courant.
+function setBulkMode(on){
+  _bulkMode = !!on;
   // Nettoyer toute sélection visuelle résiduelle sur les cartes
   _selectedItems.clear();
   _selectAnchorId = null;
@@ -9937,6 +9953,11 @@ function toggleBulkMode(){
   applyFilters();   // re-rendu : injecte les cases à cocher (grille) / la colonne de sélection (liste)
   updateBulkBar();
 }
+
+function toggleBulkMode(){ setBulkMode(!_bulkMode); }
+
+// Quitte le mode sélection quel que soit l'état de départ (sans effet s'il est déjà inactif).
+function exitBulkMode(){ setBulkMode(false); }
 
 function toggleItemSelect(id, cb){
   if(_selectedItems.has(id)) _selectedItems.delete(id);
@@ -9964,6 +9985,18 @@ function _selectRange(toId){
   applyFilters();   // re-rendu pour refléter les nouveaux états de sélection
   updateBulkBar();
   return true;
+}
+
+// Clic sur la case à cocher d'une carte ou d'une ligne : Maj+clic étend la sélection
+// depuis l'ancre, comme un Maj+clic sur le corps de la carte.
+function bulkCheckboxClick(id, cb, e){
+  if(e && e.shiftKey && _selectAnchorId && _selectAnchorId !== id){
+    if(window.getSelection) window.getSelection().removeAllRanges();
+    // La case vient d'être basculée par le navigateur : le re-rendu de _selectRange
+    // rétablira l'état correct de toutes les cases.
+    if(_selectRange(id)) return;
+  }
+  toggleItemSelect(id, cb);
 }
 
 function bulkCardClick(id, e){
