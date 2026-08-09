@@ -2025,6 +2025,13 @@
           <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Shelf">Étagère</label>
           <select id="pileModalShelf" style="margin-top:6px"></select>
         </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Type">Type</label>
+          <select id="pileModalKind" style="margin-top:6px" onchange="_syncPileKindUI()">
+            <option value="" data-en="📚 Pile (albums lying flat)">📚 Pile (albums couchés)</option>
+            <option value="classeur" data-en="🗂️ Binder (browsable)">🗂️ Classeur (feuilletable)</option>
+          </select>
+        </div>
       </div>
       <div id="pileColorRow" style="display:none">
         <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Binder colour">Couleur du classeur</label>
@@ -3201,8 +3208,18 @@ const SB = (() => {
     const eoMap = orderOf(eo,'etagere_id'), poMap = orderOf(po,'pile_id');
     R.meta['library-shelves'] = etageres.map(s=>({ id:s.id, name:s.nom,
       meubleId:s.meuble_id, col:s.col??0, row:s.row??0, itemOrder:eoMap[s.id]||[] }));
-    R.meta['library-piles'] = piles.map(p=>({ id:p.id, name:p.nom,
-      localisation:p.localisation||'', itemOrder:poMap[p.id]||[] }));
+    // La table `piles` ne porte que nom et localisation. Le type (pile ou classeur)
+    // et la couleur du classeur sont conservés à part, dans les préférences du profil,
+    // ce qui évite une migration SQL. Sans cela, tout classeur redevient une pile au
+    // rechargement.
+    const _pileStyle = (profile && profile.preferences && profile.preferences['library-piles-style']) || {};
+    R.meta['library-piles'] = piles.map(p=>{
+      const st = _pileStyle[p.id] || {};
+      const o = { id:p.id, name:p.nom, localisation:p.localisation||'', itemOrder:poMap[p.id]||[] };
+      if(st.kind)  o.kind  = st.kind;
+      if(st.color) o.color = st.color;
+      return o;
+    });
 
     // Préférences (library-linked, modules_enabled…)
     R.prefs = (profile && profile.preferences) || {};
@@ -3464,6 +3481,15 @@ const SB = (() => {
     list.forEach(p=>(p.itemOrder||[]).forEach((oid,idx)=>{
       if(itemIds.has(oid)) links.push({pile_id:ids[p.id], oeuvre_id:oid, user_id:uid, position:idx}); }));
     if(links.length) await q(client.from('pile_oeuvres').insert(links), 'pile_oeuvres');
+    // Type et couleur : hors schéma SQL, donc rangés dans les préférences du profil,
+    // indexés par l'identifiant réellement écrit en base (voir la lecture plus haut).
+    const style = {};
+    list.forEach(p=>{
+      if(p.kind || p.color) style[ids[p.id]] = { kind:p.kind||'', color:p.color||'' };
+    });
+    R.prefs['library-piles-style'] = style;
+    R.meta['library-piles-style']  = style;
+    await q(client.from('profiles').upsert({ user_id:uid, preferences:R.prefs },{onConflict:'user_id'}), 'profiles');
     R.meta['library-piles'] = list;
   }
 
@@ -12045,6 +12071,30 @@ function openClasseurReaderFromModal(){
   closeModal('pileModal');
   if(id) openClasseurReader(id);
 }
+// Ajuste la fenêtre au type choisi : la couleur et le feuilletage ne concernent
+// que les classeurs. Appelée à l'ouverture et à chaque changement du menu Type.
+function _syncPileKindUI(){
+  const estClasseur = document.getElementById("pileModalKind")?.value === "classeur";
+  const pile = libraryPiles.find(p=>p.id===_currentPileId);
+  const colorRow = document.getElementById("pileColorRow");
+  if(colorRow) colorRow.style.display = estClasseur ? "" : "none";
+  const feuBtn = document.getElementById("pileFeuilleterBtn");
+  // Feuilleter agit sur l'état enregistré : inutile tant que le changement de type
+  // n'est pas validé.
+  if(feuBtn) feuBtn.style.display = (estClasseur && pile?.kind==="classeur") ? "" : "none";
+  const titre = document.getElementById("pileModalTitle");
+  if(titre) titre.textContent = estClasseur ? T("🗂️ Gérer le classeur","🗂️ Manage binder") : T("📚 Gérer la pile","📚 Manage pile");
+  const del = document.getElementById("pileDeleteBtn");
+  if(del) del.textContent = estClasseur ? T("🗑️ Supprimer le classeur","🗑️ Delete binder") : T("🗑️ Supprimer la pile","🗑️ Delete pile");
+  if(estClasseur){
+    const couleur = document.getElementById("pileModalColor")?.value || "#6d3c3c";
+    const presets = ["#6d3c3c","#8a3a3a","#b08a3a","#3f6a4a","#3a5a7a","#5a3f7a","#7a7a7a","#2b2b2b"];
+    const sw = document.getElementById("pileColorSwatches");
+    if(sw) sw.innerHTML = presets.map(c=>
+      `<button type="button" data-color="${c}" style="width:26px;height:26px;padding:0;border-radius:6px;border:2px solid ${c===couleur?'var(--gold)':'transparent'};background:${c}" title="${c}" onclick="pickPileColor('${c}')"></button>`).join("");
+  }
+}
+
 function openPileModal(pileId){
   const pile = libraryPiles.find(p=>p.id===pileId);
   if(!pile) return;
@@ -12052,17 +12102,10 @@ function openPileModal(pileId){
   document.getElementById("pileModalTitle").textContent = pile.kind==="classeur" ? T("🗂️ Gérer le classeur","🗂️ Manage binder") : T("📚 Gérer la pile","📚 Manage pile");
   document.getElementById("pileDeleteBtn").textContent = pile.kind==="classeur" ? "🗑️ Supprimer le classeur" : "🗑️ Supprimer la pile";
   document.getElementById("pileModalName").value = pile.name;
-  // Couleur : uniquement pour les classeurs (pastilles rapides + palette complète)
-  const colorRow = document.getElementById("pileColorRow");
-  colorRow.style.display = pile.kind==="classeur" ? "" : "none";
-  const feuBtn = document.getElementById("pileFeuilleterBtn");
-  if(feuBtn) feuBtn.style.display = pile.kind==="classeur" ? "" : "none";
-  if(pile.kind==="classeur"){
-    const presets = ["#6d3c3c","#8a3a3a","#b08a3a","#3f6a4a","#3a5a7a","#5a3f7a","#7a7a7a","#2b2b2b"];
-    document.getElementById("pileColorSwatches").innerHTML = presets.map(c=>
-      `<button type="button" data-color="${c}" style="width:26px;height:26px;padding:0;border-radius:6px;border:2px solid ${c===(pile.color||'#6d3c3c')?'var(--gold)':'transparent'};background:${c}" title="${c}" onclick="pickPileColor('${c}')"></button>`).join("");
-    document.getElementById("pileModalColor").value = pile.color||"#6d3c3c";
-  }
+  const kindSel = document.getElementById("pileModalKind");
+  if(kindSel) kindSel.value = pile.kind==="classeur" ? "classeur" : "";
+  document.getElementById("pileModalColor").value = pile.color||"#6d3c3c";
+  _syncPileKindUI();
   // Peupler le select des étagères
   const sel = document.getElementById("pileModalShelf");
   sel.innerHTML = libraryShelves.map(s=>`<option value="${escapeHTML(s.name)}"${s.name===pile.localisation?" selected":""}>${escapeHTML(s.name)}</option>`).join("");
@@ -12232,7 +12275,9 @@ async function _addToPile(itemId){
 // Applique une couleur au classeur en cours d'édition (aperçu immédiat + sauvegarde)
 async function pickPileColor(c){
   const pile=libraryPiles.find(p=>p.id===_currentPileId);
-  if(!pile || pile.kind!=="classeur") return;
+  // Le menu Type fait foi : on peut choisir la couleur avant même d'avoir validé
+  // la conversion d'une pile en classeur.
+  if(!pile || document.getElementById("pileModalKind")?.value !== "classeur") return;
   pile.color = c;
   document.getElementById("pileModalColor").value = c;
   document.querySelectorAll("#pileColorSwatches [data-color]").forEach(b=>{
@@ -12268,11 +12313,23 @@ async function savePileModal(){
     pile.localisation=newShelfName;
     await saveLibraryShelves();
   }
+  // Type : pile ↔ classeur. Un classeur reçoit une couleur par défaut s'il n'en a pas.
+  const nouveauType = document.getElementById("pileModalKind")?.value === "classeur" ? "classeur" : "";
+  const ancienType  = pile.kind === "classeur" ? "classeur" : "";
+  if(nouveauType !== ancienType){
+    if(nouveauType === "classeur"){
+      pile.kind  = "classeur";
+      pile.color = pile.color || document.getElementById("pileModalColor")?.value || "#6d3c3c";
+    }else{
+      delete pile.kind;
+    }
+  }
   await saveLibraryPiles();
   _refreshLocationDatalist();
   closeModal("pileModal");
   renderLibrary();
-  toast(T("Pile enregistrée.","Pile saved."), "success");
+  const lbl = nouveauType==="classeur" ? T("Classeur enregistré.","Binder saved.") : T("Pile enregistrée.","Pile saved.");
+  toast(lbl, "success");
 }
 
 async function deleteCurrentPile(){
