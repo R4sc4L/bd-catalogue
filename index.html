@@ -235,6 +235,11 @@
   #itemForm.eph-simple #tab-infos .form-grid > div:has(#itemSubtitle),
   #itemForm.eph-simple #formSection-edition .form-grid > div:has(#itemEditionInfo),
   #itemForm.eph-simple #formFieldFirstEdition{display:none}
+  /* Éphémères hors estampes : la dédicace reste, le tirage numéroté disparaît
+     (un encart ou un carton d'invitation se dédicace sans être numéroté). */
+  #itemForm.eph-sans-tirage #formSection-signatures .form-grid > div:has(#itemPrintRun),
+  #itemForm.eph-sans-tirage #formSection-signatures .form-grid > div:has(#itemCopyNumber),
+  #itemForm.eph-sans-tirage #formSection-signatures .form-grid > div:has(#itemTirageAnnotations){display:none}
   /* — Assistant de conversion des ex-libris : lignes de sélection —
      Neutralise les styles globaux (label en majuscules, input width:100%) qui
      écrasaient la mise en page et tronquaient les titres longs. */
@@ -2608,7 +2613,7 @@ const EPHEMERE_FAMILIES = [
     types:['Flyer / Prospectus','Dépliant / Leaflet','Affichette','PLV (présentoir, stop-rayon)','Catalogue éditeur','Encart publicitaire','Bandeau'] },
   { id:'presse', label:'Presse & documentation', labelEn:'Press & documentation', icon:'📰',
     bloc:'ephBlocPublication',
-    types:['Coupure de presse','Dossier de presse','Communiqué de presse','Strip de presse','Interview'] },
+    types:['Coupure de presse','Encart','Dossier de presse','Communiqué de presse','Strip de presse','Interview'] },
   { id:'lecture', label:'Lecture & accompagnement', labelEn:'Reading & accessories', icon:'🔖',
     bloc:'ephBlocLecture',
     types:['Marque-page','Autocollant','Décalcomanie','Calendrier','Buvard',"Carte de visite d'auteur"] },
@@ -2628,6 +2633,16 @@ function familyForType(type){
   return _EPH_TYPE_FAMILY[_normCat(type)] || null;
 }
 function _modLabelEph(f){ return _lang==='en' ? (f.labelEn||f.label) : f.label; }
+
+// Intitulé de la section signatures : « Dédicace » seule quand le tirage numéroté
+// est masqué. Centralisé ici pour rester juste après un changement de langue.
+function _syncSignaturesTitle(){
+  const h3 = document.querySelector('#formSection-signatures h3');
+  if(!h3) return;
+  const sansTirage = document.getElementById('itemForm')?.classList.contains('eph-sans-tirage');
+  h3.textContent = sansTirage ? T('Dédicace','Dedication')
+                              : T('Tirage limité & Dédicace','Limited print run & Dedication');
+}
 
 // Une œuvre relève-t-elle des éphémères ?
 function _isEphItem(i){ return !i._isWish && archetypeForCategory(i.categorie).id==='ephemere'; }
@@ -2676,10 +2691,16 @@ function adaptEphemereType(type){
     const el = document.getElementById(id);
     if(el) el.style.display = (fam && fam.bloc===id) ? '' : 'none';
   });
-  // Section « Tirage limité & Dédicace » : pertinente pour les estampes uniquement
-  const sig = document.getElementById('formSection-signatures');
-  if(sig && document.getElementById('itemForm')?.classList.contains('eph-simple')){
-    sig.style.display = (fam && fam.showSignatures) ? '' : 'none';
+  // La dédicace concerne tous les éphémères : n'importe quel document peut être
+  // signé ou dédicacé. Le tirage numéroté, lui, ne vaut que pour les estampes ;
+  // hors de ce cas, ses champs sont masqués et la section s'intitule « Dédicace ».
+  const form = document.getElementById('itemForm');
+  const sig  = document.getElementById('formSection-signatures');
+  if(sig && form?.classList.contains('eph-simple')){
+    const avecTirage = !!(fam && fam.showSignatures);
+    sig.style.display = '';
+    form.classList.toggle('eph-sans-tirage', !avecTirage);
+    _syncSignaturesTitle();
   }
   // Rappel de la famille à côté du type
   const hint = document.getElementById('ephFamilyHint');
@@ -2719,7 +2740,9 @@ function applyArchetype(arch){
   const itemForm = document.getElementById('itemForm');
   if(itemForm){
     Object.values(FICHE_ARCHETYPES).forEach(a=>{ if(a.formClass) itemForm.classList.remove(a.formClass); });
+    itemForm.classList.remove('eph-sans-tirage');   // posée ensuite par adaptEphemereType
     if(arch.formClass) itemForm.classList.add(arch.formClass);
+    _syncSignaturesTitle();
   }
   // Titres de sections
   const st = arch.sectionTitles || {};
@@ -7813,6 +7836,7 @@ function applyLang() {
   setText('#formSection-edition-title', S('form.edition'));
   setText('#formSection-pins h3', S('form.pins_caract'));
   setText('#formSection-signatures h3', S('form.limited'));
+  _syncSignaturesTitle();   // rétablit « Dédicace » si le tirage est masqué
   setText('#formSection-contenu h3', S('form.content'));
   setText('#formSection-caracteristiques h3', S('form.caract'));
 
@@ -8212,8 +8236,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
     case 'estampe':
       title = `🖼️ ${T('Tirage & estampe','Edition & print')}`;
       rows = F('Tirage', it.tirage)+F(T("N° d'exemplaire",'Copy number'), it.numeroExemplaire)
-           + F(T('Annotations','Annotations'), it.tirageAnnotations)
-           + (it.signe?F('Mentions',_lang==='en'?'Signed':'Signé'):'');
+           + F(T('Annotations','Annotations'), it.tirageAnnotations);
       break;
     case 'evenement':
       title = `✉️ ${T('Événement','Event')}`;
@@ -8245,6 +8268,18 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
   }
   if(rows) specific = `<div class="panel eph-spec"><h3>${title}</h3><div class="eph-grid">${rows}</div></div>`;
 
+  // Dédicace — commune à toutes les familles : n'importe quel éphémère peut être
+  // signé ou dédicacé. Le panneau n'apparaît que si quelque chose est renseigné.
+  const _mentions = [
+    it.signe            ? T('Signé','Signed') : '',
+    (it.dedicaceSignature||it.dedicaceCheck) ? T('Dédicace (signature)','Dedication (signature)') : '',
+    it.dedicaceDessin   ? T('Dédicace (dessin)','Dedication (drawing)') : '',
+    it.dedicaceTampon   ? T('Dédicace (tampon)','Dedication (stamp)') : '',
+  ].filter(Boolean).join(' · ');
+  const dedicaceRows = F(T('Mentions','Marks'), _mentions) + F(T('Détail','Details'), it.dedicace);
+  const dedicacePanel = dedicaceRows
+    ? `<div class="panel"><h3>✍️ ${T('Dédicace','Dedication')}</h3><div class="eph-grid">${dedicaceRows}</div></div>` : '';
+
   // Section Conservation
   const conservation = F(T('État','Condition'), it.etat)
     + (it.prixAchat?F(T("Prix d'achat",'Purchase price'), it.prixAchat.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:'currency',currency:'EUR'})):'')
@@ -8275,6 +8310,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
     </div>
     ${identite?`<div class="panel"><h3>${T('Identité','Identity')}</h3><div class="eph-grid">${identite}</div></div>`:""}
     ${specific}
+    ${dedicacePanel}
     ${conservation?`<div class="panel"><h3>${T('Conservation','Conservation')}</h3><div class="eph-grid">${conservation}</div></div>`:""}
     ${_attachedPanel(it)}
     ${it.informations?`<div class="panel"><h3>${_lang==='en'?'Information':'Informations'}</h3><div style="white-space:pre-wrap">${escapeHTML(it.informations)}</div></div>`:""}
