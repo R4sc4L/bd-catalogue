@@ -292,7 +292,7 @@
   .author-card .card-img.placeholder::after{content:"👤";font-size:60px;color:var(--ink-soft)}
   /* Éditer : en bas à droite (les mentions sont regroupées en bas à gauche) */
   .card-edit-btn{position:absolute;bottom:8px;right:8px;width:32px;height:32px;padding:0;border-radius:50%;background:rgba(14,13,19,.85);color:var(--ink);box-shadow:var(--shadow);font-size:14px;z-index:3;border:1px solid var(--border-warm);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-  body.theme-light .card-edit-btn,body.theme-light .card-locate-btn,body.theme-light .fb-edit{background:rgba(255,252,244,.88);color:var(--ink);border-color:rgba(0,0,0,.15)}
+  body.theme-light .card-edit-btn,body.theme-light .card-locate-btn,body.theme-light .fb-edit,body.theme-light .fb-manage{background:rgba(255,252,244,.88);color:var(--ink);border-color:rgba(0,0,0,.15)}
   .card-edit-btn:hover{background:var(--accent-bg);color:var(--on-accent);border-color:transparent}
   /* Adult content protection */
   .card-img-adult img{filter:blur(6px);transform:scale(1.04);transition:filter .3s}
@@ -680,8 +680,8 @@
   /* Zones de la barre du haut : titre à gauche, groupe central, actions à droite */
   .fb-mid{display:flex;align-items:center;gap:12px;flex-shrink:0}
   .fb-actions{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:16px}
-  .fb-edit{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#f0e6d2;border-radius:8px;height:34px;padding:0 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;line-height:1}
-  .fb-edit:hover{background:var(--accent,#d98a3a);color:var(--on-accent);border-color:var(--accent,#d98a3a)}
+  .fb-manage{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#f0e6d2;border-radius:8px;height:34px;padding:0 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;line-height:1}
+  .fb-manage:hover{background:var(--accent,#d98a3a);color:var(--on-accent);border-color:var(--accent,#d98a3a)}
   /* Sauts au début / à la fin, accolés aux flèches de page */
   .fb-nav{display:flex;align-items:center;gap:6px;flex-shrink:0}
   .fb-jump{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:15px;line-height:1;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,opacity .15s}
@@ -690,7 +690,7 @@
   @media(max-width:760px){
     .fb-arrow{width:42px;height:42px;font-size:22px}
     .fb-jump{width:32px;height:32px;font-size:13px}
-    .fb-edit span{display:none}
+    .fb-manage span{display:none}
   }
   .fb-close{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;width:38px;height:38px;font-size:18px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;line-height:1}
   .fb-close:hover{background:rgba(255,255,255,.2)}
@@ -12049,7 +12049,7 @@ function openClasseurReader(pileId, focusItemId=null){
       <div class="fb-title">🗂️ ${escapeHTML(pile.name)}</div>
       <div class="fb-mid">
         <div class="fb-counter" id="fbCounter"></div>
-        <button class="fb-edit" id="fbEdit" title="${T(`Ouvrir la fenêtre de gestion : ordre, numérotation, ajout et retrait`,`Open the management window: order, numbering, add and remove`)}">✏️ <span>${T('Modifier le contenu','Edit content')}</span></button>
+        <button class="fb-manage" id="fbManage" title="${T(`Ouvrir la fenêtre de gestion : ordre, numérotation, ajout et retrait`,`Open the management window: order, numbering, add and remove`)}">✏️ <span>${T('Modifier le contenu','Edit content')}</span></button>
       </div>
       <div class="fb-actions">
         <button class="fb-add" id="fbAdd" title="${T(`Ajouter une œuvre à ce classeur`,`Add a work to this binder`)}">＋ ${T('Ajouter','Add')}</button>
@@ -12090,7 +12090,7 @@ function openClasseurReader(pileId, focusItemId=null){
   backdrop.querySelector('#fbFirst').addEventListener('click', ()=>_fbGoTo(0));
   backdrop.querySelector('#fbLast').addEventListener('click', ()=>_fbGoTo(_fbSpreadCount()-1));
   // Modifier le contenu : on ferme la liseuse et on ouvre la fenêtre de gestion
-  backdrop.querySelector('#fbEdit').addEventListener('click', ()=>{
+  backdrop.querySelector('#fbManage').addEventListener('click', ()=>{
     const pid = _fbState?.pile?.id;
     _fbClose();
     if(pid) openPileModal(pid);
