@@ -2045,6 +2045,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Albums in the pile">Albums dans la pile</label>
           <div style="display:flex;gap:6px">
+            <button class="secondary" style="font-size:12px;padding:4px 10px" title="Attribue les N° de page 1 à N d'après l'ordre affiché — aucune saisie manuelle" data-en-title="Assign page numbers 1 to N from the displayed order — no manual entry" data-en="🔢 Renumber" onclick="renumberCurrentPile()">🔢 Renuméroter</button>
             <button class="secondary" style="font-size:12px;padding:4px 10px" title="Retourner la pile : le premier passe en dernier" data-en-title="Flip the pile: first becomes last" data-en="⇅ Reverse order" onclick="reverseCurrentPileOrder()">⇅ Inverser l'ordre</button>
             <button class="secondary" style="font-size:12px;padding:4px 10px" data-en="+ Add" onclick="openAddToPile()">+ Ajouter</button>
           </div>
@@ -12214,6 +12215,30 @@ async function _pmDrop(e, tgtId){
   renderLibrary();
 }
 
+// Numérote les pages d'après la position affichée : 1 pour le premier document,
+// N pour le dernier. Évite toute saisie manuelle et rattrape les numérotations
+// héritées (séries commençant à 13, documents sans numéro…).
+async function renumberCurrentPile(){
+  const pile = libraryPiles.find(p=>p.id===_currentPileId);
+  if(!pile) return;
+  const books = _pileOrderedBooks(pile);
+  if(!books.length){ toast(T('Rien à numéroter','Nothing to number'),'error'); return; }
+  // L'ordre affiché fait foi : on le fige dans itemOrder puis on numérote 1..N.
+  pile.itemOrder = books.map(b=>String(b.id));
+  let modifies = 0;
+  for(let i=0;i<books.length;i++){
+    const it = cache.items.find(x=>String(x.id)===String(books[i].id));
+    if(it && Number(it.pageOrder) !== i+1){ it.pageOrder = i+1; await saveItem_lib(it); modifies++; }
+  }
+  await saveLibraryPiles();
+  await reloadCache();
+  renderPileModalList();
+  renderLibrary();
+  toast(modifies
+    ? T(`${books.length} pages numérotées de 1 à ${books.length}`,`${books.length} pages numbered 1 to ${books.length}`)
+    : T('La numérotation suivait déjà l\'ordre affiché','Numbering already matched the displayed order'));
+}
+
 // Retourne l'ordre d'une pile (le premier devient le dernier).
 // Écrit itemOrder ET les N° de page 1..N : le meuble, la liste de gestion et la
 // liseuse s'appuient alors sur le même ordre explicite (fin des divergences
@@ -12286,6 +12311,11 @@ async function _addToPile(itemId){
   const item=cache.items.find(i=>String(i.id)===String(itemId));
   if(!item) return;
   item.localisation=pile.name;
+  // N° de page attribué d'office : le document prend le numéro suivant, plutôt
+  // que d'apparaître sans numéro et d'obliger à une saisie manuelle.
+  const nums = getPileBooks(pile).map(b=>Number(b.pageOrder)).filter(n=>!isNaN(n) && n>=1);
+  const dejaNumerote = item.pageOrder!=null && item.pageOrder!=="" && !isNaN(Number(item.pageOrder));
+  if(!dejaNumerote) item.pageOrder = (nums.length ? Math.max(...nums) : 0) + 1;
   await saveItem_lib(item);
   if(!pile.itemOrder) pile.itemOrder=[];
   pile.itemOrder.unshift(String(itemId)); // nouvel album en haut de la pile
