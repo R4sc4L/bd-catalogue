@@ -1351,6 +1351,18 @@
               <select id="itemTypeDocument" onchange="adaptEphemereType(this.value)"></select>
             </div>
             <div><label data-en="Printing technique">Technique d'impression</label><input type="text" id="itemTechnique" list="dl-techniques" placeholder="ex: Lithographie, offset, sérigraphie…" data-en-ph="e.g. Lithography, offset, screen print…"></div>
+            <!-- Étendue : réservée aux documents multi-feuillets (voir EPHEMERE_MULTIFEUILLET) -->
+            <div id="ephFieldEtendue" style="display:none">
+              <label data-en="Extent">Étendue</label>
+              <div style="display:flex;gap:6px">
+                <input type="number" id="itemEtendue" min="1" placeholder="ex: 32" style="flex:1;min-width:0">
+                <select id="itemEtendueUnite" style="flex:1;min-width:0" onchange="this.dataset.userSet='1'">
+                  <option value="pages" data-en="pages">pages</option>
+                  <option value="volets" data-en="folds">volets</option>
+                  <option value="feuillets" data-en="leaves">feuillets</option>
+                </select>
+              </div>
+            </div>
           </div>
           <!-- Sous-bloc Événement (invitations, programmes, faire-part) -->
           <div id="ephBlocEvenement" style="display:none;margin-top:14px">
@@ -2620,6 +2632,37 @@ const EPHEMERE_FAMILIES = [
 ];
 const _EPH_ALL_BLOCS = ['ephBlocEvenement','ephBlocPublication','ephBlocPromotion','ephBlocLecture','ephBlocCorrespondance'];
 
+// Documents multi-feuillets : seuls ceux-ci proposent le champ Étendue, avec
+// l'unité la plus probable présélectionnée. Ajouter un type ici suffit à l'ouvrir.
+const EPHEMERE_MULTIFEUILLET = {
+  'Programme'                : 'pages',
+  "Catalogue d'exposition"   : 'pages',
+  'Catalogue éditeur'        : 'pages',
+  'Encart'                   : 'pages',
+  'Dépliant / Leaflet'       : 'volets',
+  'Dossier de presse'        : 'feuillets',
+};
+// Libellé affiché d'une unité, accordé au singulier si la quantité vaut 1.
+function _uniteLabel(u, n){
+  const un = String(u||'pages');
+  const solo = Number(n) === 1;
+  const tbl = {
+    pages     : { fr:['page','pages'],         en:['page','pages'] },
+    volets    : { fr:['volet','volets'],       en:['fold','folds'] },
+    feuillets : { fr:['feuillet','feuillets'], en:['leaf','leaves'] },
+  }[un] || { fr:[un,un], en:[un,un] };
+  const paire = _lang==='en' ? tbl.en : tbl.fr;
+  return solo ? paire[0] : paire[1];
+}
+let _EPH_MULTI_NORM = null;
+function uniteEtendue(type){
+  if(!_EPH_MULTI_NORM){
+    _EPH_MULTI_NORM = {};
+    Object.entries(EPHEMERE_MULTIFEUILLET).forEach(([t,u])=>{ _EPH_MULTI_NORM[_normCat(t)] = u; });
+  }
+  return _EPH_MULTI_NORM[_normCat(type)] || null;   // null = document mono-feuille
+}
+
 // type de document → famille (table construite à la 1re utilisation : _normCat est défini plus bas)
 let _EPH_TYPE_FAMILY = null;
 function familyForType(type){
@@ -2678,6 +2721,16 @@ function adaptEphemereType(type){
     const el = document.getElementById(id);
     if(el) el.style.display = (fam && fam.bloc===id) ? '' : 'none';
   });
+  // Étendue : proposée aux seuls documents multi-feuillets. L'unité par défaut
+  // suit le type (un dépliant se compte en volets), sans écraser une saisie.
+  const unite = uniteEtendue(type);
+  const champEtendue = document.getElementById('ephFieldEtendue');
+  if(champEtendue){
+    champEtendue.style.display = unite ? '' : 'none';
+    const selUnite = document.getElementById('itemEtendueUnite');
+    if(unite && selUnite && !selUnite.dataset.userSet) selUnite.value = unite;
+  }
+
   // Tirage limité et dédicace concernent tous les éphémères : n'importe quel
   // document peut être signé, dédicacé ou numéroté — un encart de presse comme
   // un ex-libris. La section reste donc affichée quelle que soit la famille.
@@ -2970,6 +3023,7 @@ const SB = (() => {
     // Éphémères — synchronisés dans le JSONB « contenus » (aucune colonne SQL à créer)
     'typeDocument','technique','evenement','dateEvenement','lieuEvenement','hote',
     'publication','dateParution','rubrique','pagination','sourceUrl','albumSource','albumSourceId','exlibrisImageIdx',
+    'etendue','etendueUnite',
     'titrePromu','support','diffusion','matiere','quantite','expediteur','destinataire','dateCorrespondance','supportCorr',
     'colleDansAlbum','lu','dateLecture','preteA','datePret','retourPrevu'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
@@ -4373,6 +4427,10 @@ function openItemForm(id=null, opts={}){
   _lastSavedItemId = null;
   _bulkEditIds = null;
   _bulkClearLocation = false;
+  // Unité d'étendue : oublier le choix manuel de la fiche précédente, sinon le
+  // type du nouveau document ne pourrait plus imposer son unité par défaut.
+  const _uEt = document.getElementById('itemEtendueUnite');
+  if(_uEt) delete _uEt.dataset.userSet;
   currentItemImages = [];
   currentItemImageNames = [];
   _exlibrisImgIdx = -1;
@@ -4441,6 +4499,10 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemDateParution").value = it.dateParution||"";
     document.getElementById("itemRubrique").value     = it.rubrique||"";
     document.getElementById("itemPagination").value   = it.pagination||"";
+    document.getElementById("itemEtendue").value      = it.etendue||"";
+    const _selU = document.getElementById("itemEtendueUnite");
+    _selU.value = it.etendueUnite || "pages";
+    delete _selU.dataset.userSet;   // le type pourra réimposer son unité par défaut
     document.getElementById("itemSourceUrl").value    = it.sourceUrl||"";
     document.getElementById("itemAlbumSourceId").value   = it.albumSourceId||"";
     document.getElementById("itemAlbumSourceText").value = it.albumSourceId ? "" : (it.albumSource||"");
@@ -4945,6 +5007,8 @@ async function saveItem(e){
     dateParution:    document.getElementById("itemDateParution")?.value.trim()||"",
     rubrique:        document.getElementById("itemRubrique")?.value.trim()||"",
     pagination:      document.getElementById("itemPagination")?.value.trim()||"",
+    etendue:         parseInt(document.getElementById("itemEtendue")?.value)||null,
+    etendueUnite:    document.getElementById("itemEtendueUnite")?.value||"pages",
     sourceUrl:       document.getElementById("itemSourceUrl")?.value.trim()||"",
     albumSource:     _albSrc,
     albumSourceId:   _albMatch ? _albMatch.id : "",
@@ -8209,6 +8273,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
     + F(T('Année','Year'), it.anneeEdition)
     + F('Format', it.format)
     + F(T("Technique d'impression",'Printing technique'), it.technique)
+    + F(T('Étendue','Extent'), it.etendue ? `${it.etendue} ${_uniteLabel(it.etendueUnite, it.etendue)}` : '')
     + albumLine;
 
   // Bloc spécifique piloté par la FAMILLE du type de document
