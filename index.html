@@ -4358,7 +4358,7 @@ function fillLocationSelect(){
   const sel = document.getElementById("itemLocationSelect");
   if(!sel) return;
   let html = `<option value="">${T("↕ Choisir une étagère…","↕ Choose a shelf…")}</option>`;
-  html += _meubleShelfOptions().replace(/^<option value="">.*?<\/option>/, ""); // retire l'entrée « ne pas changer »
+  html += _meubleShelfOptions(undefined, "");   // sans entrée neutre : elle est déjà en tête
   if(libraryPiles.length){
     html += `<optgroup label="Piles & classeurs">` + libraryPiles.map(p=>`<option value="${escapeHTML(p.name)}">${p.kind==="classeur"?"🗂️":"📚"} ${escapeHTML(p.name)}</option>`).join("") + `</optgroup>`;
   }
@@ -11724,26 +11724,97 @@ async function deleteMeuble(id){
 }
 
 // ── Réconciliation des localisations (fiches ↔ étagères de meubles) ──
-// Options <select> : toutes les étagères, groupées par meuble et libellées « Étage N » (numéro depuis le bas).
-function _meubleShelfOptions(selectedName){
-  let html = `<option value="">${T("— ne pas changer —","— don't change —")}</option>`;
-  libraryFurniture.forEach(m=>{
-    const shelves = libraryShelves.filter(s=>s.meubleId===m.id);
+// ── Libellés de rangement ────────────────────────────────────────────────────
+// Le nom interne d'une étagère est figé à sa création (« Meuble 4 – ét. 3 ») et
+// ne suit pas le renommage du meuble : il ne doit donc JAMAIS être montré tel
+// quel. Partout où l'on choisit un emplacement, on affiche un libellé reconstruit
+// à partir du meuble et de la position — c'est le rôle des trois fonctions ci-dessous.
+
+// Toutes les étagères, dans l'ordre des meubles puis des colonnes, du bas vers
+// le haut — l'ordre dans lequel on les voit, et non l'ordre de création.
+function _shelvesOrderedByFurniture(){
+  const { grille, residuelles } = _shelfIndex();
+  // Les résiduelles ne sont proposées que si elles contiennent quelque chose :
+  // sinon ce sont des restes, et les faire figurer ne ferait que brouiller la liste.
+  return grille.map(g=>g.shelf).concat(residuelles.filter(s=>(s.itemOrder||[]).length));
+}
+
+// Nom du meuble, suffixé d'un rang quand plusieurs meubles portent le même nom
+// (trois « Bureau » deviennent Bureau ①, Bureau ②, Bureau ③).
+function _meubleLabel(m){
+  if(!m) return T('Meuble','Bookcase');
+  const memes = libraryFurniture.filter(x=>(x.name||'').trim().toLowerCase() === (m.name||'').trim().toLowerCase());
+  if(memes.length < 2) return m.name || T('Meuble','Bookcase');
+  return `${m.name} ${memes.findIndex(x=>x.id===m.id) + 1}`;
+}
+
+// Répartit les étagères entre celles qui occupent une case réelle d'un meuble
+// (colonne et étage déclarés) et les résiduelles : rattachées à un meuble
+// supprimé, hors grille après redimensionnement, ou en double sur une même case.
+// Seules les premières ont vocation à peupler les menus de choix.
+// Meubles dans un ordre lisible pour les menus : par nom, en tenant compte des
+// nombres (Bureau 2 avant Bureau 10). L'ordre du tableau suit l'implantation
+// dans la pièce, ce qui n'a aucun sens dans une liste de choix.
+function _furnitureOrdered(){
+  return libraryFurniture.slice().sort((a,b)=>
+    String(a.name||'').localeCompare(String(b.name||''), 'fr', {numeric:true, sensitivity:'base'}));
+}
+
+function _shelfIndex(){
+  const grille = [];      // [{meuble, shelf, col, etage}]
+  const prises = new Set();
+  _furnitureOrdered().forEach(m=>{
+    const cols = Math.max(1, m.cols||1), rows = Math.max(1, m.rows||1);
+    for(let c=0;c<cols;c++){
+      for(let r=0;r<rows;r++){
+        const s = libraryShelves.find(x=>x.meubleId===m.id && (x.col||0)===c && (x.row||0)===r && !prises.has(x));
+        if(s){ prises.add(s); grille.push({meuble:m, shelf:s, col:c, etage:rows - r}); }
+      }
+    }
+  });
+  const residuelles = libraryShelves.filter(s=>!prises.has(s));
+  return { grille, residuelles };
+}
+
+// Libellé d'une étagère : « Bureau ② · Étage 3 » (étages numérotés depuis le bas).
+function _shelfLabel(s){
+  if(!s) return '';
+  const g = _shelfIndex().grille.find(x=>x.shelf===s || x.shelf.id===s.id);
+  if(!g) return s.name;                       // résiduelle : son nom brut est tout ce qu'on a
+  const cols = Math.max(1, g.meuble.cols||1);
+  const colPart = cols>1 ? ` · Col ${g.col+1}` : '';
+  return `${_meubleLabel(g.meuble)}${colPart} · ${T('Étage','Floor')} ${g.etage}`;
+}
+
+// Options <select> : toutes les étagères, groupées par meuble, du bas vers le haut.
+// `vide` fournit le libellé d'une première option neutre (omise si absent).
+function _meubleShelfOptions(selectedName, vide){
+  let html = vide===undefined
+    ? `<option value="">${T("— ne pas changer —","— don't change —")}</option>`
+    : (vide ? `<option value="">${escapeHTML(vide)}</option>` : '');
+  const { grille, residuelles } = _shelfIndex();
+  _furnitureOrdered().forEach(m=>{
     const cols = Math.max(1, m.cols||1);
     let opts = "";
-    for(let c=0;c<cols;c++){
-      const colShelves = shelves.filter(s=>(s.col||0)===c).sort((a,b)=>(a.row||0)-(b.row||0));
-      colShelves.forEach((s,i)=>{
-        const floor = colShelves.length - i;
-        const label = `${m.name} · ${cols>1?`Col ${c+1} · `:""}${T("Étage","Floor")} ${floor}`;
-        opts += `<option value="${escapeHTML(s.name)}"${s.name===selectedName?" selected":""}>${escapeHTML(label)}</option>`;
-      });
-    }
+    grille.filter(g=>g.meuble.id===m.id).forEach(g=>{
+      const label = `${cols>1?`Col ${g.col+1} · `:""}${T("Étage","Floor")} ${g.etage}`;
+      opts += `<option value="${escapeHTML(g.shelf.name)}"${g.shelf.name===selectedName?" selected":""}>${escapeHTML(label)}</option>`;
+    });
     (m.drawers||[]).forEach(d=>(d.names||[]).forEach(n=>{
       if(n) opts += `<option value="${escapeHTML(n)}"${n===selectedName?" selected":""}>🗄️ ${escapeHTML(n)}</option>`;
     }));
-    if(opts) html += `<optgroup label="${escapeHTML(m.name)}">${opts}</optgroup>`;
+    if(opts) html += `<optgroup label="${escapeHTML(_meubleLabel(m))}">${opts}</optgroup>`;
   });
+  // Étagères résiduelles : meuble supprimé, hors grille, ou doublon de position.
+  // On ne les propose que si elles contiennent encore des œuvres — sinon ce sont
+  // des restes invisibles dans les meubles, qui n'ont rien à faire dans un menu.
+  const aNettoyer = residuelles.filter(s=>(s.itemOrder||[]).length || s.name===selectedName);
+  if(aNettoyer.length){
+    html += `<optgroup label="⚠️ ${T('Étagères à reclasser','Shelves to sort out')}">` + aNettoyer.map(s=>{
+      const n = (s.itemOrder||[]).length;
+      return `<option value="${escapeHTML(s.name)}"${s.name===selectedName?" selected":""}>${escapeHTML(s.name)}${n?` — ${n} ${T('œuvre','work')}${n>1?'s':''}`:''}</option>`;
+    }).join('') + `</optgroup>`;
+  }
   return html;
 }
 
@@ -11752,12 +11823,12 @@ function _locContext(loc){
   const sh = libraryShelves.find(s=>s.name===loc);
   if(!sh){
     const dm = _drawerMeuble(loc);
-    return dm ? `${dm.name} · tiroir` : "libre";
+    return dm ? `${_meubleLabel(dm)} · tiroir` : "libre";
   }
   const m = libraryFurniture.find(x=>x.id===sh.meubleId);
   const colShelves = libraryShelves.filter(s=>s.meubleId===sh.meubleId && (s.col||0)===(sh.col||0)).sort((a,b)=>(a.row||0)-(b.row||0));
   const floor = colShelves.length - colShelves.findIndex(s=>s.id===sh.id);
-  return m ? `${m.name} · ${T("Étage","Floor")} ${floor}` : T("étagère","shelf");
+  return m ? `${_meubleLabel(m)} · ${T("Étage","Floor")} ${floor}` : T("étagère","shelf");
 }
 
 // Libellé lisible d'une localisation pour l'affichage (fiches) : « Meuble · Étage N » au lieu
@@ -11771,7 +11842,7 @@ function friendlyLocation(loc){
     const colShelves = libraryShelves.filter(s=>s.meubleId===sh.meubleId && (s.col||0)===(sh.col||0)).sort((a,b)=>(a.row||0)-(b.row||0));
     const floor = colShelves.length - colShelves.findIndex(s=>s.id===sh.id);
     const colPart = cols>1 ? ` · Col ${(sh.col||0)+1}` : "";
-    return `${m ? m.name : T("Meuble","Bookcase")}${colPart} · ${T("Étage","Floor")} ${floor}`;
+    return `${_meubleLabel(m)}${colPart} · ${T("Étage","Floor")} ${floor}`;
   }
   const pile = libraryPiles.find(p=>p.name===loc);
   if(pile) return `📚 ${loc}`;
@@ -11883,19 +11954,22 @@ async function addLibraryPile(kind){
   const trimmed = name.trim();
   if(libraryPiles.find(p=>p.name===trimmed)){ toast(T(`Une pile ou un classeur avec ce nom existe déjà.`,`A pile or binder with this name already exists.`), "error"); return; }
   if(libraryShelves.find(s=>s.name===trimmed)){ toast(T("Ce nom est déjà utilisé par une étagère.","This name is already used by a shelf."), "error"); return; }
-  // Choisir l'étagère
-  const shelfName = libraryShelves.length===1
-    ? libraryShelves[0].name
-    : prompt(T("Étagère :\n","Shelf:\n")+libraryShelves.map((s,i)=>i+1+". "+s.name).join("\n")+T("\n\nEntrez le numéro ou le nom :","\n\nEnter the number or the name:"), "1");
-  if(!shelfName) return;
+  // Choisir l'étagère — liste ordonnée par meuble puis par étage, avec des
+  // libellés reconstruits (« Bureau ② · Étage 3 ») et non les noms internes,
+  // qui restent figés au nom que portait le meuble le jour de sa création.
+  const ordonnees = _shelvesOrderedByFurniture();
   let shelf;
-  if(/^\d+$/.test(shelfName.trim())){
-    const n = parseInt(shelfName.trim())-1;
-    shelf = libraryShelves[n];
+  if(ordonnees.length === 1){
+    shelf = ordonnees[0];
   } else {
-    shelf = libraryShelves.find(s=>s.name.toLowerCase()===shelfName.trim().toLowerCase());
+    const liste = ordonnees.map((s,i)=>`${i+1}. ${_shelfLabel(s)}`).join("\n");
+    const rep = prompt(T("Où placer ce rangement ?\n\n","Where to put it?\n\n")+liste+T("\n\nEntrez le numéro :","\n\nEnter the number:"), "1");
+    if(!rep) return;
+    const n = parseInt(String(rep).trim(),10);
+    shelf = (n>=1 && n<=ordonnees.length) ? ordonnees[n-1]
+          : ordonnees.find(s=>_shelfLabel(s).toLowerCase()===String(rep).trim().toLowerCase());
   }
-  if(!shelf){ toast(T("Étagère introuvable.","Shelf not found."), "error"); return; }
+  if(!shelf){ toast(T("Emplacement introuvable.","Location not found."), "error"); return; }
   const pile = {id:"pile-"+Date.now(), name:trimmed, localisation:shelf.name, itemOrder:[]};
   if(kind==="classeur") pile.kind = "classeur";
   libraryPiles.push(pile);
@@ -12247,7 +12321,9 @@ function openPileModal(pileId){
   _syncPileKindUI();
   // Peupler le select des étagères
   const sel = document.getElementById("pileModalShelf");
-  sel.innerHTML = libraryShelves.map(s=>`<option value="${escapeHTML(s.name)}"${s.name===pile.localisation?" selected":""}>${escapeHTML(s.name)}</option>`).join("");
+  // Liste groupée par meuble, libellée « Étage N » : le nom interne de l'étagère
+  // est figé à sa création et n'a plus rien à voir avec le meuble après renommage.
+  sel.innerHTML = _meubleShelfOptions(pile.localisation, "");
   // Fermer section ajout
   document.getElementById("pileAddSection").style.display="none";
   document.getElementById("pileAddSearch").value="";
