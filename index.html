@@ -2037,6 +2037,36 @@
   </div>
 </div>
 
+<!-- Création d'une pile ou d'un classeur. Une fenêtre, et non un prompt() : au-delà
+     d'une vingtaine de lignes, le navigateur tronque le texte d'un prompt et les
+     dernières étagères deviennent invisibles. -->
+<div class="modal-backdrop" id="newPileModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h2 id="newPileTitle">📚 Nouvelle pile</h2>
+      <button class="ghost" onclick="closeModal('newPileModal')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" id="newPileNameLabel">Nom</label>
+        <input type="text" id="newPileName" style="margin-top:6px" placeholder="ex: Éphémères Moebius" data-en-ph="e.g. Moebius ephemera">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Location">Emplacement</label>
+        <select id="newPileShelf" style="margin-top:6px" size="8"></select>
+        <p class="muted" style="font-size:11px;margin:6px 0 0" data-en="Shelves are grouped by bookcase, floor 1 at the bottom.">Les étagères sont groupées par meuble, l'étage 1 étant le plus bas.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span></span>
+      <div style="display:flex;gap:8px">
+        <button class="secondary" onclick="closeModal('newPileModal')" data-en="Cancel">Annuler</button>
+        <button id="newPileOk" onclick="confirmNewPile()" data-en="Create">Créer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="pileModal">
   <div class="modal" style="max-width:540px">
     <div class="modal-header">
@@ -11947,31 +11977,40 @@ async function applyReconcile(){
 // ══ GESTION DES PILES À PLAT ══
 // ═══════════════════════════════════════════════════
 
-async function addLibraryPile(kind){
+let _newPileKind = null;
+// Ouvre la fenêtre de création. Le choix de l'étagère passe par un <select>
+// groupé par meuble : un prompt() est tronqué par le navigateur au-delà d'une
+// vingtaine de lignes, ce qui rendait les dernières étagères inatteignables.
+function addLibraryPile(kind){
   if(!libraryShelves.length){ toast(T("Créez d'abord une étagère.","Create a shelf first."), "error"); return; }
-  const name = prompt(kind==="classeur" ? "Nom du classeur :" : "Nom de la pile :");
-  if(!name || !name.trim()) return;
-  const trimmed = name.trim();
+  _newPileKind = kind;
+  const estClasseur = kind==="classeur";
+  document.getElementById("newPileTitle").textContent = estClasseur
+    ? T("🗂️ Nouveau classeur","🗂️ New binder") : T("📚 Nouvelle pile","📚 New pile");
+  document.getElementById("newPileNameLabel").textContent = estClasseur
+    ? T("Nom du classeur","Binder name") : T("Nom de la pile","Pile name");
+  const nom = document.getElementById("newPileName");
+  nom.value = "";
+  const sel = document.getElementById("newPileShelf");
+  sel.innerHTML = _meubleShelfOptions(undefined, "");
+  const premier = sel.querySelector("option");
+  if(premier) sel.value = premier.value;
+  openModal("newPileModal");
+  setTimeout(()=>nom.focus(), 30);
+}
+
+async function confirmNewPile(){
+  const kind = _newPileKind;
+  const trimmed = (document.getElementById("newPileName").value||"").trim();
+  if(!trimmed){ toast(T("Donnez un nom à ce rangement.","Give it a name."), "error"); return; }
   if(libraryPiles.find(p=>p.name===trimmed)){ toast(T(`Une pile ou un classeur avec ce nom existe déjà.`,`A pile or binder with this name already exists.`), "error"); return; }
   if(libraryShelves.find(s=>s.name===trimmed)){ toast(T("Ce nom est déjà utilisé par une étagère.","This name is already used by a shelf."), "error"); return; }
-  // Choisir l'étagère — liste ordonnée par meuble puis par étage, avec des
-  // libellés reconstruits (« Bureau ② · Étage 3 ») et non les noms internes,
-  // qui restent figés au nom que portait le meuble le jour de sa création.
-  const ordonnees = _shelvesOrderedByFurniture();
-  let shelf;
-  if(ordonnees.length === 1){
-    shelf = ordonnees[0];
-  } else {
-    const liste = ordonnees.map((s,i)=>`${i+1}. ${_shelfLabel(s)}`).join("\n");
-    const rep = prompt(T("Où placer ce rangement ?\n\n","Where to put it?\n\n")+liste+T("\n\nEntrez le numéro :","\n\nEnter the number:"), "1");
-    if(!rep) return;
-    const n = parseInt(String(rep).trim(),10);
-    shelf = (n>=1 && n<=ordonnees.length) ? ordonnees[n-1]
-          : ordonnees.find(s=>_shelfLabel(s).toLowerCase()===String(rep).trim().toLowerCase());
-  }
-  if(!shelf){ toast(T("Emplacement introuvable.","Location not found."), "error"); return; }
+  const cible = document.getElementById("newPileShelf").value;
+  const shelf = libraryShelves.find(s=>s.name===cible);
+  if(!shelf){ toast(T("Choisissez un emplacement.","Choose a location."), "error"); return; }
+  closeModal("newPileModal");
   const pile = {id:"pile-"+Date.now(), name:trimmed, localisation:shelf.name, itemOrder:[]};
-  if(kind==="classeur") pile.kind = "classeur";
+  if(kind==="classeur"){ pile.kind = "classeur"; pile.color = "#6d3c3c"; }
   libraryPiles.push(pile);
   if(!shelf.itemOrder) shelf.itemOrder=[];
   shelf.itemOrder.push("pile:"+pile.id);
@@ -11979,7 +12018,7 @@ async function addLibraryPile(kind){
   await saveLibraryShelves();
   _refreshLocationDatalist();
   renderLibrary();
-  toast(T(`${kind==="classeur"?"Classeur":"Pile"} « ${trimmed} » créé${kind==="classeur"?"":"e"} sur l'étagère « ${shelf.name} ».`,`${kind==="classeur"?"Binder":"Pile"} « ${trimmed} » created on shelf « ${shelf.name} ».`), "success");
+  toast(T(`${kind==="classeur"?"Classeur":"Pile"} « ${trimmed} » créé${kind==="classeur"?"":"e"} — ${_shelfLabel(shelf)}.`,`${kind==="classeur"?"Binder":"Pile"} « ${trimmed} » created — ${_shelfLabel(shelf)}.`), "success");
 }
 
 // ═══ Modal « contenu d'un tiroir » ═══
@@ -12086,7 +12125,7 @@ function _fbPageInner(pg){
   const edit = pg.id ? `<button class="fb-edit" title="${T(`Éditer la fiche`,`Edit record`)}" onclick="_fbEditItem(event,'${pg.id}')">✏️</button>` : '';
   if(pg.type==='img')    return `${edit}<div class="fb-imgwrap">${pg.infos?`<div class="fb-info-tip">${escapeHTML(pg.infos)}</div>`:''}<img src="${_safeUrl(pg.src)}" alt=""></div><div class="fb-cap">${pg.cap}</div>`;
   if(pg.type==='locked') return `${edit}<div class="fb-empty"><div class="fb-emoji">🔒</div><div>${T("Contenu protégé","Protected content")}</div></div><div class="fb-cap">${pg.cap}</div>`;
-  return `${edit}<div class="fb-empty">${pg.infos?`<div class="fb-info-tip">${escapeHTML(pg.infos)}</div>`:''}<div class="fb-emoji">🖼️</div><div>Pas d'image</div></div><div class="fb-cap">${pg.cap}</div>`;
+  return `${edit}<div class="fb-empty">${pg.infos?`<div class="fb-info-tip">${escapeHTML(pg.infos)}</div>`:''}<div class="fb-emoji">🖼️</div><div>${T("Pas d'image","No image")}</div></div><div class="fb-cap">${pg.cap}</div>`;
 }
 function _fbEditItem(e, id){
   if(e){ e.stopPropagation(); e.preventDefault(); }
@@ -12147,7 +12186,18 @@ function openClasseurReader(pileId, focusItemId=null){
   if(focusItemId){ const _pi = pages.findIndex(p=>p && p.id===focusItemId); if(_pi>=0) _startSpread = Math.floor(_pi/2); }
   _fbState = { pile, pages, W, H, spread:_startSpread, backdrop, busy:false };
   if(!pages.length){
-    backdrop.querySelector('#fbBook').innerHTML = `<div class="fb-spread"><div class="fb-page" style="width:${W*2}px;height:${H}px"><div class="fb-empty"><div class="fb-emoji">🗂️</div><div>Ce classeur est vide.</div></div></div></div>${_fbSpiralHTML(H)}`;
+    // Deux pages comme une double normale : sur une page unique de largeur W*2,
+    // le message se centrait pile sous les anneaux de la reliure.
+    backdrop.querySelector('#fbBook').innerHTML = `<div class="fb-spread">
+      <div class="fb-page fb-left" style="width:${W}px;height:${H}px"></div>
+      <div class="fb-page fb-right" style="width:${W}px;height:${H}px">
+        <div class="fb-empty">
+          <div class="fb-emoji">🗂️</div>
+          <div>${T('Ce classeur est vide.','This binder is empty.')}</div>
+          <div style="font-size:12px;opacity:.75">${T('Utilisez ＋ Ajouter pour y placer un document.','Use ＋ Add to put a document in it.')}</div>
+        </div>
+      </div>
+    </div>${_fbSpiralHTML(H)}`;
     backdrop.querySelector('#fbPrev').disabled = true;
     backdrop.querySelector('#fbNext').disabled = true;
     backdrop.querySelector('#fbFirst').disabled = true;
