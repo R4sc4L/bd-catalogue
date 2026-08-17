@@ -433,14 +433,27 @@
      à gauche, autres modes d'ajout (URL, presse-papiers) à droite. Les vignettes
      restent en pleine largeur, sous ce bloc. */
   .image-intake{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
-  .image-intake > .image-upload{flex:0 0 120px;width:120px;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px;line-height:1.35;font-size:12px}
-  .image-intake-side{flex:1 1 260px;min-width:220px;display:flex;flex-direction:column;justify-content:flex-start;gap:2px}
-  .image-intake-side .image-url-row{margin-top:0}
-  .image-intake-side .image-paste-hint{text-align:left}
+  .image-intake > .image-upload{flex:0 0 120px;width:120px;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px 8px;line-height:1.35;font-size:12px}
+  .image-intake > .image-upload .ico{width:34px;height:34px;color:var(--gold);opacity:.85;transition:opacity .15s}
+  .image-intake > .image-upload:hover .ico,.image-intake > .image-upload.dragover .ico{opacity:1}
+  .image-intake-side{flex:1 1 260px;min-width:220px;display:flex;flex-direction:column;justify-content:flex-start}
+  /* Les quatre actions : même gabarit — gouttière d'icône fixe à gauche, contenu à droite
+     (champ, information ou cases à cocher). Un seul cadre, lignes séparées par un filet. */
+  .intake-rows{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-tint);overflow:hidden}
+  .intake-row{display:grid;grid-template-columns:40px 1fr;align-items:center;gap:10px;padding:7px 12px 7px 4px;min-height:44px}
+  .intake-row + .intake-row{border-top:1px solid var(--border)}
+  .intake-ico{display:flex;align-items:center;justify-content:center}
+  .intake-ico .ico{width:28px;height:28px;color:var(--gold)}
+  .intake-ico.warn .ico{width:30px;height:30px;color:#e00024}   /* rouge du logo fourni */
+  .intake-row .image-url-row{margin:0}
+  .intake-row .image-paste-hint{margin:0;text-align:left}
+  .intake-row .checkbox-row{margin:0}
+  .intake-checks{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
   @media(max-width:640px){
-    .image-intake > .image-upload{flex:1 1 100%;width:auto;min-height:96px}
-    .image-intake-side{flex:1 1 100%}
-    .image-intake-side .image-paste-hint{text-align:center}
+    .image-intake > .image-upload{flex:1 1 100%;width:auto;min-height:96px;flex-direction:row;gap:10px}
+    .image-intake > .image-upload .ico{width:26px;height:26px}
+    .image-intake-side{flex:1 1 100%;margin-top:8px}
+    .intake-row{grid-template-columns:34px 1fr;padding-left:2px}
   }
   .image-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
   .image-preview > div{position:relative;width:80px;height:100px;cursor:grab;border-radius:6px;transition:opacity .15s,outline .1s}
@@ -952,6 +965,53 @@
 </head>
 <body>
 <script>try{if((localStorage.getItem('bdapp_theme')||'dark')==='light')document.body.classList.add('theme-light');}catch(e){}</script>
+
+<!-- ══ SPRITE D'ICÔNES (bloc Images des fiches) ══
+     Icônes SVG en ligne (aucune dépendance réseau), tracé monochrome hérité de
+     currentColor. Usage : <svg class="ico"><use href="#ic-xxx"></use></svg> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <g id="ic-link" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10.2 13.8a4.2 4.2 0 0 0 5.94 0l3.1-3.1a4.2 4.2 0 1 0-5.94-5.94l-1.4 1.4"/>
+    <path d="M13.8 10.2a4.2 4.2 0 0 0-5.94 0l-3.1 3.1a4.2 4.2 0 1 0 5.94 5.94l1.4-1.4"/>
+  </g>
+  <g id="ic-paste" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="8.5" y="2.6" width="7" height="4.2" rx="1.3"/>
+    <path d="M15.8 4.8h2.1a2 2 0 0 1 2 2v12.6a2 2 0 0 1-2 2H6.1a2 2 0 0 1-2-2V6.8a2 2 0 0 1 2-2h2.1"/>
+    <path d="M8 12.4h8M8 16.2h5.4"/>
+  </g>
+  <g id="ic-film" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2.8" y="4.2" width="18.4" height="15.6" rx="2.4"/>
+    <path d="M7.4 4.2v15.6M16.6 4.2v15.6M2.8 12h18.4M2.8 8.1h4.6M2.8 15.9h4.6M16.6 8.1h4.6M16.6 15.9h4.6"/>
+  </g>
+  <!-- Signalétique jeunesse « -18 » : décalque vectoriel du logo fourni par l'utilisateur
+       (c.png, tracé au potrace). Le disque est un cercle analytique en currentColor ;
+       les glyphes — « 1 », « 8 » et le tiret qui déborde à gauche — forment un seul
+       chemin blanc. Repère d'origine 447 px ramené à 24 par la mise à l'échelle. -->
+  <g id="ic-18" transform="scale(0.0536913)">
+    <circle cx="223" cy="224.5" r="221.3" fill="currentColor"/>
+    <g transform="translate(0,447) scale(0.1,-0.1)" fill="#fff">
+      <path d="M2810 3813 c-116 -19 -225 -79 -309 -169 -126 -135 -197 -285 -225
+-476 -20 -131 -20 -182 -1 -336 23 -182 73 -292 175 -384 l59 -54 -35 -24
+c-72 -48 -164 -161 -210 -255 -79 -163 -110 -335 -101 -565 11 -276 83 -488
+221 -649 141 -164 306 -236 541 -236 211 0 357 57 490 189 168 166 251 358
+276 631 32 359 -58 659 -253 839 -39 36 -75 66 -80 66 -5 0 20 27 54 59 76 71
+127 162 159 281 31 115 33 370 5 500 -69 317 -237 516 -486 574 -60 15 -218
+19 -280 9z m207 -578 c87 -44 133 -138 133 -272 0 -101 -23 -182 -68 -234
+-119 -139 -303 -86 -356 102 -31 109 -14 258 40 339 58 88 155 113 251 65z
+m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
+-222 -284 -223 -89 0 -154 25 -215 85 -125 123 -148 411 -46 585 34 59 107
+120 162 138 62 20 159 13 213 -15z M1037 3763 c-4 -3 -7 -141 -7 -305 l0 -298
+190 0 190 0 0 -1225 0 -1225 225 0 225 0 -2 1527 -3 1528 -406 3 c-223 1 -408
+-1 -412 -5z M0 1895 l0 -255 400 0 400 0 0 255 0 255 -400 0 -400 0 0 -255z"/>
+    </g>
+  </g>
+  <g id="ic-image-add" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20.4 13.2V6.2a2.2 2.2 0 0 0-2.2-2.2H5.2A2.2 2.2 0 0 0 3 6.2v11.6A2.2 2.2 0 0 0 5.2 20h8.2"/>
+    <circle cx="8.6" cy="9.4" r="1.7"/>
+    <path d="m3.4 16.9 4.1-4.1a2 2 0 0 1 2.83 0l3.2 3.2"/>
+    <path d="M18.6 15.6v5.6M15.8 18.4h5.6"/>
+  </g>
+</defs></svg>
 
 <!-- ══ LOGIN SCREEN ══ -->
 <div id="loginScreen">
@@ -1513,31 +1573,43 @@
           <h3>Images</h3>
           <div class="image-intake">
             <div class="image-upload" id="itemDropZone" onclick="document.getElementById('itemImageInput').click()">
-              <span data-en="📁 Click or drag and drop images">📁 Cliquer ou glisser-déposer des images</span>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-image-add"></use></svg>
+              <span data-en="Click or drag and drop images">Cliquer ou glisser-déposer des images</span>
               <input type="file" id="itemImageInput" accept="image/*" multiple style="display:none" onchange="handleImageUpload(event,'item')">
             </div>
             <div class="image-intake-side">
-              <div class="image-url-row">
-                <input type="url" id="itemImageUrl" placeholder="🔗 Coller une URL d'image…" data-en-ph="🔗 Paste an image URL…">
-                <button type="button" class="secondary" data-en="Add" onclick="addImageFromUrl('item')">Ajouter</button>
-              </div>
-              <div class="image-paste-hint" data-en="📋 You can also paste an image directly (Cmd+V)">📋 Vous pouvez aussi coller une image directement (Cmd+V)</div>
-              <!-- Diaporama + Contenu adulte : dans la colonne de droite, à côté de la
-                   zone de dépôt. La frise de vignettes reste seule sous le bloc. -->
-              <div id="itemDiaporamaRow" class="checkbox-row" style="margin:6px 0 0;padding:7px 12px;background:var(--surface-tint);border:1px solid var(--border);border-radius:var(--radius)">
-                <input type="checkbox" id="itemDiaporama" onchange="this.dataset.userSet='1'">
-                <label for="itemDiaporama" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="▶ Enable slideshow for this work">▶ Activer le diaporama pour cette œuvre</label>
-              </div>
-              <div id="itemAdultBlock" style="margin-top:6px;padding:8px 12px;background:rgba(180,40,40,.07);border:1px solid rgba(180,40,40,.2);border-radius:var(--radius)">
-                <div style="font-size:12px;color:var(--ink-soft);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px" data-en="🔞 Adult content protection">🔞 Protection contenu adulte</div>
-                <div style="display:flex;gap:20px;flex-wrap:wrap">
-                  <div class="checkbox-row" style="margin:0">
-                    <input type="checkbox" id="itemCouvertureAdulte">
-                    <label for="itemCouvertureAdulte" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="Blurred cover">Couverture floutée</label>
+              <!-- Quatre actions au même gabarit : icône en gouttière + contenu.
+                   La frise de vignettes reste seule sous le bloc. -->
+              <div class="intake-rows">
+                <div class="intake-row">
+                  <span class="intake-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></span>
+                  <div class="image-url-row">
+                    <input type="url" id="itemImageUrl" placeholder="Coller une URL d'image…" data-en-ph="Paste an image URL…">
+                    <button type="button" class="secondary" data-en="Add" onclick="addImageFromUrl('item')">Ajouter</button>
                   </div>
-                  <div class="checkbox-row" style="margin:0">
-                    <input type="checkbox" id="itemImagesAdultes">
-                    <label for="itemImagesAdultes" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="Plates / images locked">Planches / images verrouillées</label>
+                </div>
+                <div class="intake-row">
+                  <span class="intake-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-paste"></use></svg></span>
+                  <div class="image-paste-hint" data-en="You can also paste an image directly (Cmd+V)">Vous pouvez aussi coller une image directement (Cmd+V)</div>
+                </div>
+                <div class="intake-row" id="itemDiaporamaRow">
+                  <span class="intake-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-film"></use></svg></span>
+                  <div class="checkbox-row">
+                    <input type="checkbox" id="itemDiaporama" onchange="this.dataset.userSet='1'">
+                    <label for="itemDiaporama" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="Enable slideshow for this work">Activer le diaporama pour cette œuvre</label>
+                  </div>
+                </div>
+                <div class="intake-row" id="itemAdultBlock" title="Protection contenu adulte" data-en-title="Adult content protection">
+                  <span class="intake-ico warn"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-18"></use></svg></span>
+                  <div class="intake-checks">
+                    <div class="checkbox-row">
+                      <input type="checkbox" id="itemCouvertureAdulte">
+                      <label for="itemCouvertureAdulte" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="Blurred cover">Couverture floutée</label>
+                    </div>
+                    <div class="checkbox-row">
+                      <input type="checkbox" id="itemImagesAdultes">
+                      <label for="itemImagesAdultes" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="Plates / images locked">Planches / images verrouillées</label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1756,15 +1828,24 @@
           <h3 id="authorFormPhotoTitle">Photo / Portrait</h3>
           <div class="image-intake">
             <div class="image-upload" id="authorDropZone" onclick="document.getElementById('authorImageInput').click()">
-              <span id="authorDropZoneLabel" data-en="📁 Click or drag and drop a portrait">📁 Cliquer ou glisser-déposer un portrait</span>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-image-add"></use></svg>
+              <span id="authorDropZoneLabel" data-en="Click or drag and drop a portrait">Cliquer ou glisser-déposer un portrait</span>
               <input type="file" id="authorImageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event,'author')">
             </div>
             <div class="image-intake-side">
-              <div class="image-url-row">
-                <input type="url" id="authorImageUrl" placeholder="🔗 Coller une URL d'image…" data-en-ph="🔗 Paste an image URL…">
-                <button type="button" class="secondary" data-en="Add" onclick="addImageFromUrl('author')">Ajouter</button>
+              <div class="intake-rows">
+                <div class="intake-row">
+                  <span class="intake-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></span>
+                  <div class="image-url-row">
+                    <input type="url" id="authorImageUrl" placeholder="Coller une URL d'image…" data-en-ph="Paste an image URL…">
+                    <button type="button" class="secondary" data-en="Add" onclick="addImageFromUrl('author')">Ajouter</button>
+                  </div>
+                </div>
+                <div class="intake-row">
+                  <span class="intake-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-paste"></use></svg></span>
+                  <div class="image-paste-hint" data-en="You can also paste an image directly (Cmd+V)">Vous pouvez aussi coller une image directement (Cmd+V)</div>
+                </div>
               </div>
-              <div class="image-paste-hint" data-en="📋 You can also paste an image directly (Cmd+V)">📋 Vous pouvez aussi coller une image directement (Cmd+V)</div>
             </div>
           </div>
           <div class="image-preview" id="authorImagePreview"></div>
@@ -1826,15 +1907,24 @@
           <h3 data-en="Cover image">Image de couverture</h3>
           <div class="image-intake">
             <div class="image-upload" id="wishDropZone" onclick="document.getElementById('wishImageInput').click()">
-              <span data-en="📁 Click or drag and drop an image">📁 Cliquer ou glisser-déposer une image</span>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-image-add"></use></svg>
+              <span data-en="Click or drag and drop an image">Cliquer ou glisser-déposer une image</span>
               <input type="file" id="wishImageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event,'wish')">
             </div>
             <div class="image-intake-side">
-              <div class="image-url-row">
-                <input type="url" id="wishImageUrl" placeholder="🔗 Coller une URL d'image…" data-en-ph="🔗 Paste an image URL…">
-                <button type="button" class="secondary" data-en="Add" onclick="addImageFromUrl('wish')">Ajouter</button>
+              <div class="intake-rows">
+                <div class="intake-row">
+                  <span class="intake-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></span>
+                  <div class="image-url-row">
+                    <input type="url" id="wishImageUrl" placeholder="Coller une URL d'image…" data-en-ph="Paste an image URL…">
+                    <button type="button" class="secondary" data-en="Add" onclick="addImageFromUrl('wish')">Ajouter</button>
+                  </div>
+                </div>
+                <div class="intake-row">
+                  <span class="intake-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-paste"></use></svg></span>
+                  <div class="image-paste-hint" data-en="You can also paste an image directly (Cmd+V)">Vous pouvez aussi coller une image directement (Cmd+V)</div>
+                </div>
               </div>
-              <div class="image-paste-hint" data-en="📋 You can also paste an image directly (Cmd+V)">📋 Vous pouvez aussi coller une image directement (Cmd+V)</div>
             </div>
           </div>
           <div class="image-preview" id="wishImagePreview"></div>
@@ -2898,7 +2988,7 @@ function adaptAuthorFormToCollection(){
     set('authorLabelBirth',         T('Date de création','Date created'));
     set('authorLabelDeath',         T("Date de cessation d'activité",'Date activity ceased'));
     set('authorFormPhotoTitle',     T('Identité visuelle / Logo','Visual identity / Logo'));
-    set('authorDropZoneLabel',      T('📁 Cliquer ou glisser-déposer un logo','📁 Click or drag and drop a logo'));
+    set('authorDropZoneLabel',      T('Cliquer ou glisser-déposer un logo','Click or drag and drop a logo'));
     set('authorFormBioTitle',       T('Historique et notes','History and notes'));
     set('authorLabelBio',           T('Historique de la marque','Brand history'));
     const bio = document.getElementById('authorBio');
@@ -2914,7 +3004,7 @@ function adaptAuthorFormToCollection(){
     set('authorLabelBirth',         T('Date de naissance','Date of birth'));
     set('authorLabelDeath',         T('Date de décès','Date of death'));
     set('authorFormPhotoTitle',     T('Photo / Portrait','Photo / Portrait'));
-    set('authorDropZoneLabel',      T('📁 Cliquer ou glisser-déposer un portrait','📁 Click or drag and drop a portrait'));
+    set('authorDropZoneLabel',      T('Cliquer ou glisser-déposer un portrait','Click or drag and drop a portrait'));
     set('authorFormBioTitle',       T('Biographie et notes','Biography and notes'));
     set('authorLabelBio',           T('Biographie','Biography'));
     const bio = document.getElementById('authorBio');
@@ -7604,7 +7694,7 @@ const STRINGS = {
     // Bulk edit
     'bulk.note': '<strong>Modification groupée</strong> — Remplissez uniquement les champs à modifier.',
     // Image hint
-    'img.paste_hint': '📋 Vous pouvez aussi coller une image directement (Cmd+V)',
+    'img.paste_hint': 'Vous pouvez aussi coller une image directement (Cmd+V)',
     // Sort options
   },
   en: {
@@ -7831,7 +7921,7 @@ const STRINGS = {
     // Bulk edit
     'bulk.note': '<strong>Bulk edit</strong> — Fill in only the fields you want to change.',
     // Image hint
-    'img.paste_hint': '📋 You can also paste an image directly (Cmd+V)',
+    'img.paste_hint': 'You can also paste an image directly (Cmd+V)',
   }
 };
 
