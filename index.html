@@ -743,6 +743,10 @@
   .fb-blank{background:#f1ead9}
   .fb-info-tip{position:absolute;top:12px;left:50%;transform:translateX(-50%) translateY(-4px);max-width:82%;background:rgba(20,18,24,.95);color:#f0e6d2;font-size:12.5px;line-height:1.4;padding:8px 12px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.5);opacity:0;pointer-events:none;white-space:pre-wrap;text-align:left;z-index:12;transition:opacity .12s ease,transform .12s ease}
   .fb-imgwrap:hover .fb-info-tip,.fb-empty:hover .fb-info-tip{opacity:1;transform:translateX(-50%) translateY(0);transition-delay:.1s}
+  /* Page du document que l'on vient de localiser : même repère bleu que la tranche
+     dans le meuble, pour retrouver le bon document sur une double page qui en porte deux. */
+  .fb-page.fb-located::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:8;
+    box-shadow:inset 0 0 0 3px #4a9eff,inset 0 0 22px rgba(74,158,255,.45)}
   .fb-pagenum{position:absolute;bottom:8px;font-size:16px;font-weight:700;color:#8a7d64;letter-spacing:.5px;z-index:7;pointer-events:none;font-variant-numeric:tabular-nums}
   .fb-pagenum-left{left:14px}
   .fb-pagenum-right{right:14px}
@@ -5644,6 +5648,11 @@ async function locateOnShelf(id){
       // Contour bleu persistant (~15 s) pour laisser le temps de repérer l'album
       target.classList.add("located");
       window._locatedTimer = setTimeout(()=>target.classList.remove("located"), 15000);
+      // Un classeur ne montre pas de tranche par document : le rebond dit seulement dans quel
+      // meuble il se trouve. On enchaîne donc sur la liseuse, ouverte à la page du document.
+      if(_locPile && _locPile.kind === "classeur" && target.classList.contains("pile-block")){
+        setTimeout(()=>openClasseurReader(_locPile.id, id), 260);
+      }
     }, {once:true});
     _showLocateAgainBtn(id, it);
   }));
@@ -12263,6 +12272,7 @@ function _fbAddItem(){
 function openClasseurReader(pileId, focusItemId=null){
   const pile = libraryPiles.find(p=>p.id===pileId);
   if(!pile) return;
+  if(_fbState) _fbClose();   // jamais deux liseuses empilées (ex. : « Relocaliser » répété)
   const pages = _classeurPages(pile);
   const vw = window.innerWidth, vh = window.innerHeight;
   let H = Math.min(vh*0.74, 720);
@@ -12299,7 +12309,7 @@ function openClasseurReader(pileId, focusItemId=null){
   document.body.appendChild(backdrop);
   let _startSpread = 0;
   if(focusItemId){ const _pi = pages.findIndex(p=>p && p.id===focusItemId); if(_pi>=0) _startSpread = Math.floor(_pi/2); }
-  _fbState = { pile, pages, W, H, spread:_startSpread, backdrop, busy:false };
+  _fbState = { pile, pages, W, H, spread:_startSpread, backdrop, busy:false, focusId:focusItemId||null };
   if(!pages.length){
     // Deux pages comme une double normale : sur une page unique de largeur W*2,
     // le message se centrait pile sous les anneaux de la reliure.
@@ -12377,9 +12387,14 @@ function _fbRender(){
   const book = s.backdrop.querySelector('#fbBook');
   const numL = (L && li>=1) ? `<div class="fb-pagenum fb-pagenum-left">${li}</div>` : '';
   const numR = (R && ri>=1) ? `<div class="fb-pagenum fb-pagenum-right">${ri}</div>` : '';
+  // Document mis en avant par la localisation : sa page porte un contour bleu, tant qu'il
+  // reste visible. Feuilleter ailleurs puis revenir le réaffiche — le repère suit le document.
+  const fk = s.focusId || null;
+  const cL = (fk && L && L.id===fk) ? ' fb-located' : '';
+  const cR = (fk && R && R.id===fk) ? ' fb-located' : '';
   book.innerHTML = `<div class="fb-spread">
-    <div class="fb-page fb-left" style="width:${W}px;height:${H}px">${_fbPageInner(L)}${numL}</div>
-    <div class="fb-page fb-right" style="width:${W}px;height:${H}px">${_fbPageInner(R)}${numR}</div>
+    <div class="fb-page fb-left${cL}" style="width:${W}px;height:${H}px">${_fbPageInner(L)}${numL}</div>
+    <div class="fb-page fb-right${cR}" style="width:${W}px;height:${H}px">${_fbPageInner(R)}${numR}</div>
   </div>${_fbSpiralHTML(H)}`;
   const tot = _fbSpreadCount();
   s.backdrop.querySelector('#fbCounter').textContent = `${s.spread+1} / ${tot}`;
