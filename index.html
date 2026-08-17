@@ -2667,7 +2667,7 @@ const EPHEMERE_FAMILIES = [
     types:['Flyer / Prospectus','Dépliant / Leaflet','Affichette','PLV (présentoir, stop-rayon)','Catalogue éditeur','Encart publicitaire','Bandeau'] },
   { id:'presse', label:'Presse & documentation', labelEn:'Press & documentation', icon:'📰',
     bloc:'ephBlocPublication',
-    types:['Coupure de presse','Encart','Dossier de presse','Communiqué de presse','Strip de presse','Interview'] },
+    types:["Lettre d'information",'Coupure de presse','Encart','Dossier de presse','Communiqué de presse','Strip de presse','Interview'] },
   { id:'lecture', label:'Lecture & accompagnement', labelEn:'Reading & accessories', icon:'🔖',
     bloc:'ephBlocLecture',
     types:['Marque-page','Autocollant','Décalcomanie','Calendrier','Buvard',"Carte de visite d'auteur"] },
@@ -2686,6 +2686,7 @@ const EPHEMERE_MULTIFEUILLET = {
   'Encart'                   : 'pages',
   'Dépliant / Leaflet'       : 'volets',
   'Dossier de presse'        : 'feuillets',
+  "Lettre d'information"     : 'pages',
 };
 // Libellé affiché d'une unité, accordé au singulier si la quantité vaut 1.
 function _uniteLabel(u, n){
