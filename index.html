@@ -409,8 +409,8 @@
   #itemForm.xl-simple #formSection-signatures .form-grid > div:has(#itemDedicaceSignature),
   #itemForm.xl-simple #formSection-signatures .form-grid > div:has(#itemDedicaceDessin),
   #itemForm.xl-simple #formSection-signatures .form-grid > div:has(#itemDedication){display:none}
-  #itemForm.xl-simple .form-section:has(#itemImagePreview) > div:has(#itemDiaporama),
-  #itemForm.xl-simple .form-section:has(#itemImagePreview) > div:has(#itemCouvertureAdulte){display:none !important}
+  #itemForm.xl-simple #itemDiaporamaRow,
+  #itemForm.xl-simple #itemAdultBlock{display:none !important}
   .checkbox-row{display:flex;align-items:center;gap:8px}
   .checkbox-row input[type=checkbox]{width:auto}
   .author-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px;align-items:start}
@@ -432,7 +432,7 @@
   /* Bloc d'acquisition d'images : zone de dépôt en format portrait (ratio couverture)
      à gauche, autres modes d'ajout (URL, presse-papiers) à droite. Les vignettes
      restent en pleine largeur, sous ce bloc. */
-  .image-intake{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+  .image-intake{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
   .image-intake > .image-upload{flex:0 0 120px;width:120px;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px;line-height:1.35;font-size:12px}
   .image-intake-side{flex:1 1 260px;min-width:220px;display:flex;flex-direction:column;justify-content:flex-start;gap:2px}
   .image-intake-side .image-url-row{margin-top:0}
@@ -1522,29 +1522,28 @@
                 <button type="button" class="secondary" data-en="Add" onclick="addImageFromUrl('item')">Ajouter</button>
               </div>
               <div class="image-paste-hint" data-en="📋 You can also paste an image directly (Cmd+V)">📋 Vous pouvez aussi coller une image directement (Cmd+V)</div>
+              <!-- Diaporama + Contenu adulte : dans la colonne de droite, à côté de la
+                   zone de dépôt. La frise de vignettes reste seule sous le bloc. -->
+              <div id="itemDiaporamaRow" class="checkbox-row" style="margin:6px 0 0;padding:7px 12px;background:var(--surface-tint);border:1px solid var(--border);border-radius:var(--radius)">
+                <input type="checkbox" id="itemDiaporama" onchange="this.dataset.userSet='1'">
+                <label for="itemDiaporama" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="▶ Enable slideshow for this work">▶ Activer le diaporama pour cette œuvre</label>
+              </div>
+              <div id="itemAdultBlock" style="margin-top:6px;padding:8px 12px;background:rgba(180,40,40,.07);border:1px solid rgba(180,40,40,.2);border-radius:var(--radius)">
+                <div style="font-size:12px;color:var(--ink-soft);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px" data-en="🔞 Adult content protection">🔞 Protection contenu adulte</div>
+                <div style="display:flex;gap:20px;flex-wrap:wrap">
+                  <div class="checkbox-row" style="margin:0">
+                    <input type="checkbox" id="itemCouvertureAdulte">
+                    <label for="itemCouvertureAdulte" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="Blurred cover">Couverture floutée</label>
+                  </div>
+                  <div class="checkbox-row" style="margin:0">
+                    <input type="checkbox" id="itemImagesAdultes">
+                    <label for="itemImagesAdultes" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="Plates / images locked">Planches / images verrouillées</label>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div class="image-preview" id="itemImagePreview"></div>
-          <!-- Diaporama + Contenu adulte — juste après les images -->
-          <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-            <div class="checkbox-row" style="margin:0;padding:8px 14px;background:var(--surface-tint);border:1px solid var(--border);border-radius:var(--radius)">
-              <input type="checkbox" id="itemDiaporama" onchange="this.dataset.userSet='1'">
-              <label for="itemDiaporama" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="▶ Enable slideshow for this work">▶ Activer le diaporama pour cette œuvre</label>
-            </div>
-          </div>
-          <div style="margin-top:12px;padding:10px 14px;background:rgba(180,40,40,.07);border:1px solid rgba(180,40,40,.2);border-radius:var(--radius)">
-            <div style="font-size:12px;color:var(--ink-soft);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px" data-en="🔞 Adult content protection">🔞 Protection contenu adulte</div>
-            <div style="display:flex;gap:20px;flex-wrap:wrap">
-              <div class="checkbox-row" style="margin:0">
-                <input type="checkbox" id="itemCouvertureAdulte">
-                <label for="itemCouvertureAdulte" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="Blurred cover">Couverture floutée</label>
-              </div>
-              <div class="checkbox-row" style="margin:0">
-                <input type="checkbox" id="itemImagesAdultes">
-                <label for="itemImagesAdultes" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="Plates / images locked">Planches / images verrouillées</label>
-              </div>
-            </div>
-          </div>
         </div>
         <!-- ── RÉSUMÉ ── -->
         <div class="form-section">
