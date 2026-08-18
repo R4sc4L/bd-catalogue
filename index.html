@@ -322,11 +322,16 @@
   .pile-strip.locating{animation:spine-locate .55s ease-in-out 5;z-index:60}
   .pile-block.locating{animation:spine-locate .55s ease-in-out 5;z-index:60;position:relative}
   .book-spine.located,.pile-strip.located,.drawer-face.located,.pile-block.located{box-shadow:0 0 0 3px #4a9eff,0 0 16px rgba(74,158,255,.75);z-index:50;position:relative}
-  #locateAgainBtn{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:500;display:flex;gap:8px;align-items:center;background:#4a9eff;color:#fff;border:none;border-radius:24px;padding:10px 18px;font-size:14px;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.5);cursor:pointer;max-width:min(80vw,480px)}
-  #locateAgainBtn:hover{background:#3a8eef}
+  /* Barre flottante de localisation : segments accolés dans une même pastille.
+     « Ouvrir à la bonne page » n'apparaît que pour un document rangé dans un classeur. */
+  #locateAgainBtn{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:500;display:flex;align-items:stretch;background:#4a9eff;color:#fff;border-radius:24px;box-shadow:0 6px 24px rgba(0,0,0,.5);max-width:min(92vw,720px);overflow:hidden}
+  #locateAgainBtn .seg{display:flex;gap:8px;align-items:center;background:none;border:none;color:#fff;font-family:inherit;font-size:14px;font-weight:600;padding:10px 18px;cursor:pointer;min-width:0;border-radius:0;transition:background .15s}
+  #locateAgainBtn .seg:hover{background:rgba(0,0,0,.18)}
+  #locateAgainBtn .seg + .seg{box-shadow:inset 1px 0 0 rgba(255,255,255,.45)}
   #locateAgainBtn .lab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #locateAgainBtn .x{margin-left:4px;opacity:.75;font-weight:400}
-  #locateAgainBtn .x:hover{opacity:1}
+  #locateAgainBtn .seg-x{padding:10px 14px;opacity:.8;font-weight:400}
+  #locateAgainBtn .seg-x:hover{opacity:1}
+  @media(max-width:560px){ #locateAgainBtn .seg{padding:9px 12px;font-size:13px} }
   /* List table */
   table{width:100%;border-collapse:collapse;background:var(--bg-panel);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)}
   th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:14px}
@@ -5635,6 +5640,9 @@ async function locateOnShelf(id){
                  || document.querySelector(`.pile-strip[data-open-id="${id}"]`)
                  || (_locPile ? document.querySelector(`.pile-block[data-pile-id="${_locPile.id}"]`) : null)
                  || (loc && _drawerMeuble(loc) ? document.querySelector(`.drawer-face[data-drawer-name="${loc.replace(/"/g,'\\"')}"]`) : null);
+    // La barre flottante ne dépend pas de la surbrillance : pour un document rangé dans un
+    // classeur, « Ouvrir à la bonne page » a du sens même si aucune tranche n'a pu être visée.
+    _showLocateAgainBtn(id, it, _locPile);
     if(!target) return;
     target.scrollIntoView({behavior:"smooth", block:"center", inline:"center"});
     // Nettoyer une éventuelle localisation précédente
@@ -5648,36 +5656,39 @@ async function locateOnShelf(id){
       // Contour bleu persistant (~15 s) pour laisser le temps de repérer l'album
       target.classList.add("located");
       window._locatedTimer = setTimeout(()=>target.classList.remove("located"), 15000);
-      // Un classeur ne montre pas de tranche par document : le rebond dit seulement dans quel
-      // meuble il se trouve. On enchaîne donc sur la liseuse, ouverte à la page du document.
-      if(_locPile && _locPile.kind === "classeur" && target.classList.contains("pile-block")){
-        setTimeout(()=>openClasseurReader(_locPile.id, id), 260);
-      }
     }, {once:true});
-    _showLocateAgainBtn(id, it);
   }));
 }
 
-// Bouton flottant « relocaliser » : relance le rebond tant qu'on reste dans la bibliothèque
-function _showLocateAgainBtn(id, it){
+// Barre flottante après une localisation. Toujours : « Relocaliser » (relance le rebond).
+// En plus, si le document est rangé dans un classeur : « Ouvrir à la bonne page », qui lance
+// la liseuse feuilletable positionnée sur sa double page. Le rebond seul ne suffit pas dans
+// ce cas — un classeur n'expose pas de tranche par document —, mais l'ouverture reste un
+// choix explicite : rien ne s'ouvre sans clic.
+function _showLocateAgainBtn(id, it, pile){
   const view = document.getElementById("view-library");
   if(!view) return;
   let btn = document.getElementById("locateAgainBtn");
   if(!btn){
-    btn = document.createElement("button");
+    btn = document.createElement("div");
     btn.id = "locateAgainBtn";
     view.appendChild(btn);
   }
-  const titre = escapeHTML(it?.titre || "");
-  btn.innerHTML = `<span>📍</span><span class="lab">${_lang==='en'?'Locate again':'Relocaliser'}${titre?` « ${titre} »`:''}</span><span class="x" title="${_lang==='en'?'Close':'Fermer'}">✕</span>`;
-  btn.onclick = (e)=>{
-    if(e.target.classList.contains("x")){
-      btn.remove();
-      document.querySelectorAll(".located").forEach(el=>el.classList.remove("located"));
-      if(window._locatedTimer) clearTimeout(window._locatedTimer);
-      return;
-    }
-    locateOnShelf(id);
+  const loc = (it && it.localisation || "").trim();
+  const _pile = pile || (loc ? libraryPiles.find(p=>p.name===loc) : null);
+  const isBinder = !!(_pile && _pile.kind === "classeur");
+  const titre = escapeHTML(it && it.titre || "");
+  btn.innerHTML =
+      `<button type="button" class="seg seg-again"><span>📍</span><span class="lab">${T('Relocaliser','Locate again')}${titre?` « ${titre} »`:''}</span></button>`
+    + (isBinder ? `<button type="button" class="seg seg-open"><span>📖</span><span class="lab">${T('Ouvrir à la bonne page','Open at the right page')}</span></button>` : '')
+    + `<button type="button" class="seg seg-x" title="${T('Fermer','Close')}">✕</button>`;
+  btn.querySelector('.seg-again').onclick = ()=>locateOnShelf(id);
+  const openBtn = btn.querySelector('.seg-open');
+  if(openBtn) openBtn.onclick = ()=>openClasseurReader(_pile.id, id);
+  btn.querySelector('.seg-x').onclick = ()=>{
+    btn.remove();
+    document.querySelectorAll(".located").forEach(el=>el.classList.remove("located"));
+    if(window._locatedTimer) clearTimeout(window._locatedTimer);
   };
 }
 
