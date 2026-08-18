@@ -363,6 +363,12 @@
   .form-grid.three{grid-template-columns:1fr 1fr 1fr}
   .form-grid .span-2{grid-column:span 2}
   .form-grid .span-3{grid-column:span 3}
+  /* Composition d'un éphémère : compteurs alignés sur une ligne, libellé sous chaque case. */
+  .eph-compo{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+  .eph-compo > div{display:flex;flex-direction:column;gap:3px;width:78px}
+  .eph-compo input{width:100%;text-align:center}
+  .eph-compo > div > span{font-size:11px;color:var(--ink-soft);text-align:center;line-height:1.2}
+  .eph-compo-preview{font-size:12.5px;align-self:center;padding:0 0 14px 6px;text-transform:none;letter-spacing:0}
   @media(max-width:700px){.form-grid,.form-grid.three{grid-template-columns:1fr}.form-grid .span-2,.form-grid .span-3{grid-column:span 1}}
   /* Espacement normé des groupes de cases (tokens réutilisables) */
   :root{ --space-group:20px; --space-title:12px; --space-row:8px; --space-col:16px; }
@@ -1451,17 +1457,17 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               <select id="itemTypeDocument" onchange="adaptEphemereType(this.value)"></select>
             </div>
             <div><label data-en="Printing technique">Technique d'impression</label><input type="text" id="itemTechnique" list="dl-techniques" placeholder="ex: Lithographie, offset, sérigraphie…" data-en-ph="e.g. Lithography, offset, screen print…"></div>
-            <!-- Étendue : réservée aux documents multi-feuillets (voir EPHEMERE_MULTIFEUILLET) -->
-            <div id="ephFieldEtendue" style="display:none">
+            <!-- Composition : réservée aux documents multi-feuillets (voir EPHEMERE_MULTIFEUILLET).
+                 Quatre compteurs indépendants et facultatifs sur une seule ligne — un même document
+                 peut tenir de plusieurs à la fois (« 10 pages sur 2 feuillets + 2 volantes »). -->
+            <div id="ephFieldEtendue" class="span-2" style="display:none">
               <label data-en="Composition">Composition</label>
-              <div style="display:flex;gap:6px;align-items:center">
-                <input type="number" id="itemEtendue" min="1" placeholder="ex: 32" style="flex:1;min-width:0" oninput="_updateFeuilletsHint()">
-                <select id="itemEtendueUnite" style="flex:1;min-width:0" onchange="this.dataset.userSet='1';_updateFeuilletsHint()">
-                  <option value="pages" data-en="pages">pages</option>
-                  <option value="volets" data-en="folds">volets</option>
-                  <option value="feuillets" data-en="leaves">feuillets</option>
-                </select>
-                <span id="ephFeuilletsHint" class="muted" style="font-size:12px;white-space:nowrap;text-transform:none;letter-spacing:0"></span>
+              <div class="eph-compo">
+                <div><input type="number" id="itemEphPages" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="pages">pages</span></div>
+                <div><input type="number" id="itemEphFeuillets" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="leaves">feuillets</span></div>
+                <div><input type="number" id="itemEphVolets" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="folds">volets</span></div>
+                <div><input type="number" id="itemEphVolantes" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="loose">volantes</span></div>
+                <span class="eph-compo-preview muted" id="ephCompoPreview"></span>
               </div>
             </div>
           </div>
@@ -2820,32 +2826,49 @@ const EPHEMERE_MULTIFEUILLET = {
   'Dossier de presse'        : 'feuillets',
   "Lettre d'information"     : 'pages',
 };
-// Libellé affiché d'une unité, accordé au singulier si la quantité vaut 1.
-function _uniteLabel(u, n){
-  const un = String(u||'pages');
-  const solo = Number(n) === 1;
-  const tbl = {
-    pages     : { fr:['page','pages'],         en:['page','pages'] },
-    volets    : { fr:['volet','volets'],       en:['fold','folds'] },
-    feuillets : { fr:['feuillet','feuillets'], en:['leaf','leaves'] },
-  }[un] || { fr:[un,un], en:[un,un] };
-  const paire = _lang==='en' ? tbl.en : tbl.fr;
-  return solo ? paire[0] : paire[1];
+// Composition d'un éphémère : quatre compteurs facultatifs et indépendants.
+// Reprise de l'ancien couple `etendue` + `etendueUnite` : tant qu'une fiche n'a pas été
+// réenregistrée, sa valeur d'origine alimente le compteur correspondant. La fiche reste
+// donc lisible sans aucune migration de données.
+const EPH_COMPO_PARTS = [
+  { key:'ephPages',    fr:['page','pages'],         en:['page','pages'] },
+  { key:'ephFeuillets',fr:['feuillet','feuillets'], en:['leaf','leaves'] },
+  { key:'ephVolets',   fr:['volet','volets'],       en:['fold','folds'] },
+  { key:'ephVolantes', fr:['volante','volantes'],   en:['loose sheet','loose sheets'] },
+];
+const _EPH_LEGACY_UNIT = { pages:'ephPages', feuillets:'ephFeuillets', volets:'ephVolets' };
+function ephComposition(it){
+  const out = {};
+  let vide = true;
+  EPH_COMPO_PARTS.forEach(pt=>{
+    const n = Number(it && it[pt.key]);
+    out[pt.key] = (n > 0) ? n : null;
+    if(out[pt.key]) vide = false;
+  });
+  // Aucun compteur renseigné : on retombe sur l'ancienne saisie, si elle existe.
+  if(vide && it && Number(it.etendue) > 0){
+    const k = _EPH_LEGACY_UNIT[it.etendueUnite || 'pages'];
+    if(k) out[k] = Number(it.etendue);
+  }
+  return out;
 }
-// Une page = un côté de feuillet : un document paginé compte donc deux fois moins de
-// feuillets que de pages (arrondi au supérieur pour une pagination impaire).
-function feuilletsPourPages(n){
-  const p = Number(n);
-  if(!p || p < 1) return null;
-  return Math.ceil(p / 2);
+// Phrase lisible : « 10 pages · 2 feuillets · 2 volantes ». Vide si rien n'est renseigné.
+function ephCompositionText(it){
+  const c = ephComposition(it);
+  return EPH_COMPO_PARTS
+    .filter(pt=>c[pt.key])
+    .map(pt=>{ const n=c[pt.key], paire=(_lang==='en'?pt.en:pt.fr); return `${n} ${n===1?paire[0]:paire[1]}`; })
+    .join(' · ');
 }
-// Mention grise à côté du champ Composition : n'a de sens que si l'unité saisie est la page.
-function _updateFeuilletsHint(){
-  const el = document.getElementById('ephFeuilletsHint');
+function _updateCompoPreview(){
+  const el = document.getElementById('ephCompoPreview');
   if(!el) return;
-  const unite = document.getElementById('itemEtendueUnite')?.value;
-  const f = unite === 'pages' ? feuilletsPourPages(document.getElementById('itemEtendue')?.value) : null;
-  el.textContent = f ? `= ${f} ${_uniteLabel('feuillets', f)}` : '';
+  const lu = {};
+  EPH_COMPO_PARTS.forEach(pt=>{
+    const inp = document.getElementById('item' + pt.key.charAt(0).toUpperCase() + pt.key.slice(1));
+    lu[pt.key] = inp ? inp.value : '';
+  });
+  el.textContent = ephCompositionText(lu);
 }
 let _EPH_MULTI_NORM = null;
 function uniteEtendue(type){
@@ -2920,9 +2943,7 @@ function adaptEphemereType(type){
   const champEtendue = document.getElementById('ephFieldEtendue');
   if(champEtendue){
     champEtendue.style.display = unite ? '' : 'none';
-    const selUnite = document.getElementById('itemEtendueUnite');
-    if(unite && selUnite && !selUnite.dataset.userSet) selUnite.value = unite;
-    _updateFeuilletsHint();
+    _updateCompoPreview();
   }
 
   // Tirage limité et dédicace concernent tous les éphémères : n'importe quel
@@ -3217,7 +3238,7 @@ const SB = (() => {
     // Éphémères — synchronisés dans le JSONB « contenus » (aucune colonne SQL à créer)
     'typeDocument','technique','evenement','dateEvenement','lieuEvenement','hote',
     'publication','dateParution','rubrique','pagination','sourceUrl','albumSource','albumSourceId','exlibrisImageIdx',
-    'etendue','etendueUnite',
+    'etendue','etendueUnite','ephPages','ephFeuillets','ephVolets','ephVolantes',
     'titrePromu','support','diffusion','matiere','quantite','expediteur','destinataire','dateCorrespondance','supportCorr',
     'colleDansAlbum','lu','dateLecture','preteA','datePret','retourPrevu'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
@@ -4621,10 +4642,6 @@ function openItemForm(id=null, opts={}){
   _lastSavedItemId = null;
   _bulkEditIds = null;
   _bulkClearLocation = false;
-  // Unité d'étendue : oublier le choix manuel de la fiche précédente, sinon le
-  // type du nouveau document ne pourrait plus imposer son unité par défaut.
-  const _uEt = document.getElementById('itemEtendueUnite');
-  if(_uEt) delete _uEt.dataset.userSet;
   currentItemImages = [];
   currentItemImageNames = [];
   _exlibrisImgIdx = -1;
@@ -4693,10 +4710,12 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemDateParution").value = it.dateParution||"";
     document.getElementById("itemRubrique").value     = it.rubrique||"";
     document.getElementById("itemPagination").value   = it.pagination||"";
-    document.getElementById("itemEtendue").value      = it.etendue||"";
-    const _selU = document.getElementById("itemEtendueUnite");
-    _selU.value = it.etendueUnite || "pages";
-    _updateFeuilletsHint();
+    const _compo = ephComposition(it);      // reprend l'ancien couple si besoin
+    EPH_COMPO_PARTS.forEach(pt=>{
+      const el = document.getElementById('item' + pt.key.charAt(0).toUpperCase() + pt.key.slice(1));
+      if(el) el.value = _compo[pt.key] || "";
+    });
+    _updateCompoPreview();
     delete _selU.dataset.userSet;   // le type pourra réimposer son unité par défaut
     document.getElementById("itemSourceUrl").value    = it.sourceUrl||"";
     document.getElementById("itemAlbumSourceId").value   = it.albumSourceId||"";
@@ -5202,8 +5221,14 @@ async function saveItem(e){
     dateParution:    document.getElementById("itemDateParution")?.value.trim()||"",
     rubrique:        document.getElementById("itemRubrique")?.value.trim()||"",
     pagination:      document.getElementById("itemPagination")?.value.trim()||"",
-    etendue:         parseInt(document.getElementById("itemEtendue")?.value)||null,
-    etendueUnite:    document.getElementById("itemEtendueUnite")?.value||"pages",
+    // Composition (éphémères) : quatre compteurs. L'ancien couple est remis à zéro à
+    // l'enregistrement pour qu'il n'existe qu'une seule source de vérité.
+    ephPages:        parseInt(document.getElementById("itemEphPages")?.value)||null,
+    ephFeuillets:    parseInt(document.getElementById("itemEphFeuillets")?.value)||null,
+    ephVolets:       parseInt(document.getElementById("itemEphVolets")?.value)||null,
+    ephVolantes:     parseInt(document.getElementById("itemEphVolantes")?.value)||null,
+    etendue:         null,
+    etendueUnite:    "",
     sourceUrl:       document.getElementById("itemSourceUrl")?.value.trim()||"",
     albumSource:     _albSrc,
     albumSourceId:   _albMatch ? _albMatch.id : "",
@@ -8479,12 +8504,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
     + F(T('Année','Year'), it.anneeEdition)
     + F('Format', it.format)
     + F(T("Technique d'impression",'Printing technique'), it.technique)
-    + F(T('Composition','Composition'), (()=>{
-        if(!it.etendue) return '';
-        const base = `${it.etendue} ${_uniteLabel(it.etendueUnite, it.etendue)}`;
-        const f = (it.etendueUnite||'pages') === 'pages' ? feuilletsPourPages(it.etendue) : null;
-        return f ? `${base} — ${f} ${_uniteLabel('feuillets', f)}` : base;
-      })())
+    + F(T('Composition','Composition'), ephCompositionText(it))
     + albumLine;
 
   // Bloc spécifique piloté par la FAMILLE du type de document
