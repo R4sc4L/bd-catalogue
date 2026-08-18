@@ -324,6 +324,13 @@
   .book-spine.located,.pile-strip.located,.drawer-face.located,.pile-block.located{box-shadow:0 0 0 3px #4a9eff,0 0 16px rgba(74,158,255,.75);z-index:50;position:relative}
   /* Barre flottante de localisation : segments accolés dans une même pastille.
      « Ouvrir à la bonne page » n'apparaît que pour un document rangé dans un classeur. */
+  /* Échec du chargement initial : panneau explicite plutôt qu'une application vide. */
+  #initErrorPanel{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(10,9,14,.82);backdrop-filter:blur(3px)}
+  #initErrorPanel .ie-card{background:var(--bg-panel);border:1px solid var(--border-warm);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:26px 30px;max-width:min(92vw,460px);text-align:center}
+  #initErrorPanel .ie-title{font-size:18px;font-weight:700;color:var(--gold);margin-bottom:10px}
+  #initErrorPanel .ie-msg{color:var(--ink);font-size:14px;line-height:1.5;margin:0 0 10px}
+  #initErrorPanel .ie-detail{color:var(--ink-soft);font-size:12px;line-height:1.45;margin:0 0 18px;word-break:break-word}
+  #initErrorPanel .ie-retry{padding:10px 22px;font-size:15px}
   #locateAgainBtn{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:500;display:flex;align-items:stretch;background:#4a9eff;color:#fff;border-radius:24px;box-shadow:0 6px 24px rgba(0,0,0,.5);max-width:min(92vw,720px);overflow:hidden}
   #locateAgainBtn .seg{display:flex;gap:8px;align-items:center;background:none;border:none;color:#fff;font-family:inherit;font-size:14px;font-weight:600;padding:10px 18px;cursor:pointer;min-width:0;border-radius:0;transition:background .15s}
   #locateAgainBtn .seg:hover{background:rgba(0,0,0,.18)}
@@ -3267,16 +3274,37 @@ let db;
 /* ═══ Sélection automatique du moteur de stockage : local (IndexedDB) hors-ligne, cloud (Supabase) sur github.io ═══ */
 const CLOUD = /(^|\.)github\.io$/i.test(location.hostname) || /[?&#]cloud\b/i.test(location.href);
 let _sbLibPromise = null;
+// Chargement de la librairie Supabase depuis le CDN.
+// Point important : la promesse n'est mémorisée QUE si elle aboutit. Mémoriser un échec
+// condamnait la page entière — tout appel ultérieur recevait la même promesse rejetée,
+// et seul un rechargement complet permettait de retenter. C'est la cause principale des
+// démarrages « application vide » sur une connexion instable.
+// Trois tentatives, avec une attente croissante, et le <script> raté est retiré du DOM.
 function ensureSupabaseLib(){
   if(!CLOUD) return Promise.resolve();
   if(window.supabase) return Promise.resolve();
   if(_sbLibPromise) return _sbLibPromise;
-  _sbLibPromise = new Promise((resolve,reject)=>{
+  const charger = () => new Promise((resolve,reject)=>{
     const s=document.createElement('script');
     s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-    s.onload=()=>resolve(); s.onerror=()=>reject(new Error('Échec du chargement de la librairie Supabase'));
+    s.onload=()=>resolve();
+    s.onerror=()=>{ s.remove(); reject(new Error(T('Échec du chargement de la librairie Supabase','Failed to load the Supabase library'))); };
     document.head.appendChild(s);
   });
+  _sbLibPromise = (async ()=>{
+    let derniere;
+    for(let essai=1; essai<=3; essai++){
+      try { await charger(); return; }
+      catch(e){
+        derniere = e;
+        console.warn(`[Supabase] chargement de la librairie — tentative ${essai}/3 échouée`, e);
+        if(essai < 3) await new Promise(r=>setTimeout(r, essai*700));
+      }
+    }
+    throw derniere;
+  })();
+  // Un échec ne doit rien mémoriser : le prochain appel repart de zéro.
+  _sbLibPromise.catch(()=>{ _sbLibPromise = null; });
   return _sbLibPromise;
 }
 const SB_URL_DEFAULT = "https://vnoavfxnvnerrlzgurgu.supabase.co";
@@ -3354,13 +3382,39 @@ const SB = (() => {
   }
   function fail(e, ctx){ throw new Error((ctx?ctx+' : ':'')+(e.message||JSON.stringify(e))); }
   async function q(p, ctx){ const {data, error} = await p; if(error) fail(error, ctx); return data; }
+
+  // Une erreur d'authentification ou de droits ne se règle pas en réessayant : inutile
+  // d'insister. Tout le reste (coupure réseau, 5xx, quota) est considéré comme passager.
+  function _erreurPassagere(e){
+    const m = String((e && e.message) || e).toLowerCase();
+    if(/jwt|unauthorized|forbidden|non connect|not signed in|invalid api key|row-level security|permission/.test(m)) return false;
+    return true;
+  }
+  // Rejoue une lecture jusqu'à 3 fois. Les lectures sont idempotentes : réessayer est sans
+  // effet de bord. Sans cela, UNE requête ratée sur les quatorze du chargement initial
+  // suffisait à laisser l'application vide.
+  async function _reessayer(fabrique, ctx){
+    let derniere;
+    for(let essai=1; essai<=3; essai++){
+      try { return await fabrique(); }
+      catch(e){
+        derniere = e;
+        if(!_erreurPassagere(e) || essai === 3) break;
+        console.warn(`[Supabase] ${ctx} — tentative ${essai}/3 échouée, nouvel essai`, e);
+        await new Promise(r=>setTimeout(r, essai*500));
+      }
+    }
+    throw derniere;
+  }
   async function fetchAll(table, order){
     // pagination (par défaut PostgREST limite à 1000)
     const out = [];
     for(let from=0;;from+=1000){
-      let req = client.from(table).select('*').range(from, from+999);
-      if(order) req = req.order(order);
-      const rows = await q(req, table);
+      const rows = await _reessayer(()=>{
+        let req = client.from(table).select('*').range(from, from+999);
+        if(order) req = req.order(order);
+        return q(req, table);
+      }, table);
       out.push(...rows);
       if(rows.length < 1000) break;
     }
@@ -3421,8 +3475,11 @@ const SB = (() => {
     const list = [...new Set(paths.filter(Boolean))];
     for(let i=0;i<list.length;i+=100){
       const part = list.slice(i,i+100);
-      const {data, error} = await client.storage.from('images').createSignedUrls(part, SIGN_TTL);
-      if(error) fail(error, T('URLs signées','signed URLs'));
+      const data = await _reessayer(async ()=>{
+        const {data, error} = await client.storage.from('images').createSignedUrls(part, SIGN_TTL);
+        if(error) fail(error, T('URLs signées','signed URLs'));
+        return data;
+      }, T('URLs signées','signed URLs'));
       data.forEach((d,j)=>{ if(d.signedUrl) map[part[j]] = d.signedUrl; });
     }
     return map;
@@ -3460,7 +3517,7 @@ const SB = (() => {
       fetchAll('images'), fetchAll('souhaits'),
       fetchAll('meubles'), fetchAll('etageres'), fetchAll('etagere_oeuvres'),
       fetchAll('piles'), fetchAll('pile_oeuvres'),
-      q(client.from('profiles').select('*').maybeSingle(), 'profiles'),
+      _reessayer(()=>q(client.from('profiles').select('*').maybeSingle(), 'profiles'), 'profiles'),
     ]);
     R.collBySlug = {}; R.slugByColl = {};
     colls.forEach(c=>{ R.collBySlug[c.slug]=c.id; R.slugByColl[c.id]=c.slug; });
@@ -4781,7 +4838,6 @@ function openItemForm(id=null, opts={}){
     const _en = document.getElementById('itemEphEncartes');
     if(_en) _en.value = _compo.encartes ? "1" : "";
     _updateCompoPreview();
-    delete _selU.dataset.userSet;   // le type pourra réimposer son unité par défaut
     document.getElementById("itemSourceUrl").value    = it.sourceUrl||"";
     document.getElementById("itemAlbumSourceId").value   = it.albumSourceId||"";
     document.getElementById("itemAlbumSourceText").value = it.albumSourceId ? "" : (it.albumSource||"");
@@ -13134,7 +13190,33 @@ async function _initApp(){
   } catch(err){
     console.error(err);
     toast(T("Erreur d'initialisation : ","Initialisation error: ")+err.message, "error");
+    // Un toast disparaît : l'utilisateur se retrouvait devant une application vide sans
+    // savoir qu'un rechargement était nécessaire. On affiche donc un panneau explicite,
+    // avec un bouton qui relance l'initialisation sans recharger la page.
+    _showInitError(err);
   }
+}
+
+// Panneau d'échec de chargement. Volontairement sobre et autonome : il doit fonctionner
+// même quand rien d'autre n'a pu être initialisé.
+function _showInitError(err){
+  document.getElementById('initErrorPanel')?.remove();
+  const box = document.createElement('div');
+  box.id = 'initErrorPanel';
+  box.innerHTML =
+      `<div class="ie-card">
+        <div class="ie-title">${T('Chargement impossible','Loading failed')}</div>
+        <p class="ie-msg">${T('Les données n\'ont pas pu être récupérées. C\'est le plus souvent une connexion momentanément coupée.','Data could not be retrieved. This is usually a momentary connection drop.')}</p>
+        <p class="ie-detail">${escapeHTML(String(err && err.message || err))}</p>
+        <button type="button" class="ie-retry">${T('Réessayer','Retry')}</button>
+      </div>`;
+  document.body.appendChild(box);
+  box.querySelector('.ie-retry').onclick = async ()=>{
+    const b = box.querySelector('.ie-retry');
+    b.disabled = true; b.textContent = T('Chargement…','Loading…');
+    box.remove();
+    try { await _initApp(); } catch(e){ _showInitError(e); }
+  };
 }
 
 // ── Démarrage : thème + vérification session ──
