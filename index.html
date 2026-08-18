@@ -739,6 +739,9 @@
   .fb-page{background:#faf6ec;color:#2a241c;overflow:hidden;position:relative;display:flex;flex-direction:column;box-sizing:border-box}
   .fb-page.fb-left{border-radius:4px 0 0 4px;box-shadow:inset -10px 0 20px -10px rgba(0,0,0,.35)}
   .fb-page.fb-right{border-radius:0 4px 4px 0;box-shadow:inset 10px 0 20px -10px rgba(0,0,0,.35)}
+  .fb-open{cursor:pointer}
+  .fb-open:hover{background:#f1e7cf}
+  .fb-imgwrap.fb-open:hover img{box-shadow:0 5px 18px rgba(0,0,0,.38)}
   .fb-imgwrap{flex:1;display:flex;align-items:center;justify-content:center;padding:14px;min-height:0;background:#faf6ec}
   .fb-imgwrap img{max-width:100%;max-height:100%;object-fit:contain;box-shadow:0 3px 12px rgba(0,0,0,.28);border-radius:2px}
   .fb-cap{flex-shrink:0;padding:8px 14px 12px;font-size:12.5px;line-height:1.4;text-align:center;color:#5a4d3a;border-top:1px solid rgba(0,0,0,.06)}
@@ -1450,14 +1453,15 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div><label data-en="Printing technique">Technique d'impression</label><input type="text" id="itemTechnique" list="dl-techniques" placeholder="ex: Lithographie, offset, sérigraphie…" data-en-ph="e.g. Lithography, offset, screen print…"></div>
             <!-- Étendue : réservée aux documents multi-feuillets (voir EPHEMERE_MULTIFEUILLET) -->
             <div id="ephFieldEtendue" style="display:none">
-              <label data-en="Extent">Étendue</label>
-              <div style="display:flex;gap:6px">
-                <input type="number" id="itemEtendue" min="1" placeholder="ex: 32" style="flex:1;min-width:0">
-                <select id="itemEtendueUnite" style="flex:1;min-width:0" onchange="this.dataset.userSet='1'">
+              <label data-en="Composition">Composition</label>
+              <div style="display:flex;gap:6px;align-items:center">
+                <input type="number" id="itemEtendue" min="1" placeholder="ex: 32" style="flex:1;min-width:0" oninput="_updateFeuilletsHint()">
+                <select id="itemEtendueUnite" style="flex:1;min-width:0" onchange="this.dataset.userSet='1';_updateFeuilletsHint()">
                   <option value="pages" data-en="pages">pages</option>
                   <option value="volets" data-en="folds">volets</option>
                   <option value="feuillets" data-en="leaves">feuillets</option>
                 </select>
+                <span id="ephFeuilletsHint" class="muted" style="font-size:12px;white-space:nowrap;text-transform:none;letter-spacing:0"></span>
               </div>
             </div>
           </div>
@@ -2420,6 +2424,11 @@ function categoriesForCollection(id){
 // Retourne la liste de catégories active selon la collection courante
 // Catégories de la collection active. « Ma Collection » = union de toutes (les accepte toutes, lecture seule).
 function activeCategories(){ return categoriesForCollection(_activeCollection); }
+// Même liste, triée alphabétiquement, pour TOUTES les listes de choix présentées à
+// l'utilisateur. On ne trie pas activeCategories() elle-même : son ordre est celui que
+// l'utilisateur définit par glisser-déposer dans les réglages, et c'est lui qui est
+// enregistré. Copie systématique (slice) — sort() modifie le tableau en place.
+function activeCategoriesSorted(){ return activeCategories().slice().sort((a,b)=>a.localeCompare(b,'fr')); }
 async function saveActiveCategories(){
   if(_activeCollection === ALL_COLL) return;                 // géré dans chaque collection, pas ici
   if(_activeCollection === 'pins') await savePinsCategories();
@@ -2823,6 +2832,21 @@ function _uniteLabel(u, n){
   const paire = _lang==='en' ? tbl.en : tbl.fr;
   return solo ? paire[0] : paire[1];
 }
+// Une page = un côté de feuillet : un document paginé compte donc deux fois moins de
+// feuillets que de pages (arrondi au supérieur pour une pagination impaire).
+function feuilletsPourPages(n){
+  const p = Number(n);
+  if(!p || p < 1) return null;
+  return Math.ceil(p / 2);
+}
+// Mention grise à côté du champ Composition : n'a de sens que si l'unité saisie est la page.
+function _updateFeuilletsHint(){
+  const el = document.getElementById('ephFeuilletsHint');
+  if(!el) return;
+  const unite = document.getElementById('itemEtendueUnite')?.value;
+  const f = unite === 'pages' ? feuilletsPourPages(document.getElementById('itemEtendue')?.value) : null;
+  el.textContent = f ? `= ${f} ${_uniteLabel('feuillets', f)}` : '';
+}
 let _EPH_MULTI_NORM = null;
 function uniteEtendue(type){
   if(!_EPH_MULTI_NORM){
@@ -2898,6 +2922,7 @@ function adaptEphemereType(type){
     champEtendue.style.display = unite ? '' : 'none';
     const selUnite = document.getElementById('itemEtendueUnite');
     if(unite && selUnite && !selUnite.dataset.userSet) selUnite.value = unite;
+    _updateFeuilletsHint();
   }
 
   // Tirage limité et dédicace concernent tous les éphémères : n'importe quel
@@ -4342,7 +4367,7 @@ function addCustomCategory(){
 // masquée en vue union « Ma Collection » qui est en lecture seule pour les catégories).
 function _buildItemCategoryOptions(selected=""){
   let html = `<option value="">${T('— Choisir —','— Choose —')}</option>`
-    + activeCategories().map(c=>`<option ${c===selected?'selected':''}>${escapeHTML(c)}</option>`).join("");
+    + activeCategoriesSorted().map(c=>`<option ${c===selected?'selected':''}>${escapeHTML(c)}</option>`).join("");
   if(!isAllCollection()){
     html += `<option value="__new__">${T('+ Créer une nouvelle catégorie','+ Create a new category')}</option>`;
   }
@@ -4561,7 +4586,7 @@ function openBulkEditForm(){
   document.getElementById("itemTitle").removeAttribute("required");
   const catSel = document.getElementById("itemCategory");
   catSel.removeAttribute("required");
-  catSel.innerHTML = '<option value="">— Ne pas modifier —</option>'+activeCategories().map(c=>`<option>${escapeHTML(c)}</option>`).join("");
+  catSel.innerHTML = '<option value="">— Ne pas modifier —</option>'+activeCategoriesSorted().map(c=>`<option>${escapeHTML(c)}</option>`).join("");
 
   // État : option "ne pas modifier" en premier
   const condSel = document.getElementById("itemCondition");
@@ -4671,6 +4696,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemEtendue").value      = it.etendue||"";
     const _selU = document.getElementById("itemEtendueUnite");
     _selU.value = it.etendueUnite || "pages";
+    _updateFeuilletsHint();
     delete _selU.dataset.userSet;   // le type pourra réimposer son unité par défaut
     document.getElementById("itemSourceUrl").value    = it.sourceUrl||"";
     document.getElementById("itemAlbumSourceId").value   = it.albumSourceId||"";
@@ -6100,7 +6126,7 @@ function showCatDropdown(query) {
   const drop = document.getElementById('catSecDropdown');
   const primaryCat = document.getElementById('itemCategory')?.value || '';
   const q = (query||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  const available = activeCategories().filter(c =>
+  const available = activeCategoriesSorted().filter(c =>
     c !== primaryCat &&
     !_catSecondaires.includes(c) &&
     (!q || c.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes(q))
@@ -8453,7 +8479,12 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
     + F(T('Année','Year'), it.anneeEdition)
     + F('Format', it.format)
     + F(T("Technique d'impression",'Printing technique'), it.technique)
-    + F(T('Étendue','Extent'), it.etendue ? `${it.etendue} ${_uniteLabel(it.etendueUnite, it.etendue)}` : '')
+    + F(T('Composition','Composition'), (()=>{
+        if(!it.etendue) return '';
+        const base = `${it.etendue} ${_uniteLabel(it.etendueUnite, it.etendue)}`;
+        const f = (it.etendueUnite||'pages') === 'pages' ? feuilletsPourPages(it.etendue) : null;
+        return f ? `${base} — ${f} ${_uniteLabel('feuillets', f)}` : base;
+      })())
     + albumLine;
 
   // Bloc spécifique piloté par la FAMILLE du type de document
@@ -8533,7 +8564,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
         ${it.sousTitre?`<p class="muted" style="font-size:18px;margin-top:-8px">${escapeHTML(it.sousTitre)}</p>`:""}
         <div style="margin:12px 0">${authors||`<span class="muted">${t('detail.no_author')}</span>`}</div>
         ${it.tags&&it.tags.length?`<div style="margin-top:8px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
-        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button></div>
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>${_fbBackBtnHTML(it.id)}</div>
       </div>
     </div>
     ${identite?`<div class="panel"><h3>${T('Identité','Identity')}</h3><div class="eph-grid">${identite}</div></div>`:""}
@@ -8564,6 +8595,9 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
 function renderItemDetail(id, pushHistory=true){
   const it = cache.items.find(i=>i.id===id);
   if(!it) return;
+  // Le retour au classeur ne vaut que pour la fiche ouverte depuis la liseuse : dès qu'on
+  // navigue vers une autre œuvre, le contexte tombe.
+  if(_fbFromBinder && _fbFromBinder.itemId !== id) _fbFromBinder = null;
   // Trier : auteurs collectionnés en premier
   const sortedAuteurs = [...(it.auteurs||[])].sort((a,b)=>{
     const ac = authorById(a.auteurId)?.estCollectionne ? 0 : 1;
@@ -8644,6 +8678,7 @@ function renderItemDetail(id, pushHistory=true){
         ${it.tags&&it.tags.length?`<div style="margin-top:12px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
           <button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>
+          ${_fbBackBtnHTML(it.id)}
           ${hasDiaporama&&imgs.length>1&&!imagesLocked?`<button onclick="pcOpenLightbox(0)">▶ ${_lang==='en'?'Slideshow':'Diaporama'} (${imgs.length})</button>`:""}
           ${hasDiaporama&&imgs.length&&imagesLocked?`<button onclick="requireAdultPin(()=>renderItemDetail('${it.id}',false))">🔒 ${_lang==='en'?'Unlock images':'Déverrouiller les images'}</button>`:""}
           ${anyAdultProtected&&_adultUnlocked?`<button class="secondary" style="font-size:12px;padding:4px 10px" onclick="lockAdultContent()">🔒 ${_lang==='en'?'Lock again':'Reverrouiller'}</button>`:""}
@@ -9518,7 +9553,7 @@ function openWishForm(id=null){
   currentWishImage = null;
   renderImagePreview("wish");
   const catSel = document.getElementById("wishCategory");
-  catSel.innerHTML = `<option value="">${T('— Choisir —','— Choose —')}</option>` + CATEGORIES.map(c=>`<option>${escapeHTML(c)}</option>`).join("");
+  catSel.innerHTML = `<option value="">${T('— Choisir —','— Choose —')}</option>` + CATEGORIES.slice().sort((a,b)=>a.localeCompare(b,'fr')).map(c=>`<option>${escapeHTML(c)}</option>`).join("");
   if(id){
     getWishlist().then(all=>{
       const w = all.find(x=>x.id===id);
@@ -12258,9 +12293,38 @@ function _fbPageInner(pg){
   if(!pg) return `<div class="fb-imgwrap fb-blank"></div>`;
   if(pg.type==='cover') return `<div class="fb-imgwrap fb-cover" style="background:${pg.color||'#6d3c3c'}"></div>`;
   const edit = pg.id ? `<button class="fb-edit" title="${T(`Éditer la fiche`,`Edit record`)}" onclick="_fbEditItem(event,'${pg.id}')">✏️</button>` : '';
-  if(pg.type==='img')    return `${edit}<div class="fb-imgwrap">${pg.infos?`<div class="fb-info-tip">${escapeHTML(pg.infos)}</div>`:''}<img src="${_safeUrl(pg.src)}" alt=""></div><div class="fb-cap">${pg.cap}</div>`;
-  if(pg.type==='locked') return `${edit}<div class="fb-empty"><div class="fb-emoji">🔒</div><div>${T("Contenu protégé","Protected content")}</div></div><div class="fb-cap">${pg.cap}</div>`;
-  return `${edit}<div class="fb-empty">${pg.infos?`<div class="fb-info-tip">${escapeHTML(pg.infos)}</div>`:''}<div class="fb-emoji">🖼️</div><div>${T("Pas d'image","No image")}</div></div><div class="fb-cap">${pg.cap}</div>`;
+  // Le contenu de la page ouvre la fiche du document, comme le clic sur la vignette d'un album.
+  // Les marges de la page restent réservées au feuilletage (voir le rappel en bas de liseuse).
+  const oc = pg.id ? ' fb-open' : '';
+  const oa = pg.id ? ` title="${T('Voir la fiche','View the record')}" onclick="_fbOpenFiche(event,'${pg.id}')"` : '';
+  if(pg.type==='img')    return `${edit}<div class="fb-imgwrap${oc}"${oa}>${pg.infos?`<div class="fb-info-tip">${escapeHTML(pg.infos)}</div>`:''}<img src="${_safeUrl(pg.src)}" alt=""></div><div class="fb-cap">${pg.cap}</div>`;
+  if(pg.type==='locked') return `${edit}<div class="fb-empty${oc}"${oa}><div class="fb-emoji">🔒</div><div>${T("Contenu protégé","Protected content")}</div></div><div class="fb-cap">${pg.cap}</div>`;
+  return `${edit}<div class="fb-empty${oc}"${oa}>${pg.infos?`<div class="fb-info-tip">${escapeHTML(pg.infos)}</div>`:''}<div class="fb-emoji">🖼️</div><div>${T("Pas d'image","No image")}</div></div><div class="fb-cap">${pg.cap}</div>`;
+}
+// Contexte « d'où je viens » : renseigné quand on ouvre une fiche depuis la liseuse,
+// pour proposer un retour direct au classeur, à la page quittée.
+let _fbFromBinder = null;
+function _fbOpenFiche(e, id){
+  if(e){ e.stopPropagation(); e.preventDefault(); }
+  const pileId = _fbState ? _fbState.pile.id : null;
+  _fbClose();
+  _fbFromBinder = pileId ? { pileId, itemId:id } : null;
+  renderItemDetail(id);
+}
+// Bouton « Retour au classeur », inséré dans la barre d'actions des deux vues détail
+// (album et éphémère). Vide si l'on n'arrive pas de la liseuse.
+function _fbBackBtnHTML(itemId){
+  if(!_fbFromBinder || _fbFromBinder.itemId !== itemId) return '';
+  const pile = libraryPiles.find(p=>p.id===_fbFromBinder.pileId);
+  if(!pile) return '';
+  return `<button class="secondary" onclick="_fbBackToBinder()" title="${T('Rouvrir le classeur à cette page','Reopen the binder at this page')}">🗂️ ${T('Retour au classeur','Back to binder')}</button>`;
+}
+function _fbBackToBinder(){
+  const ctx = _fbFromBinder;
+  if(!ctx) return;
+  _fbFromBinder = null;
+  showView('library');
+  openClasseurReader(ctx.pileId, ctx.itemId);
 }
 function _fbEditItem(e, id){
   if(e){ e.stopPropagation(); e.preventDefault(); }
@@ -12316,7 +12380,7 @@ function openClasseurReader(pileId, focusItemId=null){
         <button class="fb-jump" id="fbLast" title="${T(`Dernière page (Fin)`,`Last page (End)`)}">⏭</button>
       </div>
     </div>
-    <div class="fb-hint">${T("Cliquez les bords ou utilisez ← → · Début / Fin pour les extrémités · Échap pour fermer","Click the edges or use ← → · Home / End to jump to the ends · Esc to close")}</div>`;
+    <div class="fb-hint">${T("Cliquez le document pour voir sa fiche · les bords ou ← → pour tourner · Début / Fin pour les extrémités · Échap pour fermer","Click a document to view its record · the edges or ← → to turn · Home / End to jump to the ends · Esc to close")}</div>`;
   document.body.appendChild(backdrop);
   let _startSpread = 0;
   if(focusItemId){ const _pi = pages.findIndex(p=>p && p.id===focusItemId); if(_pi>=0) _startSpread = Math.floor(_pi/2); }
