@@ -368,7 +368,10 @@
   .eph-compo > div{display:flex;flex-direction:column;gap:3px;width:78px}
   .eph-compo input{width:100%;text-align:center}
   .eph-compo > div > span{font-size:11px;color:var(--ink-soft);text-align:center;line-height:1.2}
+  .eph-compo > div.wide{width:132px}
+  .eph-compo select{width:100%}
   .eph-compo-preview{font-size:12.5px;align-self:center;padding:0 0 14px 6px;text-transform:none;letter-spacing:0}
+  .eph-compo-ecart{font-size:12px;align-self:center;padding:0 0 14px 4px;color:var(--gold);text-transform:none;letter-spacing:0;white-space:nowrap}
   @media(max-width:700px){.form-grid,.form-grid.three{grid-template-columns:1fr}.form-grid .span-2,.form-grid .span-3{grid-column:span 1}}
   /* Espacement normé des groupes de cases (tokens réutilisables) */
   :root{ --space-group:20px; --space-title:12px; --space-row:8px; --space-col:16px; }
@@ -1463,11 +1466,19 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div id="ephFieldEtendue" class="span-2" style="display:none">
               <label data-en="Composition">Composition</label>
               <div class="eph-compo">
-                <div><input type="number" id="itemEphPages" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="pages">pages</span></div>
-                <div><input type="number" id="itemEphFeuillets" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="leaves">feuillets</span></div>
-                <div><input type="number" id="itemEphVolets" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="folds">volets</span></div>
-                <div><input type="number" id="itemEphVolantes" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="loose">volantes</span></div>
+                <div><input type="number" id="itemEphPages" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="printed pages">pages imprimées</span></div>
+                <div><input type="number" id="itemEphCahiers" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="gatherings">cahiers</span></div>
+                <div><input type="number" id="itemEphVolants" min="0" placeholder="—" oninput="_updateCompoPreview()"><span data-en="single leaves">feuillets simples</span></div>
+                <div class="wide"><select id="itemEphEncartes" onchange="_updateCompoPreview()">
+                    <option value="" data-en="loose">volants</option>
+                    <option value="1" data-en="inserted">encartés</option>
+                  </select><span data-en="position">position</span></div>
+                <div class="wide"><select id="itemEphRectoSeul" onchange="_updateCompoPreview()">
+                    <option value="" data-en="both sides">recto-verso</option>
+                    <option value="1" data-en="single-sided">recto seul</option>
+                  </select><span data-en="printing">impression</span></div>
                 <span class="eph-compo-preview muted" id="ephCompoPreview"></span>
+                <span class="eph-compo-ecart" id="ephCompoEcart" style="display:none"></span>
               </div>
             </div>
           </div>
@@ -2826,17 +2837,34 @@ const EPHEMERE_MULTIFEUILLET = {
   'Dossier de presse'        : 'feuillets',
   "Lettre d'information"     : 'pages',
 };
-// Composition d'un éphémère : quatre compteurs facultatifs et indépendants.
-// Reprise de l'ancien couple `etendue` + `etendueUnite` : tant qu'une fiche n'a pas été
-// réenregistrée, sa valeur d'origine alimente le compteur correspondant. La fiche reste
-// donc lisible sans aucune migration de données.
+// ============================================================
+// COMPOSITION D'UN ÉPHÉMÈRE
+// ------------------------------------------------------------
+// Vocabulaire retenu (celui de l'imprimeur, pas celui du catalogueur) :
+//   page    : un côté imprimé
+//   feuillet: une feuille — 2 pages
+//   cahier  : une feuille pliée en deux — 4 pages
+// Trois compteurs structurels, tous facultatifs : pages imprimées, cahiers,
+// feuillets volants (non reliés). Le mode d'impression ne concerne que les volants,
+// souvent imprimés d'un seul côté.
+// Rien n'est déduit ni corrigé : le total attendu sert uniquement de contrôle
+// indicatif, car un cahier peut parfaitement se terminer sur une page blanche.
+// ============================================================
+const EPH_PAGES_PAR_CAHIER = 4;
+// `ephVolants` compte des feuillets simples — une feuille non pliée. Leur état (libre ou
+// inséré dans les cahiers) est porté à part par `ephVolantsEncartes`, car il ne change
+// rien au décompte des pages mais tout à la description de l'objet.
 const EPH_COMPO_PARTS = [
-  { key:'ephPages',    fr:['page','pages'],         en:['page','pages'] },
-  { key:'ephFeuillets',fr:['feuillet','feuillets'], en:['leaf','leaves'] },
-  { key:'ephVolets',   fr:['volet','volets'],       en:['fold','folds'] },
-  { key:'ephVolantes', fr:['volante','volantes'],   en:['loose sheet','loose sheets'] },
+  { key:'ephPages',   fr:['page imprimée','pages imprimées'], en:['printed page','printed pages'] },
+  { key:'ephCahiers', fr:['cahier','cahiers'],                en:['gathering','gatherings'] },
+  { key:'ephVolants', fr:['feuillet volant','feuillets volants'], en:['loose leaf','loose leaves'],
+    frEncarte:['feuillet encarté','feuillets encartés'], enEncarte:['inserted leaf','inserted leaves'] },
 ];
-const _EPH_LEGACY_UNIT = { pages:'ephPages', feuillets:'ephFeuillets', volets:'ephVolets' };
+// Reprise de l'existant, tant qu'une fiche n'a pas été réenregistrée :
+//  - ancien couple `etendue` + `etendueUnite` (avant les compteurs) ;
+//  - compteurs de la version intermédiaire : « feuillets » et « volantes » désignaient
+//    tous deux des feuilles non reliées, ils alimentent donc « feuillets volants ».
+const _EPH_LEGACY_UNIT = { pages:'ephPages', feuillets:'ephVolants', volets:'ephVolants' };
 function ephComposition(it){
   const out = {};
   let vide = true;
@@ -2845,30 +2873,62 @@ function ephComposition(it){
     out[pt.key] = (n > 0) ? n : null;
     if(out[pt.key]) vide = false;
   });
-  // Aucun compteur renseigné : on retombe sur l'ancienne saisie, si elle existe.
+  out.rectoSeul = !!(it && it.ephVolantsRectoSeul);
+  out.encartes  = !!(it && it.ephVolantsEncartes);
+  if(vide && it){
+    const anciensVolants = (Number(it.ephFeuillets)||0) + (Number(it.ephVolantes)||0) + (Number(it.ephVolets)||0);
+    if(anciensVolants > 0){ out.ephVolants = anciensVolants; vide = false; }
+  }
   if(vide && it && Number(it.etendue) > 0){
     const k = _EPH_LEGACY_UNIT[it.etendueUnite || 'pages'];
-    if(k) out[k] = Number(it.etendue);
+    if(k) out[k] = (out[k] || 0) + Number(it.etendue);
   }
   return out;
 }
-// Phrase lisible : « 10 pages · 2 feuillets · 2 volantes ». Vide si rien n'est renseigné.
+// Total attendu d'après la structure. null si aucun élément structurel n'est saisi.
+function ephPagesAttendues(c){
+  if(!c.ephCahiers && !c.ephVolants) return null;
+  return (c.ephCahiers || 0) * EPH_PAGES_PAR_CAHIER
+       + (c.ephVolants || 0) * (c.rectoSeul ? 1 : 2);
+}
+// Phrase lisible : « 10 pages imprimées · 2 cahiers · 2 feuillets encartés (recto seul) ».
 function ephCompositionText(it){
   const c = ephComposition(it);
-  return EPH_COMPO_PARTS
+  let txt = EPH_COMPO_PARTS
     .filter(pt=>c[pt.key])
-    .map(pt=>{ const n=c[pt.key], paire=(_lang==='en'?pt.en:pt.fr); return `${n} ${n===1?paire[0]:paire[1]}`; })
+    .map(pt=>{
+      const n = c[pt.key];
+      const enc = (pt.key === 'ephVolants') && c.encartes;
+      const paire = _lang==='en' ? (enc ? pt.enEncarte : pt.en) : (enc ? pt.frEncarte : pt.fr);
+      return `${n} ${n===1?paire[0]:paire[1]}`;
+    })
     .join(' · ');
+  if(txt && c.ephVolants && c.rectoSeul) txt += ` (${T('recto seul','single-sided')})`;
+  return txt;
+}
+// Écart entre les pages saisies et le total attendu. '' si tout concorde ou si le
+// contrôle ne s'applique pas. Simple information : aucune saisie n'est empêchée.
+function ephCompositionEcart(it){
+  const c = ephComposition(it);
+  const attendu = ephPagesAttendues(c);
+  if(!attendu || !c.ephPages || attendu === c.ephPages) return '';
+  return T(`structure : ${attendu} pages`, `structure: ${attendu} pages`);
 }
 function _updateCompoPreview(){
   const el = document.getElementById('ephCompoPreview');
   if(!el) return;
-  const lu = {};
+  const lu = {
+    ephVolantsRectoSeul: document.getElementById('itemEphRectoSeul')?.value === '1',
+    ephVolantsEncartes:  document.getElementById('itemEphEncartes')?.value === '1',
+  };
   EPH_COMPO_PARTS.forEach(pt=>{
     const inp = document.getElementById('item' + pt.key.charAt(0).toUpperCase() + pt.key.slice(1));
     lu[pt.key] = inp ? inp.value : '';
   });
+  const ecart = ephCompositionEcart(lu);
   el.textContent = ephCompositionText(lu);
+  const w = document.getElementById('ephCompoEcart');
+  if(w){ w.textContent = ecart ? `⚠ ${ecart}` : ''; w.style.display = ecart ? '' : 'none'; }
 }
 let _EPH_MULTI_NORM = null;
 function uniteEtendue(type){
@@ -3239,6 +3299,7 @@ const SB = (() => {
     'typeDocument','technique','evenement','dateEvenement','lieuEvenement','hote',
     'publication','dateParution','rubrique','pagination','sourceUrl','albumSource','albumSourceId','exlibrisImageIdx',
     'etendue','etendueUnite','ephPages','ephFeuillets','ephVolets','ephVolantes',
+    'ephCahiers','ephVolants','ephVolantsRectoSeul','ephVolantsEncartes',
     'titrePromu','support','diffusion','matiere','quantite','expediteur','destinataire','dateCorrespondance','supportCorr',
     'colleDansAlbum','lu','dateLecture','preteA','datePret','retourPrevu'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
@@ -4710,11 +4771,15 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemDateParution").value = it.dateParution||"";
     document.getElementById("itemRubrique").value     = it.rubrique||"";
     document.getElementById("itemPagination").value   = it.pagination||"";
-    const _compo = ephComposition(it);      // reprend l'ancien couple si besoin
+    const _compo = ephComposition(it);      // reprend les saisies antérieures si besoin
     EPH_COMPO_PARTS.forEach(pt=>{
       const el = document.getElementById('item' + pt.key.charAt(0).toUpperCase() + pt.key.slice(1));
       if(el) el.value = _compo[pt.key] || "";
     });
+    const _rs = document.getElementById('itemEphRectoSeul');
+    if(_rs) _rs.value = _compo.rectoSeul ? "1" : "";
+    const _en = document.getElementById('itemEphEncartes');
+    if(_en) _en.value = _compo.encartes ? "1" : "";
     _updateCompoPreview();
     delete _selU.dataset.userSet;   // le type pourra réimposer son unité par défaut
     document.getElementById("itemSourceUrl").value    = it.sourceUrl||"";
@@ -5224,9 +5289,11 @@ async function saveItem(e){
     // Composition (éphémères) : quatre compteurs. L'ancien couple est remis à zéro à
     // l'enregistrement pour qu'il n'existe qu'une seule source de vérité.
     ephPages:        parseInt(document.getElementById("itemEphPages")?.value)||null,
-    ephFeuillets:    parseInt(document.getElementById("itemEphFeuillets")?.value)||null,
-    ephVolets:       parseInt(document.getElementById("itemEphVolets")?.value)||null,
-    ephVolantes:     parseInt(document.getElementById("itemEphVolantes")?.value)||null,
+    ephCahiers:      parseInt(document.getElementById("itemEphCahiers")?.value)||null,
+    ephVolants:      parseInt(document.getElementById("itemEphVolants")?.value)||null,
+    ephVolantsRectoSeul: document.getElementById("itemEphRectoSeul")?.value === "1",
+    ephVolantsEncartes:  document.getElementById("itemEphEncartes")?.value === "1",
+    ephFeuillets:    null, ephVolets: null, ephVolantes: null,   // compteurs de la version intermédiaire
     etendue:         null,
     etendueUnite:    "",
     sourceUrl:       document.getElementById("itemSourceUrl")?.value.trim()||"",
@@ -8504,7 +8571,10 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
     + F(T('Année','Year'), it.anneeEdition)
     + F('Format', it.format)
     + F(T("Technique d'impression",'Printing technique'), it.technique)
-    + F(T('Composition','Composition'), ephCompositionText(it))
+    + F(T('Composition','Composition'), (()=>{
+        const txt = ephCompositionText(it), e = ephCompositionEcart(it);
+        return txt && e ? `${txt} — ${e}` : txt;
+      })())
     + albumLine;
 
   // Bloc spécifique piloté par la FAMILLE du type de document
