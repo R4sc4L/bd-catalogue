@@ -8595,6 +8595,12 @@ function _attachedToLine(it){
 function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
   const type = it.typeDocument || (_lang==='en'?'Ephemera':'Éphémère');
   const norm = _normCat(type);
+  // Diaporama : la vue éphémère ne l'initialisait pas du tout, la case de la fiche était
+  // donc sans effet. Même mécanique que la vue album — état du carrousel armé ici.
+  const hasDiaporama  = !!it.diaporama;
+  const imagesLocked  = (it.imagesAdultes || it.contenuAdulte) && !_adultUnlocked;
+  const diapoActif    = hasDiaporama && !imagesLocked && imgs.length > 1;
+  if(hasDiaporama){ _pcImgs = imgs; _pcNames = imgNames; _pcIdx = 0; }
   const F = (label, val) => (val===undefined||val===null||val===''||val===0 && typeof val!=='number') ? '' :
     `<div class="eph-f"><span class="eph-l">${escapeHTML(label)}</span><span class="eph-v">${escapeHTML(String(val))}</span></div>`;
 
@@ -8611,10 +8617,10 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
       ? `<button class="card-locate-btn" title="${glued?T(`Localiser l'album qui le contient`,`Locate the album holding it`):T(`Localiser sur l'étagère`,`Locate on shelf`)}" onclick="event.stopPropagation();locateOnShelf('${locId}')">📍</button>`
       : `<button class="card-locate-btn card-locate-empty" title="${T(`Aucune localisation — cliquer pour la définir`,`No location — click to set it`)}" onclick="event.stopPropagation();openItemForm('${it.id}')">📍</button>`}
     ${imgs[0]
-      ? `<img id="detailMainImg" src="${_safeUrl(imgs[0])}" data-imgs="${escapeHTML(JSON.stringify(imgs))}" data-idx="0"${imgs.length>1?` class="cycable" title="${_lang==='en'?'Click to cycle images':'Cliquer pour l\'image suivante'}" onclick="cycleDetailImg()"`:''}>`
+      ? `<img id="detailMainImg" src="${_safeUrl(imgs[0])}" data-imgs="${escapeHTML(JSON.stringify(imgs))}" data-idx="0"${diapoActif?` style="cursor:pointer" title="${_lang==='en'?'Open slideshow':'Ouvrir le diaporama'}" onclick="pcOpenLightbox(0)"`:imgs.length>1?` class="cycable" title="${_lang==='en'?'Click to cycle images':'Cliquer pour l\'image suivante'}" onclick="cycleDetailImg()"`:''}>`
       : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:60px;color:var(--ink-soft)">🗂️</div>`}
     </div>
-    ${imgs.length>1?`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${imgs.map((s,i2)=>{const n=imgNames[i2]||"";const tl=n?escapeHTML(n):(_lang==='en'?`Visual ${i2+1}`:`Visuel ${i2+1}`);return`<div class="detail-thumb${i2===0?' active':''}" data-idx="${i2}" title="${tl}" style="width:60px;height:90px;border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg-panel);cursor:pointer" onclick="jumpDetailImg(${i2})"><img src="${_safeUrl(s)}" style="max-width:100%;max-height:100%;object-fit:contain;pointer-events:none"></div>`}).join("")}</div>`:""}`;
+    ${imgs.length>1?`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${imgs.map((s,i2)=>{const n=imgNames[i2]||"";const tl=n?escapeHTML(n):(_lang==='en'?`Visual ${i2+1}`:`Visuel ${i2+1}`);return`<div class="detail-thumb${i2===0?' active':''}" data-idx="${i2}" title="${tl}" style="width:60px;height:90px;border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg-panel);cursor:pointer" onclick="${diapoActif?`pcOpenLightbox(${i2})`:`jumpDetailImg(${i2})`}"><img src="${_safeUrl(s)}" style="max-width:100%;max-height:100%;object-fit:contain;pointer-events:none"></div>`}).join("")}</div>`:""}`;
 
   // « Livré avec l'album » : lien cliquable si l'album source existe encore, sinon texte
   const albumLine = albObj
@@ -8710,7 +8716,12 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
         ${it.sousTitre?`<p class="muted" style="font-size:18px;margin-top:-8px">${escapeHTML(it.sousTitre)}</p>`:""}
         <div style="margin:12px 0">${authors||`<span class="muted">${t('detail.no_author')}</span>`}</div>
         ${it.tags&&it.tags.length?`<div style="margin-top:8px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
-        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>${_fbBackBtnHTML(it.id)}</div>
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>
+          ${diapoActif?`<button onclick="pcOpenLightbox(0)">▶ ${_lang==='en'?'Slideshow':'Diaporama'} (${imgs.length})</button>`:''}
+          ${hasDiaporama&&imgs.length&&imagesLocked?`<button onclick="requireAdultPin(()=>renderItemDetail('${it.id}',false))">🔒 ${_lang==='en'?'Unlock images':'Déverrouiller les images'}</button>`:''}
+          ${_fbBackBtnHTML(it.id)}
+        </div>
       </div>
     </div>
     ${identite?`<div class="panel"><h3>${T('Identité','Identity')}</h3><div class="eph-grid">${identite}</div></div>`:""}
@@ -12413,7 +12424,16 @@ function _classeurPages(pile){
     const cap = _fbCaption(it);
     const infos = (it.informations||'').trim();
     if(locked) return [{type:'locked', cap, id:it.id, infos}];
-    if(imgs.length) return imgs.map((src,i)=>({type:'img', src, id:it.id, infos, cap: imgs.length>1 ? cap+` <span style="opacity:.55">(${i+1}/${imgs.length})</span>` : cap}));
+    // Un document = une page. Seul le premier visuel est feuilleté : les suivants
+    // (verso, détails, variantes) alourdissaient la pagination du classeur sans rien
+    // apporter à la lecture. Ils restent accessibles depuis la fiche, via le diaporama.
+    if(imgs.length){
+      const autres = imgs.length - 1;
+      const legende = autres > 0
+        ? cap + ` <span style="opacity:.55">(+${autres} ${autres===1?T('visuel','visual'):T('visuels','visuals')})</span>`
+        : cap;
+      return [{type:'img', src:imgs[0], id:it.id, infos, cap:legende}];
+    }
     return [{type:'empty', cap, id:it.id, infos}];
   };
   // Le N° de page saisi = emplacement ABSOLU (prioritaire). Les trous deviennent des pages blanches.
