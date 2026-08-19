@@ -314,6 +314,8 @@
   .card-locate-btn{position:absolute;top:8px;left:8px;width:32px;height:32px;padding:0;border-radius:50%;background:rgba(14,13,19,.85);color:var(--ink);box-shadow:var(--shadow);font-size:14px;z-index:2;border:1px solid var(--border-warm);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
   .card-locate-btn:hover{background:#4a9eff;color:#fff;border-color:transparent}
   .card-locate-btn.card-locate-empty{opacity:.35;filter:grayscale(1)}
+  .guest-hidden{display:none !important}
+  body.guest-mode .card-edit-btn{display:none !important}
   .card-locate-btn.card-locate-empty:hover{opacity:1;filter:none;background:var(--gold-bg);color:var(--on-accent)}
   .grid.grid-sm .card-locate-btn{width:26px;height:26px;font-size:12px}
   .bulk-mode .card-locate-btn{display:none}
@@ -331,6 +333,15 @@
   #initErrorPanel .ie-msg{color:var(--ink);font-size:14px;line-height:1.5;margin:0 0 10px}
   #initErrorPanel .ie-detail{color:var(--ink-soft);font-size:12px;line-height:1.45;margin:0 0 18px;word-break:break-word}
   #initErrorPanel .ie-retry{padding:10px 22px;font-size:15px}
+  /* ── Page invité ── */
+  #guestBanner{position:fixed;left:0;right:0;bottom:0;z-index:400;background:var(--bg-alt);border-top:1px solid var(--border-warm);color:var(--ink-soft);font-size:12px;text-align:center;padding:6px 12px;letter-spacing:.02em}
+  body.guest-mode{padding-bottom:32px}
+  .guest-binders{display:flex;flex-wrap:wrap;gap:16px}
+  .guest-binder{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:190px;padding:14px 16px 14px 22px;position:relative;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;text-align:left;box-shadow:var(--shadow)}
+  .guest-binder:hover{border-color:var(--accent)}
+  .guest-binder .gb-spine{position:absolute;left:0;top:0;bottom:0;width:10px;border-radius:var(--radius) 0 0 var(--radius);background:var(--cl,#6d3c3c)}
+  .guest-binder .gb-name{font-weight:700;color:var(--ink);font-size:15px}
+  .guest-binder .gb-count{font-size:12px;color:var(--ink-soft)}
   #locateAgainBtn{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:500;display:flex;align-items:stretch;background:#4a9eff;color:#fff;border-radius:24px;box-shadow:0 6px 24px rgba(0,0,0,.5);max-width:min(92vw,720px);overflow:hidden}
   #locateAgainBtn .seg{display:flex;gap:8px;align-items:center;background:none;border:none;color:#fff;font-family:inherit;font-size:14px;font-weight:600;padding:10px 18px;cursor:pointer;min-width:0;border-radius:0;transition:background .15s}
   #locateAgainBtn .seg:hover{background:rgba(0,0,0,.18)}
@@ -507,10 +518,14 @@
   .detail-header{display:grid;grid-template-columns:280px 1fr;gap:24px;margin-bottom:24px}
   /* ── Portfolio carousel ── */
   .portfolio-carousel{background:var(--bg-alt);border:1px solid var(--border-warm);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
-  .pc-stage{position:relative;display:flex;align-items:center;justify-content:center;background:#0a0914;min-height:480px;max-height:70vh;overflow:hidden}
-  .pc-img-wrap{display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:20px;box-sizing:border-box;transition:opacity .2s}
+  /* Hauteur d'affichage CONSTANTE, quelle que soit la largeur de l'image : une double
+     page (un cahier ouvert) s'affiche à la même hauteur qu'une page seule, et devient
+     simplement deux fois plus large. Sans cela, une image large était ajustée sur la
+     largeur et se retrouvait deux fois plus basse qu'une page simple. */
+  .pc-stage{position:relative;display:flex;align-items:center;justify-content:flex-start;background:#0a0914;min-height:480px;max-height:70vh;overflow-x:auto;overflow-y:hidden}
+  .pc-img-wrap{display:flex;align-items:center;justify-content:center;min-width:100%;height:100%;padding:20px;box-sizing:border-box;transition:opacity .2s}
   .pc-img-wrap.fading{opacity:0}
-  .pc-img-wrap img{max-width:100%;max-height:calc(70vh - 40px);object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.7);border-radius:2px}
+  .pc-img-wrap img{height:calc(70vh - 40px);width:auto;max-width:none;flex:none;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.7);border-radius:2px}
   .pc-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(14,13,19,.75);border:1px solid var(--border-warm);color:var(--ink);width:44px;height:64px;border-radius:6px;font-size:24px;cursor:pointer;z-index:10;backdrop-filter:blur(6px);transition:background .15s,transform .1s}
   .pc-nav:hover{background:var(--accent-bg);color:var(--on-accent);transform:translateY(-50%) scale(1.05)}
   .pc-nav:disabled{opacity:.2;cursor:default;pointer-events:none}
@@ -544,8 +559,16 @@
   #linkEditionModal .lem-title{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #linkEditionModal .lem-sub{font-size:11px;color:var(--ink-soft)}
   .edition-link-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-soft);background:var(--bg-alt);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle}
-  #pcLightbox{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9500;display:flex;align-items:center;justify-content:center;cursor:zoom-out}
-  #pcLightbox img{max-width:92vw;max-height:92vh;object-fit:contain;box-shadow:0 0 80px rgba(0,0,0,.8)}
+  #pcLightbox{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9500;display:flex;align-items:center;justify-content:flex-start;cursor:zoom-out;overflow-x:auto;overflow-y:hidden}
+  #pcLightbox img{height:92vh;width:auto;max-width:none;flex:none;margin:auto;object-fit:contain;box-shadow:0 0 80px rgba(0,0,0,.8)}
+  /* Sur écran étroit, une double page à pleine hauteur imposerait un défilement pénible :
+     on repasse à un ajustement sur la largeur. */
+  @media(max-width:700px){
+    .pc-img-wrap img{height:auto;max-width:100%;max-height:calc(70vh - 40px)}
+    .pc-stage{overflow-x:hidden;justify-content:center}
+    #pcLightbox{overflow-x:hidden;justify-content:center}
+    #pcLightbox img{height:auto;max-width:96vw;max-height:92vh}
+  }
   #pcLightbox .pc-nav{position:fixed;top:50%;transform:translateY(-50%)}
   /* Portfolio info layout */
   .portfolio-detail-info{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
@@ -1269,6 +1292,10 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <button class="secondary" data-en="📊 Export the collection (CSV)" onclick="exportCSV('items')">📊 Exporter la collection (CSV)</button>
           <button class="secondary" data-en="👥 Export authors (CSV)" onclick="exportCSV('authors')">👥 Exporter les auteurs (CSV)</button>
         </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:20px 0 16px">
+        <h3 data-en="👀 Guest version">👀 Version invité</h3>
+        <p class="muted" data-en="Generates a standalone, read-only page: collection, records, authors and binders. Purchase prices, estimates, storage locations, loans, personal notes and the wishlist are absent from the file — not merely hidden. The page holds no key and no database access: nothing can be written to it. Publish it separately from your own version.">Génère une page autonome en lecture seule : collection, fiches, auteurs et classeurs. Prix d'achat, cotes, rangements, prêts, notes personnelles et souhaits sont absents du fichier — pas seulement masqués. La page ne contient aucune clé ni accès à la base : rien ne peut y être écrit. À publier séparément de ta propre version.</p>
+        <button id="genGuestBtn" class="secondary" data-en="👥 Generate guest version" onclick="genererVersionInvite()" style="margin-top:12px">👥 Générer la version invité</button>
       </div>
       <div class="panel">
         <h3 data-en="📥 Import">📥 Importer</h3>
@@ -3283,6 +3310,14 @@ let db;
 
 /* ═══ Sélection automatique du moteur de stockage : local (IndexedDB) hors-ligne, cloud (Supabase) sur github.io ═══ */
 const CLOUD = /(^|\.)github\.io$/i.test(location.hostname) || /[?&#]cloud\b/i.test(location.href);
+// ============================================================
+// MODE INVITÉ (lecture seule)
+// ------------------------------------------------------------
+// Une page invité est une COPIE de cette application dans laquelle un instantané des
+// données a été injecté (voir genererVersionInvite). Elle ne contient ni identifiants,
+// ni accès à la base : rien ne peut y être écrit, même en manipulant la page. Les
+// données sensibles ne sont pas masquées, elles sont absentes du fichier.
+const GUEST = !!window.__GUEST__;
 let _sbLibPromise = null;
 // Chargement de la librairie Supabase depuis le CDN.
 // Point important : la promesse n'est mémorisée QUE si elle aboutit. Mémoriser un échec
@@ -3991,6 +4026,33 @@ const SB = (() => {
     },
     async signOut(){ if(client) await client.auth.signOut(); },
     userEmail(){ return client?.auth?.getSession ? null : null; },
+    // Re-signe toutes les images avec une durée longue, pour la page invité.
+    // Renvoie { items:{id:[url…]}, authors:{id:url} } — même ordre que dans le cache.
+    async signLong(ttlSeconds){
+      ensureClient();
+      const chemins = [
+        ...Object.values(R.imgByItem||{}).flat().map(im=>im.storage_path),
+        ...Object.values(R.authorPhoto||{}),
+      ].filter(Boolean);
+      const map = {};
+      const list = [...new Set(chemins)];
+      for(let i=0;i<list.length;i+=100){
+        const part = list.slice(i,i+100);
+        const data = await _reessayer(async ()=>{
+          const {data, error} = await client.storage.from('images').createSignedUrls(part, ttlSeconds);
+          if(error) fail(error, T('URLs signées','signed URLs'));
+          return data;
+        }, T('URLs signées longue durée','long-lived signed URLs'));
+        data.forEach((d,j)=>{ if(d.signedUrl) map[part[j]] = d.signedUrl; });
+      }
+      const items = {};
+      Object.entries(R.imgByItem||{}).forEach(([id,list2])=>{
+        items[id] = list2.map(im=>map[im.storage_path]).filter(Boolean);
+      });
+      const authors = {};
+      Object.entries(R.authorPhoto||{}).forEach(([id,ch])=>{ if(ch && map[ch]) authors[id] = map[ch]; });
+      return { items, authors };
+    },
     async init(){ ensureClient();
       if(!uid){ const {data} = await client.auth.getSession();
         if(!data.session) throw new Error(T('non connecté','not signed in')); uid = data.session.user.id; }
@@ -4766,6 +4828,7 @@ function openBulkEditForm(){
 }
 
 function openItemForm(id=null, opts={}){
+  if(GUEST) return;                 // page invité : aucune écriture possible
   _fbReturn = null;
   _lastSavedItemId = null;
   _bulkEditIds = null;
@@ -5432,6 +5495,7 @@ let currentWishImage = null;
 let authorFormCallback = null;
 
 function openAuthorForm(id=null, callback=null){
+  if(GUEST) return;                 // page invité : aucune écriture possible
   authorFormCallback = callback;
   currentAuthorImage = null;
   document.getElementById("authorForm").reset();
@@ -7106,10 +7170,10 @@ function cardItemHTML(i, compact=false){
   // Localisation effective (héritée de l'album pour un éphémère collé) — même source que la fiche
   const _eloc = effectiveLocation(i);
   const locateBtn = _eloc.loc
-    ? `<button class="card-locate-btn" title="${_eloc.album
+    ? `<button class="card-locate-btn${GUEST?" guest-hidden":""}" title="${_eloc.album
           ? `${T(`Localiser l'album qui le contient`,`Locate the album holding it`)} « ${escapeHTML(_eloc.album.titre||'')} » — ${escapeHTML(friendlyLocation(_eloc.loc))}`
           : `${T(`Localiser sur l'étagère`,`Locate on shelf`)} « ${escapeHTML(i.localisation)} »`}" onclick="event.stopPropagation();locateOnShelf('${_eloc.id}')">📍</button>`
-    : `<button class="card-locate-btn card-locate-empty" title="${T(`Aucune localisation — cliquer pour la définir`,`No location — click to set it`)}" onclick="event.stopPropagation();openItemForm('${i.id}')">📍</button>`;
+    : `<button class="card-locate-btn card-locate-empty${GUEST?" guest-hidden":""}" title="${T(`Aucune localisation — cliquer pour la définir`,`No location — click to set it`)}" onclick="event.stopPropagation();openItemForm('${i.id}')">📍</button>`;
   const isCoverLocked  = (i.couvertureAdulte || i.contenuAdulte) && !_adultUnlocked;
   const adultClickHandler = isCoverLocked
     ? `onclick="event.stopPropagation();requireAdultPin(()=>refreshCurrentView())"`
@@ -8644,8 +8708,8 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
 
   // Visuel (réutilise le style .detail-cover ; cycle d'images si plusieurs)
   const cover = `<div class="detail-cover">${locVal
-      ? `<button class="card-locate-btn" title="${glued?T(`Localiser l'album qui le contient`,`Locate the album holding it`):T(`Localiser sur l'étagère`,`Locate on shelf`)}" onclick="event.stopPropagation();locateOnShelf('${locId}')">📍</button>`
-      : `<button class="card-locate-btn card-locate-empty" title="${T(`Aucune localisation — cliquer pour la définir`,`No location — click to set it`)}" onclick="event.stopPropagation();openItemForm('${it.id}')">📍</button>`}
+      ? `<button class="card-locate-btn${GUEST?" guest-hidden":""}" title="${glued?T(`Localiser l'album qui le contient`,`Locate the album holding it`):T(`Localiser sur l'étagère`,`Locate on shelf`)}" onclick="event.stopPropagation();locateOnShelf('${locId}')">📍</button>`
+      : `<button class="card-locate-btn card-locate-empty${GUEST?" guest-hidden":""}" title="${T(`Aucune localisation — cliquer pour la définir`,`No location — click to set it`)}" onclick="event.stopPropagation();openItemForm('${it.id}')">📍</button>`}
     ${imgs[0]
       ? `<img id="detailMainImg" src="${_safeUrl(imgs[0])}" data-imgs="${escapeHTML(JSON.stringify(imgs))}" data-idx="0"${diapoActif?` style="cursor:pointer" title="${_lang==='en'?'Open slideshow':'Ouvrir le diaporama'}" onclick="pcOpenLightbox(0)"`:imgs.length>1?` class="cycable" title="${_lang==='en'?'Click to cycle images':'Cliquer pour l\'image suivante'}" onclick="cycleDetailImg()"`:''}>`
       : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:60px;color:var(--ink-soft)">🗂️</div>`}
@@ -8747,7 +8811,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
         <div style="margin:12px 0">${authors||`<span class="muted">${t('detail.no_author')}</span>`}</div>
         ${it.tags&&it.tags.length?`<div style="margin-top:8px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>
+          ${GUEST?'':`<button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>`}
           ${diapoActif?`<button onclick="pcOpenLightbox(0)">▶ ${_lang==='en'?'Slideshow':'Diaporama'} (${imgs.length})</button>`:''}
           ${hasDiaporama&&imgs.length&&imagesLocked?`<button onclick="requireAdultPin(()=>renderItemDetail('${it.id}',false))">🔒 ${_lang==='en'?'Unlock images':'Déverrouiller les images'}</button>`:''}
           ${_fbBackBtnHTML(it.id)}
@@ -8837,8 +8901,8 @@ function renderItemDetail(id, pushHistory=true){
     <div class="detail-header">
       <div>
         <div class="detail-cover">${it.localisation
-          ? `<button class="card-locate-btn" title="${T(`Localiser sur l'étagère`,`Locate on shelf`)} « ${escapeHTML(friendlyLocation(it.localisation))} »" onclick="event.stopPropagation();locateOnShelf('${it.id}')">📍</button>`
-          : `<button class="card-locate-btn card-locate-empty" title="${T(`Aucune localisation — cliquer pour la définir`,`No location — click to set it`)}" onclick="event.stopPropagation();openItemForm('${it.id}')">📍</button>`
+          ? `<button class="card-locate-btn${GUEST?" guest-hidden":""}" title="${T(`Localiser sur l'étagère`,`Locate on shelf`)} « ${escapeHTML(friendlyLocation(it.localisation))} »" onclick="event.stopPropagation();locateOnShelf('${it.id}')">📍</button>`
+          : `<button class="card-locate-btn card-locate-empty${GUEST?" guest-hidden":""}" title="${T(`Aucune localisation — cliquer pour la définir`,`No location — click to set it`)}" onclick="event.stopPropagation();openItemForm('${it.id}')">📍</button>`
         }${imgs[0]
           ? (adultLocked /* cover locked */
             ? `<div class="adult-img-wrap" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">
@@ -8864,7 +8928,7 @@ function renderItemDetail(id, pushHistory=true){
         <dl>${infoDl}</dl>
         ${it.tags&&it.tags.length?`<div style="margin-top:12px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>
+          ${GUEST?'':`<button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>`}
           ${_fbBackBtnHTML(it.id)}
           ${hasDiaporama&&imgs.length>1&&!imagesLocked?`<button onclick="pcOpenLightbox(0)">▶ ${_lang==='en'?'Slideshow':'Diaporama'} (${imgs.length})</button>`:""}
           ${hasDiaporama&&imgs.length&&imagesLocked?`<button onclick="requireAdultPin(()=>renderItemDetail('${it.id}',false))">🔒 ${_lang==='en'?'Unlock images':'Déverrouiller les images'}</button>`:""}
@@ -9002,7 +9066,7 @@ function renderItemDetail(id, pushHistory=true){
       return `<div class="panel">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${total?'8px':'0'}">
           <h3 style="margin:0">${t('detail.other_ed')}${total?` (${total})`:""}</h3>
-          <button class="secondary" style="padding:4px 10px;font-size:12px" onclick="openLinkEditionModal('${it.id}')">${t('detail.other_ed_link')}</button>
+          ${GUEST?'':`<button class="secondary" style="padding:4px 10px;font-size:12px" onclick="openLinkEditionModal('${it.id}')">${t('detail.other_ed_link')}</button>`}
         </div>
         ${total ? `<div style="display:flex;flex-direction:column;gap:8px">${allOthers.map(x=>editionRow(x, manualIds.has(x.id))).join("")}</div>`
           : `<p class="muted" style="font-size:13px;margin:8px 0 0">${t('detail.no_other_ed')} <span style="opacity:.7">${t('detail.no_other_hint')}</span></p>`}
@@ -9060,7 +9124,7 @@ function renderAuthorDetail(id, pushHistory=true){
         ${(a.roles||[]).length?`<div style="margin:8px 0">${a.roles.map(r=>`<span class="tag">${escapeHTML(r)}</span>`).join(" ")}</div>`:""}
         ${a.bio?`<p style="white-space:pre-wrap;margin-top:12px">${escapeHTML(a.bio)}</p>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="openItemForm(null,{authorId:'${a.id}'})">${T('+ Ajouter une œuvre','+ Add a work')}</button>
+          ${GUEST?'':`<button onclick="openItemForm(null,{authorId:'${a.id}'})">${T('+ Ajouter une œuvre','+ Add a work')}</button>`}
           <button class="secondary" onclick="openAuthorForm('${a.id}')">✏️ Modifier la fiche</button>
         </div>
       </div>
@@ -9195,6 +9259,105 @@ async function _embedAllImages(items, authors, meta){
 // les catégories actives, la Bibliothèque (meubles, étagères, piles), la liste de
 // souhaits et les préférences. Exporter tout le magasin plutôt qu'une liste de clés
 // garantit qu'une donnée ajoutée plus tard sera sauvegardée sans modifier ce code.
+// ============================================================
+// GÉNÉRATION DE LA PAGE INVITÉ (lecture seule)
+// ------------------------------------------------------------
+// Produit un fichier autonome : une copie de cette application dans laquelle on injecte
+// un instantané FILTRÉ des données. Les champs privés ne sont pas masqués à l'affichage,
+// ils sont absents du fichier — un invité ne peut donc pas les retrouver. Aucune clé,
+// aucun accès à la base : la page est inerte.
+// ============================================================
+const GUEST_TTL = 31536000;   // 1 an, durée de validité des liens d'images
+
+// Champs retirés de l'instantané. Retirer une ligne suffit à publier le champ.
+const GUEST_CHAMPS_PRIVES = [
+  'prixAchat','cote','dateAcquisition','lieuAcquisition',   // valeur et provenance
+  'localisation',                                            // où la pièce est rangée
+  'preteA','datePret','retourPrevu',                         // prêts
+  'lu','dateLecture','notes','etatDetail',                   // suivi et notes personnelles
+];
+
+function _guestNettoieItem(it, imagesLongues, nomsClasseurs){
+  const o = {};
+  for(const [k,v] of Object.entries(it)){
+    if(GUEST_CHAMPS_PRIVES.includes(k)) continue;
+    o[k] = v;
+  }
+  // Exception à la règle : le rangement est conservé lorsqu'il désigne un classeur publié.
+  // C'est lui qui rattache le document à son classeur — sans quoi les classeurs seraient
+  // vides. Un nom de classeur ne dit pas où il se trouve, contrairement à un meuble.
+  if(nomsClasseurs && nomsClasseurs.has((it.localisation||'').trim())){
+    o.localisation = (it.localisation||'').trim();
+  }
+  const urls = imagesLongues && imagesLongues[it.id];
+  if(urls && urls.length) o.images = urls;
+  return o;
+}
+
+async function genererVersionInvite(){
+  if(GUEST) return;
+  const btn = document.getElementById('genGuestBtn');
+  if(btn){ btn.disabled = true; btn.textContent = T('Génération…','Generating…'); }
+  try {
+    // 1. Liens d'images de longue durée (uniquement en ligne ; en local ils sont déjà autonomes)
+    let longues = null;
+    if(CLOUD){
+      toast(T('Signature des images pour un an…','Signing images for one year…'));
+      const r = await SB.signLong(GUEST_TTL);
+      longues = r.items;
+      var photosAuteurs = r.authors;
+    }
+    // 2. Instantané filtré
+    const nomsClasseurs = new Set((libraryPiles||[])
+      .filter(p=>p.kind === 'classeur').map(p=>(p.name||'').trim()));
+    const items = cache.items
+      .filter(i=>!i._isWish)
+      .map(i=>_guestNettoieItem(i, longues, nomsClasseurs));
+    const authors = cache.authors.map(a=>{
+      const o = {...a};
+      if(photosAuteurs && photosAuteurs[a.id]) o.photoUrl = photosAuteurs[a.id];
+      delete o.notes;                       // notes personnelles sur l'auteur
+      return o;
+    });
+    // Seuls les classeurs sont publiés, et sans leur emplacement physique.
+    const piles = (libraryPiles||[])
+      .filter(p=>p.kind === 'classeur')
+      .map(p=>({ id:p.id, name:p.name, kind:'classeur', color:p.color||'', itemOrder:p.itemOrder||[] }));
+
+    const donnees = {
+      version: 1,
+      genereLe: new Date().toISOString(),
+      expireLe: CLOUD ? new Date(Date.now()+GUEST_TTL*1000).toISOString() : null,
+      titre: '',
+      items, authors, piles,
+    };
+
+    // 3. Copie de l'application + injection de l'instantané
+    const source = await fetch(location.href, {cache:'no-store'}).then(r=>{
+      if(!r.ok) throw new Error(T(`source illisible (HTTP ${r.status})`,`source unreadable (HTTP ${r.status})`));
+      return r.text();
+    });
+    const bloc = `<script>window.__GUEST__ = ${JSON.stringify(donnees).replace(/<\/script>/gi,'<\\/script>')};<\/script>`;
+    if(!/<body>/i.test(source)) throw new Error(T('balise <body> introuvable dans la source','<body> tag not found in source'));
+    const sortie = source.replace(/<body>/i, '<body>\n' + bloc);
+
+    downloadFile(sortie, 'invite.html', 'text/html;charset=utf-8');
+    const mo = (sortie.length/1048576).toFixed(1);
+    toast(T(`Page invité générée — ${items.length} œuvres, ${authors.length} auteurs, ${piles.length} classeur(s) · ${mo} Mo`,
+            `Guest page generated — ${items.length} works, ${authors.length} authors, ${piles.length} binder(s) · ${mo} MB`));
+    if(CLOUD){
+      const d = new Date(Date.now()+GUEST_TTL*1000).toLocaleDateString(_lang==='en'?'en-GB':'fr-FR');
+      setTimeout(()=>toast(T(`Les images de cette page expirent le ${d} — il faudra la régénérer.`,
+                             `Images in this page expire on ${d} — regenerate before then.`)), 1600);
+    }
+  } catch(e){
+    console.error('[Page invité]', e);
+    toast(T("Génération impossible : ","Generation failed: ")+e.message, 'error');
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = T('👥 Générer la version invité','👥 Generate guest version'); }
+  }
+}
+
 async function exportJSON(){
   let meta = [];
   try { meta = await dbAll("meta"); } catch(e){ console.warn('[Export] meta indisponible', e); }
@@ -11005,6 +11168,9 @@ async function saveItem_lib(item){
 }
 
 async function renderLibrary(){
+  // Page invité : pas de meubles — ils diraient où les pièces sont rangées. On propose
+  // seulement les classeurs, dont la liseuse feuilletable est une expérience de lecture.
+  if(GUEST) return _renderGuestBinders();
   await loadLibraryShelves();
   await loadLibraryPiles();
   await loadLibraryFurniture();
@@ -12488,7 +12654,7 @@ function _classeurPages(pile){
 function _fbPageInner(pg){
   if(!pg) return `<div class="fb-imgwrap fb-blank"></div>`;
   if(pg.type==='cover') return `<div class="fb-imgwrap fb-cover" style="background:${pg.color||'#6d3c3c'}"></div>`;
-  const edit = pg.id ? `<button class="fb-edit" title="${T(`Éditer la fiche`,`Edit record`)}" onclick="_fbEditItem(event,'${pg.id}')">✏️</button>` : '';
+  const edit = (pg.id && !GUEST) ? `<button class="fb-edit" title="${T(`Éditer la fiche`,`Edit record`)}" onclick="_fbEditItem(event,'${pg.id}')">✏️</button>` : '';
   // Le contenu de la page ouvre la fiche du document, comme le clic sur la vignette d'un album.
   // Les marges de la page restent réservées au feuilletage (voir le rappel en bas de liseuse).
   const oc = pg.id ? ' fb-open' : '';
@@ -12558,10 +12724,10 @@ function openClasseurReader(pileId, focusItemId=null){
       <div class="fb-title">🗂️ ${escapeHTML(pile.name)}</div>
       <div class="fb-mid">
         <div class="fb-counter" id="fbCounter"></div>
-        <button class="fb-manage" id="fbManage" title="${T(`Ouvrir la fenêtre de gestion : ordre, numérotation, ajout et retrait`,`Open the management window: order, numbering, add and remove`)}">✏️ <span>${T('Modifier le contenu','Edit content')}</span></button>
+        ${GUEST?'':`<button class="fb-manage" id="fbManage" title="${T(`Ouvrir la fenêtre de gestion : ordre, numérotation, ajout et retrait`,`Open the management window: order, numbering, add and remove`)}">✏️ <span>${T('Modifier le contenu','Edit content')}</span></button>`}
       </div>
       <div class="fb-actions">
-        <button class="fb-add" id="fbAdd" title="${T(`Ajouter une œuvre à ce classeur`,`Add a work to this binder`)}">＋ ${T('Ajouter','Add')}</button>
+        ${GUEST?'':`<button class="fb-add" id="fbAdd" title="${T(`Ajouter une œuvre à ce classeur`,`Add a work to this binder`)}">＋ ${T('Ajouter','Add')}</button>`}
         <button class="fb-close" id="fbClose" title="${T(`Fermer (Échap)`,`Close (Esc)`)}">✕</button>
       </div>
     </div>
@@ -12603,14 +12769,14 @@ function openClasseurReader(pileId, focusItemId=null){
     _fbRender();
   }
   backdrop.querySelector('#fbClose').addEventListener('click', _fbClose);
-  backdrop.querySelector('#fbAdd').addEventListener('click', _fbAddItem);
+  backdrop.querySelector('#fbAdd')?.addEventListener('click', _fbAddItem);
   backdrop.addEventListener('click', e=>{ if(e.target===backdrop) _fbClose(); });
   backdrop.querySelector('#fbPrev').addEventListener('click', ()=>_fbTurn(-1));
   backdrop.querySelector('#fbNext').addEventListener('click', ()=>_fbTurn(1));
   backdrop.querySelector('#fbFirst').addEventListener('click', ()=>_fbGoTo(0));
   backdrop.querySelector('#fbLast').addEventListener('click', ()=>_fbGoTo(_fbSpreadCount()-1));
   // Modifier le contenu : on ferme la liseuse et on ouvre la fenêtre de gestion
-  backdrop.querySelector('#fbManage').addEventListener('click', ()=>{
+  backdrop.querySelector('#fbManage')?.addEventListener('click', ()=>{
     const pid = _fbState?.pile?.id;
     _fbClose();
     if(pid) openPileModal(pid);
@@ -13269,6 +13435,102 @@ function _showInitError(err){
   };
 }
 
+// ============================================================
+// AMORÇAGE DE LA PAGE INVITÉ
+// ------------------------------------------------------------
+// Aucune base : les données viennent de l'instantané injecté. On alimente les mêmes
+// variables globales que l'application normale, puis on neutralise tout ce qui écrit.
+// ============================================================
+function _initGuest(){
+  const G = window.__GUEST__ || {};
+  try {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app-wrapper').style.display = 'block';
+    document.body.classList.add('guest-mode');
+    window._appInitialized = true;
+
+    cache.items    = G.items   || [];
+    cache.authors  = G.authors || [];
+    cache.wishlist = [];                       // jamais publiée
+    libraryPiles   = (G.piles  || []).filter(p=>p.kind === 'classeur');
+    libraryShelves = [];
+    _lastItemList  = cache.items;
+
+    // Catégories : celles réellement utilisées, pour que filtres et libellés restent justes.
+    const utilisees = [...new Set(cache.items.map(i=>i.categorie).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+    CATEGORIES.length = 0; CATEGORIES.push(...utilisees);
+
+    _initStickyHeader();
+    _initEnvBadge();
+    _guestTrimUI(G);
+    _syncAdvFilters();
+    showView('collection', false);
+    renderCollection();
+  } catch(e){
+    console.error('[Invité] amorçage impossible', e);
+    _showInitError(e);
+  }
+}
+
+// Retrait des vues et des commandes qui n'ont pas de sens sans compte. C'est de la
+// présentation : la vraie garantie est qu'il n'y a aucune base derrière cette page.
+function _guestTrimUI(G){
+  ['souhaites','stats','categories','import-export','dashboard','hub'].forEach(v=>{
+    document.querySelector(`nav button[data-view="${v}"]`)?.remove();
+  });
+  // La vue « Bibliothèque » devient la liste des classeurs : les meubles révéleraient
+  // où les pièces sont physiquement rangées.
+  const libBtn = document.querySelector('nav button[data-view="library"]');
+  if(libBtn){
+    if(libraryPiles.length) libBtn.textContent = T('Classeurs','Binders');
+    else libBtn.remove();
+  }
+  document.getElementById('navMore')?.remove();
+  document.getElementById('addItemBtn')?.remove();
+  document.getElementById('bulkModeBtn')?.remove();   // sélection multiple = édition groupée
+  // Instantané d'une seule collection : le sélecteur n'a plus d'objet.
+  const sw = document.getElementById('collectionWord');
+  if(sw){ sw.removeAttribute('onclick'); sw.removeAttribute('onkeydown'); sw.removeAttribute('role');
+          sw.removeAttribute('tabindex'); sw.style.cursor='default';
+          sw.querySelector('.caret')?.remove(); }
+  document.getElementById('env-badge')?.remove();
+  ['logoutBtn','themeBtn','langBtn'].forEach(id=>document.getElementById(id)?.remove());
+  const titre = (G.titre || '').trim();
+  if(titre){
+    const h = document.querySelector('header h1, .brand, #appTitle');
+    if(h) h.textContent = titre;
+    document.title = titre;
+  }
+  // Bandeau permanent : l'invité doit comprendre qu'il consulte une copie figée.
+  const bandeau = document.createElement('div');
+  bandeau.id = 'guestBanner';
+  const d = G.genereLe ? new Date(G.genereLe).toLocaleDateString(_lang==='en'?'en-GB':'fr-FR') : '';
+  bandeau.textContent = T(`Consultation — copie en lecture seule${d?` du ${d}`:''}`,
+                          `Read-only copy${d?` from ${d}`:''}`);
+  document.body.appendChild(bandeau);
+}
+
+// Liste des classeurs proposée à l'invité, en remplacement de la vue bibliothèque.
+function _renderGuestBinders(){
+  const vue = document.getElementById('view-library');
+  if(!vue) return;
+  const classeurs = libraryPiles.filter(p=>p.kind === 'classeur');
+  if(!classeurs.length){
+    vue.innerHTML = `<p class="muted">${T('Aucun classeur à consulter.','No binder to browse.')}</p>`;
+    return;
+  }
+  vue.innerHTML = `<h2 style="margin-top:0">${T('Classeurs','Binders')}</h2>
+    <p class="muted" style="margin-bottom:18px">${T('Cliquez un classeur pour le feuilleter.','Click a binder to browse it.')}</p>
+    <div class="guest-binders">${classeurs.map(p=>{
+      const n = getPileBooks(p).length;
+      return `<button type="button" class="guest-binder" onclick="openClasseurReader('${p.id}')" style="--cl:${escapeHTML(p.color||'#6d3c3c')}">
+        <span class="gb-spine"></span>
+        <span class="gb-name">${escapeHTML(p.name)}</span>
+        <span class="gb-count">${n} ${n===1?T('document','document'):T('documents','documents')}</span>
+      </button>`;
+    }).join('')}</div>`;
+}
+
 // ── Démarrage : thème + vérification session ──
 // Demander au navigateur de conserver le stockage (évite la purge auto d'IndexedDB).
 if(navigator.storage && navigator.storage.persist){
@@ -13276,6 +13538,8 @@ if(navigator.storage && navigator.storage.persist){
 }
 applyTheme(localStorage.getItem('bdapp_theme') || 'dark');
 (async () => {
+  // Le mode invité court-circuite tout : ni librairie Supabase, ni connexion, ni base.
+  if(GUEST){ _initGuest(); return; }
   if (CLOUD) { try { await ensureSupabaseLib(); } catch(e){ console.error(e); }
     const _c=document.getElementById('sbCfgArea'); if(_c && !SB.getCfg()) _c.style.display='block'; }
   if(isSessionActive()){
