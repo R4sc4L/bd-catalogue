@@ -435,6 +435,12 @@
   .checkbox-row{display:flex;align-items:center;gap:8px}
   .checkbox-row input[type=checkbox]{width:auto}
   .author-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px;align-items:start}
+  /* Accès direct à la fiche de l'auteur, accolé à sa liste déroulante. */
+  .author-pick{display:flex;gap:6px;align-items:stretch}
+  .author-pick select{flex:1;min-width:0}
+  .author-open{flex:none;width:38px;padding:0;display:flex;align-items:center;justify-content:center}
+  .author-open .ico{width:19px;height:19px;color:var(--gold);opacity:.8;transition:opacity .15s}
+  .author-open:hover .ico{opacity:1}
   .role-dropdown-wrap{position:relative;margin-top:6px}
   .role-dropdown-btn{width:100%;text-align:left;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px;color:var(--ink)}
   .role-dropdown-btn:hover{border-color:var(--accent)}
@@ -1032,6 +1038,10 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
 190 0 190 0 0 -1225 0 -1225 225 0 225 0 -2 1527 -3 1528 -406 3 c-223 1 -408
 -1 -412 -5z M0 1895 l0 -255 400 0 400 0 0 255 0 255 -400 0 -400 0 0 -255z"/>
     </g>
+  </g>
+  <g id="ic-person" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8.2" r="3.7"/>
+    <path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0"/>
   </g>
   <g id="ic-image-add" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
     <path d="M20.4 13.2V6.2a2.2 2.2 0 0 0-2.2-2.2H5.2A2.2 2.2 0 0 0 3 6.2v11.6A2.2 2.2 0 0 0 5.2 20h8.2"/>
@@ -5040,10 +5050,13 @@ function addAuthorRow(auteurId="", roles=[]){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start">
       <div>
         <label>${T("Auteur","Author")}</label>
-        <select class="item-author-select">
-          ${_authorSelectHeader()}
-          ${authorsOptions}
-        </select>
+        <div class="author-pick">
+          <select class="item-author-select">
+            ${_authorSelectHeader()}
+            ${authorsOptions}
+          </select>
+          <button type="button" class="author-open ghost" title="${T("Ouvrir la fiche de cet auteur","Open this author's record")}" onclick="_openAuthorOfRow(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-person"></use></svg></button>
+        </div>
       </div>
       <div>
         <label>${T("Rôle(s)","Role(s)")}</label>
@@ -5076,6 +5089,23 @@ function addAuthorRow(auteurId="", roles=[]){
         sel.value = newId;
       });
     }
+  });
+}
+
+// Ouvre la fiche de l'auteur choisi sur la ligne, PAR-DESSUS la fiche de l'œuvre.
+// La saisie en cours n'est jamais perdue — même principe que « + Créer un auteur ».
+// Si l'auteur est modifié, la ligne est rafraîchie pour refléter son nouveau nom.
+function _openAuthorOfRow(btn){
+  const row = btn.closest('.author-row');
+  const sel = row && row.querySelector('.item-author-select');
+  const id  = sel && sel.value;
+  if(!id || id.startsWith('__')){
+    toast(T("Choisis d'abord un auteur dans la liste.","Pick an author from the list first."), 'error');
+    return;
+  }
+  openAuthorForm(id, ()=>{
+    sel.innerHTML = _authorSelectHeader() + _authorOptionsHTML(id, true);
+    sel.value = id;
   });
 }
 
