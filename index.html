@@ -10000,7 +10000,7 @@ function applyWishFilters(items){
     return;
   }
   container.innerHTML = `<table><thead><tr>
-    <th>${T("Priorité","Priority")}</th><th></th><th>${T("Titre","Title")}</th><th>${T("Auteur(s)","Author(s)")}</th><th>Collection</th><th>${T("Catégorie","Category")}</th><th>${T("Éditeur","Publisher")}</th><th>${T("Année","Year")}</th><th>Actions</th>
+    <th>${T("Priorité","Priority")}</th><th></th><th>${T("Titre","Title")}</th><th>${T("Auteur(s)","Author(s)")}</th><th>Collection</th><th>${T("Catégorie","Category")}</th><th>${T("Éditeur","Publisher")}</th><th>${T("Année","Year")}</th><th>Actions</th><th>${T("Achat","Purchase")}</th>
   </tr></thead><tbody>${list.map(w=>`
     <tr>
       <td>${escapeHTML(PRIO_LABEL[w.priorite]||w.priorite||"")}</td>
@@ -10014,6 +10014,8 @@ function applyWishFilters(items){
       <td style="white-space:nowrap">
         <button class="ghost" style="font-size:12px" onclick="openWishForm('${w.id}')" title="Modifier">✏️</button>
         <button class="ghost" style="font-size:12px;color:var(--danger)" onclick="deleteWishById('${w.id}')" title="Supprimer">🗑️</button>
+      </td>
+      <td style="white-space:nowrap">
         <button class="secondary" style="font-size:12px;padding:4px 8px" onclick="acquireWish('${w.id}')" title="${T(`Cette œuvre rejoint la collection ; elle quitte la liste des souhaits`,`This work joins the collection and leaves the wishlist`)}">➕ ${T("Ajouter à ma collection","Add to my collection")}</button>
       </td>
     </tr>`).join("")}
