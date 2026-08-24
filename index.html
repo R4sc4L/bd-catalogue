@@ -1128,6 +1128,13 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <a href="#" onclick="event.preventDefault();showLoginPanel()" style="color:var(--ink-soft)" data-en="← Back to sign in">← Retour à la connexion</a>
       </p>
     </div>
+    <!-- Accès invité, hors des panneaux connexion / création / mot de passe oublié :
+         il doit rester visible quel que soit le panneau affiché. N'apparaît que si une
+         page invité a bien été publiée à côté de l'application (_detecterPageInvite). -->
+    <div id="guestEnterWrap" style="display:none;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+      <button class="login-btn secondary" id="guestEnterBtn" onclick="entrerEnInvite()" data-en="👀 Browse as a guest">👀 Consulter en invité</button>
+      <p style="text-align:center;margin-top:8px;font-size:12px;color:var(--ink-soft)" data-en="Read-only, no account needed.">Lecture seule, sans compte.</p>
+    </div>
     <div class="login-hint" id="loginHint"></div>
   </div>
 </div>
@@ -3435,8 +3442,16 @@ const SB = (() => {
 
   // Une erreur d'authentification ou de droits ne se règle pas en réessayant : inutile
   // d'insister. Tout le reste (coupure réseau, 5xx, quota) est considéré comme passager.
+  // « JWT issued at future » : le serveur juge la date d'émission du jeton postérieure à
+  // sa propre horloge. C'est un décalage de quelques secondes entre le service qui émet
+  // les jetons et celui qui les vérifie — donc passager, et réparable en attendant un peu.
+  // À distinguer absolument d'un jeton expiré ou invalide, qui lui ne guérira pas seul.
+  function _decalageHorloge(e){
+    return /issued at future|iat.*future/i.test(String((e && e.message) || e));
+  }
   function _erreurPassagere(e){
     const m = String((e && e.message) || e).toLowerCase();
+    if(_decalageHorloge(e)) return true;      // testé AVANT la règle ci-dessous, qui bloque sur « jwt »
     if(/jwt|unauthorized|forbidden|non connect|not signed in|invalid api key|row-level security|permission/.test(m)) return false;
     return true;
   }
@@ -3445,13 +3460,16 @@ const SB = (() => {
   // suffisait à laisser l'application vide.
   async function _reessayer(fabrique, ctx){
     let derniere;
-    for(let essai=1; essai<=3; essai++){
+    for(let essai=1; essai<=4; essai++){
       try { return await fabrique(); }
       catch(e){
         derniere = e;
-        if(!_erreurPassagere(e) || essai === 3) break;
-        console.warn(`[Supabase] ${ctx} — tentative ${essai}/3 échouée, nouvel essai`, e);
-        await new Promise(r=>setTimeout(r, essai*500));
+        if(!_erreurPassagere(e) || essai === 4) break;
+        // Un décalage d'horloge se résorbe en secondes, pas en millisecondes : on attend
+        // nettement plus longtemps que pour une simple coupure réseau.
+        const attente = _decalageHorloge(e) ? essai*1500 : essai*500;
+        console.warn(`[Supabase] ${ctx} — tentative ${essai}/4 échouée, nouvel essai dans ${attente} ms`, e);
+        await new Promise(r=>setTimeout(r, attente));
       }
     }
     throw derniere;
@@ -4697,6 +4715,10 @@ const CAT_ICONS = {
   "Reportage / Documentaire BD":"📡","Strip de presse":"🗞","Anthologie":"🗂️",
 };
 const CAT_PRIORITY = ["Album de BD","Tirage de tête","Édition limitée (numérotée)","Album d'illustration"];
+// Comparaison de titres : les suites de chiffres sont lues comme des nombres, pas comme
+// du texte. Sans cela « Moebius Groove #10 » précède « #8 », puisque le caractère « 1 »
+// vient avant « 8 ». Vaut pour les numéros de lettres, de tomes, de tirages…
+const _CMP_NUM = { numeric:true, sensitivity:'base' };
 
 function openCategoryPicker(){
   const grid = document.getElementById("catPickerGrid");
@@ -4877,7 +4899,7 @@ function openItemForm(id=null, opts={}){
   // Datalist des titres (suggestion pour « Titre promu » du bloc Promotion)
   const _albTitles = [...new Set(cache.items
     .filter(x=>archetypeForCategory(x.categorie).id!=='ephemere')
-    .map(x=>x.titre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+    .map(x=>x.titre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr',_CMP_NUM));
   const _dlAlb = document.getElementById("dl-albums");
   if(_dlAlb) _dlAlb.innerHTML = _albTitles.map(a=>`<option>${escapeHTML(a)}</option>`).join("");
   initCatTagInput([]);
@@ -6321,6 +6343,7 @@ function pcOpenLightbox(startIdx){
   const img = lb.querySelector('img');
   img.addEventListener('load', _pcApplyTransform);
   _pcApplyTransform();
+  _pcMajFleches(lb);
 
   // Molette : agrandir / réduire autour du pointeur.
   lb.addEventListener('wheel', e=>{
@@ -6328,9 +6351,21 @@ function pcOpenLightbox(startIdx){
     _pcZoomAt(e.deltaY < 0 ? 1.18 : 1/1.18, e.clientX, e.clientY);
   }, {passive:false});
 
+  // Fermeture, différée pour laisser sa chance au double-clic (voir plus bas).
+  let _fermetureDifferee = null;
+  const fermer = ()=>{
+    clearTimeout(_fermetureDifferee);
+    lb.remove();
+    document.removeEventListener("keydown", _pcLbKey);
+    document.getElementById('pcLbHint')?.remove();
+  };
+
   // Double-clic : bascule entre taille d'origine et agrandissement ×2,5.
+  // Il annule la fermeture programmée par le premier des deux clics — sans cela, la
+  // visionneuse se refermait avant même que le double-clic soit reconnu.
   lb.addEventListener('dblclick', e=>{
     e.preventDefault(); e.stopPropagation();
+    clearTimeout(_fermetureDifferee);
     if(_pcZoom > 1) _pcResetZoom();
     else _pcZoomAt(2.5, e.clientX, e.clientY);
   });
@@ -6366,9 +6401,8 @@ function pcOpenLightbox(startIdx){
     const venaitDeGlisser = bouge;
     bouge = false;                       // l'état ne doit pas survivre au clic qui le consomme
     if(venaitDeGlisser || _pcZoom > 1 || e.target.closest('.pc-nav')) return;
-    lb.remove();
-    document.removeEventListener("keydown", _pcLbKey);
-    document.getElementById('pcLbHint')?.remove();
+    clearTimeout(_fermetureDifferee);
+    _fermetureDifferee = setTimeout(fermer, 280);   // annulée si un second clic suit
   });
 
   // Rappel des commandes, effacé après quelques secondes.
@@ -6385,22 +6419,46 @@ function pcOpenLightbox(startIdx){
     else if(e.key==="+" || e.key==="=") _pcZoomAt(1.3, lb.clientWidth/2, lb.clientHeight/2);
     else if(e.key==="-") _pcZoomAt(1/1.3, lb.clientWidth/2, lb.clientHeight/2);
     else if(e.key==="0") _pcResetZoom();
-    else if(e.key==="Escape"){
-      lb.remove();
-      document.removeEventListener("keydown",_pcLbKey);
-      document.getElementById('pcLbHint')?.remove();
-    }
+    else if(e.key==="Escape") fermer();
   });
 }
 let _pcLbKey = null;
+// Le diaporama ne boucle pas : après le dernier visuel on referme et on ramène le lecteur
+// au résumé de la fiche. Avant le premier, on ne fait rien — reculer n'a pas de sens ici.
+function _pcFinDiaporama(){
+  document.getElementById('pcLightbox')?.remove();
+  document.removeEventListener("keydown", _pcLbKey);
+  document.getElementById('pcLbHint')?.remove();
+  // Le résumé n'existe que si l'œuvre en a un : à défaut, on revient simplement en haut.
+  const cible = document.getElementById('detailSummaryPanel');
+  const doux = _prefersReducedMotion() ? 'auto' : 'smooth';
+  if(cible) cible.scrollIntoView({behavior:doux, block:'center'});
+  else window.scrollTo({top:0, behavior:doux});
+}
 function pcLbNav(dir){
-  const newIdx = (((_pcIdx+dir)%_pcImgs.length)+_pcImgs.length)%_pcImgs.length;
-  pcGoto(newIdx);
+  if(!_pcImgs.length) return;
+  const suivant = _pcIdx + dir;
+  if(suivant >= _pcImgs.length) return _pcFinDiaporama();   // fin du diaporama
+  if(suivant < 0) return;                                   // déjà au premier visuel
+  pcGoto(suivant);
   const lb = document.getElementById("pcLightbox");
   if(lb){
     const img = lb.querySelector("img");
     if(img) img.src = _pcImgs[_pcIdx];
     _pcResetZoom();          // on repart cadré sur la nouvelle image
+    _pcMajFleches(lb);
+  }
+}
+// Reflète la position dans les flèches : la précédente est inactive sur le premier visuel,
+// la suivante annonce la sortie sur le dernier.
+function _pcMajFleches(lb){
+  const prev = lb.querySelector('.pc-prev'), next = lb.querySelector('.pc-next');
+  if(prev) prev.disabled = (_pcIdx === 0);
+  if(next){
+    const dernier = (_pcIdx === _pcImgs.length - 1);
+    next.textContent = dernier ? '✕' : '›';
+    next.title = dernier ? T('Terminer et revenir au résumé','Finish and return to the summary')
+                         : T('Suivant','Next');
   }
 }
 
@@ -6636,7 +6694,7 @@ function onAssocCollChange(){
   if(!is) return;
   if(!type){ is.innerHTML = `<option value="">${T('— Type seul (sans objet précis) —','— Type only (no specific object) —')}</option>`; return; }
   const items = cache.items.filter(i=>(i.collectionType||'bd')===type)
-    .slice().sort((a,b)=>(a.titre||'').localeCompare(b.titre||'','fr'));
+    .slice().sort((a,b)=>(a.titre||'').localeCompare(b.titre||'','fr',_CMP_NUM));
   is.innerHTML = `<option value="">${T('— Type seul (sans objet précis) —','— Type only (no specific object) —')}</option>` +
     items.map(i=>`<option value="${i.id}">${escapeHTML(i.titre||'Sans titre')}</option>`).join('');
 }
@@ -6913,7 +6971,7 @@ function openMissingDimensions(){ renderMissingDimensions(); openModal('missingD
 function renderMissingDimensions(){
   const body = document.getElementById('missingDimsBody');
   const missing = (cache.items||[]).filter(i=>itemHeightCm(i)==null)
-    .sort((a,b)=>(a.collectionType||'bd').localeCompare(b.collectionType||'bd')||(a.titre||'').localeCompare(b.titre||'','fr'));
+    .sort((a,b)=>(a.collectionType||'bd').localeCompare(b.collectionType||'bd')||(a.titre||'').localeCompare(b.titre||'','fr',_CMP_NUM));
   if(!missing.length){ body.innerHTML = `<p class="muted" style="margin:0">${T('Toutes les œuvres ont une hauteur exploitable. 🎉','All works have a usable height. 🎉')}</p>`; return; }
   const byColl = {};
   missing.forEach(i=>{ const c=i.collectionType||'bd'; (byColl[c]=byColl[c]||[]).push(i); });
@@ -7078,15 +7136,15 @@ function applyFilters(){
         if(nA !== nB) return nA - nB;    // les tomes sans numéro ferment la marche
         return (a.anneeEdition||9999)-(b.anneeEdition||9999)
           || (a.moisEdition||0)-(b.moisEdition||0)
-          || (a.titre||"").localeCompare(b.titre||"","fr");
+          || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
       }
-      case "annee_desc":      return (b.anneeEdition||0)-(a.anneeEdition||0) || (b.moisEdition||0)-(a.moisEdition||0) || (a.titre||"").localeCompare(b.titre||"","fr");
-      case "annee_asc":       return (a.anneeEdition||9999)-(b.anneeEdition||9999) || (a.moisEdition||0)-(b.moisEdition||0) || (a.titre||"").localeCompare(b.titre||"","fr");
+      case "annee_desc":      return (b.anneeEdition||0)-(a.anneeEdition||0) || (b.moisEdition||0)-(a.moisEdition||0) || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
+      case "annee_asc":       return (a.anneeEdition||9999)-(b.anneeEdition||9999) || (a.moisEdition||0)-(b.moisEdition||0) || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
       case "acquisition_desc":return (b.dateAcquisition||"").localeCompare(a.dateAcquisition||"");
       case "cote_desc":       return (b.cote||0)-(a.cote||0);
-      case "dessinateur":     return authorByRole(a,"Dessinateur").localeCompare(authorByRole(b,"Dessinateur"),"fr") || (a.titre||"").localeCompare(b.titre||"","fr");
-      case "scenariste":      return authorByRole(a,"Scénariste").localeCompare(authorByRole(b,"Scénariste"),"fr") || (a.titre||"").localeCompare(b.titre||"","fr");
-      default:                return (a.titre||"").localeCompare(b.titre||"","fr");
+      case "dessinateur":     return authorByRole(a,"Dessinateur").localeCompare(authorByRole(b,"Dessinateur"),"fr") || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
+      case "scenariste":      return authorByRole(a,"Scénariste").localeCompare(authorByRole(b,"Scénariste"),"fr") || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
+      default:                return (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
     }
   });
 
@@ -7151,17 +7209,17 @@ function applyFilters(){
     if(tableSort.col){
       list.sort((a,b)=>{
         switch(tableSort.col){
-          case "titre":     return tableSort.dir*(a.titre||"").localeCompare(b.titre||"","fr");
-          case "categorie": return tableSort.dir*(a.categorie||"").localeCompare(b.categorie||"","fr") || (a.titre||"").localeCompare(b.titre||"","fr");
+          case "titre":     return tableSort.dir*(a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
+          case "categorie": return tableSort.dir*(a.categorie||"").localeCompare(b.categorie||"","fr") || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
           case "auteurs": {
             const na=(a.auteurs||[]).map(x=>authorDisplay(authorById(x.auteurId))).filter(Boolean).join(", ");
             const nb=(b.auteurs||[]).map(x=>authorDisplay(authorById(x.auteurId))).filter(Boolean).join(", ");
-            return tableSort.dir*na.localeCompare(nb,"fr") || (a.titre||"").localeCompare(b.titre||"","fr");
+            return tableSort.dir*na.localeCompare(nb,"fr") || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
           }
-          case "editeur":   return tableSort.dir*(a.editeur||"").localeCompare(b.editeur||"","fr") || (a.titre||"").localeCompare(b.titre||"","fr");
-          case "annee":     return tableSort.dir*((a.anneeEdition||0)-(b.anneeEdition||0)) || tableSort.dir*((a.moisEdition||0)-(b.moisEdition||0)) || (a.titre||"").localeCompare(b.titre||"","fr");
-          case "etat":      return tableSort.dir*(a.etat||"").localeCompare(b.etat||"","fr") || (a.titre||"").localeCompare(b.titre||"","fr");
-          case "cote":      return tableSort.dir*((a.cote||0)-(b.cote||0)) || (a.titre||"").localeCompare(b.titre||"","fr");
+          case "editeur":   return tableSort.dir*(a.editeur||"").localeCompare(b.editeur||"","fr") || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
+          case "annee":     return tableSort.dir*((a.anneeEdition||0)-(b.anneeEdition||0)) || tableSort.dir*((a.moisEdition||0)-(b.moisEdition||0)) || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
+          case "etat":      return tableSort.dir*(a.etat||"").localeCompare(b.etat||"","fr") || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
+          case "cote":      return tableSort.dir*((a.cote||0)-(b.cote||0)) || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
           default:          return 0;
         }
       });
@@ -7210,7 +7268,7 @@ function applyFilters(){
             <td>${escapeHTML(i.editeur||"")}</td>
             <td>${i.anneeEdition||""}</td>
             <td><span class="badge-wish">${prioLabel}</span></td>
-            <td class="right"><button class="secondary" style="font-size:11px;padding:3px 8px" onclick="event.stopPropagation();acquireWish('${i.id}')">✅ ${T('Acheté','Bought')}</button></td>
+            <td class="right"><button class="secondary" style="font-size:11px;padding:3px 8px" title="${T('Ajouter cette œuvre à ma collection','Add this work to my collection')}" onclick="event.stopPropagation();acquireWish('${i.id}')">➕ ${T('Ajouter','Add')}</button></td>
           </tr>`);
         } else {
           const authors = (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2).map(a=>escapeHTML(a)).join("<br>");
@@ -7239,7 +7297,7 @@ function cardItemHTML(i, compact=false){
   if(i._isWish){
     const prioLabel = {haute:"🔴",normale:"🟡",basse:"🟢"}[i._wishPriorite]||"🎯";
     return `<div class="card wish-item" role="button" tabindex="0" aria-label="${escapeHTML(i.titre||T('Sans titre','Untitled'))}" style="position:relative" onclick="openWishForm('${i.id}')">
-      <button class="card-edit-btn" title="${T(`Acheté — ajouter à la collection`,`Bought — add to the collection`)}" onclick="event.stopPropagation();acquireWish('${i.id}')">✅</button>
+      <button class="card-edit-btn" title="${T(`Ajouter à ma collection`,`Add to my collection`)}" onclick="event.stopPropagation();acquireWish('${i.id}')">➕</button>
       <div style="position:absolute;top:8px;left:8px;z-index:2"><span class="badge-wish">${prioLabel} ${T("Souhaité","Wished")}</span></div>
       <div class="card-img">${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}">`:'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:40px">🎯</div>'}</div>
       <div class="card-body">
@@ -8750,7 +8808,7 @@ function renderAlbumPickResults(query){
       ...(a.auteurs||[]).map(x=>authorDisplay(authorById(x.auteurId)))]
       .join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
     return f.includes(q);
-  }).sort((a,b)=>(a.titre||'').localeCompare(b.titre||'','fr') || (a.anneeEdition||0)-(b.anneeEdition||0));
+  }).sort((a,b)=>(a.titre||'').localeCompare(b.titre||'','fr',_CMP_NUM) || (a.anneeEdition||0)-(b.anneeEdition||0));
   if(!results.length){
     list.innerHTML = `<p class="muted" style="padding:16px;text-align:center;font-size:13px">${T('Aucun album trouvé','No album found')}</p>`;
     return;
@@ -8947,7 +9005,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
     ${conservation?`<div class="panel"><h3>${T('Conservation','Conservation')}</h3><div class="eph-grid">${conservation}</div></div>`:""}
     ${_attachedPanel(it)}
     ${it.informations?`<div class="panel"><h3>${_lang==='en'?'Information':'Informations'}</h3><div style="white-space:pre-wrap">${escapeHTML(it.informations)}</div></div>`:""}
-    ${it.notes?`<div class="panel"><h3>${t('detail.summary')}</h3><div style="white-space:pre-wrap">${escapeHTML(it.notes)}</div></div>`:""}
+    ${it.notes?`<div class="panel" id="detailSummaryPanel"><h3>${t('detail.summary')}</h3><div style="white-space:pre-wrap">${escapeHTML(it.notes)}</div></div>`:""}
   `;
   document.getElementById("itemDetailContent").innerHTML = html;
 
@@ -9137,7 +9195,7 @@ function renderItemDetail(id, pushHistory=true){
     })()}
     ${_attachedPanel(it)}
     ${it.informations?`<div class="panel"><h3>${_lang==='en'?'Information':'Informations'}</h3><div style="white-space:pre-wrap">${escapeHTML(it.informations)}</div></div>`:""}
-    ${it.notes?`<div class="panel"><h3>${t('detail.summary')}</h3><div style="white-space:pre-wrap">${escapeHTML(it.notes)}</div></div>`:""}
+    ${it.notes?`<div class="panel" id="detailSummaryPanel"><h3>${t('detail.summary')}</h3><div style="white-space:pre-wrap">${escapeHTML(it.notes)}</div></div>`:""}
     ${(()=>{
       const normTitle = s => (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]/g," ").replace(/\s+/g," ").trim();
       const levenshtein = (a,b) => {
@@ -9220,7 +9278,7 @@ function renderAuthorDetail(id, pushHistory=true){
   const a = cache.authors.find(x=>x.id===id);
   if(!a) return;
   const items = cache.items.filter(i=>(i.auteurs||[]).some(x=>x.auteurId===id))
-    .sort((x,y)=>(x.anneeEdition||9999)-(y.anneeEdition||9999) || (x.titre||"").localeCompare(y.titre||"","fr"));
+    .sort((x,y)=>(x.anneeEdition||9999)-(y.anneeEdition||9999) || (x.titre||"").localeCompare(y.titre||"","fr",_CMP_NUM));
 
   // Group by category
   const byCat = {};
@@ -9934,7 +9992,7 @@ function applyWishFilters(items){
   if(s)    list = list.filter(w=>[w.titre,w.auteurs,w.editeur,w.notes].join(" ").toLowerCase().includes(s));
   if(cat)  list = list.filter(w=>w.categorie===cat);
   if(prio) list = list.filter(w=>w.priorite===prio);
-  list.sort((a,b)=>(PRIO_ORDER[a.priorite]??1)-(PRIO_ORDER[b.priorite]??1) || (a.titre||"").localeCompare(b.titre||"","fr"));
+  list.sort((a,b)=>(PRIO_ORDER[a.priorite]??1)-(PRIO_ORDER[b.priorite]??1) || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM));
   document.getElementById("wishCount").textContent = `(${list.length})`;
   const container = document.getElementById("wishContainer");
   if(!list.length){
@@ -9956,7 +10014,7 @@ function applyWishFilters(items){
       <td style="white-space:nowrap">
         <button class="ghost" style="font-size:12px" onclick="openWishForm('${w.id}')" title="Modifier">✏️</button>
         <button class="ghost" style="font-size:12px;color:var(--danger)" onclick="deleteWishById('${w.id}')" title="Supprimer">🗑️</button>
-        <button class="secondary" style="font-size:12px;padding:4px 8px" onclick="acquireWish('${w.id}')" title="${T(`Marquer comme acheté et ajouter à la collection`,`Mark as bought and add to the collection`)}">✅ ${T("Acheté","Bought")}</button>
+        <button class="secondary" style="font-size:12px;padding:4px 8px" onclick="acquireWish('${w.id}')" title="${T(`Cette œuvre rejoint la collection ; elle quitte la liste des souhaits`,`This work joins the collection and leaves the wishlist`)}">➕ ${T("Ajouter à ma collection","Add to my collection")}</button>
       </td>
     </tr>`).join("")}
   </tbody></table>`;
@@ -13654,6 +13712,21 @@ function _renderGuestBinders(){
     }).join('')}</div>`;
 }
 
+// Adresse de la page invité, publiée à côté de l'application.
+const GUEST_PAGE_URL = 'invite.html';
+// Le bouton n'est proposé que si cette page existe réellement : mieux vaut pas de bouton
+// qu'un bouton menant à une erreur 404. La vérification est silencieuse et sans effet
+// sur le reste du démarrage.
+async function _detecterPageInvite(){
+  const wrap = document.getElementById('guestEnterWrap');
+  if(!wrap) return;
+  try {
+    const r = await fetch(GUEST_PAGE_URL, {method:'HEAD', cache:'no-store'});
+    if(r.ok) wrap.style.display = '';
+  } catch(e){ /* page absente, ou consultation hors serveur : on n'affiche rien */ }
+}
+function entrerEnInvite(){ location.href = GUEST_PAGE_URL; }
+
 // ── Démarrage : thème + vérification session ──
 // Demander au navigateur de conserver le stockage (évite la purge auto d'IndexedDB).
 if(navigator.storage && navigator.storage.persist){
@@ -13663,6 +13736,7 @@ applyTheme(localStorage.getItem('bdapp_theme') || 'dark');
 (async () => {
   // Le mode invité court-circuite tout : ni librairie Supabase, ni connexion, ni base.
   if(GUEST){ _initGuest(); return; }
+  _detecterPageInvite();
   if (CLOUD) { try { await ensureSupabaseLib(); } catch(e){ console.error(e); }
     const _c=document.getElementById('sbCfgArea'); if(_c && !SB.getCfg()) _c.style.display='block'; }
   if(isSessionActive()){
