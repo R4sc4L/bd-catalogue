@@ -1743,6 +1743,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <div class="checkbox-row"><input type="checkbox" id="itemVernisSelectif"><label for="itemVernisSelectif" style="margin:0" data-en="Spot varnish">Vernis sélectif</label></div>
                 <div class="checkbox-row"><input type="checkbox" id="itemCuirImitation"><label for="itemCuirImitation" style="margin:0" data-en="Leather or imitation">Cuir ou imitation</label></div>
                 <div class="checkbox-row"><input type="checkbox" id="itemMarquageChaud"><label for="itemMarquageChaud" style="margin:0" data-en="Hot foil stamping (Gold/Silver)">Marquage à chaud (Or/Argent)</label></div>
+                <div class="checkbox-row"><input type="checkbox" id="itemEmbossageFroid"><label for="itemEmbossageFroid" style="margin:0" title="Relief obtenu par pression, sans encre ni feuille métallique" data-en-title="Relief pressed into the board, without ink or foil" data-en="Blind embossing">Embossage à froid</label></div>
               </div>
             </div>
           </div>
@@ -1799,6 +1800,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                   <div class="checkbox-row"><input type="checkbox" id="itemFinitionBristol"><label for="itemFinitionBristol" style="margin:0" data-en="Bristol board">Bristol</label></div>
                   <div class="checkbox-row"><input type="checkbox" id="itemFinitionDecoupeLaser"><label for="itemFinitionDecoupeLaser" style="margin:0" data-en="Laser cut">Découpe laser</label></div>
                   <div class="checkbox-row"><input type="checkbox" id="itemFinitionPlexiglas"><label for="itemFinitionPlexiglas" style="margin:0">Plexiglas</label></div>
+                  <div class="checkbox-row"><input type="checkbox" id="itemEmboitageEmbossageFroid"><label for="itemEmboitageEmbossageFroid" style="margin:0" title="Relief obtenu par pression, sans encre ni feuille métallique" data-en-title="Relief pressed into the board, without ink or foil" data-en="Blind embossing">Embossage à froid</label></div>
                 </div>
               </div>
             </div>
@@ -2683,6 +2685,41 @@ document.addEventListener('click', e=>{
   }
 });
 
+// ============================================================
+// RATTACHEMENT À UNE COLLECTION — meubles, étagères, piles, souhaits
+// ------------------------------------------------------------
+// Les œuvres, auteurs et catégories portent déjà leur collection. Ce n'était pas le cas
+// du mobilier ni des souhaits, dont les tables SQL n'ont pas de colonne « collection ».
+// Plutôt qu'une migration de schéma, on mémorise le rattachement dans les préférences du
+// profil — exactement le procédé déjà employé pour le type et la couleur des classeurs.
+// Tout élément inconnu de cette table est réputé appartenir à « bd » : l'existant, saisi
+// depuis la Bande dessinée, reste donc là où il a toujours été.
+// ============================================================
+let _entityColl = null;                       // { identifiant : slug de collection }
+// Listes complètes, toutes collections confondues. Les variables sans préfixe (libraryFurniture,
+// libraryShelves, libraryPiles) ne contiennent que la collection active.
+let _libAllFurniture = [], _libAllShelves = [], _libAllPiles = [];
+async function loadEntityColl(){
+  try { const r = await dbGet('meta','entity-collection'); _entityColl = r?.value || {}; }
+  catch(e){ _entityColl = {}; }
+  return _entityColl;
+}
+async function saveEntityColl(){
+  await dbPut('meta',{ key:'entity-collection', value:_entityColl||{} });
+}
+function collOf(id){ return (_entityColl && _entityColl[id]) || 'bd'; }
+function setCollOf(id, slug){ if(!_entityColl) _entityColl = {}; _entityColl[id] = slug || 'bd'; }
+// Élément visible dans la collection courante ? La vue agrégée « Ma Collection » montre tout.
+function inActiveColl(id){ return isAllCollection() || collOf(id) === _activeCollection; }
+// Fusionne la vue filtrée dans la liste complète : les éléments des AUTRES collections
+// sont préservés tels quels. Sans cela, enregistrer depuis une collection effacerait les
+// meubles de toutes les autres.
+function _fusionnerColl(complet, visible){
+  const vus = new Set(visible.map(x=>x.id));
+  const autres = (complet||[]).filter(x=>!inActiveColl(x.id) && !vus.has(x.id));
+  return [...autres, ...visible];
+}
+
 function switchCollection(id){
   _activeCollection = id;
   localStorage.setItem('bdapp_collection', id);
@@ -2700,7 +2737,12 @@ function switchCollection(id){
   document.title = `${T('Ma Collection','My Collection')} ${_modLabel(ct)}`;
   // Adapt nav + view labels
   _adaptCollectionLabels();
-  refreshCurrentView();
+  // Le mobilier et les souhaits diffèrent d'une collection à l'autre : il faut les relire.
+  (async ()=>{
+    try { await loadLibraryFurniture(); await loadLibraryShelves(); await loadLibraryPiles(); }
+    catch(e){ console.warn('[Collection] rechargement de la bibliothèque impossible', e); }
+    refreshCurrentView();
+  })();
 }
 
 // Sections hidden per collection
@@ -3373,9 +3415,9 @@ const SB = (() => {
   // ── Constantes de mapping (identiques à l'outil de migration) ────
   const CARACT_KEYS = ['broche','relie','dosAgrafe','dosSpiral','couvertureSouple','couvertureCartonnee',
     'rabats','aLaSuisse','formatCarre','formatFrancaise','formatItalienne','formatManga','formatComics',
-    'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','bandeau','rubanMarquePage',
+    'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','embossageFroid','bandeau','rubanMarquePage',
     'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
-    'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite',
+    'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite','emboitageEmbossageFroid',
     'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche'];
   const CONTENU_KEYS = ['exlibris','exlibrisColle','exlibrisSigne','exlibrisNumerote','exlibrisTirage',
     'tirageInclus','serigraphie','marquePage','timbre','carnetCroquis','autocollant','decalcomanie',
@@ -5013,6 +5055,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemFinitionDecoupeLaser").checked = !!it.finitionDecoupeLaser;
     document.getElementById("itemFinitionPlexiglas").checked = !!it.finitionPlexiglas;
     document.getElementById("itemEmboitagePleineToile").checked = !!it.emboitagePleineToile;
+    document.getElementById("itemEmboitageEmbossageFroid").checked = !!it.emboitageEmbossageFroid;
     document.getElementById("itemEmboitageQualite").value = it.emboitageQualite||"";
     document.getElementById("itemBroche").checked = !!it.broche;
     document.getElementById("itemDosAgrafe").checked = !!it.dosAgrafe;
@@ -5032,6 +5075,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemVernisSelectif").checked = !!it.vernisSelectif;
     document.getElementById("itemCuirImitation").checked = !!it.cuirImitation;
     document.getElementById("itemMarquageChaud").checked = !!it.marquageChaud;
+    document.getElementById("itemEmbossageFroid").checked = !!it.embossageFroid;
     document.getElementById("itemBandeau").checked = !!it.bandeau;
     document.getElementById("itemRubanMarquePage").checked = !!it.rubanMarquePage;
     document.getElementById("itemJaquette").checked = !!it.jaquette;
@@ -5273,6 +5317,7 @@ async function saveItem(e){
       itemFormatCarre:"formatCarre", itemFormatFrancaise:"formatFrancaise", itemFormatItalienne:"formatItalienne", itemFormatManga:"formatManga", itemFormatComics:"formatComics",
       itemDosToile:"dosToile", itemPleineToile:"pleineToile",
       itemVernisSelectif:"vernisSelectif", itemCuirImitation:"cuirImitation", itemMarquageChaud:"marquageChaud",
+      itemEmbossageFroid:"embossageFroid", itemEmboitageEmbossageFroid:"emboitageEmbossageFroid",
       itemFinitionCarton:"finitionCarton", itemFinitionBristol:"finitionBristol", itemFinitionDecoupeLaser:"finitionDecoupeLaser", itemFinitionPlexiglas:"finitionPlexiglas",
       itemEmboitagePleineToile:"emboitagePleineToile",
       itemBandeau:"bandeau", itemRubanMarquePage:"rubanMarquePage", itemJaquette:"jaquette"
@@ -5424,6 +5469,8 @@ async function saveItem(e){
     vernisSelectif: document.getElementById("itemVernisSelectif").checked,
     cuirImitation: document.getElementById("itemCuirImitation").checked,
     marquageChaud: document.getElementById("itemMarquageChaud").checked,
+    embossageFroid: document.getElementById("itemEmbossageFroid").checked,
+    emboitageEmbossageFroid: document.getElementById("itemEmboitageEmbossageFroid").checked,
     bandeau: document.getElementById("itemBandeau").checked,
     rubanMarquePage: document.getElementById("itemRubanMarquePage").checked,
     jaquette: document.getElementById("itemJaquette").checked,
@@ -9162,7 +9209,7 @@ function renderItemDetail(id, pushHistory=true){
         ? `<div class="panel"><h3>${t('detail.includes')}</h3><dl>${inclRows.map(_dtdd).join("")}</dl></div>`
         : "";
       const carRows = [];
-      if(it.emboitageFourreau||it.emboitageCoffret||it.emboitageChemise||it.finitionCarton||it.finitionBristol||it.finitionDecoupeLaser||it.emboitagePleineToile||it.finitionPlexiglas) carRows.push({k:t('caract.emboitage'),v:[it.emboitageFourreau?(_lang==='en'?'Slipcase':'Étui'):"",it.emboitageCoffret?(_lang==='en'?'Box set':'Coffret'):"",it.emboitageChemise?(_lang==='en'?'Folder':'Chemise'):"",it.finitionCarton?'Carton':"",it.emboitagePleineToile?(_lang==='en'?'Full cloth':'Pleine toile'):"",it.finitionBristol?'Bristol':"",it.finitionDecoupeLaser?(_lang==='en'?'Laser cut':'Découpe laser'):"",it.finitionPlexiglas?'Plexiglas':""].filter(Boolean).join(" + ")});
+      if(it.emboitageFourreau||it.emboitageCoffret||it.emboitageChemise||it.finitionCarton||it.finitionBristol||it.finitionDecoupeLaser||it.emboitagePleineToile||it.finitionPlexiglas||it.emboitageEmbossageFroid) carRows.push({k:t('caract.emboitage'),v:[it.emboitageFourreau?(_lang==='en'?'Slipcase':'Étui'):"",it.emboitageCoffret?(_lang==='en'?'Box set':'Coffret'):"",it.emboitageChemise?(_lang==='en'?'Folder':'Chemise'):"",it.finitionCarton?'Carton':"",it.emboitagePleineToile?(_lang==='en'?'Full cloth':'Pleine toile'):"",it.finitionBristol?'Bristol':"",it.finitionDecoupeLaser?(_lang==='en'?'Laser cut':'Découpe laser'):"",it.finitionPlexiglas?'Plexiglas':"",it.emboitageEmbossageFroid?(_lang==='en'?'Blind embossing':'Embossage à froid'):""].filter(Boolean).join(" + ")});
       if(it.emboitageQualite) carRows.push({k:(_lang==='en'?'Slipcase quality':"Qualité de l'emboîtage"),v:escapeHTML(it.emboitageQualite)});
       if(it.relie||it.broche||it.dosAgrafe||it.dosSpiral||it.aLaSuisse) carRows.push({k:t('caract.reliure'),v:[it.relie?(_lang==='en'?'Hardcover':'Relié'):"",it.broche?(_lang==='en'?'Paperback':'Broché'):"",it.dosAgrafe?(_lang==='en'?'Staple-bound':'Agrafé'):"",it.dosSpiral?(_lang==='en'?'Spiral-bound':'Spirale'):"",it.aLaSuisse?(_lang==='en'?'Swiss-bound':'À la Suisse'):""].filter(Boolean).join(" + ")});
       if(it.couvertureCartonnee||it.couvertureSouple||it.rabats) carRows.push({k:t('caract.couverture'),v:[it.couvertureCartonnee?(_lang==='en'?'Hardcover':'Cartonnée'):"",it.couvertureSouple?(_lang==='en'?'Softcover':'Souple'):"",it.rabats?(_lang==='en'?'Softcover with flaps':'Souple avec rabats'):""].filter(Boolean).join(" + ")});
@@ -9173,6 +9220,7 @@ function renderItemDetail(id, pushHistory=true){
       if(it.vernisSelectif) finitions.push(_lang==='en'?'Spot UV':'Vernis sélectif');
       if(it.cuirImitation) finitions.push(_lang==='en'?'Leatherette':'Cuir ou imitation');
       if(it.marquageChaud) finitions.push(_lang==='en'?'Hot stamping':'Marquage à chaud');
+      if(it.embossageFroid) finitions.push(_lang==='en'?'Blind embossing':'Embossage à froid');
       if(finitions.length) carRows.push({k:t('caract.finition'),v:finitions.join(" + ")});
       if(it.bandeau) carRows.push({k:t('caract.bandeau'),p:true});
       if(it.rubanMarquePage) carRows.push({k:t('caract.ruban'),p:true});
@@ -9963,8 +10011,19 @@ function refreshCurrentView(){
 const PRIO_LABEL = { get haute(){return T("🔴 Haute","🔴 High")}, get normale(){return T("🟡 Normale","🟡 Normal")}, get basse(){return T("🟢 Basse","🟢 Low")} };
 const PRIO_ORDER = { haute:0, normale:1, basse:2 };
 
-async function getWishlist(){ const r = await dbGet("meta","wishlist"); return r?.value||[]; }
-async function saveWishlist(items){ await dbPut("meta",{key:"wishlist",value:items}); }
+// Souhaits : la liste stockée reste complète ; on n'expose que ceux de la collection active.
+let _wishAll = [];
+async function getWishlist(){
+  const r = await dbGet("meta","wishlist");
+  _wishAll = r?.value || [];
+  return _wishAll.filter(w=>inActiveColl(w.id));
+}
+async function saveWishlist(items){
+  items.forEach(w=>{ if(!(_entityColl||{})[w.id]) setCollOf(w.id, isAllCollection()?'bd':_activeCollection); });
+  _wishAll = _fusionnerColl(_wishAll, items);      // les souhaits des autres collections sont préservés
+  await dbPut("meta",{key:"wishlist",value:_wishAll});
+  await saveEntityColl();
+}
 
 function toggleWishInCollection(checked){
   localStorage.setItem('bd_show_wish_in_coll', checked ? '1' : '0');
@@ -11226,14 +11285,23 @@ async function loadLibraryShelves(){
   return new Promise(res=>{
     const tx = db.transaction("meta","readonly");
     const req = tx.objectStore("meta").get("library-shelves");
-    req.onsuccess = ()=>{ libraryShelves = req.result?.value || []; res(libraryShelves); };
-    req.onerror = ()=>{ libraryShelves=[]; res([]); };
+    req.onsuccess = ()=>{
+      _libAllShelves = req.result?.value || [];
+      libraryShelves = _libAllShelves.filter(x=>inActiveColl(x.id));   // seule la collection active est exposée
+      res(libraryShelves);
+    };
+    req.onerror = ()=>{ _libAllShelves=[]; libraryShelves=[]; res([]); };
   });
 }
 async function saveLibraryShelves(){
+  // Rattacher les nouveaux éléments à la collection courante, puis enregistrer la table :
+  // sans cette persistance, un meuble créé ici réapparaîtrait dans « BD » au rechargement.
+  libraryShelves.forEach(x=>{ if(!(_entityColl||{})[x.id]) setCollOf(x.id, isAllCollection()?'bd':_activeCollection); });
+  _libAllShelves = _fusionnerColl(_libAllShelves, libraryShelves);
+  await saveEntityColl();
   return new Promise((res,rej)=>{
     const tx = db.transaction("meta","readwrite");
-    tx.objectStore("meta").put({key:"library-shelves", value: libraryShelves});
+    tx.objectStore("meta").put({key:"library-shelves", value: _libAllShelves});
     tx.oncomplete = res;
     tx.onerror = rej;
   });
@@ -11242,14 +11310,23 @@ async function loadLibraryPiles(){
   return new Promise(res=>{
     const tx = db.transaction("meta","readonly");
     const req = tx.objectStore("meta").get("library-piles");
-    req.onsuccess = ()=>{ libraryPiles = req.result?.value || []; res(libraryPiles); };
-    req.onerror = ()=>{ libraryPiles=[]; res([]); };
+    req.onsuccess = ()=>{
+      _libAllPiles = req.result?.value || [];
+      libraryPiles = _libAllPiles.filter(x=>inActiveColl(x.id));   // seule la collection active est exposée
+      res(libraryPiles);
+    };
+    req.onerror = ()=>{ _libAllPiles=[]; libraryPiles=[]; res([]); };
   });
 }
 async function saveLibraryPiles(){
+  // Rattacher les nouveaux éléments à la collection courante, puis enregistrer la table :
+  // sans cette persistance, un meuble créé ici réapparaîtrait dans « BD » au rechargement.
+  libraryPiles.forEach(x=>{ if(!(_entityColl||{})[x.id]) setCollOf(x.id, isAllCollection()?'bd':_activeCollection); });
+  _libAllPiles = _fusionnerColl(_libAllPiles, libraryPiles);
+  await saveEntityColl();
   return new Promise((res,rej)=>{
     const tx = db.transaction("meta","readwrite");
-    tx.objectStore("meta").put({key:"library-piles", value: libraryPiles});
+    tx.objectStore("meta").put({key:"library-piles", value: _libAllPiles});
     tx.oncomplete = res;
     tx.onerror = rej;
   });
@@ -11258,14 +11335,23 @@ async function loadLibraryFurniture(){
   return new Promise(res=>{
     const tx = db.transaction("meta","readonly");
     const req = tx.objectStore("meta").get("library-furniture");
-    req.onsuccess = ()=>{ libraryFurniture = req.result?.value || []; res(libraryFurniture); };
-    req.onerror = ()=>{ libraryFurniture=[]; res([]); };
+    req.onsuccess = ()=>{
+      _libAllFurniture = req.result?.value || [];
+      libraryFurniture = _libAllFurniture.filter(x=>inActiveColl(x.id));   // seule la collection active est exposée
+      res(libraryFurniture);
+    };
+    req.onerror = ()=>{ _libAllFurniture=[]; libraryFurniture=[]; res([]); };
   });
 }
 async function saveLibraryFurniture(){
+  // Rattacher les nouveaux éléments à la collection courante, puis enregistrer la table :
+  // sans cette persistance, un meuble créé ici réapparaîtrait dans « BD » au rechargement.
+  libraryFurniture.forEach(x=>{ if(!(_entityColl||{})[x.id]) setCollOf(x.id, isAllCollection()?'bd':_activeCollection); });
+  _libAllFurniture = _fusionnerColl(_libAllFurniture, libraryFurniture);
+  await saveEntityColl();
   return new Promise((res,rej)=>{
     const tx = db.transaction("meta","readwrite");
-    tx.objectStore("meta").put({key:"library-furniture", value: libraryFurniture});
+    tx.objectStore("meta").put({key:"library-furniture", value: _libAllFurniture});
     tx.oncomplete = res;
     tx.onerror = rej;
   });
@@ -11297,7 +11383,7 @@ async function ensureFurnitureModel(){
   let changed = false;
   if(!libraryFurniture.length && libraryShelves.length){
     const m = {id:"meuble-"+Date.now(), name:"Meuble 1", x:30, y:30, wCm:80, hCm:237, dCm:28, cols:1, rows:libraryShelves.length, rot:0, color:"#8b5e3c"};
-    libraryFurniture.push(m);
+    libraryFurniture.push(m); setCollOf(m.id, isAllCollection()?'bd':_activeCollection);
     libraryShelves.forEach((s,i)=>{ s.meubleId=m.id; s.col=0; s.row=i; });
     changed = true;
   }
@@ -12414,7 +12500,7 @@ async function saveMeubleModal(){
     // Position décalée pour ne pas empiler les nouveaux meubles
     const off = libraryFurniture.length;
     const m = {id:"meuble-"+Date.now(), name, x:30+off*26, y:30+off*26, wCm, hCm, dCm, cols, rows, rot:0, color:wood, drawers:newDrawers};
-    libraryFurniture.push(m);
+    libraryFurniture.push(m); setCollOf(m.id, isAllCollection()?'bd':_activeCollection);
     for(let c=0;c<cols;c++){
       for(let r=0;r<rows;r++){
         const nm = cols>1 ? uniqueShelfName(`${name} C${c+1}E${r+1}`) : uniqueShelfName(`${name} – ét.`);
@@ -12717,7 +12803,7 @@ async function confirmNewPile(){
   closeModal("newPileModal");
   const pile = {id:"pile-"+Date.now(), name:trimmed, localisation:shelf.name, itemOrder:[]};
   if(kind==="classeur"){ pile.kind = "classeur"; pile.color = "#6d3c3c"; }
-  libraryPiles.push(pile);
+  libraryPiles.push(pile); setCollOf(pile.id, isAllCollection()?'bd':_activeCollection);
   if(!shelf.itemOrder) shelf.itemOrder=[];
   shelf.itemOrder.push("pile:"+pile.id);
   await saveLibraryPiles();
@@ -13451,6 +13537,7 @@ async function _initApp(){
     _initStickyHeader();
     _initEnvBadge();
     await openDB();
+    await loadEntityColl();     // avant toute lecture de la bibliothèque ou des souhaits
     await reloadCache();
     // Migration : corriger les catégories mal capitalisées
     const catFixes = {"livre illustré":"Livre illustré"};
