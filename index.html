@@ -326,7 +326,9 @@
   .book-spine.located,.pile-strip.located,.drawer-face.located,.pile-block.located{box-shadow:0 0 0 3px #4a9eff,0 0 16px rgba(74,158,255,.75);z-index:50;position:relative}
   /* Meuble qui vient d'être dupliqué : un halo bref, le temps de le repérer sur le plan */
   @keyframes meuble-neuf{0%,100%{box-shadow:0 0 0 0 rgba(74,158,255,0)}50%{box-shadow:0 0 0 4px #4a9eff,0 0 22px rgba(74,158,255,.7)}}
-  .meuble3d.neuf{animation:meuble-neuf .7s ease-in-out 3;z-index:40}
+  /* Pas de z-index ici : le halo doit apparaître à la place RÉELLE du meuble dans la pile,
+     sinon changer l'ordre de superposition afficherait aussitôt le contraire du résultat. */
+  .meuble3d.neuf{animation:meuble-neuf .7s ease-in-out 3}
   /* Barre flottante de localisation : segments accolés dans une même pastille.
      « Ouvrir à la bonne page » n'apparaît que pour un document rangé dans un classeur. */
   /* Échec du chargement initial : panneau explicite plutôt qu'une application vide. */
@@ -3800,6 +3802,7 @@ const SB = (() => {
         cols:m.cols??1, rows:m.rows??1, rot:m.rotation??0, color:m.couleur||'' };
       if(st.hCm != null) o.hCm = st.hCm;
       if(st.drawers)     o.drawers = st.drawers;
+      if(st.z != null)   o.z = st.z;
       return o;
     });
     const orderOf = (links, key) => { const map={};
@@ -4039,14 +4042,16 @@ const SB = (() => {
     const old = R.meta['library-furniture']||[];
     const gone = []; for(const m of old){ const did=await detId(m.id); if(!keep.has(did)) gone.push(did); }
     if(gone.length) await q(client.from('meubles').delete().in('id', gone), 'meubles');
-    // La table `meubles` n'a ni colonne de hauteur ni colonne de tiroirs : sans cela, tout
-    // meuble reprenait 237 cm au rechargement et perdait ses tiroirs. On les range dans les
-    // préférences du profil — même procédé que le type et la couleur des classeurs.
+    // La table `meubles` n'a ni colonne de hauteur, ni de tiroirs, ni d'ordre de superposition :
+    // sans cela, tout meuble reprenait 237 cm au rechargement, perdait ses tiroirs et son rang
+    // dans la pile. On les range dans les préférences du profil — même procédé que le type et
+    // la couleur des classeurs.
     const style = {};
     list.forEach(m=>{
       const s = {};
       if(m.hCm != null && m.hCm !== '') s.hCm = Number(m.hCm);
       if((m.drawers||[]).length) s.drawers = m.drawers;
+      if(m.z != null) s.z = Number(m.z);
       if(Object.keys(s).length) style[ids[m.id]] = s;
     });
     R.prefs['library-furniture-style'] = style;
@@ -11640,7 +11645,11 @@ function renderFurniturePlan(container){
   };
   const labels = [];     // titres : centrés sous chaque meuble, collés à son propre bas
   let maxBottom = 0, minBottom = Infinity;
-  const boxes = libraryFurniture.map(m=>{
+  // Ordre de superposition explicite : le dernier dessiné passe devant. Sans lui, l'empilement
+  // dépendait de l'ordre d'arrivée en base — impossible de faire passer un meuble derrière un
+  // autre pour composer un angle ou un décrochement.
+  _normaliserPlans();
+  const boxes = libraryFurniture.slice().sort((a,b)=>(a.z||0)-(b.z||0)).map(m=>{
     const cols = Math.max(1, m.cols||1);
     const rows = Math.max(1, m.rows||1);
     const w = (m.wCm||80)*SC;
@@ -11695,6 +11704,8 @@ function renderFurniturePlan(container){
       <div class="m3d-actions">
         <button class="ghost" title="${T(`Ouvrir`,`Open`)}" data-act="open">↗</button>
         <button class="ghost" title="Pivoter (face → droit → droit fort → gauche → gauche fort)" data-act="rotate">⟳</button>
+        <button class="ghost" title="${T(`Faire passer devant (alt+clic : tout devant)`,`Bring forward (alt+click: bring to front)`)}" data-act="avant">⬆</button>
+        <button class="ghost" title="${T(`Faire passer derrière (alt+clic : tout derrière)`,`Send backward (alt+click: send to back)`)}" data-act="arriere">⬇</button>
         <button class="ghost" title="Modifier" data-act="edit">✏️</button>
         <button class="ghost" title="Supprimer" data-act="delete">🗑️</button>
       </div>
@@ -11711,12 +11722,14 @@ function renderFurniturePlan(container){
   const titleBaseline = maxBottom + GAP;
   const titlesHTML = labels.map(l=>`<div class="m3d-title" style="left:${l.cx}px;top:${titleBaseline}px;transform:translateX(-50%);text-align:center" title="${escapeHTML(l.name)}">${escapeHTML(l.name)}</div>`).join("");
   container.innerHTML = `
-    <p class="muted" style="margin:0 0 10px;font-size:13px">${T(`Vue en perspective — glisse les meubles pour reproduire ta pièce, clique sur un meuble pour l'ouvrir et le remplir. ⟳ incline le meuble (face → mur droit → mur gauche).`,`Perspective view — drag the bookcases to reproduce your room, click a bookcase to open and fill it. ⟳ tilts the bookcase (front → right wall → left wall).`)}</p>
+    <p class="muted" style="margin:0 0 10px;font-size:13px">${T(`Vue en perspective — glisse les meubles pour reproduire ta pièce, clique sur un meuble pour l'ouvrir et le remplir. ⟳ incline le meuble (face → mur droit → mur gauche) ; ⬆ ⬇ le font passer devant ou derrière ses voisins (alt+clic : tout devant / tout derrière).`,`Perspective view — drag the bookcases to reproduce your room, click a bookcase to open and fill it. ⟳ tilts the bookcase (front → right wall → left wall); ⬆ ⬇ move it in front of or behind its neighbours (alt+click: all the way front / back).`)}</p>
     <div class="meuble-scene" id="meubleScene"><div class="floor-grid"></div>${boxes || `<div class="plan-empty">${T('Aucun meuble. Clique sur « + Nouveau meuble » pour commencer.','No bookcases. Click « + New bookcase » to get started.')}</div>`}${titlesHTML}</div>`;
   container.querySelectorAll(".meuble3d").forEach(tile=>{
     const id = tile.dataset.meubleId;
     tile.querySelector('[data-act="open"]').addEventListener("click", e=>{ e.stopPropagation(); openMeuble(id); });
     tile.querySelector('[data-act="rotate"]').addEventListener("click", e=>{ e.stopPropagation(); rotateMeuble(id); });
+    tile.querySelector('[data-act="avant"]').addEventListener("click", e=>{ e.stopPropagation(); superposerMeuble(id, e.altKey ? 'devant' : 'avancer'); });
+    tile.querySelector('[data-act="arriere"]').addEventListener("click", e=>{ e.stopPropagation(); superposerMeuble(id, e.altKey ? 'derriere' : 'reculer'); });
     tile.querySelector('[data-act="edit"]').addEventListener("click", e=>{ e.stopPropagation(); editMeuble(id); });
     tile.querySelector('[data-act="delete"]').addEventListener("click", e=>{ e.stopPropagation(); deleteMeuble(id); });
     tile.addEventListener("click", e=>{ if(e.target.closest(".m3d-actions")) return; if(!_meubleDragMoved) openMeuble(id); });
@@ -12405,6 +12418,57 @@ async function moveLibraryShelf(id, dir){
 // ═══════════════════════════════════════════════════
 
 function openMeuble(id){ _currentMeubleId = id; renderLibrary(); }
+
+// ── Ordre de superposition sur le plan (comme les calques d'un logiciel de dessin) ──
+// Chaque meuble porte un rang `z` : 0 = tout au fond, n-1 = tout devant. On renumérote à
+// chaque lecture pour rester sur une suite continue, ce qui rend les échanges triviaux et
+// répare les fichiers anciens, qui n'avaient pas de rang du tout.
+function _normaliserPlans(){
+  const ordonnes = libraryFurniture.slice().sort((a,b)=>{
+    const za = (a.z==null) ? Infinity : a.z, zb = (b.z==null) ? Infinity : b.z;
+    if(za !== zb) return za - zb;
+    return libraryFurniture.indexOf(a) - libraryFurniture.indexOf(b);   // ordre d'origine
+  });
+  let modifie = false;
+  ordonnes.forEach((m,i)=>{ if(m.z !== i){ m.z = i; modifie = true; } });
+  return modifie;
+}
+
+// action : 'avancer' | 'reculer' (un cran) — 'devant' | 'derriere' (aux extrêmes)
+async function superposerMeuble(id, action){
+  _normaliserPlans();
+  const m = libraryFurniture.find(x=>x.id===id);
+  if(!m) return;
+  const n = libraryFurniture.length;
+  if(n < 2){ toast(T("Un seul meuble : rien à superposer.","Only one bookcase: nothing to stack."), "error"); return; }
+
+  const auxExtremes = (action==='devant' || action==='derriere');
+  if(auxExtremes){
+    const cible = action==='devant' ? n-1 : 0;
+    if(m.z === cible){ toast(T(`« ${m.name} » est déjà ${action==='devant'?'au premier plan':"à l'arrière-plan"}.`,
+                              `“${m.name}” is already ${action==='devant'?'at the front':'at the back'}.`)); return; }
+    const ancien = m.z;
+    // Tous ceux franchis reculent (ou avancent) d'un cran : la suite reste continue.
+    libraryFurniture.forEach(x=>{
+      if(x === m) return;
+      if(action==='devant' && x.z > ancien) x.z -= 1;
+      if(action==='derriere' && x.z < ancien) x.z += 1;
+    });
+    m.z = cible;
+  } else {
+    const voisinZ = m.z + (action==='avancer' ? 1 : -1);
+    if(voisinZ < 0 || voisinZ >= n){
+      toast(T(`« ${m.name} » est déjà ${action==='avancer'?'au premier plan':"à l'arrière-plan"}.`,
+              `“${m.name}” is already ${action==='avancer'?'at the front':'at the back'}.`));
+      return;
+    }
+    const voisin = libraryFurniture.find(x=>x.z === voisinZ);
+    if(voisin){ voisin.z = m.z; m.z = voisinZ; }
+  }
+  await saveLibraryFurniture();
+  await renderLibrary();
+  _cadrerMeuble(id);
+}
 
 // Navigation clavier entre meubles (vue solo) : flèches gauche/droite
 document.addEventListener("keydown", (e)=>{
