@@ -2551,6 +2551,7 @@ const MODULES = [
             addItem:'Ajouter une œuvre', addCreator:'Ajouter un auteur' },
     formSections:['authors','edition','signatures','caracteristiques','contenu'],
     categoriesMetaKey:'categories',
+    libraryLabel:{ fr:'Bibliothèque', en:'Library' },
     tabs:{ wishlist:true, library:true },
   },
   {
@@ -2587,7 +2588,8 @@ const MODULES = [
             addItem:'Ajouter un disque', addCreator:'Ajouter un artiste' },
     formSections:['edition'],
     categoriesMetaKey:'vinyle_cd_dvd_categories',
-    tabs:{ wishlist:false, library:false },
+    libraryLabel:{ fr:'CDthèque', en:'Disc library' },
+    tabs:{ wishlist:false, library:true },
   },
 ];
 
@@ -2612,6 +2614,12 @@ function _modDesc(m){ return _lang==='en' ? (m.descEn||m.desc) : m.desc; }
 function moduleById(id){ if(id===ALL_COLL) return ALL_MODULE; return MODULES.find(m=>m.id===id) || MODULES[0]; }
 function currentModule(){ return moduleById(_activeCollection); }
 function _collInfo(id){ return moduleById(id); } // alias rétro-compatible (label/icon/desc présents)
+// Nom du rangement propre à la collection active : une CDthèque n'est pas une bibliothèque.
+function libraryLabel(){
+  const l = currentModule().libraryLabel;
+  if(!l) return T('Bibliothèque','Library');
+  return _lang==='en' ? (l.en||l.fr) : l.fr;
+}
 // Mode agrégé « Ma Collection » actif ?
 function isAllCollection(){ return _activeCollection === ALL_COLL; }
 // Une œuvre a-t-elle au moins un auteur/artiste « collectionné » (favori) ?
@@ -2732,12 +2740,43 @@ let _entityColl = null;                       // { identifiant : slug de collect
 // Listes complètes, toutes collections confondues. Les variables sans préfixe (libraryFurniture,
 // libraryShelves, libraryPiles) ne contiennent que la collection active.
 let _libAllFurniture = [], _libAllShelves = [], _libAllPiles = [];
+// Les identifiants locaux (« meuble-1755… ») sont convertis en UUID DÉTERMINISTES à l'envoi
+// vers le cloud ; au rechargement, la bibliothèque revient donc indexée sur ces UUID. Or la
+// table de rattachement était indexée sur l'identifiant local : plus une seule clé ne
+// correspondait et tout retombait sur « bd » — c'est ainsi que les meubles CD réapparaissaient
+// parmi les meubles BD. On indexe désormais chaque élément sous ses DEUX identifiants.
+const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+async function idCloudDeterministe(s){
+  s = String(s);
+  if(_UUID_RE.test(s)) return s.toLowerCase();
+  const h = new Uint8Array(await crypto.subtle.digest('SHA-1', new TextEncoder().encode(s)));
+  h[6]=(h[6]&0x0f)|0x40; h[8]=(h[8]&0x3f)|0x80;
+  const x=[...h.slice(0,16)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  return `${x.slice(0,8)}-${x.slice(8,12)}-${x.slice(12,16)}-${x.slice(16,20)}-${x.slice(20,32)}`;
+}
+// Recopie le rattachement de chaque clé locale sur son jumeau UUID. Idempotent.
+// crypto.subtle n'existe qu'en contexte sécurisé : hors ligne (file://) il n'y a de toute
+// façon aucun UUID à rapprocher, on passe simplement son tour.
+async function consoliderEntityColl(){
+  if(!_entityColl || !(crypto && crypto.subtle)) return false;
+  let change = false;
+  for(const [cle, slug] of Object.entries(_entityColl)){
+    if(_UUID_RE.test(cle)) continue;
+    try {
+      const jumeau = await idCloudDeterministe(cle);
+      if(_entityColl[jumeau] === undefined){ _entityColl[jumeau] = slug; change = true; }
+    } catch(e){ /* hash indisponible : on garde la clé locale telle quelle */ }
+  }
+  return change;
+}
 async function loadEntityColl(){
   try { const r = await dbGet('meta','entity-collection'); _entityColl = r?.value || {}; }
   catch(e){ _entityColl = {}; }
+  if(await consoliderEntityColl()){ try { await saveEntityColl(); } catch(e){} }
   return _entityColl;
 }
 async function saveEntityColl(){
+  await consoliderEntityColl();   // toujours écrire les deux clés, locale et cloud
   await dbPut('meta',{ key:'entity-collection', value:_entityColl||{} });
 }
 function collOf(id){ return (_entityColl && _entityColl[id]) || 'bd'; }
@@ -3278,7 +3317,9 @@ function _adaptCollectionLabels(){
   if(wishBtn) wishBtn.style.display = isPins ? 'none' : '';
   // Library tab: hide in non-BD collections
   const libBtn = document.querySelector('button[data-view="library"]');
-  if(libBtn) libBtn.style.display = isPins ? 'none' : '';
+  if(libBtn){ libBtn.style.display = isPins ? 'none' : ''; libBtn.textContent = libraryLabel(); }
+  const libH2 = document.querySelector('#view-library h2');
+  if(libH2) libH2.textContent = '🗄️ ' + libraryLabel();
 }
 
 // Apply collection on init
@@ -3732,10 +3773,18 @@ const SB = (() => {
     });
     for(const [slug,names] of Object.entries(catsBySlug)) R.meta[metaKeyOfSlug(slug)] = names;
 
-    // Bibliothèque
-    R.meta['library-furniture'] = meubles.map(m=>({ id:m.id, name:m.nom,
-      x:m.x??0, y:m.y??0, wCm:m.w_cm??0, dCm:m.d_cm??0,
-      cols:m.cols??1, rows:m.rows??1, rot:m.rotation??0, color:m.couleur||'' }));
+    // Bibliothèque — hauteur et tiroirs vivent dans les préférences, la table `meubles`
+    // n'ayant pas de colonne pour eux (voir syncFurniture).
+    const _furnStyle = (profile && profile.preferences && profile.preferences['library-furniture-style']) || {};
+    R.meta['library-furniture'] = meubles.map(m=>{
+      const st = _furnStyle[m.id] || {};
+      const o = { id:m.id, name:m.nom,
+        x:m.x??0, y:m.y??0, wCm:m.w_cm??0, dCm:m.d_cm??0,
+        cols:m.cols??1, rows:m.rows??1, rot:m.rotation??0, color:m.couleur||'' };
+      if(st.hCm != null) o.hCm = st.hCm;
+      if(st.drawers)     o.drawers = st.drawers;
+      return o;
+    });
     const orderOf = (links, key) => { const map={};
       links.sort((a,b)=>a.position-b.position).forEach(l=>{
         (map[l[key]]=map[l[key]]||[]).push(l.oeuvre_id); });
@@ -3973,6 +4022,19 @@ const SB = (() => {
     const old = R.meta['library-furniture']||[];
     const gone = []; for(const m of old){ const did=await detId(m.id); if(!keep.has(did)) gone.push(did); }
     if(gone.length) await q(client.from('meubles').delete().in('id', gone), 'meubles');
+    // La table `meubles` n'a ni colonne de hauteur ni colonne de tiroirs : sans cela, tout
+    // meuble reprenait 237 cm au rechargement et perdait ses tiroirs. On les range dans les
+    // préférences du profil — même procédé que le type et la couleur des classeurs.
+    const style = {};
+    list.forEach(m=>{
+      const s = {};
+      if(m.hCm != null && m.hCm !== '') s.hCm = Number(m.hCm);
+      if((m.drawers||[]).length) s.drawers = m.drawers;
+      if(Object.keys(s).length) style[ids[m.id]] = s;
+    });
+    R.prefs['library-furniture-style'] = style;
+    R.meta['library-furniture-style']  = style;
+    await q(client.from('profiles').upsert({ user_id:uid, preferences:R.prefs },{onConflict:'user_id'}), 'profiles');
     R.meta['library-furniture'] = list;
   }
 
@@ -8523,6 +8585,8 @@ function applyLang() {
       btn.textContent = _activeCollection === 'pins' ? T('Éditeurs','Publishers') : S('nav.authors');
       return;
     }
+    // « Bibliothèque » dépend de la collection : CDthèque pour les disques
+    if(btn.dataset.view === 'library'){ btn.textContent = libraryLabel(); return; }
     const key = 'nav.' + btn.dataset.view.replace('-','_').replace('import-export','import').replace('souhaites','wishlist');
     if(STRINGS[_lang][key]) btn.textContent = S(key);
   });
@@ -8640,7 +8704,7 @@ function applyLang() {
   setH2WithSpan(document.querySelector('#view-souhaites h2'), S('wish.title'));
   setText('#view-stats h2', S('stats.title'));
   setText('#view-categories h2', S('cats.title'));
-  setText('#view-library h2', S('library.title'));
+  setText('#view-library h2', '🗄️ ' + libraryLabel());
   setText('#view-import-export h2', S('ie.title'));
 
   // ── Authors buttons ──
