@@ -324,6 +324,9 @@
   .pile-strip.locating{animation:spine-locate .55s ease-in-out 5;z-index:60}
   .pile-block.locating{animation:spine-locate .55s ease-in-out 5;z-index:60;position:relative}
   .book-spine.located,.pile-strip.located,.drawer-face.located,.pile-block.located{box-shadow:0 0 0 3px #4a9eff,0 0 16px rgba(74,158,255,.75);z-index:50;position:relative}
+  /* Meuble qui vient d'être dupliqué : un halo bref, le temps de le repérer sur le plan */
+  @keyframes meuble-neuf{0%,100%{box-shadow:0 0 0 0 rgba(74,158,255,0)}50%{box-shadow:0 0 0 4px #4a9eff,0 0 22px rgba(74,158,255,.7)}}
+  .meuble3d.neuf{animation:meuble-neuf .7s ease-in-out 3;z-index:40}
   /* Barre flottante de localisation : segments accolés dans une même pastille.
      « Ouvrir à la bonne page » n'apparaît que pour un document rangé dans un classeur. */
   /* Échec du chargement initial : panneau explicite plutôt qu'une application vide. */
@@ -11616,7 +11619,7 @@ function renderFurniturePlan(container){
   // Tous les titres alignés sur une même ligne (sous le meuble le plus bas) et au même corps (pas de rotation qui rétrécit le texte)
   const GAP = 14;
   const titleBaseline = maxBottom + GAP;
-  const titlesHTML = labels.map(l=>`<div class="m3d-title" style="left:${l.cx}px;top:${titleBaseline}px;transform:translateX(-50%);text-align:center">${escapeHTML(l.name)}</div>`).join("");
+  const titlesHTML = labels.map(l=>`<div class="m3d-title" style="left:${l.cx}px;top:${titleBaseline}px;transform:translateX(-50%);text-align:center" title="${escapeHTML(l.name)}">${escapeHTML(l.name)}</div>`).join("");
   container.innerHTML = `
     <p class="muted" style="margin:0 0 10px;font-size:13px">${T(`Vue en perspective — glisse les meubles pour reproduire ta pièce, clique sur un meuble pour l'ouvrir et le remplir. ⟳ incline le meuble (face → mur droit → mur gauche).`,`Perspective view — drag the bookcases to reproduce your room, click a bookcase to open and fill it. ⟳ tilts the bookcase (front → right wall → left wall).`)}</p>
     <div class="meuble-scene" id="meubleScene"><div class="floor-grid"></div>${boxes || `<div class="plan-empty">${T('Aucun meuble. Clique sur « + Nouveau meuble » pour commencer.','No bookcases. Click « + New bookcase » to get started.')}</div>`}${titlesHTML}</div>`;
@@ -11629,6 +11632,28 @@ function renderFurniturePlan(container){
     tile.addEventListener("click", e=>{ if(e.target.closest(".m3d-actions")) return; if(!_meubleDragMoved) openMeuble(id); });
     tile.addEventListener("mousedown", e=>startMeubleDrag(e,id,tile));
   });
+  _demelerTitresPlan(container, titleBaseline);
+}
+
+// Des meubles accolés (une structure de modules étroits) ont des titres plus larges qu'eux :
+// sur une seule ligne ils se recouvrent et deviennent illisibles. On les répartit sur autant
+// de lignes que nécessaire, en gardant chaque titre centré sous son meuble.
+function _demelerTitresPlan(container, baseline){
+  const titres = [...container.querySelectorAll(".m3d-title")];
+  if(titres.length < 2) return;
+  const mesures = titres.map(el=>{
+    const centre = parseFloat(el.style.left) || 0;
+    const demi = el.getBoundingClientRect().width / 2;
+    return {el, g:centre - demi, d:centre + demi};
+  }).sort((a,b)=>a.g - b.g);
+  const HAUTEUR = 17, MARGE = 6;
+  const finDeLigne = [];              // bord droit du dernier titre posé sur chaque ligne
+  for(const t of mesures){
+    let ligne = finDeLigne.findIndex(fin => t.g >= fin + MARGE);
+    if(ligne === -1){ ligne = finDeLigne.length; finDeLigne.push(-Infinity); }
+    finDeLigne[ligne] = t.d;
+    t.el.style.top = (baseline + ligne*HAUTEUR) + "px";
+  }
 }
 
 // ---- Vue de face d'un meuble (grille colonnes × étagères) ----
@@ -12490,6 +12515,43 @@ function editMeuble(id){
   openModal("meubleModal");
 }
 
+// Place la copie ACCOLÉE À DROITE de l'original, posée sur le même sol : dupliquer sert à
+// composer une structure (mur de meubles identiques), pas à obtenir un meuble isolé. Si la
+// place est déjà prise, on glisse vers la droite jusqu'au premier emplacement libre.
+const PLAN_SC = 2.45; // px par cm — même échelle que la vue en perspective
+function _poserALaSuite(origine, copie){
+  const px = cm => (cm||0)*PLAN_SC;
+  const w = px(copie.wCm||80), h = px(copie.hCm||237);
+  const bas = (origine.y??60) + px(origine.hCm||237);
+  copie.y = bas - h;                       // même ligne de sol, quelles que soient les hauteurs
+  copie.x = (origine.x??40) + px(origine.wCm||80);
+  const chevauche = () => libraryFurniture.some(o=>{
+    if(o.id === copie.id) return false;
+    const ox = o.x??40, oy = o.y??60, ow = px(o.wCm||80), oh = px(o.hCm||237);
+    return copie.x < ox+ow-1 && copie.x+w > ox+1 && copie.y < oy+oh-1 && copie.y+h > oy+1;
+  });
+  for(let garde=0; garde<60 && chevauche(); garde++){
+    const bloquant = libraryFurniture.filter(o=>{
+      if(o.id === copie.id) return false;
+      const ox = o.x??40, oy = o.y??60, ow = px(o.wCm||80), oh = px(o.hCm||237);
+      return copie.x < ox+ow-1 && copie.x+w > ox+1 && copie.y < oy+oh-1 && copie.y+h > oy+1;
+    }).map(o=>(o.x??40) + px(o.wCm||80));
+    copie.x = Math.max(...bloquant);
+  }
+}
+
+// Amène le meuble dans le champ de vision du plan et le fait clignoter brièvement.
+function _cadrerMeuble(id){
+  const tuile = document.querySelector(`.meuble3d[data-meuble-id="${id}"]`);
+  if(!tuile) return;
+  const scene = document.getElementById("meubleScene");
+  if(scene && scene.scrollWidth > scene.clientWidth){
+    scene.scrollLeft = Math.max(0, tuile.offsetLeft + tuile.offsetWidth - scene.clientWidth + 30);
+  }
+  tuile.classList.add("neuf");
+  setTimeout(()=>tuile.classList.remove("neuf"), 2400);
+}
+
 // Duplique le meuble en cours d'édition : mêmes dimensions, même teinte, même structure
 // de colonnes, étagères et blocs de tiroirs — mais VIDE. Les albums rangés ne suivent pas,
 // une œuvre n'étant rangée qu'à un seul endroit.
@@ -12497,19 +12559,22 @@ async function duplicateMeuble(){
   const m = libraryFurniture.find(x=>x.id===_editingMeubleId);
   if(!m){ toast(T("Aucun meuble à dupliquer.","No bookcase to duplicate."), "error"); return; }
 
-  // Nom libre : « Meuble 1 » → « Meuble 1 (copie) », puis « (copie 2) », etc.
-  const base = `${m.name} (${T('copie','copy')})`;
-  let nom = base, n = 2;
-  while(libraryFurniture.some(x=>x.name === nom)) nom = `${base} ${n++}`;
+  // Numérotation plutôt que « (copie) » : dupliquer sert à aligner des modules d'une même
+  // structure. « Colonne CD » → « Colonne CD 2 » → « Colonne CD 3 »… et dupliquer « Colonne
+  // CD 2 » ne donne pas « Colonne CD 2 2 » mais le premier numéro encore libre.
+  const base = m.name.replace(/\s+\d+$/, '').trim() || m.name;
+  let n = 2, nom;
+  do { nom = `${base} ${n++}`; } while(libraryFurniture.some(x=>x.name === nom));
 
   const cols = m.cols||1, rows = m.rows||1;
   const copie = {
     id: "meuble-"+Date.now(), name: nom,
-    x: (m.x??30)+26, y: (m.y??30)+26,
+    x: 0, y: 0,
     wCm: m.wCm, hCm: m.hCm, dCm: m.dCm,
     cols, rows, rot: m.rot||0, color: m.color,
     drawers: [],
   };
+  _poserALaSuite(m, copie);   // accolée à droite, sur le même sol
   // Les tiroirs sont recopiés sans leurs noms — tableau NEUF, sans quoi on partagerait
   // (et renommerait) celui du meuble d'origine. _finalizeDrawerNames les renomme d'après
   // le nouveau meuble, faute de quoi deux tiroirs porteraient la même localisation.
@@ -12528,12 +12593,14 @@ async function duplicateMeuble(){
   }
   await saveLibraryFurniture();
   await saveLibraryShelves();
-  _currentMeubleId = copie.id;          // on ouvre la copie
+  // On reste sur le PLAN : la copie se voit à côté de l'original, prête à être glissée.
+  _currentMeubleId = null;
   _editingMeubleId = null;
   closeModal("meubleModal");
-  renderLibrary();
-  toast(T(`Meuble dupliqué : « ${nom} » — ${cols*rows} case(s) vides.`,
-          `Bookcase duplicated: “${nom}” — ${cols*rows} empty compartment(s).`));
+  await renderLibrary();
+  _cadrerMeuble(copie.id);
+  toast(T(`Meuble dupliqué : « ${nom} » — ${cols*rows} case(s) vides, posé à droite de « ${m.name} ».`,
+          `Bookcase duplicated: “${nom}” — ${cols*rows} empty compartment(s), placed to the right of “${m.name}”.`));
 }
 
 async function saveMeubleModal(){
