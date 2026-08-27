@@ -881,6 +881,28 @@
   .m3d-boardface{position:absolute;left:0;right:0;height:4px;transform:translateZ(-1.6px);pointer-events:none;
     background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 96%,white),color-mix(in srgb,var(--wood,#5a3f28) 58%,black));
     box-shadow:0 3px 6px rgba(0,0,0,.5)}
+  /* ── Portes ─────────────────────────────────────────────────────────
+     Posées juste devant l'ouverture (4,6 px, soit en avant du cadre de carcasse). Une porte
+     vitrée laisse voir le rangement, d'où le fond translucide et le reflet oblique ; une
+     porte pleine masque le contenu, comme dans la réalité. */
+  .m3d-portes{position:absolute;display:flex;gap:2px;pointer-events:none;transform:translateZ(4.6px)}
+  .m3d-porte{flex:1;position:relative;box-sizing:border-box;border-radius:2px;border:1px solid rgba(0,0,0,.4)}
+  .m3d-porte.pleines{background:linear-gradient(115deg,color-mix(in srgb,var(--wood,#5a3f28) 96%,white),var(--wood,#5a3f28) 40%,color-mix(in srgb,var(--wood,#5a3f28) 74%,black));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 3px color-mix(in srgb,var(--wood,#5a3f28) 86%,black),0 2px 6px rgba(0,0,0,.5)}
+  .m3d-porte.vitrees{background:linear-gradient(115deg,rgba(255,255,255,.22) 0 14%,rgba(255,255,255,.05) 22%,rgba(255,255,255,.13) 44%,rgba(255,255,255,.02) 56%,rgba(255,255,255,.10) 78%,rgba(255,255,255,.03));
+    box-shadow:inset 0 0 0 3px var(--wood,#5a3f28),inset 0 0 0 4px color-mix(in srgb,var(--wood,#5a3f28) 70%,black),0 2px 6px rgba(0,0,0,.45)}
+  /* Poignée, du côté de l'ouvrant */
+  .m3d-porte::after{content:"";position:absolute;top:42%;height:15%;min-height:6px;width:2px;border-radius:1px;
+    background:linear-gradient(90deg,#9aa0a8,#e8ecf1 45%,#7c828a);box-shadow:0 1px 2px rgba(0,0,0,.6)}
+  .m3d-porte.gauche::after{right:5px}
+  .m3d-porte.droite::after{left:5px}
+  /* ── Pieds ──────────────────────────────────────────────────────────
+     Quatre montants sous le caisson : deux en façade, deux au fond, à la vraie profondeur. */
+  .m3d-pied{position:absolute;top:100%;pointer-events:none;border-radius:0 0 2px 2px}
+  .m3d-pied.metal{background:linear-gradient(90deg,#5f646b,#cdd3db 32%,#9198a1 58%,#4e535a);
+    box-shadow:0 2px 4px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.35)}
+  .m3d-pied.bois{background:linear-gradient(90deg,color-mix(in srgb,var(--wood,#5a3f28) 62%,black),var(--wood,#5a3f28) 45%,color-mix(in srgb,var(--wood,#5a3f28) 58%,black));
+    box-shadow:0 2px 4px rgba(0,0,0,.5)}
   /* Séparation verticale entre colonnes, elle aussi en volume */
   .m3d-divider{position:absolute;top:0;bottom:0;width:var(--d,60px);transform-origin:left center;transform:translateZ(-2px) rotateY(90deg);pointer-events:none;
     background:linear-gradient(90deg,color-mix(in srgb,var(--wood,#5a3f28) 82%,black),color-mix(in srgb,var(--wood,#5a3f28) 56%,black))}
@@ -2230,6 +2252,30 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <input type="number" id="meubleYawNum" min="-75" max="75" step="1" value="0" style="width:74px;flex-shrink:0" oninput="_majApercuYaw(true)">
           </div>
           <p class="muted" style="font-size:11px;margin:4px 0 0"><span id="meubleYawTxt">de face</span></p>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Doors">Portes</label>
+          <select id="meublePortes" style="margin-top:6px" onchange="_majChampsPortes()">
+            <option value="aucune" data-en="None">Aucune</option>
+            <option value="vitrees" data-en="Glazed">Vitrées</option>
+            <option value="pleines" data-en="Solid">Pleines</option>
+          </select>
+        </div>
+        <div id="meublePortesEtagesBlock" style="display:none">
+          <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Doors over the bottom N shelves">Portes sur les N étages du bas</label>
+          <input type="number" id="meublePortesEtages" min="1" max="12" value="1" style="margin-top:6px">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Legs">Pieds</label>
+          <select id="meublePieds" style="margin-top:6px" onchange="_majChampsPortes()">
+            <option value="aucun" data-en="None (plinth)">Aucun (posé au sol)</option>
+            <option value="metal" data-en="Metal">Métal</option>
+            <option value="bois" data-en="Wood">Bois</option>
+          </select>
+        </div>
+        <div id="meublePiedsHBlock" style="display:none">
+          <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Leg height (cm)">Hauteur des pieds (cm)</label>
+          <input type="number" id="meublePiedsCm" min="2" max="40" value="12" style="margin-top:6px">
         </div>
         <div id="meubleCollBlock" style="display:none">
           <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Collection">Collection</label>
@@ -3847,6 +3893,8 @@ const SB = (() => {
       if(st.drawers)     o.drawers = st.drawers;
       if(st.z != null)   o.z = st.z;
       if(st.yaw != null) o.yaw = st.yaw;
+      if(st.portes){ o.portes = st.portes; if(st.portesEtages != null) o.portesEtages = st.portesEtages; }
+      if(st.pieds){ o.pieds = st.pieds; if(st.piedsCm != null) o.piedsCm = st.piedsCm; }
       return o;
     });
     const orderOf = (links, key) => { const map={};
@@ -4097,6 +4145,8 @@ const SB = (() => {
       if((m.drawers||[]).length) s.drawers = m.drawers;
       if(m.z != null) s.z = Number(m.z);
       if(m.yaw != null) s.yaw = Number(m.yaw);
+      if(m.portes && m.portes !== 'aucune'){ s.portes = m.portes; if(m.portesEtages != null) s.portesEtages = Number(m.portesEtages); }
+      if(m.pieds && m.pieds !== 'aucun'){ s.pieds = m.pieds; if(m.piedsCm != null) s.piedsCm = Number(m.piedsCm); }
       if(Object.keys(s).length) style[ids[m.id]] = s;
     });
     R.prefs['library-furniture-style'] = style;
@@ -11703,7 +11753,8 @@ function renderFurniturePlan(container){
     const colW = w/cols;
     const cx = (m.x||40) + w/2;
     const left = (m.x||40);
-    const bottom = (m.y||60) + h;
+    const hPieds = (m.pieds && m.pieds!=='aucun') ? Math.max(2, Math.min(40, m.piedsCm||12)) * SC : 0;
+    const bottom = (m.y||60) + h + hPieds;   // les pieds comptent : les titres ne doivent pas les chevaucher
     if(bottom > maxBottom) maxBottom = bottom;
     if(bottom < minBottom) minBottom = bottom;
     // Angles : 0 = face, 90 = droit, 135 = droit fort, 180 = gauche, 225 = gauche fort
@@ -11760,6 +11811,30 @@ function renderFurniturePlan(container){
       const x = CADRE + utileW * c / cols;
       menuiserie += `<div class="m3d-divider" style="left:${x.toFixed(1)}px"></div>`
                  +  `<div class="m3d-dividerface" style="left:${x.toFixed(1)}px"></div>`;
+    }
+    // ── Portes : une rangée de vantaux par colonne, sur les N étages du bas. Le nombre de
+    //    vantaux découle de la largeur réelle (un battant au-delà de 50 cm serait invraisemblable).
+    const typePortes = (m.portes && m.portes !== 'aucune') ? m.portes : null;
+    if(typePortes){
+      const nbEt = Math.max(1, Math.min(rows, m.portesEtages == null ? rows : m.portesEtages));
+      const yHaut  = CADRE + utileH * (rows - nbEt) / rows;
+      const hPorte = utileH * nbEt / rows;
+      const colWcm = (m.wCm||80) / cols;
+      const vantaux = Math.max(1, Math.min(4, Math.round(colWcm / 50)));
+      for(let c=0; c<cols; c++){
+        const x = CADRE + utileW * c / cols;
+        menuiserie += `<div class="m3d-portes" style="left:${x.toFixed(1)}px;width:${(utileW/cols).toFixed(1)}px;top:${yHaut.toFixed(1)}px;height:${hPorte.toFixed(1)}px">`
+          + Array.from({length:vantaux}, (_,k)=>`<div class="m3d-porte ${typePortes} ${k%2 ? 'droite' : 'gauche'}"></div>`).join('')
+          + `</div>`;
+      }
+    }
+    // ── Pieds : quatre montants, deux en façade et deux au fond du caisson
+    if(hPieds){
+      const larg = Math.max(4, Math.round(d * 0.11));
+      const enc  = Math.max(3, Math.round(w * 0.04));
+      for(const z of [0, -(d - larg)])
+        for(const x of [enc, w - enc - larg])
+          menuiserie += `<div class="m3d-pied ${m.pieds}" style="left:${x}px;width:${larg}px;height:${hPieds.toFixed(1)}px;transform:translateZ(${z.toFixed(1)}px)"></div>`;
     }
     return `<div class="meuble3d" data-meuble-id="${m.id}" style="left:${m.x||40}px;top:${m.y||60}px;--w:${w}px;--h:${h}px;--d:${d}px;--yaw:${yaw}deg;--wood:${m.color||'#5a3f28'}">
       <div class="m3d-actions">
@@ -12721,6 +12796,35 @@ function _majApercuYaw(depuisNombre){
   const txt = document.getElementById("meubleYawTxt");
   if(txt) txt.textContent = _libelleYaw(v);
 }
+// « Étages du bas » n'a de sens qu'avec des portes, « hauteur » qu'avec des pieds.
+function _majChampsPortes(){
+  const p = document.getElementById("meublePortes").value;
+  document.getElementById("meublePortesEtagesBlock").style.display = (p === 'aucune') ? "none" : "";
+  const pd = document.getElementById("meublePieds").value;
+  document.getElementById("meublePiedsHBlock").style.display = (pd === 'aucun') ? "none" : "";
+}
+function _reglerChampsMenuiserie(m){
+  const rows = Math.max(1, (m && m.rows) || 1);
+  document.getElementById("meublePortes").value = (m && m.portes) || 'aucune';
+  const et = document.getElementById("meublePortesEtages");
+  et.max = rows;
+  et.value = Math.max(1, Math.min(rows, (m && m.portesEtages != null) ? m.portesEtages : rows));
+  document.getElementById("meublePieds").value = (m && m.pieds) || 'aucun';
+  document.getElementById("meublePiedsCm").value = Math.max(2, Math.min(40, (m && m.piedsCm) || 12));
+  _majChampsPortes();
+}
+function _lireChampsMenuiserie(rows){
+  const portes = document.getElementById("meublePortes").value || 'aucune';
+  const pieds  = document.getElementById("meublePieds").value || 'aucun';
+  const nEt = parseInt(document.getElementById("meublePortesEtages").value);
+  const hPi = parseInt(document.getElementById("meublePiedsCm").value);
+  return {
+    portes,
+    portesEtages: portes === 'aucune' ? null : Math.max(1, Math.min(rows, isFinite(nEt) ? nEt : rows)),
+    pieds,
+    piedsCm: pieds === 'aucun' ? null : Math.max(2, Math.min(40, isFinite(hPi) ? hPi : 12)),
+  };
+}
 function _reglerChampYaw(deg){
   document.getElementById("meubleYaw").value = Math.round(deg);
   document.getElementById("meubleYawNum").value = Math.round(deg);
@@ -12745,6 +12849,7 @@ function addMeuble(){
   document.getElementById("meubleD").value = 28;
   document.getElementById("meubleWood").value = "#5a3f28";
   _reglerChampYaw(0);
+  _reglerChampsMenuiserie(null);
   document.getElementById("meubleCollBlock").style.display = "none";  // création : dans la collection courante
   document.getElementById("meubleCols").disabled = false;
   document.getElementById("meubleRows").disabled = false;
@@ -12770,6 +12875,7 @@ function editMeuble(id){
   woodSel.value = m.color||"#5a3f28";
   if(woodSel.selectedIndex < 0) woodSel.value = "#5a3f28"; // teinte inconnue → défaut
   _reglerChampYaw(yawMeuble(m));
+  _reglerChampsMenuiserie(m);
   _remplirSelecteurCollection(m.id);
   // À l'édition : colonnes/étagères seulement en augmentation
   document.getElementById("meubleCols").disabled = false;
@@ -12863,6 +12969,8 @@ async function duplicateMeuble(){
     x: 0, y: 0,
     wCm: m.wCm, hCm: m.hCm, dCm: m.dCm,
     cols, rows, yaw: yawMeuble(m), color: m.color,
+    portes: m.portes||'aucune', portesEtages: m.portesEtages ?? null,
+    pieds: m.pieds||'aucun', piedsCm: m.piedsCm ?? null,
     drawers: [],
   };
   _poserALaSuite(m, copie);   // accolée à droite, sur le même sol
@@ -12917,6 +13025,7 @@ async function saveMeubleModal(){
     const drawerErr = _finalizeDrawerNames(name, newDrawers, m.id);
     if(drawerErr){ toast(drawerErr, "error"); return; }
     m.name = name; m.wCm = wCm; m.hCm = hCm; m.dCm = dCm; m.color = wood; m.yaw = _lireChampYaw();
+    Object.assign(m, _lireChampsMenuiserie(rows));
     await _applyDrawerRelocations(m.drawers||[], newDrawers);
     m.drawers = newDrawers;
     // Ajout des nouvelles cases (colonnes/étagères supplémentaires)
@@ -12947,7 +13056,7 @@ async function saveMeubleModal(){
     if(drawerErr){ toast(drawerErr, "error"); return; }
     // Position décalée pour ne pas empiler les nouveaux meubles
     const off = libraryFurniture.length;
-    const m = {id:"meuble-"+Date.now(), name, x:30+off*26, y:30+off*26, wCm, hCm, dCm, cols, rows, yaw:_lireChampYaw(), color:wood, drawers:newDrawers};
+    const m = {id:"meuble-"+Date.now(), name, x:30+off*26, y:30+off*26, wCm, hCm, dCm, cols, rows, yaw:_lireChampYaw(), color:wood, drawers:newDrawers, ..._lireChampsMenuiserie(rows)};
     libraryFurniture.push(m); setCollOf(m.id, isAllCollection()?'bd':_activeCollection);
     for(let c=0;c<cols;c++){
       for(let r=0;r<rows;r++){
