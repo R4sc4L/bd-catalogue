@@ -707,7 +707,7 @@
   .book-spine.drop-after{box-shadow:3px 0 0 2px var(--accent),2px 2px 5px rgba(0,0,0,.18)}
   .book-spine,.book-spine-title{user-select:none;-webkit-user-select:none}
   .book-spine-title{pointer-events:none}
-  .shelf-body.shelf-empty-state::before{content:"Glissez des albums ici";position:absolute;inset:0 0 12px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:13px;font-style:italic;pointer-events:none}
+  .shelf-body.shelf-empty-state::before{content:var(--indice-depot,"Glissez des albums ici");position:absolute;inset:0 0 12px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:13px;font-style:italic;pointer-events:none}
   .book-spine{width:14px;height:110px;border-radius:2px 0 0 2px;cursor:grab;position:relative;flex-shrink:0;transition:transform .15s,box-shadow .15s;box-shadow:2px 2px 5px rgba(0,0,0,.18)}
   /* Œuvre prêtée : absente de l'étagère → tranche estompée et rayée, marqueur 📤 */
   .book-spine.spine-pret{opacity:.42;filter:grayscale(.55);
@@ -2552,6 +2552,7 @@ const MODULES = [
     formSections:['authors','edition','signatures','caracteristiques','contenu'],
     categoriesMetaKey:'categories',
     libraryLabel:{ fr:'Bibliothèque', en:'Library' },
+    libraryUnit:{ fr:['album','albums'], en:['album','albums'] },
     tabs:{ wishlist:true, library:true },
   },
   {
@@ -2589,6 +2590,7 @@ const MODULES = [
     formSections:['edition'],
     categoriesMetaKey:'vinyle_cd_dvd_categories',
     libraryLabel:{ fr:'CDthèque', en:'Disc library' },
+    libraryUnit:{ fr:['disque','disques'], en:['disc','discs'] },
     tabs:{ wishlist:false, library:true },
   },
 ];
@@ -2620,6 +2622,12 @@ function libraryLabel(){
   if(!l) return T('Bibliothèque','Library');
   return _lang==='en' ? (l.en||l.fr) : l.fr;
 }
+// « 3 albums » en bibliothèque, « 3 disques » en CDthèque.
+function libUnit(n){
+  const u = currentModule().libraryUnit || { fr:['album','albums'], en:['album','albums'] };
+  const paire = (_lang==='en' ? (u.en||u.fr) : u.fr);
+  return paire[n===1 ? 0 : 1];
+}
 // Mode agrégé « Ma Collection » actif ?
 function isAllCollection(){ return _activeCollection === ALL_COLL; }
 // Une œuvre a-t-elle au moins un auteur/artiste « collectionné » (favori) ?
@@ -2648,6 +2656,12 @@ function authorInActiveCollection(a, refs){
 // En mode « Ma Collection » (agrégé) : uniquement les œuvres d'un auteur favori, toutes collections.
 function itemInActiveCollection(i){
   if(_activeCollection === ALL_COLL) return _hasCollectedAuthor(i);
+  return (i.collectionType||'bd') === _activeCollection;
+}
+// Variante pour la Bibliothèque / CDthèque : la vue agrégée « Ma Collection » montre la pièce
+// entière, sans se limiter aux auteurs collectionnés — on y range tout ce que l'on possède.
+function itemInActiveLibrary(i){
+  if(_activeCollection === ALL_COLL) return true;
   return (i.collectionType||'bd') === _activeCollection;
 }
 
@@ -3320,6 +3334,9 @@ function _adaptCollectionLabels(){
   if(libBtn){ libBtn.style.display = isPins ? 'none' : ''; libBtn.textContent = libraryLabel(); }
   const libH2 = document.querySelector('#view-library h2');
   if(libH2) libH2.textContent = '🗄️ ' + libraryLabel();
+  // L'invite des étagères vides vient d'un ::before : elle passe par une variable CSS.
+  document.documentElement.style.setProperty('--indice-depot',
+    JSON.stringify(T(`Glissez des ${libUnit(2)} ici`, `Drag ${libUnit(2)} here`)));
 }
 
 // Apply collection on init
@@ -11548,10 +11565,16 @@ async function renderLibrary(){
   await ensureFurnitureModel();
   const container = document.getElementById("libraryContainer");
   const actions = document.getElementById("libToolbarActions");
-  const items = cache.items;
-  if(!items.length){
-    if(actions) actions.innerHTML = "";
-    container.innerHTML = '<p class="lib-empty">Aucun album dans votre collection. Commencez par en ajouter depuis l\'onglet Collection.</p>';
+  // Rien à ranger ET aucun meuble : seul ce cas justifie l'écran vide. Une CDthèque sans
+  // disque doit rester constructible, sans quoi on ne pourrait jamais monter le meuble avant
+  // de saisir les fiches.
+  const items = cache.items.filter(itemInActiveLibrary);
+  if(!items.length && !libraryFurniture.length && !libraryShelves.length && !libraryPiles.length){
+    // Le bouton de création reste offert : sinon la première collection venue serait sans issue.
+    if(actions) actions.innerHTML = `<button onclick="addMeuble()">${T("+ Nouveau meuble","+ New bookcase")}</button>`;
+    container.innerHTML = `<p class="lib-empty">${T(
+      `Aucun ${currentModule().terms.item} dans cette collection, et aucun meuble. Ajoute une fiche depuis l'onglet Collection, ou crée un meuble ci-dessus.`,
+      `No ${currentModule().terms.item} in this collection, and no bookcase. Add an entry from the Collection tab, or create a bookcase above.`)}</p>`;
     return;
   }
   const meuble = _currentMeubleId ? libraryFurniture.find(m=>m.id===_currentMeubleId) : null;
@@ -11577,12 +11600,15 @@ async function renderLibrary(){
 }
 
 // Répartit les albums par étagère (+ non classés), en excluant ceux rangés dans une pile.
+// Seules les œuvres de la collection active sont prises en compte : le mobilier est cloisonné,
+// la réserve « Non classés » doit l'être aussi, faute de quoi la CDthèque proposait de ranger
+// 279 albums de bande dessinée sur ses étagères.
 function _bucketItemsByShelf(){
   const shelfNames = new Set(libraryShelves.map(s=>s.name));
   const pileNames  = new Set(libraryPiles.map(p=>p.name));
   const drawerNames = new Set(_allDrawerNames());
   const byShelf = {}; const unclassed = [];
-  cache.items.forEach(it=>{
+  cache.items.filter(itemInActiveLibrary).forEach(it=>{
     const loc = (it.localisation||"").trim();
     if(pileNames.has(loc)) return;
     if(drawerNames.has(loc)) return; // rangé dans un tiroir (badge sur la façade)
@@ -12259,7 +12285,7 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
           const cnt = nm ? cache.items.filter(it=>(it.localisation||"").trim()===nm).length : 0;
           const safe = escapeHTML(nm);
           return `<div class="drawer-face" data-drawer-name="${safe}"
-            title="${safe} — ${cnt} album${cnt>1?'s':''} (clic : voir le contenu, glisser un album dessus : le ranger)">
+            title="${safe} — ${cnt} ${libUnit(cnt)} (clic : voir le contenu, glisser un ${libUnit(1)} dessus : le ranger)">
             <span class="drawer-label">${safe}</span>${cnt?`<span class="drawer-count">${cnt}</span>`:''}</div>`;
         }).join("");
         return `<div class="drawer-block" style="width:calc(${pct}% - 3px);height:${hPx}px">${faces}</div>`;
@@ -12274,8 +12300,8 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
   const realPiles = shelfPiles.filter(p=>p.kind!=="classeur");
   const classeurs = shelfPiles.filter(p=>p.kind==="classeur");
   const pileBooksCount = realPiles.reduce((s,p)=>s+getPileBooks(p).length,0);
-  const countParts = [`${books.length} album${books.length!==1?'s':''}`];
-  if(realPiles.length) countParts.push(`${realPiles.length} pile${realPiles.length>1?'s':''} ${T('de','of')} ${pileBooksCount} album${pileBooksCount>1?'s':''}`);
+  const countParts = [`${books.length} ${libUnit(books.length)}`];
+  if(realPiles.length) countParts.push(`${realPiles.length} pile${realPiles.length>1?'s':''} ${T('de','of')} ${pileBooksCount} ${libUnit(pileBooksCount)}`);
   if(classeurs.length) countParts.push(`${classeurs.length} ${T('classeur','binder')}${classeurs.length>1?'s':''}`);
 
   const compactClass = (availW && availW < 260) ? ' shelf-compact' : '';
@@ -12889,8 +12915,10 @@ function friendlyLocation(loc){
 function openReconcileModal(){
   const pileNames = new Set(libraryPiles.map(p=>p.name));
   // Toutes les localisations présentes sur des albums (hors piles), même si ce sont déjà des étagères.
+  // Bornées à la collection active : réconcilier depuis la CDthèque ne doit pas toucher aux
+  // rangements de la bande dessinée.
   const counts = {};
-  cache.items.forEach(it=>{
+  cache.items.filter(itemInActiveLibrary).forEach(it=>{
     const loc = (it.localisation||"").trim();
     if(!loc || pileNames.has(loc)) return;
     counts[loc] = (counts[loc]||0) + 1;
