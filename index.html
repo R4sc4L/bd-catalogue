@@ -866,15 +866,17 @@
      cadre de carcasse au ras de l'ouverture. Auparavant tout l'intérieur était un aplat collé
      sur le plan de façade — d'où l'impression d'étagères imprimées sur le fond. Les tranches
      d'albums, elles, restent en façade : on range les disques au bord de la tablette. */
-  /* Les tranches d'albums sont franchement détachées du plan des tablettes (3 px contre −2 px) :
-     à profondeur voisine, le compositeur 3D mélange les deux plans et les albums paraissaient
-     translucides sur leur tiers inférieur, le bois transparaissant au travers. */
-  .m3d-front{position:absolute;inset:0;display:flex;box-sizing:border-box;padding:5px;background:transparent;transform:translateZ(3px)}
+  /* Profondeurs de la façade, en px, comptées depuis le plan d'ouverture du caisson :
+       cadre de carcasse 0 (il EST la face avant — le décaler détache visiblement la façade
+       du meuble dès qu'on le pivote), tranches d'albums +0,6, portes +1,2 (elles affleurent),
+       tablettes −2. L'écart tranches/tablettes évite que le compositeur 3D ne mélange les
+       deux plans, ce qui rendait le bas des albums translucide. */
+  .m3d-front{position:absolute;inset:0;display:flex;box-sizing:border-box;padding:5px;background:transparent;transform:translateZ(0.6px)}
   .m3d-back{position:absolute;inset:0;transform:translateZ(calc(-1 * var(--d,60px) + 2px));pointer-events:none;border-radius:3px;
     background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 38%,black),color-mix(in srgb,var(--wood,#5a3f28) 24%,black));
     box-shadow:inset 0 0 34px rgba(0,0,0,.6)}
   .m3d-frame{position:absolute;inset:0;box-sizing:border-box;border:5px solid var(--wood,#5a3f28);border-radius:4px;pointer-events:none;
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.3),0 12px 30px rgba(0,0,0,.5);transform:translateZ(4px)}
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.3),0 12px 30px rgba(0,0,0,.5)}
   /* Tablette : le dessus fuit vers le fond, le chant reste en façade */
   .m3d-board{position:absolute;left:0;right:0;height:var(--d,60px);transform-origin:center top;transform:translateZ(-2px) rotateX(-90deg);pointer-events:none;
     background:linear-gradient(0deg,color-mix(in srgb,var(--wood,#5a3f28) 88%,white),color-mix(in srgb,var(--wood,#5a3f28) 55%,black))}
@@ -885,7 +887,7 @@
      Posées juste devant l'ouverture (4,6 px, soit en avant du cadre de carcasse). Une porte
      vitrée laisse voir le rangement, d'où le fond translucide et le reflet oblique ; une
      porte pleine masque le contenu, comme dans la réalité. */
-  .m3d-portes{position:absolute;display:flex;gap:2px;pointer-events:none;transform:translateZ(4.6px)}
+  .m3d-portes{position:absolute;display:flex;gap:2px;pointer-events:none;transform:translateZ(1.2px)}
   .m3d-porte{flex:1;position:relative;box-sizing:border-box;border-radius:2px;border:1px solid rgba(0,0,0,.4)}
   .m3d-porte.pleines{background:linear-gradient(115deg,color-mix(in srgb,var(--wood,#5a3f28) 96%,white),var(--wood,#5a3f28) 40%,color-mix(in srgb,var(--wood,#5a3f28) 74%,black));
     box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 3px color-mix(in srgb,var(--wood,#5a3f28) 86%,black),0 2px 6px rgba(0,0,0,.5)}
@@ -903,6 +905,11 @@
     box-shadow:0 2px 4px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.35)}
   .m3d-pied.bois{background:linear-gradient(90deg,color-mix(in srgb,var(--wood,#5a3f28) 62%,black),var(--wood,#5a3f28) 45%,color-mix(in srgb,var(--wood,#5a3f28) 58%,black));
     box-shadow:0 2px 4px rgba(0,0,0,.5)}
+  /* Plancher du caisson : ferme le volume par le bas. Sans lui, un meuble très pivoté
+     laissait voir le décor au travers, la face arrière étant alors trop décalée pour couvrir. */
+  .m3d-bottom{position:absolute;left:0;right:0;bottom:0;height:var(--d,60px);transform-origin:center bottom;
+    transform:translateZ(-2px) rotateX(90deg);pointer-events:none;
+    background:linear-gradient(0deg,color-mix(in srgb,var(--wood,#5a3f28) 58%,black),color-mix(in srgb,var(--wood,#5a3f28) 38%,black))}
   /* Séparation verticale entre colonnes, elle aussi en volume */
   .m3d-divider{position:absolute;top:0;bottom:0;width:var(--d,60px);transform-origin:left center;transform:translateZ(-2px) rotateY(90deg);pointer-events:none;
     background:linear-gradient(90deg,color-mix(in srgb,var(--wood,#5a3f28) 82%,black),color-mix(in srgb,var(--wood,#5a3f28) 56%,black))}
@@ -2261,9 +2268,21 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <option value="pleines" data-en="Solid">Pleines</option>
           </select>
         </div>
+        <div id="meublePortesNbBlock" style="display:none">
+          <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Number of doors">Nombre de portes</label>
+          <input type="number" id="meublePortesNb" min="1" max="8" value="2" style="margin-top:6px">
+          <p class="muted" style="font-size:11px;margin:4px 0 0" data-en="Independent of columns: 3 doors on a 2-column bookcase is fine.">Indépendant des colonnes : 3 portes sur un meuble à 2 colonnes, c'est possible.</p>
+        </div>
         <div id="meublePortesEtagesBlock" style="display:none">
           <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Doors over the bottom N shelves">Portes sur les N étages du bas</label>
-          <input type="number" id="meublePortesEtages" min="1" max="12" value="1" style="margin-top:6px">
+          <input type="number" id="meublePortesEtages" min="1" max="12" value="1" style="margin-top:6px" onchange="_majChampsPortes()">
+        </div>
+        <div id="meublePortesHBlock" style="display:none">
+          <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Door height">Hauteur des portes</label>
+          <select id="meublePortesHauteur" style="margin-top:6px">
+            <option value="pleine" data-en="Full height (across the shelves)">Pleine hauteur (à cheval sur les étagères)</option>
+            <option value="etagere" data-en="One row per shelf">Une rangée par étagère</option>
+          </select>
         </div>
         <div>
           <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Legs">Pieds</label>
@@ -3893,7 +3912,10 @@ const SB = (() => {
       if(st.drawers)     o.drawers = st.drawers;
       if(st.z != null)   o.z = st.z;
       if(st.yaw != null) o.yaw = st.yaw;
-      if(st.portes){ o.portes = st.portes; if(st.portesEtages != null) o.portesEtages = st.portesEtages; }
+      if(st.portes){ o.portes = st.portes;
+        if(st.portesEtages != null) o.portesEtages = st.portesEtages;
+        if(st.portesNb != null) o.portesNb = st.portesNb;
+        if(st.portesHauteur) o.portesHauteur = st.portesHauteur; }
       if(st.pieds){ o.pieds = st.pieds; if(st.piedsCm != null) o.piedsCm = st.piedsCm; }
       return o;
     });
@@ -4145,7 +4167,10 @@ const SB = (() => {
       if((m.drawers||[]).length) s.drawers = m.drawers;
       if(m.z != null) s.z = Number(m.z);
       if(m.yaw != null) s.yaw = Number(m.yaw);
-      if(m.portes && m.portes !== 'aucune'){ s.portes = m.portes; if(m.portesEtages != null) s.portesEtages = Number(m.portesEtages); }
+      if(m.portes && m.portes !== 'aucune'){ s.portes = m.portes;
+        if(m.portesEtages != null) s.portesEtages = Number(m.portesEtages);
+        if(m.portesNb != null) s.portesNb = Number(m.portesNb);
+        if(m.portesHauteur) s.portesHauteur = m.portesHauteur; }
       if(m.pieds && m.pieds !== 'aucun'){ s.pieds = m.pieds; if(m.piedsCm != null) s.piedsCm = Number(m.piedsCm); }
       if(Object.keys(s).length) style[ids[m.id]] = s;
     });
@@ -11812,19 +11837,23 @@ function renderFurniturePlan(container){
       menuiserie += `<div class="m3d-divider" style="left:${x.toFixed(1)}px"></div>`
                  +  `<div class="m3d-dividerface" style="left:${x.toFixed(1)}px"></div>`;
     }
-    // ── Portes : une rangée de vantaux par colonne, sur les N étages du bas. Le nombre de
-    //    vantaux découle de la largeur réelle (un battant au-delà de 50 cm serait invraisemblable).
+    // ── Portes. Leur nombre est INDÉPENDANT des colonnes et des étagères : une façade de
+    //    bahut se compose librement (3 portes sur 2 colonnes, par exemple). Elles couvrent
+    //    les N étages du bas, soit d'un seul tenant (« pleine hauteur », à cheval sur les
+    //    tablettes), soit en une rangée de vantaux par étagère.
     const typePortes = (m.portes && m.portes !== 'aucune') ? m.portes : null;
     if(typePortes){
       const nbEt = Math.max(1, Math.min(rows, m.portesEtages == null ? rows : m.portesEtages));
-      const yHaut  = CADRE + utileH * (rows - nbEt) / rows;
-      const hPorte = utileH * nbEt / rows;
-      const colWcm = (m.wCm||80) / cols;
-      const vantaux = Math.max(1, Math.min(4, Math.round(colWcm / 50)));
-      for(let c=0; c<cols; c++){
-        const x = CADRE + utileW * c / cols;
-        menuiserie += `<div class="m3d-portes" style="left:${x.toFixed(1)}px;width:${(utileW/cols).toFixed(1)}px;top:${yHaut.toFixed(1)}px;height:${hPorte.toFixed(1)}px">`
-          + Array.from({length:vantaux}, (_,k)=>`<div class="m3d-porte ${typePortes} ${k%2 ? 'droite' : 'gauche'}"></div>`).join('')
+      const nbP  = Math.max(1, Math.min(8, m.portesNb == null ? nbPortesParDefaut(m.wCm) : m.portesNb));
+      const parEtage = m.portesHauteur === 'etagere';
+      const hRang = utileH / rows;
+      // Rangées à habiller : une seule bande pleine hauteur, ou une bande par étagère couverte
+      const bandes = parEtage
+        ? Array.from({length:nbEt}, (_,k)=>({ y: CADRE + hRang*(rows - nbEt + k), h: hRang }))
+        : [{ y: CADRE + hRang*(rows - nbEt), h: hRang*nbEt }];
+      for(const bd of bandes){
+        menuiserie += `<div class="m3d-portes" style="left:${CADRE}px;width:${utileW.toFixed(1)}px;top:${bd.y.toFixed(1)}px;height:${bd.h.toFixed(1)}px">`
+          + Array.from({length:nbP}, (_,k)=>`<div class="m3d-porte ${typePortes} ${k%2 ? 'droite' : 'gauche'}"></div>`).join('')
           + `</div>`;
       }
     }
@@ -11847,6 +11876,7 @@ function renderFurniturePlan(container){
       </div>
       <div class="m3d-box">
         <div class="m3d-back"></div>
+        <div class="m3d-bottom"></div>
         <div class="m3d-side m3d-side-l"></div>
         <div class="m3d-side m3d-side-r"></div>
         <div class="m3d-top"></div>
@@ -12796,10 +12826,18 @@ function _majApercuYaw(depuisNombre){
   const txt = document.getElementById("meubleYawTxt");
   if(txt) txt.textContent = _libelleYaw(v);
 }
+// Nombre de portes proposé d'office : un battant au-delà de 50 cm n'existe pas en menuiserie.
+function nbPortesParDefaut(wCm){ return Math.max(1, Math.min(8, Math.round((wCm||80) / 50))); }
+
 // « Étages du bas » n'a de sens qu'avec des portes, « hauteur » qu'avec des pieds.
 function _majChampsPortes(){
   const p = document.getElementById("meublePortes").value;
-  document.getElementById("meublePortesEtagesBlock").style.display = (p === 'aucune') ? "none" : "";
+  const avecPortes = (p !== 'aucune');
+  document.getElementById("meublePortesNbBlock").style.display     = avecPortes ? "" : "none";
+  document.getElementById("meublePortesEtagesBlock").style.display = avecPortes ? "" : "none";
+  // Le choix pleine hauteur / par étagère ne veut rien dire sur un seul étage.
+  const nbEt = parseInt(document.getElementById("meublePortesEtages").value) || 1;
+  document.getElementById("meublePortesHBlock").style.display = (avecPortes && nbEt > 1) ? "" : "none";
   const pd = document.getElementById("meublePieds").value;
   document.getElementById("meublePiedsHBlock").style.display = (pd === 'aucun') ? "none" : "";
 }
@@ -12809,6 +12847,9 @@ function _reglerChampsMenuiserie(m){
   const et = document.getElementById("meublePortesEtages");
   et.max = rows;
   et.value = Math.max(1, Math.min(rows, (m && m.portesEtages != null) ? m.portesEtages : rows));
+  document.getElementById("meublePortesNb").value =
+    (m && m.portesNb != null) ? m.portesNb : nbPortesParDefaut(m && m.wCm);
+  document.getElementById("meublePortesHauteur").value = (m && m.portesHauteur) || 'pleine';
   document.getElementById("meublePieds").value = (m && m.pieds) || 'aucun';
   document.getElementById("meublePiedsCm").value = Math.max(2, Math.min(40, (m && m.piedsCm) || 12));
   _majChampsPortes();
@@ -12817,10 +12858,14 @@ function _lireChampsMenuiserie(rows){
   const portes = document.getElementById("meublePortes").value || 'aucune';
   const pieds  = document.getElementById("meublePieds").value || 'aucun';
   const nEt = parseInt(document.getElementById("meublePortesEtages").value);
+  const nP  = parseInt(document.getElementById("meublePortesNb").value);
   const hPi = parseInt(document.getElementById("meublePiedsCm").value);
+  const sansPortes = (portes === 'aucune');
   return {
     portes,
-    portesEtages: portes === 'aucune' ? null : Math.max(1, Math.min(rows, isFinite(nEt) ? nEt : rows)),
+    portesEtages: sansPortes ? null : Math.max(1, Math.min(rows, isFinite(nEt) ? nEt : rows)),
+    portesNb:     sansPortes ? null : Math.max(1, Math.min(8, isFinite(nP) ? nP : 2)),
+    portesHauteur: sansPortes ? null : (document.getElementById("meublePortesHauteur").value || 'pleine'),
     pieds,
     piedsCm: pieds === 'aucun' ? null : Math.max(2, Math.min(40, isFinite(hPi) ? hPi : 12)),
   };
@@ -12970,6 +13015,7 @@ async function duplicateMeuble(){
     wCm: m.wCm, hCm: m.hCm, dCm: m.dCm,
     cols, rows, yaw: yawMeuble(m), color: m.color,
     portes: m.portes||'aucune', portesEtages: m.portesEtages ?? null,
+    portesNb: m.portesNb ?? null, portesHauteur: m.portesHauteur ?? null,
     pieds: m.pieds||'aucun', piedsCm: m.piedsCm ?? null,
     drawers: [],
   };
