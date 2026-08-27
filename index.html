@@ -2223,6 +2223,14 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <option value="#26231f" data-en="Black">Noir</option>
           </select>
         </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Angle">Angle</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+            <input type="range" id="meubleYaw" min="-75" max="75" step="1" value="0" style="flex:1;min-width:0" oninput="_majApercuYaw()">
+            <input type="number" id="meubleYawNum" min="-75" max="75" step="1" value="0" style="width:74px;flex-shrink:0" oninput="_majApercuYaw(true)">
+          </div>
+          <p class="muted" style="font-size:11px;margin:4px 0 0"><span id="meubleYawTxt">de face</span></p>
+        </div>
         <div id="meubleCollBlock" style="display:none">
           <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Collection">Collection</label>
           <select id="meubleColl" style="margin-top:6px"></select>
@@ -3838,6 +3846,7 @@ const SB = (() => {
       if(st.hCm != null) o.hCm = st.hCm;
       if(st.drawers)     o.drawers = st.drawers;
       if(st.z != null)   o.z = st.z;
+      if(st.yaw != null) o.yaw = st.yaw;
       return o;
     });
     const orderOf = (links, key) => { const map={};
@@ -4087,6 +4096,7 @@ const SB = (() => {
       if(m.hCm != null && m.hCm !== '') s.hCm = Number(m.hCm);
       if((m.drawers||[]).length) s.drawers = m.drawers;
       if(m.z != null) s.z = Number(m.z);
+      if(m.yaw != null) s.yaw = Number(m.yaw);
       if(Object.keys(s).length) style[ids[m.id]] = s;
     });
     R.prefs['library-furniture-style'] = style;
@@ -11697,7 +11707,7 @@ function renderFurniturePlan(container){
     if(bottom > maxBottom) maxBottom = bottom;
     if(bottom < minBottom) minBottom = bottom;
     // Angles : 0 = face, 90 = droit, 135 = droit fort, 180 = gauche, 225 = gauche fort
-    const yaw = (m.rot===90) ? -22 : (m.rot===135 ? -40 : (m.rot===180 ? 22 : (m.rot===225 ? 40 : 0)));
+    const yaw = yawMeuble(m);
     labels.push({cx, left, bottom, name:m.name, yaw});
     const compartCm = (m.hCm||237)/rows; // hauteur réelle d'une case (cm)
     const {n,piles} = counts(m);
@@ -11754,7 +11764,7 @@ function renderFurniturePlan(container){
     return `<div class="meuble3d" data-meuble-id="${m.id}" style="left:${m.x||40}px;top:${m.y||60}px;--w:${w}px;--h:${h}px;--d:${d}px;--yaw:${yaw}deg;--wood:${m.color||'#5a3f28'}">
       <div class="m3d-actions">
         <button class="ghost" title="${T(`Ouvrir`,`Open`)}" data-act="open">↗</button>
-        <button class="ghost" title="Pivoter (face → droit → droit fort → gauche → gauche fort)" data-act="rotate">⟳</button>
+        <button class="ghost" title="${T(`Pivoter de ${YAW_PAS}° (actuellement : ${_libelleYaw(yaw)}) — alt+clic : remettre de face. Angle exact dans « Modifier ».`,`Rotate by ${YAW_PAS}° (currently: ${_libelleYaw(yaw)}) — alt+click: reset to front. Exact angle in “Edit”.`)}" data-act="rotate">⟳</button>
         <button class="ghost" title="${T(`Faire passer devant (alt+clic : tout devant)`,`Bring forward (alt+click: bring to front)`)}" data-act="avant">⬆</button>
         <button class="ghost" title="${T(`Faire passer derrière (alt+clic : tout derrière)`,`Send backward (alt+click: send to back)`)}" data-act="arriere">⬇</button>
         <button class="ghost" title="Modifier" data-act="edit">✏️</button>
@@ -11781,7 +11791,7 @@ function renderFurniturePlan(container){
   container.querySelectorAll(".meuble3d").forEach(tile=>{
     const id = tile.dataset.meubleId;
     tile.querySelector('[data-act="open"]').addEventListener("click", e=>{ e.stopPropagation(); openMeuble(id); });
-    tile.querySelector('[data-act="rotate"]').addEventListener("click", e=>{ e.stopPropagation(); rotateMeuble(id); });
+    tile.querySelector('[data-act="rotate"]').addEventListener("click", e=>{ e.stopPropagation(); rotateMeuble(id, e.altKey); });
     tile.querySelector('[data-act="avant"]').addEventListener("click", e=>{ e.stopPropagation(); superposerMeuble(id, e.altKey ? 'devant' : 'avancer'); });
     tile.querySelector('[data-act="arriere"]').addEventListener("click", e=>{ e.stopPropagation(); superposerMeuble(id, e.altKey ? 'derriere' : 'reculer'); });
     tile.querySelector('[data-act="edit"]').addEventListener("click", e=>{ e.stopPropagation(); editMeuble(id); });
@@ -12540,13 +12550,34 @@ document.addEventListener("keydown", (e)=>{
 });
 function openBackToPlan(){ _currentMeubleId = null; renderLibrary(); }
 
-async function rotateMeuble(id){
+// ── Orientation d'un meuble ──────────────────────────────────────────
+// L'angle est désormais un NOMBRE DE DEGRÉS libre, stocké dans `yaw`. Les fichiers anciens
+// n'ont qu'un code symbolique `rot` (0 / 90 / 135 / 180 / 225) qui valait respectivement
+// 0, −22, −40, +22 et +40 degrés : on le convertit à la lecture, sans jamais le réécrire,
+// de sorte qu'un angle libre ne puisse pas être confondu avec un de ces codes.
+const YAW_MAX = 75;                      // au-delà, la façade devient trop rasante pour servir
+const YAW_PAS = 15;                      // incrément d'un clic sur ⟳
+const _YAW_LEGACY = {0:0, 90:-22, 135:-40, 180:22, 225:40};
+function yawMeuble(m){
+  if(m && m.yaw != null && isFinite(m.yaw)) return Math.max(-YAW_MAX, Math.min(YAW_MAX, Number(m.yaw)));
+  return _YAW_LEGACY[(m && m.rot) || 0] ?? 0;
+}
+function _libelleYaw(deg){
+  const d = Math.round(deg);
+  if(d === 0) return T('de face','front-on');
+  return `${Math.abs(d)}° ${d < 0 ? T('vers la droite','to the right') : T('vers la gauche','to the left')}`;
+}
+// ⟳ : un cran de 15°, qui repart à l'autre extrémité une fois la butée atteinte.
+// alt+clic : retour immédiat à la position de face.
+async function rotateMeuble(id, remiseAZero){
   const m = libraryFurniture.find(x=>x.id===id);
   if(!m) return;
-  const cycle = {0:90, 90:135, 135:180, 180:225, 225:0}; // face → droit → droit fort → gauche → gauche fort
-  m.rot = cycle[m.rot||0] ?? 0;
+  let deg = remiseAZero ? 0 : Math.round(yawMeuble(m)) + YAW_PAS;
+  if(deg > YAW_MAX) deg = -YAW_MAX;
+  m.yaw = deg;
   await saveLibraryFurniture();
-  renderLibrary();
+  await renderLibrary();
+  toast(T(`« ${m.name} » : ${_libelleYaw(deg)}.`, `“${m.name}”: ${_libelleYaw(deg)}.`));
 }
 
 function startMeubleDrag(e, id, tile){
@@ -12680,6 +12711,26 @@ async function _applyDrawerRelocations(oldDrawers, newDrawers){
   if(touched) await reloadCache();
 }
 
+// Curseur et champ chiffré décrivent la même valeur : on recopie l'un dans l'autre.
+function _majApercuYaw(depuisNombre){
+  const sl = document.getElementById("meubleYaw"), nb = document.getElementById("meubleYawNum");
+  let v = parseInt(depuisNombre ? nb.value : sl.value);
+  if(!isFinite(v)) v = 0;
+  v = Math.max(-YAW_MAX, Math.min(YAW_MAX, v));
+  sl.value = v; if(!depuisNombre || String(nb.value) !== String(v)) nb.value = v;
+  const txt = document.getElementById("meubleYawTxt");
+  if(txt) txt.textContent = _libelleYaw(v);
+}
+function _reglerChampYaw(deg){
+  document.getElementById("meubleYaw").value = Math.round(deg);
+  document.getElementById("meubleYawNum").value = Math.round(deg);
+  _majApercuYaw();
+}
+function _lireChampYaw(){
+  const v = parseInt(document.getElementById("meubleYawNum").value);
+  return isFinite(v) ? Math.max(-YAW_MAX, Math.min(YAW_MAX, v)) : 0;
+}
+
 function addMeuble(){
   _editingMeubleId = null;
   document.getElementById("meubleModalTitle").textContent = T("🗄️ Nouveau meuble","🗄️ New bookcase");
@@ -12693,6 +12744,7 @@ function addMeuble(){
   document.getElementById("meubleH").value = 237;
   document.getElementById("meubleD").value = 28;
   document.getElementById("meubleWood").value = "#5a3f28";
+  _reglerChampYaw(0);
   document.getElementById("meubleCollBlock").style.display = "none";  // création : dans la collection courante
   document.getElementById("meubleCols").disabled = false;
   document.getElementById("meubleRows").disabled = false;
@@ -12717,6 +12769,7 @@ function editMeuble(id){
   const woodSel = document.getElementById("meubleWood");
   woodSel.value = m.color||"#5a3f28";
   if(woodSel.selectedIndex < 0) woodSel.value = "#5a3f28"; // teinte inconnue → défaut
+  _reglerChampYaw(yawMeuble(m));
   _remplirSelecteurCollection(m.id);
   // À l'édition : colonnes/étagères seulement en augmentation
   document.getElementById("meubleCols").disabled = false;
@@ -12809,7 +12862,7 @@ async function duplicateMeuble(){
     id: "meuble-"+Date.now(), name: nom,
     x: 0, y: 0,
     wCm: m.wCm, hCm: m.hCm, dCm: m.dCm,
-    cols, rows, rot: m.rot||0, color: m.color,
+    cols, rows, yaw: yawMeuble(m), color: m.color,
     drawers: [],
   };
   _poserALaSuite(m, copie);   // accolée à droite, sur le même sol
@@ -12863,7 +12916,7 @@ async function saveMeubleModal(){
     const newDrawers = _collectDrawerRows(cols, rows, wCm);
     const drawerErr = _finalizeDrawerNames(name, newDrawers, m.id);
     if(drawerErr){ toast(drawerErr, "error"); return; }
-    m.name = name; m.wCm = wCm; m.hCm = hCm; m.dCm = dCm; m.color = wood;
+    m.name = name; m.wCm = wCm; m.hCm = hCm; m.dCm = dCm; m.color = wood; m.yaw = _lireChampYaw();
     await _applyDrawerRelocations(m.drawers||[], newDrawers);
     m.drawers = newDrawers;
     // Ajout des nouvelles cases (colonnes/étagères supplémentaires)
@@ -12894,7 +12947,7 @@ async function saveMeubleModal(){
     if(drawerErr){ toast(drawerErr, "error"); return; }
     // Position décalée pour ne pas empiler les nouveaux meubles
     const off = libraryFurniture.length;
-    const m = {id:"meuble-"+Date.now(), name, x:30+off*26, y:30+off*26, wCm, hCm, dCm, cols, rows, rot:0, color:wood, drawers:newDrawers};
+    const m = {id:"meuble-"+Date.now(), name, x:30+off*26, y:30+off*26, wCm, hCm, dCm, cols, rows, yaw:_lireChampYaw(), color:wood, drawers:newDrawers};
     libraryFurniture.push(m); setCollOf(m.id, isAllCollection()?'bd':_activeCollection);
     for(let c=0;c<cols;c++){
       for(let r=0;r<rows;r++){
@@ -12907,7 +12960,7 @@ async function saveMeubleModal(){
     _currentMeubleId = m.id; // ouvrir directement le nouveau meuble
   }
   closeModal("meubleModal");
-  renderLibrary();
+  await renderLibrary();
 }
 
 async function deleteMeuble(id){
