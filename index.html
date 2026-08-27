@@ -941,7 +941,7 @@
   .meuble3d:hover .m3d-side,.meuble3d:hover .m3d-top{filter:brightness(1.1)}
   /* ---- Vue de face d'un meuble ---- */
   .meuble-front-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-  .meuble-grid{display:flex;gap:16px;align-items:flex-start;justify-content:safe center;overflow-x:auto;padding-bottom:6px;flex:1;min-width:0}
+  .meuble-grid{display:flex;gap:0;align-items:flex-start;justify-content:safe center;overflow-x:auto;padding:14px 4px 10px;flex:1;min-width:0}
   /* Navigation entre meubles (flèches latérales + clavier) */
   .meuble-nav-wrap{display:flex;align-items:stretch;gap:10px}
   .meuble-nav-btn{align-self:center;flex-shrink:0;width:44px;height:110px;font-size:34px;line-height:1;padding:0;border-radius:12px;background:var(--bg-panel);color:var(--gold);border:1px solid var(--border-warm);box-shadow:var(--shadow);transition:background .15s,transform .15s}
@@ -951,7 +951,17 @@
   .meuble-col-head{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;opacity:.8}
   .shelf-floor{display:inline-block;font-size:11px;font-weight:800;color:var(--on-accent);background:var(--gold-bg);border-radius:6px;padding:1px 7px;vertical-align:middle;letter-spacing:.02em;text-shadow:none}
   /* ---- Vue meuble : étagères 3D (caisson bois en perspective) ---- */
-  .meuble-grid .meuble-col{gap:0;padding:10px 10px 12px;border-radius:8px;background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 90%,black),color-mix(in srgb,var(--wood,#5a3f28) 60%,black) 60%,color-mix(in srgb,var(--wood,#5a3f28) 50%,black));box-shadow:0 12px 30px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08),inset 0 -2px 4px rgba(0,0,0,.4)}
+  /* Un meuble à plusieurs colonnes est UN caisson cloisonné, pas plusieurs meubles côte à côte :
+     le fond, l'arrondi et l'ombre portée appartiennent à la carcasse, et les colonnes sont
+     séparées par un montant de bois plein — comme dans la vue en perspective. */
+  .meuble-caisson{display:flex;gap:0;align-items:stretch;padding:10px 10px 12px;border-radius:8px;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 90%,black),color-mix(in srgb,var(--wood,#5a3f28) 60%,black) 60%,color-mix(in srgb,var(--wood,#5a3f28) 50%,black));
+    box-shadow:0 12px 30px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08),inset 0 -2px 4px rgba(0,0,0,.4)}
+  .meuble-grid .meuble-col{gap:0;padding:0;border-radius:0;background:none;box-shadow:none;box-sizing:border-box}
+  /* Montant de séparation entre deux compartiments, avec son arête éclairée */
+  .meuble-caisson .meuble-col + .meuble-col{
+    border-left:10px solid color-mix(in srgb,var(--wood,#5a3f28) 58%,black);
+    box-shadow:inset 11px 0 0 -10px rgba(255,255,255,.16),inset 0 0 0 0 transparent}
   .meuble-grid .meuble-col-head{padding:2px 4px 9px;color:#f0d9a8;opacity:.95}
   .meuble-grid .shelf-section{margin-bottom:0;border:none;border-radius:0;background:none}
   .meuble-grid .shelf-section + .shelf-section{margin-top:2px}
@@ -11957,7 +11967,7 @@ function renderMeubleFront(container, m){
     </div>
     <div class="meuble-nav-wrap">
       ${prevM?`<button class="meuble-nav-btn" onclick="openMeuble('${prevM.id}')" title="← ${escapeHTML(prevM.name)} ${T(`(flèche gauche)`,`(left arrow)`)}">‹</button>`:'<span class="meuble-nav-spacer"></span>'}
-      <div class="meuble-grid" style="--wood:${m.color||'#5a3f28'}">${colsHTML}</div>
+      <div class="meuble-grid" style="--wood:${m.color||'#5a3f28'}"><div class="meuble-caisson">${colsHTML}</div></div>
       ${nextM?`<button class="meuble-nav-btn" onclick="openMeuble('${nextM.id}')" title="${escapeHTML(nextM.name)} → ${T(`(flèche droite)`,`(right arrow)`)}">›</button>`:'<span class="meuble-nav-spacer"></span>'}
     </div>
     ${unclassedHTML ? `<div style="margin-top:18px">${unclassedHTML}</div>` : ''}`;
