@@ -898,6 +898,17 @@
   .meuble-grid .shelf-header .shelf-floor{flex-shrink:0}
   .meuble-grid .shelf-header .muted{color:#f0e6d2!important;opacity:.9;text-shadow:0 1px 2px rgba(0,0,0,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .meuble-grid .shelf-header .shelf-actions .ghost{color:#e8dcc8}
+  /* Un meuble étroit (20 cm ≈ 160 px) ne peut pas aligner l'étiquette et cinq commandes
+     sur une ligne : elles sortaient du caisson. On autorise le passage à la ligne, et
+     on resserre les boutons en dessous d'une certaine largeur plutôt que d'en retirer. */
+  .meuble-grid .shelf-header{flex-wrap:wrap;row-gap:2px;overflow:hidden}
+  .meuble-grid .shelf-header h3{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .meuble-grid .shelf-actions{flex-shrink:0;margin-left:auto}
+  .shelf-compact .shelf-header{padding:4px 6px}
+  .shelf-compact .shelf-header h3{font-size:13px;gap:3px}
+  .shelf-compact .shelf-floor{font-size:10px;padding:1px 5px}
+  .shelf-compact .shelf-actions{gap:0}
+  .shelf-compact .shelf-actions .ghost{padding:1px 3px;font-size:12px;line-height:1.1;min-width:0}
   .meuble-grid .shelf-body{padding:16px 16px 8px;background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 14%,black) 0%,color-mix(in srgb,var(--wood,#5a3f28) 22%,black) 45%,color-mix(in srgb,var(--wood,#5a3f28) 30%,black) 100%);box-shadow:inset 0 16px 22px -12px rgba(0,0,0,.85),inset 18px 0 26px -16px rgba(0,0,0,.8),inset -18px 0 26px -16px rgba(0,0,0,.8)}
   .meuble-grid .shelf-body::after{height:15px;margin-top:4px;opacity:1;border-radius:2px 2px 0 0;background:linear-gradient(180deg,rgba(255,255,255,.25),rgba(255,255,255,0) 45%),linear-gradient(90deg,color-mix(in srgb,var(--wood,#5a3f28) 78%,black),var(--wood,#5a3f28) 30%,color-mix(in srgb,var(--wood,#5a3f28) 78%,white) 50%,var(--wood,#5a3f28) 70%,color-mix(in srgb,var(--wood,#5a3f28) 78%,black));transform:perspective(460px) rotateX(44deg);transform-origin:center bottom;box-shadow:0 3px 0 color-mix(in srgb,var(--wood,#5a3f28) 45%,black),0 6px 10px rgba(0,0,0,.6)}
   .meuble-grid .shelf-body.drag-over{filter:brightness(1.4)}
@@ -2188,6 +2199,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     </div>
     <div class="modal-footer">
       <button class="secondary" id="meubleDeleteBtn" style="color:#c0392b;border-color:rgba(192,57,43,.4);display:none" data-en="🗑️ Delete" onclick="deleteMeuble(_editingMeubleId)">🗑️ Supprimer</button>
+      <button class="secondary" id="meubleDuplicateBtn" style="display:none;margin-left:8px" title="Créer un meuble identique, vide" data-en-title="Create an identical, empty bookcase" data-en="⧉ Duplicate" onclick="duplicateMeuble()">⧉ Dupliquer</button>
       <div style="display:flex;gap:8px;margin-left:auto">
         <button class="secondary" onclick="closeModal('meubleModal')" data-en="Cancel">Annuler</button>
         <button data-en="Create" onclick="saveMeubleModal()" id="meubleSaveBtn">Créer</button>
@@ -2603,6 +2615,24 @@ function isAllCollection(){ return _activeCollection === ALL_COLL; }
 function _hasCollectedAuthor(i){
   return (i.auteurs||[]).some(a=>{ const au = cache.authors.find(x=>x.id===a.auteurId); return au && au.estCollectionne; });
 }
+// Auteurs référencés par les œuvres de la collection active.
+function authorsReferencedInActiveCollection(){
+  return new Set(cache.items.filter(i=>itemInActiveCollection(i))
+    .flatMap(i=>(i.auteurs||[]).map(a=>a.auteurId).filter(Boolean)));
+}
+// Un auteur appartient-il à la collection active ? Règle unique, partagée par la vue
+// Auteurs, le tableau de bord, les statistiques et les menus déroulants — la dupliquer
+// reviendrait à la voir diverger, ce qui est précisément ce qui laissait 83 auteurs de
+// bande dessinée s'afficher dans une collection vide.
+function authorInActiveCollection(a, refs){
+  if(_activeCollection === ALL_COLL) return true;
+  const ctype = a.collectionType || 'bd';
+  if(ctype === _activeCollection) return true;
+  // Tolérance : un auteur sans collection explicite, mais cité par une œuvre d'ici.
+  if(!a.collectionType && (refs || authorsReferencedInActiveCollection()).has(a.id)) return true;
+  return false;
+}
+
 // Un item appartient-il à la collection active ?
 // En mode « Ma Collection » (agrégé) : uniquement les œuvres d'un auteur favori, toutes collections.
 function itemInActiveCollection(i){
@@ -5127,7 +5157,10 @@ function openItemForm(id=null, opts={}){
 // auteurs » ouvre la liste entière pour la fiche en cours.
 let _authorsCollectedOnly = true;
 function _authorOptionsHTML(selectedId, applyFilter=true){
-  let auths = cache.authors.slice();
+  // Un menu d'auteurs ne doit proposer que ceux de la collection active : choisir un
+  // dessinateur de bande dessinée pour un disque n'aurait aucun sens.
+  const _refs = authorsReferencedInActiveCollection();
+  let auths = cache.authors.filter(a=>authorInActiveCollection(a, _refs) || String(a.id)===String(selectedId));
   if(applyFilter && _authorsCollectedOnly) auths = auths.filter(a=>a.estCollectionne || String(a.id)===String(selectedId));
   // Classement alphabétique par NOM DE FAMILLE (pseudonyme s'il en tient lieu),
   // et affichage « Nom, Prénom » pour que l'ordre soit lisible d'un coup d'œil.
@@ -5137,7 +5170,8 @@ function _authorOptionsHTML(selectedId, applyFilter=true){
 }
 // Entêtes communes à tous les menus d'auteur (création + bascule de portée)
 function _authorSelectHeader(){
-  const nTot = cache.authors.length;
+  const _refs = authorsReferencedInActiveCollection();
+  const nTot = cache.authors.filter(a=>authorInActiveCollection(a, _refs)).length;
   return `<option value="">${T("— Choisir un auteur —","— Choose an author —")}</option>
     <option value="__new__">${T("+ Créer un nouvel auteur","+ Create a new author")}</option>`
     + (_authorsCollectedOnly
@@ -6054,7 +6088,8 @@ function renderDashboard(){
   const collItems = cache.items.filter(i=>itemInActiveCollection(i));
   const isPins = _activeCollection === 'pins';
   const totalItems = collItems.length;
-  const totalAuthors = cache.authors.length;
+  const _refs = authorsReferencedInActiveCollection();
+  const totalAuthors = cache.authors.filter(a=>authorInActiveCollection(a, _refs)).length;
   const signedCount = collItems.filter(i=>i.signe||i.dedicaceSignature||i.dedicaceDessin||i.dedicaceTampon||i.dedicaceCheck).length;
   const eoCount = isPins ? collItems.filter(i=>i.pinsEditionLimitee).length : collItems.filter(i=>i.editionOriginale).length;
   const totalValue = collItems.reduce((s,i)=>s+(i.cote||i.prixAchat||0),0);
@@ -6064,7 +6099,7 @@ function renderDashboard(){
     {num:totalAuthors, lbl:T("Auteurs / Créateurs","Authors / Creators")},
     {num:eoCount, lbl: isPins ? T("Éditions limitées","Limited editions") : T("Éditions originales","First editions")},
     {num:signedCount, lbl:T("Signés / Dédicacés","Signed / Dedicated")},
-    {num:categoriesUsed+"/"+CATEGORIES.length, lbl:T("Catégories","Categories")},
+    {num:categoriesUsed+"/"+activeCategories().length, lbl:T("Catégories","Categories")},
     {num:totalValue.toLocaleString("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}), lbl:T("Valeur estimée","Estimated value")}
   ].map(s=>`<div class="stat-card"><div class="num">${s.num}</div><div class="lbl">${s.lbl}</div></div>`).join("");
   document.getElementById("statGrid").innerHTML = html;
@@ -7592,12 +7627,7 @@ function applyAuthorFilters(){
   // explicitement créé dans la collection active, ou référencé dans ses items
   // mais sans collectionType différent.
   let list = cache.authors.filter(a=>{
-    if(_activeCollection === ALL_COLL) return true;   // « Ma Collection » : tous les auteurs par défaut (bouton ⭐ pour ne garder que les collectionnés)
-    const ctype = a.collectionType || 'bd';
-    if(ctype === _activeCollection) return true;
-    // Tolérer un auteur sans collectionType explicite ET référencé dans cette collection
-    if(!a.collectionType && authorsInColl.has(a.id)) return true;
-    return false;
+    return authorInActiveCollection(a, authorsInColl);
   });
   const s = document.getElementById("authorSearch").value.trim().toLowerCase();
   const n = document.getElementById("authorNationality").value;
@@ -9387,14 +9417,18 @@ function renderAuthorDetail(id, pushHistory=true){
 
 // --------- Stats view ---------
 function renderStats(){
-  const totalItems = cache.items.length;
-  const totalAuthors = cache.authors.length;
-  const totalValue = cache.items.reduce((s,i)=>s+(i.cote||0),0);
-  const totalPurchased = cache.items.reduce((s,i)=>s+(i.prixAchat||0),0);
-  const signedCount = cache.items.filter(i=>i.signe||i.dedicaceSignature||i.dedicaceDessin||i.dedicaceTampon||i.dedicaceCheck).length;
-  const avgYear = cache.items.filter(i=>i.anneeEdition).reduce((s,i,_,a)=>s+i.anneeEdition/a.length,0);
+  // Toutes les statistiques portent sur la collection active — elles agrégeaient
+  // auparavant l'ensemble des collections, ce qui faussait chaque chiffre.
+  const collItems = cache.items.filter(i=>itemInActiveCollection(i));
+  const _refs = authorsReferencedInActiveCollection();
+  const totalItems = collItems.length;
+  const totalAuthors = cache.authors.filter(a=>authorInActiveCollection(a, _refs)).length;
+  const totalValue = collItems.reduce((s,i)=>s+(i.cote||0),0);
+  const totalPurchased = collItems.reduce((s,i)=>s+(i.prixAchat||0),0);
+  const signedCount = collItems.filter(i=>i.signe||i.dedicaceSignature||i.dedicaceDessin||i.dedicaceTampon||i.dedicaceCheck).length;
+  const avgYear = collItems.filter(i=>i.anneeEdition).reduce((s,i,_,a)=>s+i.anneeEdition/a.length,0);
 
-  const eoCount = cache.items.filter(i=>i.editionOriginale).length;
+  const eoCount = collItems.filter(i=>i.editionOriginale).length;
   document.getElementById("bigStatGrid").innerHTML = [
     {num:totalItems, lbl:T("Œuvres","Works")},
     {num:totalAuthors, lbl:T("Auteurs","Authors")},
@@ -9405,19 +9439,19 @@ function renderStats(){
     {num:avgYear?Math.round(avgYear):"—", lbl:T("Année moyenne","Average year")}
   ].map(s=>`<div class="stat-card"><div class="num">${s.num}</div><div class="lbl">${s.lbl}</div></div>`).join("");
 
-  renderCatBarChart("statsCategories", cache.items);
-  renderBarChart("statsPublishers", tallyBy(cache.items,"editeur"), 15);
+  renderCatBarChart("statsCategories", collItems);
+  renderBarChart("statsPublishers", tallyBy(collItems,"editeur"), 15);
 
   // Decades
   const decades = {};
-  cache.items.forEach(i=>{
+  collItems.forEach(i=>{
     if(i.anneeEdition){ const d = Math.floor(i.anneeEdition/10)*10+"s"; decades[d]=(decades[d]||0)+1; }
   });
   renderBarChart("statsDecades", Object.entries(decades).sort((a,b)=>a[0].localeCompare(b[0])), 20);
 
   // Nationalities
   const nats = {};
-  cache.items.forEach(i=>(i.auteurs||[]).forEach(a=>{
+  collItems.forEach(i=>(i.auteurs||[]).forEach(a=>{
     const auth = authorById(a.auteurId);
     if(auth?.nationalite) nats[auth.nationalite]=(nats[auth.nationalite]||0)+1;
   }));
@@ -9425,7 +9459,7 @@ function renderStats(){
 
   // Top authors
   const counts = {};
-  cache.items.forEach(i=>(i.auteurs||[]).forEach(a=>{ if(a.auteurId) counts[a.auteurId]=(counts[a.auteurId]||0)+1; }));
+  collItems.forEach(i=>(i.auteurs||[]).forEach(a=>{ if(a.auteurId) counts[a.auteurId]=(counts[a.auteurId]||0)+1; }));
   const top = Object.entries(counts).map(([id,c])=>[authorDisplay(authorById(id)),c]).filter(x=>x[0]).sort((a,b)=>b[1]-a[1]);
   renderBarChart("statsTopAuthors", top, 15);
 }
@@ -12155,7 +12189,8 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
   if(realPiles.length) countParts.push(`${realPiles.length} pile${realPiles.length>1?'s':''} ${T('de','of')} ${pileBooksCount} album${pileBooksCount>1?'s':''}`);
   if(classeurs.length) countParts.push(`${classeurs.length} ${T('classeur','binder')}${classeurs.length>1?'s':''}`);
 
-  return `<div class="shelf-section${sectionClass}" id="shelf-section-${escapeHTML(shelf.id)}">
+  const compactClass = (availW && availW < 260) ? ' shelf-compact' : '';
+  return `<div class="shelf-section${sectionClass}${compactClass}" id="shelf-section-${escapeHTML(shelf.id)}">
     <div class="shelf-header">
       <h3 title="${countParts.join(" + ")}">${floorNum?`<span class="shelf-floor">${T("Étage","Floor")} ${floorNum}</span>`:`${icon}${escapeHTML(shelf.name)}`}${(availW && availW < 380)?'':` <span class="muted" style="font-size:12px;font-weight:normal">(${countParts.join(" + ")})</span>`}</h3>
       ${headerBtns}
@@ -12415,6 +12450,7 @@ async function _applyDrawerRelocations(oldDrawers, newDrawers){
 function addMeuble(){
   _editingMeubleId = null;
   document.getElementById("meubleModalTitle").textContent = T("🗄️ Nouveau meuble","🗄️ New bookcase");
+  document.getElementById("meubleDuplicateBtn").style.display = "none";
   document.getElementById("meubleSaveBtn").textContent = T("Créer","Create");
   document.getElementById("meubleDeleteBtn").style.display = "none";
   document.getElementById("meubleName").value = "Meuble " + (libraryFurniture.length+1);
@@ -12438,6 +12474,7 @@ function editMeuble(id){
   document.getElementById("meubleModalTitle").textContent = T("🗄️ Modifier le meuble","🗄️ Edit bookcase");
   document.getElementById("meubleSaveBtn").textContent = T("Enregistrer","Save");
   document.getElementById("meubleDeleteBtn").style.display = "";
+  document.getElementById("meubleDuplicateBtn").style.display = "";
   document.getElementById("meubleName").value = m.name;
   document.getElementById("meubleCols").value = m.cols||1;
   document.getElementById("meubleRows").value = m.rows||1;
@@ -12451,6 +12488,52 @@ function editMeuble(id){
   document.getElementById("meubleRows").disabled = false;
   _renderDrawerRows(m.drawers||[], m.rows||1);
   openModal("meubleModal");
+}
+
+// Duplique le meuble en cours d'édition : mêmes dimensions, même teinte, même structure
+// de colonnes, étagères et blocs de tiroirs — mais VIDE. Les albums rangés ne suivent pas,
+// une œuvre n'étant rangée qu'à un seul endroit.
+async function duplicateMeuble(){
+  const m = libraryFurniture.find(x=>x.id===_editingMeubleId);
+  if(!m){ toast(T("Aucun meuble à dupliquer.","No bookcase to duplicate."), "error"); return; }
+
+  // Nom libre : « Meuble 1 » → « Meuble 1 (copie) », puis « (copie 2) », etc.
+  const base = `${m.name} (${T('copie','copy')})`;
+  let nom = base, n = 2;
+  while(libraryFurniture.some(x=>x.name === nom)) nom = `${base} ${n++}`;
+
+  const cols = m.cols||1, rows = m.rows||1;
+  const copie = {
+    id: "meuble-"+Date.now(), name: nom,
+    x: (m.x??30)+26, y: (m.y??30)+26,
+    wCm: m.wCm, hCm: m.hCm, dCm: m.dCm,
+    cols, rows, rot: m.rot||0, color: m.color,
+    drawers: [],
+  };
+  // Les tiroirs sont recopiés sans leurs noms — tableau NEUF, sans quoi on partagerait
+  // (et renommerait) celui du meuble d'origine. _finalizeDrawerNames les renomme d'après
+  // le nouveau meuble, faute de quoi deux tiroirs porteraient la même localisation.
+  const nouveauxTiroirs = (m.drawers||[]).map(d=>({ ...d, id:_newDrawerBlockId(), names:[] }));
+  const err = _finalizeDrawerNames(nom, nouveauxTiroirs, copie.id);
+  if(err){ toast(err, "error"); return; }
+  copie.drawers = nouveauxTiroirs;
+
+  libraryFurniture.push(copie);
+  setCollOf(copie.id, isAllCollection() ? 'bd' : _activeCollection);
+  for(let c=0;c<cols;c++){
+    for(let r=0;r<rows;r++){
+      const nm = cols>1 ? uniqueShelfName(`${nom} C${c+1}E${r+1}`) : uniqueShelfName(`${nom} – ét.`);
+      libraryShelves.push({id:"shelf-"+Date.now()+"-"+c+"-"+r, name:nm, itemOrder:[], meubleId:copie.id, col:c, row:r});
+    }
+  }
+  await saveLibraryFurniture();
+  await saveLibraryShelves();
+  _currentMeubleId = copie.id;          // on ouvre la copie
+  _editingMeubleId = null;
+  closeModal("meubleModal");
+  renderLibrary();
+  toast(T(`Meuble dupliqué : « ${nom} » — ${cols*rows} case(s) vides.`,
+          `Bookcase duplicated: “${nom}” — ${cols*rows} empty compartment(s).`));
 }
 
 async function saveMeubleModal(){
