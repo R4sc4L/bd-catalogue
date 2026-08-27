@@ -866,22 +866,25 @@
      cadre de carcasse au ras de l'ouverture. Auparavant tout l'intérieur était un aplat collé
      sur le plan de façade — d'où l'impression d'étagères imprimées sur le fond. Les tranches
      d'albums, elles, restent en façade : on range les disques au bord de la tablette. */
-  .m3d-front{position:absolute;inset:0;display:flex;box-sizing:border-box;padding:5px;background:transparent;transform:translateZ(0.8px)}
+  /* Les tranches d'albums sont franchement détachées du plan des tablettes (3 px contre −2 px) :
+     à profondeur voisine, le compositeur 3D mélange les deux plans et les albums paraissaient
+     translucides sur leur tiers inférieur, le bois transparaissant au travers. */
+  .m3d-front{position:absolute;inset:0;display:flex;box-sizing:border-box;padding:5px;background:transparent;transform:translateZ(3px)}
   .m3d-back{position:absolute;inset:0;transform:translateZ(calc(-1 * var(--d,60px) + 2px));pointer-events:none;border-radius:3px;
-    background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 26%,black),color-mix(in srgb,var(--wood,#5a3f28) 15%,black));
-    box-shadow:inset 0 0 40px rgba(0,0,0,.75)}
+    background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 38%,black),color-mix(in srgb,var(--wood,#5a3f28) 24%,black));
+    box-shadow:inset 0 0 34px rgba(0,0,0,.6)}
   .m3d-frame{position:absolute;inset:0;box-sizing:border-box;border:5px solid var(--wood,#5a3f28);border-radius:4px;pointer-events:none;
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.3),0 12px 30px rgba(0,0,0,.5);transform:translateZ(1.4px)}
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.3),0 12px 30px rgba(0,0,0,.5);transform:translateZ(4px)}
   /* Tablette : le dessus fuit vers le fond, le chant reste en façade */
-  .m3d-board{position:absolute;left:0;right:0;height:var(--d,60px);transform-origin:center top;transform:rotateX(-90deg);pointer-events:none;
+  .m3d-board{position:absolute;left:0;right:0;height:var(--d,60px);transform-origin:center top;transform:translateZ(-2px) rotateX(-90deg);pointer-events:none;
     background:linear-gradient(0deg,color-mix(in srgb,var(--wood,#5a3f28) 88%,white),color-mix(in srgb,var(--wood,#5a3f28) 55%,black))}
-  .m3d-boardface{position:absolute;left:0;right:0;height:4px;transform:translateZ(0.9px);pointer-events:none;
+  .m3d-boardface{position:absolute;left:0;right:0;height:4px;transform:translateZ(-1.6px);pointer-events:none;
     background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 96%,white),color-mix(in srgb,var(--wood,#5a3f28) 58%,black));
     box-shadow:0 3px 6px rgba(0,0,0,.5)}
   /* Séparation verticale entre colonnes, elle aussi en volume */
-  .m3d-divider{position:absolute;top:0;bottom:0;width:var(--d,60px);transform-origin:left center;transform:rotateY(90deg);pointer-events:none;
+  .m3d-divider{position:absolute;top:0;bottom:0;width:var(--d,60px);transform-origin:left center;transform:translateZ(-2px) rotateY(90deg);pointer-events:none;
     background:linear-gradient(90deg,color-mix(in srgb,var(--wood,#5a3f28) 82%,black),color-mix(in srgb,var(--wood,#5a3f28) 56%,black))}
-  .m3d-dividerface{position:absolute;top:0;bottom:0;width:4px;transform:translateZ(0.9px);pointer-events:none;
+  .m3d-dividerface{position:absolute;top:0;bottom:0;width:4px;transform:translateZ(-1.6px);pointer-events:none;
     background:linear-gradient(90deg,color-mix(in srgb,var(--wood,#5a3f28) 94%,white),color-mix(in srgb,var(--wood,#5a3f28) 58%,black))}
   .m3d-side{position:absolute;top:0;bottom:0;width:var(--d,60px);backface-visibility:visible}
   .m3d-side-l{left:0;transform-origin:left center;transform:rotateY(90deg);background:linear-gradient(90deg,color-mix(in srgb,var(--wood,#5a3f28) 85%,black),color-mix(in srgb,var(--wood,#5a3f28) 58%,black) 80%),linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.25))}
@@ -894,7 +897,13 @@
   /* Case vide : plus aucun fond ni ombre peinte — ce que l'on voit est le VRAI volume derrière */
   .m3d-shelf{position:relative;flex:1;display:flex;align-items:flex-end;gap:1px;padding:0 3px 4px;background:transparent}
   .m3d-shelf-num{position:absolute;top:2px;left:4px;font-size:11px;font-weight:800;color:rgba(255,235,200,.62);text-shadow:0 1px 3px rgba(0,0,0,.85);pointer-events:none;z-index:2}
-  .m3d-shelf i{display:block;width:3px;height:78%;border-radius:1px 1px 0 0;flex-shrink:0;background-image:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0) 24%,rgba(0,0,0,0) 70%,rgba(0,0,0,.3));box-shadow:inset -1px 0 0 rgba(0,0,0,.3),0 0 2px rgba(0,0,0,.4)}
+  /* Tranche d'album : objet PLEIN. L'ancien dégradé noircissait tout le tiers inférieur ;
+     sur le fond de caisson désormais très sombre, l'album semblait s'y dissoudre. On garde
+     un reflet haut discret et un modelé latéral, mais plus d'extinction vers le bas. */
+  .m3d-shelf i{display:block;width:3px;height:78%;border-radius:1px 1px 0 0;flex-shrink:0;
+    background-image:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,0) 20%,rgba(0,0,0,0) 88%,rgba(0,0,0,.10)),
+      linear-gradient(90deg,rgba(255,255,255,.14),rgba(0,0,0,0) 42%,rgba(0,0,0,.20));
+    box-shadow:inset -1px 0 0 rgba(0,0,0,.32),0 1px 2px rgba(0,0,0,.55)}
   /* ---- Tiroirs : mini façade dans la vue 3D ---- */
   .m3d-drawers{display:flex;flex-direction:column;gap:1px;height:92%;flex-shrink:0;padding:1px;border-radius:1px;background:rgba(0,0,0,.4);box-shadow:0 0 2px rgba(0,0,0,.5)}
   .m3d-drawers b{flex:1;min-height:3px;border-radius:1px;position:relative;background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 70%,white),color-mix(in srgb,var(--wood,#5a3f28) 70%,black));box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
@@ -2213,6 +2222,11 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <option value="#e8e4dc" data-en="White">Blanc</option>
             <option value="#26231f" data-en="Black">Noir</option>
           </select>
+        </div>
+        <div id="meubleCollBlock" style="display:none">
+          <label style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em" data-en="Collection">Collection</label>
+          <select id="meubleColl" style="margin-top:6px"></select>
+          <p class="muted" style="font-size:11px;margin:4px 0 0" data-en="Moves the bookcase and its shelves to another collection — nothing is deleted, and whatever is stored inside follows.">Déplace le meuble et ses étagères vers une autre collection — rien n'est supprimé, ce qui y est rangé suit.</p>
         </div>
       </div>
       <div>
@@ -12679,6 +12693,7 @@ function addMeuble(){
   document.getElementById("meubleH").value = 237;
   document.getElementById("meubleD").value = 28;
   document.getElementById("meubleWood").value = "#5a3f28";
+  document.getElementById("meubleCollBlock").style.display = "none";  // création : dans la collection courante
   document.getElementById("meubleCols").disabled = false;
   document.getElementById("meubleRows").disabled = false;
   _renderDrawerRows([], 5);
@@ -12702,11 +12717,40 @@ function editMeuble(id){
   const woodSel = document.getElementById("meubleWood");
   woodSel.value = m.color||"#5a3f28";
   if(woodSel.selectedIndex < 0) woodSel.value = "#5a3f28"; // teinte inconnue → défaut
+  _remplirSelecteurCollection(m.id);
   // À l'édition : colonnes/étagères seulement en augmentation
   document.getElementById("meubleCols").disabled = false;
   document.getElementById("meubleRows").disabled = false;
   _renderDrawerRows(m.drawers||[], m.rows||1);
   openModal("meubleModal");
+}
+
+// Un meuble rangé dans la mauvaise collection ne doit PAS se supprimer pour disparaître :
+// meubles, étagères et piles vivent dans des tables communes, seul le rattachement diffère.
+// Supprimer effacerait l'objet pour toutes les collections à la fois. On le déplace donc.
+function _remplirSelecteurCollection(meubleId){
+  const bloc = document.getElementById("meubleCollBlock");
+  const sel  = document.getElementById("meubleColl");
+  const dispo = enabledModules();
+  if(dispo.length < 2){ bloc.style.display = "none"; return; }   // une seule collection : rien à déplacer
+  sel.innerHTML = dispo.map(m=>`<option value="${m.id}">${escapeHTML(m.icon+' '+_modLabel(m))}</option>`).join("");
+  sel.value = collOf(meubleId);
+  if(sel.selectedIndex < 0) sel.value = 'bd';
+  bloc.style.display = "";
+}
+
+// Rattache le meuble ET ses étagères à une autre collection. Retourne le slug retenu.
+function _appliquerCollectionMeuble(meuble){
+  const bloc = document.getElementById("meubleCollBlock");
+  if(!bloc || bloc.style.display === "none") return null;
+  const slug = document.getElementById("meubleColl").value;
+  if(!slug || slug === collOf(meuble.id)) return null;
+  setCollOf(meuble.id, slug);
+  libraryShelves.filter(s=>s.meubleId===meuble.id).forEach(s=>setCollOf(s.id, slug));
+  // Les piles posées sur ces étagères suivent leur support.
+  const noms = new Set(libraryShelves.filter(s=>s.meubleId===meuble.id).map(s=>s.name));
+  libraryPiles.filter(p=>noms.has((p.localisation||"").trim())).forEach(p=>setCollOf(p.id, slug));
+  return slug;
 }
 
 // Place la copie ACCOLÉE À DROITE de l'original, posée sur le même sol : dupliquer sert à
@@ -12834,8 +12878,15 @@ async function saveMeubleModal(){
         }
       }
     }
+    const deplace = _appliquerCollectionMeuble(m);
     await saveLibraryShelves();
     await saveLibraryFurniture();
+    if(deplace){
+      const lib = _modLabel(moduleById(deplace));
+      _currentMeubleId = null;   // il quitte la vue courante
+      toast(T(`« ${name} » et ses étagères sont déplacés vers ${lib}. Rien n'a été supprimé.`,
+              `“${name}” and its shelves moved to ${lib}. Nothing was deleted.`));
+    }
   } else {
     if(libraryFurniture.some(x=>x.name===name)){ toast(T("Un meuble porte déjà ce nom.","A bookcase already has this name."), "error"); return; }
     const newDrawers = _collectDrawerRows(cols, rows, wCm);
