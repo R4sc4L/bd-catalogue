@@ -12926,6 +12926,10 @@ function editMeuble(id){
   document.getElementById("meubleRows").value = m.rows||1;
   document.getElementById("meubleW").value = m.wCm||80;
   document.getElementById("meubleH").value = m.hCm||237;
+  // La profondeur n'était PAS rechargée : le champ gardait la valeur du meuble précédemment
+  // ouvert, et le premier enregistrement la recopiait sur celui-ci. De proche en proche, tous
+  // les meubles finissaient à la même profondeur.
+  document.getElementById("meubleD").value = m.dCm||28;
   const woodSel = document.getElementById("meubleWood");
   woodSel.value = m.color||"#5a3f28";
   if(woodSel.selectedIndex < 0) woodSel.value = "#5a3f28"; // teinte inconnue → défaut
