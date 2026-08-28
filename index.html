@@ -10243,12 +10243,20 @@ document.getElementById("globalSearch").addEventListener("input", debounce(e=>{
 },250));
 
 // --------- Refresh current view ---------
+// Appelé après un changement de collection : TOUTES les vues doivent se recharger, faute de
+// quoi on continue de voir le contenu de la collection précédente. La Bibliothèque, les
+// Souhaités, les Catégories et le Hub manquaient à l'appel.
 function refreshCurrentView(){
   const active = document.querySelector(".view.active")?.id?.replace("view-","") || "dashboard";
   if(active==="dashboard") renderDashboard();
   else if(active==="collection") renderCollection();
   else if(active==="authors") renderAuthors();
   else if(active==="stats") renderStats();
+  else if(active==="library"){ _currentMeubleId = null; renderLibrary(); }  // le meuble ouvert était celui de l'autre collection
+  else if(active==="souhaites") renderWishlist();
+  else if(active==="categories") renderCategoriesManager();
+  else if(active==="hub") renderHub();
+  else if(active==="global") renderGlobal();
   else if(active==="item-detail"){
     const id = location.hash.split("/")[1];
     if(id) renderItemDetail(id, false);
@@ -14329,19 +14337,13 @@ async function _initApp(){
     setupDropZone("itemDropZone","item");
     setupDropZone("authorDropZone","author");
     setupDropZone("wishDropZone","wish");
-    // Handle initial hash — show AND render the correct view
-    const hash = location.hash.slice(1).split("/")[0];
-    if(location.hash.slice(1).startsWith("item/")){ renderDashboard(); renderItemDetail(location.hash.slice(1).split("/")[1], false); }
-    else if(location.hash.slice(1).startsWith("author/")){ renderDashboard(); renderAuthorDetail(location.hash.slice(1).split("/")[1], false); }
-    else if(hash === "hub"){ showView("hub", false); renderHub(); }
-    else if(hash === "global"){ showView("global", false); renderGlobal(); }
-    else if(hash === "collection"){ showView("collection", false); renderCollection(); }
-    else if(hash === "authors"){ showView("authors", false); renderAuthors(); }
-    else if(hash === "stats"){ showView("stats", false); renderStats(); }
-    else if(hash === "souhaites"){ showView("souhaites", false); renderWishlist(); }
-    else if(hash === "library"){ showView("library", false); renderLibrary(); }
-    else if(hash === "categories"){ showView("categories", false); renderCategoriesManager(); }
-    else { showView("hub", false); renderHub(); }
+    // Écran d'ouverture : TOUJOURS le tableau de bord. Un lien profond partagé ou remis en
+    // favori (#item/…, #author/…) reste honoré, mais on ne rouvre plus la vue où l'on se
+    // trouvait la fois précédente : on ne sait plus, en arrivant, dans quelle collection on est.
+    const chemin = location.hash.slice(1);
+    if(chemin.startsWith("item/")){ renderDashboard(); renderItemDetail(chemin.split("/")[1], false); }
+    else if(chemin.startsWith("author/")){ renderDashboard(); renderAuthorDetail(chemin.split("/")[1], false); }
+    else { showView("dashboard", false); renderDashboard(); history.replaceState({view:"dashboard"}, "", "#dashboard"); }
     // Sauvegarde automatique périodique de la collection
     setTimeout(checkAutoBackup, 2500);
   } catch(err){
