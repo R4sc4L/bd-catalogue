@@ -926,7 +926,10 @@
   /* Plus de bordure peinte : la séparation entre colonnes est un panneau réel (.m3d-divider) */
   .m3d-col{flex:1;display:flex;flex-direction:column}
   /* Case vide : plus aucun fond ni ombre peinte — ce que l'on voit est le VRAI volume derrière */
-  .m3d-shelf{position:relative;flex:1;display:flex;align-items:flex-end;gap:1px;padding:0 3px 4px;background:transparent}
+  /* Aucun interstice entre les tranches : sur une étagère bien remplie elles ne font qu'un ou
+     deux pixels, et un jour d'un pixel entre chacune laissait voir le fond à parts égales —
+     l'ensemble paraissait translucide alors que chaque tranche est pleine. */
+  .m3d-shelf{position:relative;flex:1;display:flex;align-items:flex-end;gap:0;padding:0 3px 4px;background:transparent}
   .m3d-shelf-num{position:absolute;top:2px;left:4px;font-size:11px;font-weight:800;color:rgba(255,235,200,.62);text-shadow:0 1px 3px rgba(0,0,0,.85);pointer-events:none;z-index:2}
   /* Tranche d'album : objet PLEIN. L'ancien dégradé noircissait tout le tiers inférieur ;
      sur le fond de caisson désormais très sombre, l'album semblait s'y dissoudre. On garde
@@ -935,6 +938,8 @@
     background-image:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,0) 20%,rgba(0,0,0,0) 88%,rgba(0,0,0,.10)),
       linear-gradient(90deg,rgba(255,255,255,.14),rgba(0,0,0,0) 42%,rgba(0,0,0,.20));
     box-shadow:inset -1px 0 0 rgba(0,0,0,.32),0 1px 2px rgba(0,0,0,.55)}
+  /* Tranche de 1 à 2 px : ni filet ni modelé latéral, ils la videraient de sa couleur */
+  .m3d-shelf i.serre{background-image:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 22%);box-shadow:none}
   /* ---- Tiroirs : mini façade dans la vue 3D ---- */
   .m3d-drawers{display:flex;flex-direction:column;gap:1px;height:92%;flex-shrink:0;padding:1px;border-radius:1px;background:rgba(0,0,0,.4);box-shadow:0 0 2px rgba(0,0,0,.5)}
   .m3d-drawers b{flex:1;min-height:3px;border-radius:1px;position:relative;background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 70%,white),color-mix(in srgb,var(--wood,#5a3f28) 70%,black));box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
@@ -11860,14 +11865,17 @@ function renderFurniturePlan(container, _secondePasse){
           return `<span class="m3d-drawers" style="width:${wpx}px">${faces}</span>`;
         }).join("");
         const avail = colW - 7 - drawersW; // largeur utile (retire padding + bordures + tiroirs)
-        // largeur des tranches calculée pour que TOUS les albums tiennent dans le cadre
+        // largeur des tranches calculée pour que TOUS les albums tiennent dans le cadre.
+        // Les tranches se touchent : la rangée forme un bloc plein, quitte à perdre le filet
+        // de séparation quand elles deviennent très fines.
         let bw = 8;
-        if(N>0) bw = Math.max(1, Math.min(9, Math.floor((avail - (N-1)) / N)));
+        if(N>0) bw = Math.max(1, Math.min(9, Math.floor(avail / N)));
+        const serre = bw < 3;   // sous 3 px, l'ombre de séparation mangerait toute la tranche
         const bars = books.map(b=>{
           // hauteur du livre à l'échelle de la case (format réel), bornée
           let pct = b.hcm ? Math.round(Math.max(45, Math.min(96, (b.hcm/compartCm)*100))) : 82;
           if(b.flat) pct = Math.min(pct, 60); // album couché (pile) : plus bas
-          return `<i style="background-color:${b.color};width:${bw}px;height:${pct}%"></i>`;
+          return `<i class="${serre?'serre':''}" style="background-color:${b.color};width:${bw}px;height:${pct}%"></i>`;
         }).join("");
         // Numéro d'étage : du bas (1) vers le haut (affiché dans la 1re colonne seulement)
         const numHTML = (c===0) ? `<span class="m3d-shelf-num">${rows - r}</span>` : '';
