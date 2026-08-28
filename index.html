@@ -11372,6 +11372,7 @@ let libraryShelves = []; // [{id, name, itemOrder:[], meubleId, col, row}]
 let libraryPiles = [];   // [{id, name, localisation (=shelf.name), itemOrder:[albumId,...]}]
 let libraryFurniture = []; // [{id, name, x, y, wCm, dCm, cols, rows, rot, color}]
 let libraryLinked = false; // meubles liés : déplacer l'un déplace tout l'ensemble
+let _planVue = { k:1, gauche:0, haut:0, MARGE:26 }; // projection courante du plan (échelle + cadrage)
 let _currentMeubleId = null; // meuble ouvert en vue de face ; null = plan vue de dessus
 let _editingMeubleId = null; // meuble en cours d'édition dans la modale
 let _meubleDragMoved = false;
@@ -11764,9 +11765,38 @@ function _bucketItemsByShelf(){
 }
 
 // ---- Plan vue de dessus ----
-function renderFurniturePlan(container){
+let _planDecalHaut = 52;   // hauteur réelle du bandeau d'aide entre le conteneur et la scène
+function renderFurniturePlan(container, _secondePasse){
   const {byShelf} = _bucketItemsByShelf();
-  const SC = 2.45;         // px par cm — échelle UNIQUE pour largeur/hauteur/profondeur (homothétie réelle)
+  // ── Échelle ADAPTATIVE. Les positions x/y des meubles sont mémorisées dans une unité de
+  //    référence (PLAN_SC px par cm) ; on les projette par un facteur k choisi pour que la
+  //    pièce occupe au mieux la hauteur disponible. Une collection de colonnes de 200 cm et
+  //    une autre de bibliothèques de 240 cm remplissent ainsi la page de la même façon.
+  //    k est borné : sans quoi un meuble isolé deviendrait démesuré, ou un mur immense illisible.
+  const MARGE = 26, BANDE_TITRES = 54;
+  // Si la page a été défilée, le haut du conteneur peut être négatif : on le borne, sinon la
+  // scène s'allongerait d'autant.
+  const hautConteneur = Math.max(0, container.getBoundingClientRect().top);
+  // Entre le haut du conteneur et la scène s'intercale le bandeau d'aide, dont la hauteur
+  // dépend de la largeur de la fenêtre (il passe sur deux ou trois lignes). On l'ajuste après
+  // coup à la mesure, sans quoi la scène débordait sous le bas de la page.
+  const dispoH = Math.max(340, window.innerHeight - hautConteneur - _planDecalHaut - BANDE_TITRES - 14);
+  const dispoW = Math.max(300, (container.clientWidth || 900) - MARGE*2);
+  const _px = cm => (cm||0) * PLAN_SC;
+  const _piedsRef = m => (m.pieds && m.pieds!=='aucun') ? _px(Math.max(2, Math.min(40, m.piedsCm||12))) : 0;
+  let gauche = Infinity, droite = -Infinity, haut = Infinity, bas = -Infinity;
+  libraryFurniture.forEach(m=>{
+    const x = m.x ?? 40, y = m.y ?? 60;
+    gauche = Math.min(gauche, x);  droite = Math.max(droite, x + _px(m.wCm||80));
+    haut   = Math.min(haut, y);    bas    = Math.max(bas,   y + _px(m.hCm||237) + _piedsRef(m));
+  });
+  if(!isFinite(gauche)){ gauche = 0; droite = 1; haut = 0; bas = 1; }
+  const k = Math.max(0.25, Math.min(2.6,
+    Math.min(dispoH / Math.max(1, bas - haut), dispoW / Math.max(1, droite - gauche))));
+  const SC = PLAN_SC * k;                       // px par cm à l'écran
+  const projX = x => (x - gauche) * k + MARGE;  // coordonnée mémorisée → écran
+  const projY = y => (y - haut)   * k + MARGE/2;
+  _planVue = { k, gauche, haut, MARGE };        // le glisser-déposer en a besoin
   const counts = (m)=>{
     const sh = libraryShelves.filter(s=>s.meubleId===m.id);
     let n=0; sh.forEach(s=>{ n += (byShelf[s.name]||[]).length; });
@@ -11796,10 +11826,11 @@ function renderFurniturePlan(container){
     const h = (m.hCm||237)*SC;
     const d = (m.dCm||28)*SC;
     const colW = w/cols;
-    const cx = (m.x||40) + w/2;
-    const left = (m.x||40);
+    const X = projX(m.x ?? 40), Y = projY(m.y ?? 60);   // position à l'écran
+    const cx = X + w/2;
+    const left = X;
     const hPieds = (m.pieds && m.pieds!=='aucun') ? Math.max(2, Math.min(40, m.piedsCm||12)) * SC : 0;
-    const bottom = (m.y||60) + h + hPieds;   // les pieds comptent : les titres ne doivent pas les chevaucher
+    const bottom = Y + h + hPieds;   // les pieds comptent : les titres ne doivent pas les chevaucher
     if(bottom > maxBottom) maxBottom = bottom;
     if(bottom < minBottom) minBottom = bottom;
     // Angles : 0 = face, 90 = droit, 135 = droit fort, 180 = gauche, 225 = gauche fort
@@ -11885,7 +11916,7 @@ function renderFurniturePlan(container){
         for(const x of [enc, w - enc - larg])
           menuiserie += `<div class="m3d-pied ${m.pieds}" style="left:${x}px;width:${larg}px;height:${hPieds.toFixed(1)}px;transform:translateZ(${z.toFixed(1)}px)"></div>`;
     }
-    return `<div class="meuble3d" data-meuble-id="${m.id}" style="left:${m.x||40}px;top:${m.y||60}px;--w:${w}px;--h:${h}px;--d:${d}px;--yaw:${yaw}deg;--wood:${m.color||'#5a3f28'}">
+    return `<div class="meuble3d" data-meuble-id="${m.id}" style="left:${X.toFixed(1)}px;top:${Y.toFixed(1)}px;--w:${w}px;--h:${h}px;--d:${d}px;--yaw:${yaw}deg;--wood:${m.color||'#5a3f28'}">
       <div class="m3d-actions">
         <button class="ghost" title="${T(`Ouvrir`,`Open`)}" data-act="open">↗</button>
         <button class="ghost" title="${T(`Pivoter de ${YAW_PAS}° (actuellement : ${_libelleYaw(yaw)}) — alt+clic : remettre de face. Angle exact dans « Modifier ».`,`Rotate by ${YAW_PAS}° (currently: ${_libelleYaw(yaw)}) — alt+click: reset to front. Exact angle in “Edit”.`)}" data-act="rotate">⟳</button>
@@ -11912,7 +11943,7 @@ function renderFurniturePlan(container){
   const titlesHTML = labels.map(l=>`<div class="m3d-title" data-cx="${l.cx.toFixed(1)}" data-bas="${l.bottom.toFixed(1)}" style="left:${l.cx}px;top:${titleBaseline}px;transform:translateX(-50%);text-align:center" title="${escapeHTML(l.name)}">${escapeHTML(l.name)}</div>`).join("");
   container.innerHTML = `
     <p class="muted" style="margin:0 0 10px;font-size:13px">${T(`Vue en perspective — glisse les meubles pour reproduire ta pièce, clique sur un meuble pour l'ouvrir et le remplir. ⟳ incline le meuble (face → mur droit → mur gauche) ; ⬆ ⬇ le font passer devant ou derrière ses voisins (alt+clic : tout devant / tout derrière).`,`Perspective view — drag the bookcases to reproduce your room, click a bookcase to open and fill it. ⟳ tilts the bookcase (front → right wall → left wall); ⬆ ⬇ move it in front of or behind its neighbours (alt+click: all the way front / back).`)}</p>
-    <div class="meuble-scene" id="meubleScene"><div class="floor-grid"></div>${boxes || `<div class="plan-empty">${T('Aucun meuble. Clique sur « + Nouveau meuble » pour commencer.','No bookcases. Click « + New bookcase » to get started.')}</div>`}${titlesHTML}</div>`;
+    <div class="meuble-scene" id="meubleScene" style="height:${Math.round(dispoH + BANDE_TITRES)}px;min-height:0"><div class="floor-grid"></div>${boxes || `<div class="plan-empty">${T('Aucun meuble. Clique sur « + Nouveau meuble » pour commencer.','No bookcases. Click « + New bookcase » to get started.')}</div>`}${titlesHTML}</div>`;
   container.querySelectorAll(".meuble3d").forEach(tile=>{
     const id = tile.dataset.meubleId;
     tile.querySelector('[data-act="open"]').addEventListener("click", e=>{ e.stopPropagation(); openMeuble(id); });
@@ -11925,6 +11956,15 @@ function renderFurniturePlan(container){
     tile.addEventListener("mousedown", e=>startMeubleDrag(e,id,tile));
   });
   _placerTitresPlan(container, titleBaseline);
+  // Correction en une passe si le bandeau d'aide n'avait pas la hauteur supposée
+  const scene = container.querySelector("#meubleScene");
+  if(scene && !_secondePasse){
+    const mesure = scene.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    if(isFinite(mesure) && Math.abs(mesure - _planDecalHaut) > 6){
+      _planDecalHaut = mesure;
+      return renderFurniturePlan(container, true);
+    }
+  }
 }
 
 // Des meubles accolés ont des noms plus larges qu'eux. Les empiler sur plusieurs lignes,
@@ -12749,12 +12789,16 @@ function startMeubleDrag(e, id, tile){
   const startX = e.clientX, startY = e.clientY;
   _meubleDragMoved = false;
   tile.classList.add("dragging");
+  // Le plan est dessiné à une échelle variable : un déplacement de la souris de N pixels
+  // correspond à N/k dans l'unité où les positions sont mémorisées.
   function mv(ev){
     const dx = ev.clientX-startX, dy = ev.clientY-startY;
     if(Math.abs(dx)>3 || Math.abs(dy)>3) _meubleDragMoved = true;
+    const k = _planVue.k || 1;
     targets.forEach(t=>{
-      t.m.x = Math.max(0, t.ox+dx); t.m.y = Math.max(0, t.oy+dy);
-      t.el.style.left = t.m.x+"px"; t.el.style.top = t.m.y+"px";
+      t.m.x = Math.max(0, t.ox + dx/k); t.m.y = Math.max(0, t.oy + dy/k);
+      t.el.style.left = ((t.m.x - _planVue.gauche)*k + _planVue.MARGE).toFixed(1)+"px";
+      t.el.style.top  = ((t.m.y - _planVue.haut)*k + _planVue.MARGE/2).toFixed(1)+"px";
     });
   }
   async function up(){
