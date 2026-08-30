@@ -4769,9 +4769,36 @@ function parseDimensions(str){
   return null;
 }
 // Hauteur d'un item en cm (depuis le champ format) ; null si indéterminable.
+// Dimensions normalisées des supports musicaux, en centimètres (hauteur ×
+// largeur du rangement debout sur l'étagère) :
+//   boîtier cristal CD 12,5 × 14,2 · pochette 33 tours 31,5 × 31,5
+//   45 tours 17,8 × 17,8 · boîtier DVD (Amaray) 19 × 13,5 · Blu-ray 17 × 13,5
+//   cassette 10,9 × 6,9. Sans ces valeurs, un CD était dessiné à la hauteur
+//   d'un album de BD — le champ « Format » de la fiche livre étant masqué
+//   pour les disques, aucune dimension ne remontait au plan.
+const DIM_DISQUE_CM = {
+  'CD':               {h:12.5, l:14.2},
+  'Vinyle 33 tours':  {h:31.5, l:31.5},
+  'Maxi 45 tours':    {h:31.5, l:31.5},
+  'Vinyle 45 tours':  {h:17.8, l:17.8},
+  'DVD':              {h:19,   l:13.5},
+  'Blu-ray':          {h:17,   l:13.5},
+  'Cassette':         {h:10.9, l:6.9},
+  'Coffret':          {h:14,   l:14.5},
+};
+// Repli par catégorie quand le support n'est pas renseigné (fiche saisie à la main).
+const DIM_DISQUE_CAT = { 'CD':'CD', 'Vinyle':'Vinyle 33 tours', 'DVD':'DVD', 'Blu-ray':'Blu-ray' };
+function dimDisqueCm(it){
+  if(!it) return null;
+  return DIM_DISQUE_CM[it.disqueSupport]
+      || DIM_DISQUE_CM[DIM_DISQUE_CAT[it.categorie]]
+      || null;
+}
+
 function itemHeightCm(it){
   const d = parseDimensions(it && it.format);
-  return d ? d.hauteur : null;
+  if(d) return d.hauteur;                 // un format saisi à la main fait foi
+  return dimDisqueCm(it)?.h ?? null;
 }
 
 function countryFlag(country){
@@ -11851,7 +11878,10 @@ const SPINE_DEFAULT_PX = 136;
 function spineHeightPx(it){
   const cm = itemHeightCm(it);
   if(cm == null) return SPINE_DEFAULT_PX;
-  const MIN_CM=15, MAX_CM=36, MIN_PX=86, MAX_PX=184;
+  // Plancher abaissé à 10 cm (cassette, boîtier CD) : à 15 cm, tous les
+  // disques s'écrasaient sur la même hauteur minimale que les petits livres.
+  // Les albums de BD (28-32 cm) gardent la même taille qu'avant à 1 px près.
+  const MIN_CM=10, MAX_CM=36, MIN_PX=62, MAX_PX=184;
   const t = Math.max(0, Math.min(1, (cm - MIN_CM) / (MAX_CM - MIN_CM)));
   return Math.round(MIN_PX + t * (MAX_PX - MIN_PX));
 }
@@ -11860,7 +11890,7 @@ function spineHeightPx(it){
 // Échelle : 13 cm → 80px, 26 cm → 165px. Défaut 120px.
 function flatBookWidthPx(it){
   const d = parseDimensions(it && it.format);
-  const cm = d ? (d.largeur ?? d.hauteur) : null;
+  const cm = d ? (d.largeur ?? d.hauteur) : (dimDisqueCm(it)?.l ?? null);
   if(cm == null) return 120;
   const MIN_CM=13, MAX_CM=26, MIN_PX=80, MAX_PX=165;
   const t = Math.max(0, Math.min(1, (cm - MIN_CM) / (MAX_CM - MIN_CM)));
@@ -12271,7 +12301,9 @@ function renderFurniturePlan(container, _secondePasse){
         const serre = bw < 3;   // sous 3 px, l'ombre de séparation mangerait toute la tranche
         const bars = books.map(b=>{
           // hauteur du livre à l'échelle de la case (format réel), bornée
-          let pct = b.hcm ? Math.round(Math.max(45, Math.min(96, (b.hcm/compartCm)*100))) : 82;
+          // Plancher à 20 % : à 45 %, un boîtier de CD occupait presque la
+          // hauteur d'un album de BD dans la case. On garde un minimum visible.
+          let pct = b.hcm ? Math.round(Math.max(20, Math.min(96, (b.hcm/compartCm)*100))) : 82;
           if(b.flat) pct = Math.min(pct, 60); // album couché (pile) : plus bas
           return `<i class="${serre?'serre':'epais'}" style="background-color:${b.color};width:${bw}px;height:${pct}%"></i>`;
         }).join("");
