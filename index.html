@@ -873,7 +873,7 @@
        du meuble dès qu'on le pivote), tranches d'albums +0,6, portes +1,2 (elles affleurent),
        tablettes −2. L'écart tranches/tablettes évite que le compositeur 3D ne mélange les
        deux plans, ce qui rendait le bas des albums translucide. */
-  .m3d-front{position:absolute;inset:0;display:flex;box-sizing:border-box;padding:5px;background:transparent;transform:translateZ(0.6px)}
+  .m3d-front{position:absolute;inset:0;display:flex;box-sizing:border-box;padding:5px;background:transparent;transform:translateZ(0.6px);transform-style:preserve-3d}
   .m3d-back{position:absolute;inset:0;transform:translateZ(calc(-1 * var(--d,60px) + 2px));pointer-events:none;border-radius:3px;
     background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 38%,black),color-mix(in srgb,var(--wood,#5a3f28) 24%,black));
     box-shadow:inset 0 0 34px rgba(0,0,0,.6)}
@@ -924,12 +924,12 @@
   .m3d-side,.m3d-top{border-radius:2px}
   .m3d-badge{position:absolute;top:6px;right:6px;font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:2px 6px;z-index:3}
   /* Plus de bordure peinte : la séparation entre colonnes est un panneau réel (.m3d-divider) */
-  .m3d-col{flex:1;display:flex;flex-direction:column}
+  .m3d-col{flex:1;display:flex;flex-direction:column;transform-style:preserve-3d}
   /* Case vide : plus aucun fond ni ombre peinte — ce que l'on voit est le VRAI volume derrière */
   /* Aucun interstice entre les tranches : sur une étagère bien remplie elles ne font qu'un ou
      deux pixels, et un jour d'un pixel entre chacune laissait voir le fond à parts égales —
      l'ensemble paraissait translucide alors que chaque tranche est pleine. */
-  .m3d-shelf{position:relative;flex:1;display:flex;align-items:flex-end;gap:0;padding:0 3px 4px;background:transparent}
+  .m3d-shelf{position:relative;flex:1;display:flex;align-items:flex-end;gap:0;padding:0 3px 4px;background:transparent;transform-style:preserve-3d}
   .m3d-shelf-num{position:absolute;top:2px;left:4px;font-size:11px;font-weight:800;color:rgba(255,235,200,.62);text-shadow:0 1px 3px rgba(0,0,0,.85);pointer-events:none;z-index:2}
   /* Tranche d'album : objet PLEIN. L'ancien dégradé noircissait tout le tiers inférieur ;
      sur le fond de caisson désormais très sombre, l'album semblait s'y dissoudre. On garde
@@ -940,6 +940,15 @@
     box-shadow:inset -1px 0 0 rgba(0,0,0,.32),0 1px 2px rgba(0,0,0,.55)}
   /* Tranche de 1 à 2 px : ni filet ni modelé latéral, ils la videraient de sa couleur */
   .m3d-shelf i.serre{background-image:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 22%);box-shadow:none}
+  /* Volume des albums : au-dessus de chaque tranche, le DESSUS du livre — un plan couché qui
+     fuit vers le fond de l'étagère, sur 80 % de la profondeur du meuble. Réservé aux tranches
+     d'au moins 3 px : en dessous, ce dessus serait plus fin que le lissage du navigateur et
+     n'ajouterait que du bruit. */
+  .m3d-shelf i{transform-style:preserve-3d}
+  .m3d-shelf i.epais::after{content:"";position:absolute;left:0;right:0;top:0;pointer-events:none;
+    height:calc(var(--d,60px) * 0.62);transform-origin:center top;transform:rotateX(-90deg);
+    background-color:inherit;
+    background-image:linear-gradient(0deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,.14) 62%,rgba(255,255,255,.24) 100%)}
   /* ---- Tiroirs : mini façade dans la vue 3D ---- */
   .m3d-drawers{display:flex;flex-direction:column;gap:1px;height:92%;flex-shrink:0;padding:1px;border-radius:1px;background:rgba(0,0,0,.4);box-shadow:0 0 2px rgba(0,0,0,.5)}
   .m3d-drawers b{flex:1;min-height:3px;border-radius:1px;position:relative;background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 70%,white),color-mix(in srgb,var(--wood,#5a3f28) 70%,black));box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
@@ -11875,7 +11884,7 @@ function renderFurniturePlan(container, _secondePasse){
           // hauteur du livre à l'échelle de la case (format réel), bornée
           let pct = b.hcm ? Math.round(Math.max(45, Math.min(96, (b.hcm/compartCm)*100))) : 82;
           if(b.flat) pct = Math.min(pct, 60); // album couché (pile) : plus bas
-          return `<i class="${serre?'serre':''}" style="background-color:${b.color};width:${bw}px;height:${pct}%"></i>`;
+          return `<i class="${serre?'serre':'epais'}" style="background-color:${b.color};width:${bw}px;height:${pct}%"></i>`;
         }).join("");
         // Numéro d'étage : du bas (1) vers le haut (affiché dans la 1re colonne seulement)
         const numHTML = (c===0) ? `<span class="m3d-shelf-num">${rows - r}</span>` : '';
