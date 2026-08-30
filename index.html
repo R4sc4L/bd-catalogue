@@ -946,15 +946,19 @@
      n'ajouterait que du bruit. */
   .m3d-shelf i{transform-style:preserve-3d}
   /* Face latérale : le plat du livre, visible là où il dépasse ses voisins et au bout des
-     rangées. Le côté exposé dépend du sens de rotation du meuble, d'où les deux variantes. */
-  .m3d-shelf i.epais::before{content:"";position:absolute;top:0;bottom:0;pointer-events:none;
-    width:calc(var(--d,60px) * 0.62);background-color:inherit;
-    background-image:linear-gradient(90deg,rgba(255,255,255,.10),rgba(0,0,0,.34) 55%,rgba(0,0,0,.52))}
+     rangées. Elle n'EXISTE que sur un meuble pivoté — la règle est donc portée par les classes
+     vu-g / vu-d, jamais par la tranche seule. Un meuble vu de face n'expose aucun plat : sans
+     cette précaution, le pseudo-élément restait non pivoté et posait un grand pan sombre en
+     travers de l'étagère. */
+  .meuble3d.vu-g .m3d-shelf i.epais::before,
+  .meuble3d.vu-d .m3d-shelf i.epais::before{content:"";position:absolute;top:0;bottom:0;pointer-events:none;
+    width:calc(var(--d,60px) * 0.62);background-color:inherit}
   /* Plat gauche : part de l'arête gauche et s'enfonce vers le fond */
   .meuble3d.vu-g .m3d-shelf i.epais::before{left:0;transform-origin:left center;transform:rotateY(90deg);
     background-image:linear-gradient(270deg,rgba(255,255,255,.10),rgba(0,0,0,.34) 55%,rgba(0,0,0,.52))}
   /* Plat droit : même chose depuis l'arête droite */
-  .meuble3d.vu-d .m3d-shelf i.epais::before{right:0;transform-origin:right center;transform:rotateY(-90deg)}
+  .meuble3d.vu-d .m3d-shelf i.epais::before{right:0;transform-origin:right center;transform:rotateY(-90deg);
+    background-image:linear-gradient(90deg,rgba(255,255,255,.10),rgba(0,0,0,.34) 55%,rgba(0,0,0,.52))}
   .m3d-shelf i.epais::after{content:"";position:absolute;left:0;right:0;top:0;pointer-events:none;
     height:calc(var(--d,60px) * 0.62);transform-origin:center top;transform:rotateX(-90deg);
     background-color:inherit;
