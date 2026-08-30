@@ -413,6 +413,22 @@
   .form-tab-panel{display:none}
   .form-tab-panel.active{display:block}
   /* ---- Fiche simplifiée Ex-libris : une seule page (Auteur, tirage, format, qualité papier, état, aperçu) ---- */
+  /* ── Fiche disque : un seul onglet, champs de livre retirés ── */
+  #itemForm.disque-simple .form-tabs{display:none}
+  #itemForm.disque-simple .form-tab-panel{display:block}
+  #itemForm.disque-simple #formSection-rattachement,
+  #itemForm.disque-simple #formSection-ephemere,
+  #itemForm.disque-simple #formSection-pins,
+  #itemForm.disque-simple #formSection-signatures,
+  #itemForm.disque-simple #formSection-caracteristiques,
+  #itemForm.disque-simple #formSection-contenu,
+  #itemForm.disque-simple #formSection-objets-associes{display:none}
+  #itemForm.disque-simple #formFieldCatSec,
+  #itemForm.disque-simple #formFieldFormat,
+  #itemForm.disque-simple #formFieldPaperQuality,
+  #itemForm.disque-simple #formFieldPageOrder,
+  #itemForm.disque-simple #formFieldFirstEdition{display:none}
+
   #itemForm.xl-simple .form-tabs{display:none}
   #itemForm.xl-simple .form-tab-panel{display:block}
   #itemForm.xl-simple #formSection-caracteristiques,
@@ -1706,6 +1722,46 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             </div>
           </div>
         </div>
+        <!-- ── SECTION DISQUE (archétype « disque » : CD, Vinyle, DVD) ── -->
+        <div class="form-section" id="formSection-disque" style="display:none">
+          <h3>💿 <span data-en="Disc">Disque</span></h3>
+          <div class="form-grid">
+            <div><label data-en="Format">Support</label>
+              <select id="itemDisqueSupport">
+                <option value=""></option>
+                <option>CD</option><option>Vinyle 33 tours</option><option>Vinyle 45 tours</option>
+                <option>Maxi 45 tours</option><option>DVD</option><option>Blu-ray</option>
+                <option>Cassette</option><option>Coffret</option>
+              </select>
+            </div>
+            <div><label data-en="Number of discs">Nombre de disques</label><input type="number" id="itemDisqueNb" min="1" max="99" placeholder="1"></div>
+            <div><label data-en="Total running time">Durée totale</label><input type="text" id="itemDisqueDuree" placeholder="ex: 42:15" data-en-ph="e.g. 42:15"></div>
+            <div><label data-en="Genre">Genre</label><input type="text" id="itemDisqueGenre" list="dl-genres-disque" placeholder="ex: Rock progressif" data-en-ph="e.g. Progressive rock"></div>
+            <div><label data-en="Pressing">Pressage</label>
+              <select id="itemDisquePressage">
+                <option value=""></option>
+                <option>Édition originale</option><option>Réédition</option><option>Remasterisé</option>
+                <option>Édition limitée</option><option>Promo</option><option>Test pressing</option>
+              </select>
+            </div>
+            <div><label data-en="Country of pressing">Pays de pressage</label><input type="text" id="itemDisquePays" list="dl-nationalities" placeholder="ex: France"></div>
+            <div><label data-en="Catalogue number">Référence catalogue</label><input type="text" id="itemDisqueRef" placeholder="ex: 2C 068-14022"></div>
+            <div><label data-en="Sleeve condition">État de la pochette</label>
+              <select id="itemDisqueEtatPochette">
+                <option value=""></option>
+                <option>Neuf / scellé</option><option>Très bon</option><option>Bon</option>
+                <option>Moyen</option><option>Usé</option>
+              </select>
+            </div>
+          </div>
+          <p class="muted" style="font-size:11px;margin:8px 0 0" data-en="Label, year and barcode are in the section below; artists and performers in “Contributors”.">Le label, l'année et le code-barres sont dans la section suivante ; les artistes et interprètes dans « Auteurs et contributeurs ».</p>
+        </div>
+        <datalist id="dl-genres-disque">
+          <option>Rock</option><option>Rock progressif</option><option>Pop</option><option>Jazz</option>
+          <option>Blues</option><option>Classique</option><option>Électronique</option><option>Chanson française</option>
+          <option>Folk</option><option>Funk / Soul</option><option>Hip-hop</option><option>Musique de film</option>
+          <option>Metal</option><option>Punk</option><option>Reggae</option><option>World</option>
+        </datalist>
         <div class="form-section" id="formSection-authors">
           <h3>Auteurs et contributeurs</h3>
           <!-- La portée de la liste (collectionnés / tous) se règle directement
@@ -2662,6 +2718,23 @@ async function loadModuleCategories(){
       _modCats[m.id] = [...m.defaultCategories];
       try { await saveModuleCategories(m.id); } catch(e){ /* hors ligne : on garde la liste en mémoire */ }
     }
+    // Purge unique : une collection qui avait hérité de la liste BD avant que le
+    // module n'ait la sienne garde ces catégories pour toujours. On les retire une
+    // fois — et une seule, pour ne pas effacer les catégories ajoutées ensuite.
+    else if((m.defaultCategories||[]).length){
+      const drapeau = m.categoriesMetaKey + '_purge';
+      let dejaFait = false;
+      try { dejaFait = !!(await dbGet('meta', drapeau))?.value; } catch(e){ dejaFait = true; }
+      if(!dejaFait){
+        const avant = _modCats[m.id].length;
+        _modCats[m.id] = _modCats[m.id].filter(c=>m.defaultCategories.includes(c));
+        for(const c of m.defaultCategories) if(!_modCats[m.id].includes(c)) _modCats[m.id].push(c);
+        try {
+          if(_modCats[m.id].length !== avant) await saveModuleCategories(m.id);
+          await dbPut('meta', { key: drapeau, value: true });
+        } catch(e){ /* hors ligne : la purge sera retentée à la prochaine session */ }
+      }
+    }
   }
 }
 async function saveModuleCategories(id){
@@ -3113,6 +3186,24 @@ const FICHE_ARCHETYPES = {
     hidden:['univers','serie','serieNum','collection','mois','isbn','pages','reliure','couverture','emboitage','contenu'],
     sectionTitles:{ edition:{fr:'Réalisation',en:'Creation'} },
   },
+  // Disques (CD, vinyles, DVD) : fiche mono-onglet centrée sur le support.
+  // Aucun attribut de livre (série, pagination, reliure, couverture, emboîtage) ;
+  // une section « Disque » dédiée, et « Édition » devient « Label et parution »
+  // (l'ISBN y sert de code-barres EAN).
+  disque: {
+    id:'disque', label:'Disque (CD / Vinyle / DVD)', labelEn:'Disc (CD / Vinyl / DVD)', icon:'💿',
+    hidden:['univers','serie','serieNum','collection','mois','pages','reliure','couverture',
+            'emboitage','contenu','formatManga','formatComics'],
+    showDisque:true,
+    formClass:'disque-simple',
+    sectionTitles:{ edition:{fr:'Label et parution',en:'Label and release'} },
+    fieldLabels:{
+      itemPublisher:{fr:'Label / Éditeur',       en:'Label / Publisher'},
+      itemIsbn:     {fr:'Code-barres (EAN)',     en:'Barcode (EAN)'},
+      itemCountry:  {fr:'Pays de parution',      en:'Country of release'},
+      itemCondition:{fr:'État du disque',        en:'Disc condition'},
+    },
+  },
   // Éphémères : petit imprimé non relié (ex-libris, invitations, marque-pages,
   // flyers, coupures de presse…). Fiche épurée + section « Éphémère » dédiée
   // dont le sous-bloc dépend du champ « type de document » (voir adaptEphemereType).
@@ -3136,6 +3227,10 @@ const CATEGORY_ARCHETYPE = {
   'Œuvre publicitaire':'tete',          // legacy : ancien nom de « Travaux publicitaires »
   'Éphémères':'ephemere',
   'Ex-libris':'ephemere',   // legacy : fondu dans « Éphémères » (type de document)
+  'CD':'disque',
+  'Vinyle':'disque',
+  'DVD':'disque',
+  'Blu-ray':'disque',
   'Planche originale':'original',
   'Dessin original':'original',
   'Couverture (originale)':'original',
@@ -3381,7 +3476,9 @@ function archetypeForCategory(cat){
 // Titres de section « gérés » par les archétypes : on ne les réinitialise
 // que si le titre courant en fait partie, pour ne pas écraser un libellé
 // posé par un autre contexte (ex. « Informations générales » des pin's).
-const _ARCH_EDITION_TITLES = ['Édition','Edition','Caractéristiques','Characteristics','Réalisation','Creation','Identité','Identity'];
+// Champs dont un archétype peut réécrire le libellé (voir `fieldLabels`).
+const _ARCH_LABEL_FIELDS = ['itemPublisher','itemIsbn','itemCountry','itemCondition'];
+const _ARCH_EDITION_TITLES = ['Édition','Edition','Caractéristiques','Characteristics','Réalisation','Creation','Identité','Identity','Label et parution','Label and release'];
 const _ARCH_ACQ_TITLES     = ['Acquisition et valeur','Acquisition and value','Localisation','Location','Conservation'];
 
 // Moteur déclaratif : applique un archétype au formulaire œuvre.
@@ -3419,6 +3516,24 @@ function applyArchetype(arch){
   // Diaporama : coché automatiquement par certains archétypes (sauf réglage manuel)
   const diaCheck = document.getElementById('itemDiaporama');
   if(diaCheck && !diaCheck.dataset.userSet) diaCheck.checked = !!arch.autoDiaporama;
+  // Libellés de champs pilotés par l'archétype (ex. Éditeur → Label).
+  // Le libellé d'origine est mémorisé au premier passage pour pouvoir le rendre.
+  const fl = arch.fieldLabels || {};
+  for(const key of _ARCH_LABEL_FIELDS){
+    const input = document.getElementById(key);
+    const lbl = input && (input.parentElement||input).querySelector('label');
+    if(!lbl) continue;
+    if(lbl.dataset.archFr === undefined){
+      lbl.dataset.archFr = lbl.textContent;
+      lbl.dataset.archEn = lbl.getAttribute('data-en') || lbl.textContent;
+    }
+    const o = fl[key];
+    lbl.textContent = o ? T(o.fr, o.en) : T(lbl.dataset.archFr, lbl.dataset.archEn);
+    lbl.setAttribute('data-en', o ? o.en : lbl.dataset.archEn);
+  }
+  // Section « Disque » (CD / Vinyle / DVD)
+  const disqueSec = document.getElementById('formSection-disque');
+  if(disqueSec) disqueSec.style.display = arch.showDisque ? '' : 'none';
   // Section « Éphémère » (type de document + sous-blocs)
   const ephSec = document.getElementById('formSection-ephemere');
   if(ephSec) ephSec.style.display = arch.showEphemere ? '' : 'none';
@@ -3684,7 +3799,10 @@ const SB = (() => {
     'etendue','etendueUnite','ephPages','ephFeuillets','ephVolets','ephVolantes',
     'ephCahiers','ephVolants','ephVolantsRectoSeul','ephVolantsEncartes',
     'titrePromu','support','diffusion','matiere','quantite','expediteur','destinataire','dateCorrespondance','supportCorr',
-    'colleDansAlbum','lu','dateLecture','preteA','datePret','retourPrevu'];
+    'colleDansAlbum','lu','dateLecture','preteA','datePret','retourPrevu',
+    // Disques (CD / Vinyle / DVD) — même sac JSONB, aucune colonne SQL à créer
+    'disqueSupport','disqueNb','disqueDuree','disqueGenre','disquePressage',
+    'disquePays','disqueRef','disqueEtatPochette'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
     'pinsReference','pinsEditionLimitee'];
   // [cléLegacy, colonne, type] — s:texte(''), n:nombre(null), z:nombre(0), b:bool, d:date('')
@@ -5417,6 +5535,16 @@ function openItemForm(id=null, opts={}){
     _exlibrisImgIdx = (typeof it.exlibrisImageIdx==='number' && it.exlibrisImageIdx>=0 && it.exlibrisImageIdx < currentItemImages.length) ? it.exlibrisImageIdx : -1;
     renderImagePreview("item");
     (it.auteurs||[]).forEach(a=>addAuthorRow(a.auteurId, a.roles||a.role||[]));
+    // Disque (CD / Vinyle / DVD)
+    const _setD = (id,v)=>{ const el=document.getElementById(id); if(el) el.value = v==null?"":v; };
+    _setD("itemDisqueSupport", it.disqueSupport);
+    _setD("itemDisqueNb", it.disqueNb);
+    _setD("itemDisqueDuree", it.disqueDuree);
+    _setD("itemDisqueGenre", it.disqueGenre);
+    _setD("itemDisquePressage", it.disquePressage);
+    _setD("itemDisquePays", it.disquePays);
+    _setD("itemDisqueRef", it.disqueRef);
+    _setD("itemDisqueEtatPochette", it.disqueEtatPochette);
     // Pin's specific fields
     if(document.getElementById("itemPinsMarque")) document.getElementById("itemPinsMarque").value = it.pinsMarque||"";
     if(document.getElementById("itemPinsTheme"))  document.getElementById("itemPinsTheme").value  = it.pinsTheme||"";
@@ -5816,6 +5944,15 @@ async function saveItem(e){
     imageNames: [...currentItemImageNames],
     exlibrisImageIdx: (_exlibrisImgIdx>=0 && _exlibrisImgIdx < currentItemImages.length) ? _exlibrisImgIdx : null,
     collectionType: existing?.collectionType || (isAllCollection() ? 'bd' : _activeCollection),
+    // Disque (CD / Vinyle / DVD)
+    disqueSupport:      document.getElementById("itemDisqueSupport")?.value||"",
+    disqueNb:           parseInt(document.getElementById("itemDisqueNb")?.value)||null,
+    disqueDuree:        document.getElementById("itemDisqueDuree")?.value.trim()||"",
+    disqueGenre:        document.getElementById("itemDisqueGenre")?.value.trim()||"",
+    disquePressage:     document.getElementById("itemDisquePressage")?.value||"",
+    disquePays:         document.getElementById("itemDisquePays")?.value.trim()||"",
+    disqueRef:          document.getElementById("itemDisqueRef")?.value.trim()||"",
+    disqueEtatPochette: document.getElementById("itemDisqueEtatPochette")?.value||"",
     // Pin's specific fields
     pinsMarque:        document.getElementById("itemPinsMarque")?.value.trim()||"",
     pinsTheme:         document.getElementById("itemPinsTheme")?.value||"",
@@ -9421,17 +9558,32 @@ function renderItemDetail(id, pushHistory=true){
     return renderEphemereDetail(it, imgs, imgNames, authors, pushHistory);
   }
   const isPortfolio = it.categorie === 'Portfolio';
+  // Disque : mêmes panneaux que l'album, mais les lignes du support passent en tête
+  // et les libellés d'édition parlent musique (Label, code-barres).
+  const isDisque = archetypeForCategory(it.categorie).id === 'disque';
+  const disqueDl = !isDisque ? '' : [
+    [T('Support','Format'),            it.disqueSupport],
+    [T('Nombre de disques','Discs'),   it.disqueNb],
+    [T('Durée','Running time'),        it.disqueDuree],
+    [T('Genre','Genre'),               it.disqueGenre],
+    [T('Pressage','Pressing'),         it.disquePressage],
+    [T('Pays de pressage','Pressed in'), it.disquePays],
+    [T('Référence catalogue','Catalogue no.'), it.disqueRef],
+    [T('État de la pochette','Sleeve condition'), it.disqueEtatPochette],
+  ].filter(([,v])=>v!==null && v!==undefined && v!=='')
+   .map(([l,v])=>`<dt>${escapeHTML(l)}</dt><dd>${escapeHTML(String(v))}</dd>`).join('');
   const hasDiaporama = !!(it.diaporama ?? isPortfolio); // rétrocompat : Portfolio = diapo par défaut
   // Init carousel state si diaporama activé
   if(hasDiaporama){ _pcImgs = imgs; _pcNames = imgNames; _pcIdx = 0; }
 
   const infoMeta = `<span class="tag cat">${escapeHTML(it.categorie||"")}</span>${(it.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}${it.editionOriginale?`<span class="badge-eo">${_lang==='en'?'Original Edition':'Édition Originale'}</span>`:""}${it.signe?`<span class="badge-signed">${_lang==='en'?'Signed':'Signé'}</span>`:""}${(it.dedicaceSignature||it.dedicaceCheck)?`<span class="badge-signed">${_lang==='en'?'Dedication sig.':'Dédicace sig.'}</span>`:""}${it.dedicaceDessin?`<span class="badge-signed">${_lang==='en'?'Dedication draw.':'Dédicace dessin'}</span>`:""}`;
   const infoDl = `
-    ${it.editeur?`<dt>${t('detail.publisher_label')}</dt><dd>${escapeHTML(it.editeur)}${it.collection?` — ${escapeHTML(it.collection)}`:""}</dd>`:""}
+    ${disqueDl}
+    ${it.editeur?`<dt>${isDisque?T('Label','Label'):t('detail.publisher_label')}</dt><dd>${escapeHTML(it.editeur)}${it.collection?` — ${escapeHTML(it.collection)}`:""}</dd>`:""}
     ${it.anneeEdition?`<dt>${t('detail.release_label')}</dt><dd>${it.moisEdition?t('month.'+it.moisEdition)+" ":""}${it.anneeEdition}</dd>`:""}
     ${itemLangues(it).length?`<dt>${t('detail.lang_label')}</dt><dd>${itemLangues(it).map(l=>{const f=languageFlag(l);return (f?f+' ':'')+escapeHTML(l)}).join(', ')}</dd>`:""}
     ${it.paysEdition?`<dt>${t('detail.country_label')}</dt><dd>${escapeHTML(it.paysEdition)}</dd>`:""}
-    ${it.isbn?`<dt>${t('detail.isbn_label')}</dt><dd>${escapeHTML(it.isbn)}</dd>`:""}
+    ${it.isbn?`<dt>${isDisque?T('Code-barres','Barcode'):t('detail.isbn_label')}</dt><dd>${escapeHTML(it.isbn)}</dd>`:""}
     ${it.nbPages?`<dt>${isPortfolio?t('detail.planches_label'):t('detail.pages_label')}</dt><dd>${it.nbPages}${isPortfolio?" pl.":" p."}</dd>`:""}
     ${it.tirage?`<dt>${t('detail.print_label')}</dt><dd>${escapeHTML(it.tirage)}${it.numeroExemplaire?` · ${_lang==='en'?'copy':'exemplaire'} ${escapeHTML(it.numeroExemplaire)}`:""}</dd>`:""}
     ${it.format?`<dt>${t('detail.format_label')}</dt><dd>${escapeHTML(it.format)}</dd>`:""}
@@ -9468,7 +9620,7 @@ function renderItemDetail(id, pushHistory=true){
                  </div>
                </div>`
             : `<img id="detailMainImg" src="${_safeUrl(imgs[0])}" data-imgs="${escapeHTML(JSON.stringify(imgs))}" data-idx="0"${hasDiaporama?` style="cursor:pointer" title="${_lang==='en'?'Open slideshow':'Ouvrir le diaporama'}" onclick="pcOpenLightbox(0)"`:imgs.length>1?` class="cycable" title="${_lang==='en'?'Click to cycle images':'Cliquer pour passer à l\'image suivante'}" onclick="cycleDetailImg()"`:''}>`)
-          : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:60px;color:var(--ink-soft)">📖</div>'
+          : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:60px;color:var(--ink-soft)">${isDisque?'💿':'📖'}</div>`
         }</div>
         ${!imagesLocked && imgs.length>1?`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${imgs.map((s,idx2)=>{const n=imgNames[idx2]||"";const tl=n?escapeHTML(n):(_lang==='en'?`Visual ${idx2+1}`:`Visuel ${idx2+1}`);return`<div class="detail-thumb${idx2===0?' active':''}" data-idx="${idx2}" title="${tl}" style="width:60px;height:90px;border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg-panel);cursor:pointer" onclick="${hasDiaporama?`pcOpenLightbox(${idx2})`:`jumpDetailImg(${idx2})`}"><img src="${_safeUrl(s)}" style="max-width:100%;max-height:100%;object-fit:contain;pointer-events:none"></div>`}).join("")}</div>`:""}
       </div>
@@ -9562,10 +9714,14 @@ function renderItemDetail(id, pushHistory=true){
           ? `<button class="secondary" style="padding:5px 12px;border-color:${m.accent};color:${m.accent}" onclick="openAssocItem('${o.type}','${o.itemId}')">${label} ›</button>`
           : `<span class="tag" style="border-color:${m.accent}66;color:${m.accent};background:${m.accent}1f">${label}</span>`;
       }).join('')}</div></div>` : '';
-      return `<div class="panel"><h3>${t('detail.limited')}</h3>${rows.length
-        ? `<dl>${rows.map(_dtdd).join("")}</dl>`
-        : `<p class="muted" style="font-size:14px;margin:0">${t('detail.no_info')}</p>`
-      }</div>${inclPanel}${carPanel}${assocPanel}`;
+      // Sur un disque, le panneau « tirage limité / dédicace » n'a pas d'objet :
+      // on ne l'affiche que s'il porte réellement quelque chose.
+      const limPanel = (isDisque && !rows.length) ? ''
+        : `<div class="panel"><h3>${t('detail.limited')}</h3>${rows.length
+            ? `<dl>${rows.map(_dtdd).join("")}</dl>`
+            : `<p class="muted" style="font-size:14px;margin:0">${t('detail.no_info')}</p>`
+          }</div>`;
+      return `${limPanel}${inclPanel}${carPanel}${assocPanel}`;
     })()}
     ${_attachedPanel(it)}
     ${it.informations?`<div class="panel"><h3>${_lang==='en'?'Information':'Informations'}</h3><div style="white-space:pre-wrap">${escapeHTML(it.informations)}</div></div>`:""}
