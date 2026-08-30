@@ -1530,6 +1530,10 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <input type="text" id="newCatInput" placeholder="Ajouter une catégorie personnalisée…" data-en-ph="Add a custom category…" onkeydown="if(event.key==='Enter'){addCustomCategory();event.preventDefault()}">
           <button data-en="+ Add" onclick="addCustomCategory()">+ Ajouter</button>
         </div>
+        <button class="secondary" id="resetCatsBtn" style="display:none;margin-top:12px;font-size:13px"
+          title="Remplacer la liste par les catégories prévues pour cette collection"
+          data-en-title="Replace the list with the categories intended for this collection"
+          data-en="↺ Default categories for this collection" onclick="reinitialiserCategories()">↺ Catégories par défaut de cette collection</button>
       </div>
       <div class="panel">
         <h3 data-en="📋 Reference list">📋 Liste de référence</h3>
@@ -2653,6 +2657,11 @@ async function loadModuleCategories(){
     if(m.id==='bd' || m.id==='pins') continue;
     try { const rec = await dbGet('meta', m.categoriesMetaKey); _modCats[m.id] = (rec && Array.isArray(rec.value)) ? rec.value : []; }
     catch(e){ _modCats[m.id] = []; }
+    // Un module qui n'a encore aucune catégorie reçoit les siennes, pas celles de la BD.
+    if(!_modCats[m.id].length && (m.defaultCategories||[]).length){
+      _modCats[m.id] = [...m.defaultCategories];
+      try { await saveModuleCategories(m.id); } catch(e){ /* hors ligne : on garde la liste en mémoire */ }
+    }
   }
 }
 async function saveModuleCategories(id){
@@ -2746,6 +2755,7 @@ const MODULES = [
     categoriesMetaKey:'vinyle_cd_dvd_categories',
     libraryLabel:{ fr:'CDthèque', en:'Disc library' },
     libraryUnit:{ fr:['disque','disques'], en:['disc','discs'] },
+    defaultCategories:['CD','Vinyle','DVD'],
     tabs:{ wishlist:false, library:true },
   },
 ];
@@ -4827,8 +4837,40 @@ function renderCategoriesManager(){
   if(masterPanel) masterPanel.style.display = (isPins || isAll) ? 'none' : '';
   const addRow = document.getElementById('newCatInput')?.closest('div');
   if(addRow) addRow.style.display = isAll ? 'none' : '';
+  // Réinitialisation : proposée dès qu'un module définit ses propres catégories et que la
+  // liste courante s'en écarte — typiquement une collection qui a hérité de celles de la BD.
+  const btn = document.getElementById('resetCatsBtn');
+  if(btn){
+    const parDefaut = (moduleById(_activeCollection).defaultCategories)||[];
+    const cats = isAll ? [] : activeCategories();
+    const identique = parDefaut.length === cats.length && parDefaut.every(c=>cats.includes(c));
+    btn.style.display = (!isAll && parDefaut.length && !identique) ? '' : 'none';
+    if(btn.style.display==='') btn.textContent = T(`↺ Revenir à : ${parDefaut.join(', ')}`, `↺ Reset to: ${parDefaut.join(', ')}`);
+  }
   renderActiveCats();
   renderMasterCats();
+}
+
+// Remplace la liste de la collection active par les catégories prévues pour ce module.
+// Les œuvres ne sont PAS modifiées : celles qui portent une catégorie retirée la gardent,
+// on l'annonce clairement avant d'agir plutôt que de les toucher dans le dos.
+async function reinitialiserCategories(){
+  if(isAllCollection()){ toast(T("Gérez les catégories dans chaque collection","Manage categories in each collection"),"error"); return; }
+  const parDefaut = (moduleById(_activeCollection).defaultCategories)||[];
+  if(!parDefaut.length) return;
+  const cats = activeCategories();
+  const perdues = cats.filter(c=>!parDefaut.includes(c));
+  const orphelines = cache.items.filter(i=>itemInActiveCollection(i) && perdues.includes(i.categorie));
+  let msg = T(`Remplacer les ${cats.length} catégorie(s) actuelle(s) par : ${parDefaut.join(', ')} ?`,
+              `Replace the ${cats.length} current categor(ies) with: ${parDefaut.join(', ')}?`);
+  if(orphelines.length) msg += T(
+    `\n\n${orphelines.length} œuvre(s) utilisent une catégorie retirée (${[...new Set(orphelines.map(i=>i.categorie))].slice(0,4).join(', ')}). Elles la conservent, mais tu devras les reclasser.`,
+    `\n\n${orphelines.length} work(s) use a removed category (${[...new Set(orphelines.map(i=>i.categorie))].slice(0,4).join(', ')}). They keep it, but you will need to reclassify them.`);
+  if(!confirm(msg)) return;
+  cats.length = 0; cats.push(...parDefaut);
+  await saveActiveCategories();
+  renderCategoriesManager();
+  toast(T(`Catégories réinitialisées : ${parDefaut.join(', ')}.`, `Categories reset: ${parDefaut.join(', ')}.`));
 }
 
 function renderActiveCats(){
