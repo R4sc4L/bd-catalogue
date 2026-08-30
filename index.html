@@ -166,6 +166,9 @@
   .card-title{font-weight:600;font-size:14px;margin:0 0 4px;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .card-sub{font-size:12px;color:var(--ink-soft);margin:0 0 6px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
   .card-meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-soft);margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
+  /* Fiche auteur : le compteur est calé à gauche et s'arrête avant le bouton
+     « Modifier » (32 px + 8 px de marge, 44 px en tactile) qui flotte à droite. */
+  .card-meta-auteur{justify-content:flex-start;padding-right:44px}
   .card-roles{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 8px}
   .card-roles .tag{font-size:10px;padding:2px 6px}
   .tag{display:inline-block;background:var(--accent-soft);color:var(--gold);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid rgba(200,144,74,.2)}
@@ -1147,6 +1150,7 @@
     .table-cb-col input[type=checkbox],.table-cb-col .card-select-cb{width:24px;height:24px}
     .role-check-item input{width:22px;height:22px}
     .card-edit-btn,.card-locate-btn,.card-lu{width:44px;height:44px}
+    .card-meta-auteur{padding-right:56px}
     #filterSearchClear{font-size:20px!important;padding:8px 10px!important;right:0!important}
   }
 
@@ -2783,6 +2787,36 @@ const ROLES_DISQUE = [
 
 // Rôles de la collection active. « Ma Collection » accepte tout : on présente
 // l'union, sans doublon, pour qu'aucun rôle existant ne devienne inatteignable.
+// ============================================================
+// « LU », « ÉCOUTÉ », « VU »
+// ------------------------------------------------------------
+// Le suivi personnel dit « Lu » depuis l'origine : c'est le mot
+// du livre. On ne consulte pas un disque de la même manière —
+// et un DVD se regarde plutôt qu'il ne s'écoute. Le champ stocké
+// reste `lu` / `dateLecture` (aucune migration), seul l'affichage
+// suit la nature de l'œuvre.
+// ============================================================
+const TERMES_SUIVI = {
+  livre: { fait:{fr:'Lu',   en:'Read'},    date:{fr:'Date de lecture',   en:'Date read'},
+           icone:'📖', ouiPl:{fr:'Lus',    en:'Read'},   nonPl:{fr:'Non lus',    en:'Unread'} },
+  audio: { fait:{fr:'Écouté',en:'Played'},  date:{fr:"Date d'écoute",     en:'Date played'},
+           icone:'🎧', ouiPl:{fr:'Écoutés',en:'Played'}, nonPl:{fr:'Non écoutés',en:'Not played'} },
+  video: { fait:{fr:'Vu',   en:'Watched'},  date:{fr:'Date de visionnage',en:'Date watched'},
+           icone:'🎬', ouiPl:{fr:'Vus',    en:'Watched'},nonPl:{fr:'Non vus',    en:'Not watched'} },
+};
+// `cat` = catégorie de l'œuvre quand on la connaît (fiche, carte, vue détail).
+// Sans catégorie (filtres de la liste), on se rabat sur la collection active.
+function termesSuivi(cat){
+  if(cat){
+    if(/^(DVD|Blu-ray)$/i.test(String(cat).trim())) return TERMES_SUIVI.video;
+    if(archetypeForCategory(cat).id === 'disque')   return TERMES_SUIVI.audio;
+    return TERMES_SUIVI.livre;
+  }
+  const par = (moduleById(_activeCollection)?.defaultCategories) || [];
+  if(par.length && par.every(c=>archetypeForCategory(c).id === 'disque')) return TERMES_SUIVI.audio;
+  return TERMES_SUIVI.livre;
+}
+
 function _capitaliser(t){ t=String(t||''); return t.charAt(0).toUpperCase()+t.slice(1); }
 
 function rolesActifs(){
@@ -3590,6 +3624,12 @@ function _archetypeParDefautCollection(){
 function adaptFormToCategory(cat){
   const arch = (!cat && _archetypeParDefautCollection()) || archetypeForCategory(cat);
   applyArchetype(arch);
+  // Suivi personnel : « Lu » sur un album, « Écouté » sur un disque, « Vu » sur un DVD.
+  const t = termesSuivi(cat || (arch.id==='disque' ? 'CD' : ''));
+  const luLbl = document.querySelector('label[for="itemLu"]');
+  if(luLbl){ luLbl.textContent = T(t.fait.fr, t.fait.en); luLbl.setAttribute('data-en', t.fait.en); }
+  const dtLbl = document.querySelector('#formFieldDateLecture label');
+  if(dtLbl){ dtLbl.textContent = T(t.date.fr, t.date.en); dtLbl.setAttribute('data-en', t.date.en); }
 }
 
 function adaptAuthorFormToCollection(){
@@ -6801,6 +6841,17 @@ function renderCollection(){
     const el = document.getElementById(id);
     if(el) el.style.display = isPins ? 'none' : '';
   });
+  // Filtre de consultation : « Lu / Lus / Non lus » en BD, « Écouté / Écoutés /
+  // Non écoutés » dans la CDthèque. La valeur stockée ('', 'true', 'false') ne change pas.
+  const ts = termesSuivi();
+  const luLabel = document.querySelector('#filterFieldLu label');
+  if(luLabel){ luLabel.textContent = T(ts.fait.fr, ts.fait.en); luLabel.setAttribute('data-en', ts.fait.en); }
+  const luSel = document.getElementById('filterLu');
+  if(luSel){
+    const opts = luSel.options;
+    if(opts[1]) opts[1].textContent = T(ts.ouiPl.fr, ts.ouiPl.en);
+    if(opts[2]) opts[2].textContent = T(ts.nonPl.fr, ts.nonPl.en);
+  }
   // Label "Catégorie" → "Thème" pour les pin's
   const catLabel = document.getElementById('filterCategoryLabel');
   if(catLabel) catLabel.textContent = isPins ? T('Thème','Theme') : T('Catégorie','Category');
@@ -7958,7 +8009,7 @@ function cardItemHTML(i, compact=false){
       ${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}">`:(isPins?"📌":"📖")}
       ${isCoverLocked?`<div class="adult-overlay"><span class="adult-lock-icon">🔒</span><span class="adult-badge">🔞 ADULTE</span></div>`:""}
       ${selCb}
-      ${i.lu?`<span class="card-lu" title="${escapeHTML(T('Lu','Read')+(i.dateLecture?` — ${i.dateLecture}`:''))}">📖</span>`:""}
+      ${i.lu?(()=>{const _t=termesSuivi(i.categorie);return `<span class="card-lu" title="${escapeHTML(T(_t.fait.fr,_t.fait.en)+(i.dateLecture?` — ${i.dateLecture}`:''))}">${_t.icone}</span>`;})():""}
       ${badgesBL.length?`<div class="card-badges-bl">${badgesBL.join("")}</div>`:""}
       <button class="card-edit-btn" title="${T(`Modifier cette œuvre`,`Edit this work`)}" onclick="event.stopPropagation();openItemForm('${i.id}')">✏️</button>
     </div>
@@ -8201,8 +8252,7 @@ function applyAuthorFilters(){
         <div class="card-title">${escapeHTML(authorDisplay(a))}</div>
         <div class="card-sub">${escapeHTML(a.nationalite||"")}</div>
         <div class="card-roles">${rolesOfAuthor.map(r=>`<span class="tag">${escapeHTML(r)}</span>`).join(" ")}</div>
-        <div class="card-meta">
-          <span class="muted"></span>
+        <div class="card-meta card-meta-auteur">
           <span>${countLabel}</span>
         </div>
       </div>
@@ -9678,7 +9728,7 @@ function renderItemDetail(id, pushHistory=true){
     ${it.lieuAcquisition?`<dt>${t('detail.source_label')}</dt><dd>${escapeHTML(it.lieuAcquisition)}</dd>`:""}
     ${it.localisation?`<dt>${t('detail.location_label')}</dt><dd>${escapeHTML(friendlyLocation(it.localisation))}</dd>`:""}
     ${_attachedToLine(it)}
-    ${it.lu?`<dt>${T('Lu','Read')}</dt><dd>✓ ${it.dateLecture?escapeHTML(it.dateLecture):T('oui','yes')}</dd>`:""}
+    ${it.lu?(()=>{const _t=termesSuivi(it.categorie);return `<dt>${T(_t.fait.fr,_t.fait.en)}</dt><dd>✓ ${it.dateLecture?escapeHTML(it.dateLecture):T('oui','yes')}</dd>`;})():""}
     ${estPrete(it)?`<dt>${T('Prêté','Lent')}</dt><dd><span class="badge-pret${pretEnRetard(it)?' late':''}">📤 ${escapeHTML(it.preteA)}</span>${(()=>{const j=joursDePret(it);return j!==null?` <span class="muted" style="font-size:12px">${T(`depuis ${_formatDuree(j)}`,`for ${_formatDuree(j)}`)}</span>`:'';})()}${it.retourPrevu?` <span class="muted" style="font-size:12px">· ${T('retour prévu','due')} ${escapeHTML(it.retourPrevu)}${pretEnRetard(it)?` ⚠️`:''}</span>`:''}</dd>`:""}`;
 
   // ── Mise en page unifiée ──
