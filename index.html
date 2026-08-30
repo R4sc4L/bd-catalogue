@@ -1744,7 +1744,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <option>Édition limitée</option><option>Promo</option><option>Test pressing</option>
               </select>
             </div>
-            <div><label data-en="Country of pressing">Pays de pressage</label><input type="text" id="itemDisquePays" list="dl-nationalities" placeholder="ex: France"></div>
+            <div><label data-en="Country of pressing">Pays de pressage</label><input type="text" id="itemDisquePays" list="dl-pays" placeholder="ex: France"></div>
             <div><label data-en="Catalogue number">Référence catalogue</label><input type="text" id="itemDisqueRef" placeholder="ex: 2C 068-14022"></div>
             <div><label data-en="Sleeve condition">État de la pochette</label>
               <select id="itemDisqueEtatPochette">
@@ -2217,7 +2217,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       <button class="ghost" onclick="closeModal('autofillModal')">✕</button>
     </div>
     <div class="modal-body">
-      <p class="muted" style="margin-top:0;font-size:13px" data-en="ISBN for an exact match, or a title to search. Sources: BNF, Google Books, Open Library.">ISBN pour une correspondance exacte, ou titre pour une recherche. Sources : BNF, Google Books, Open Library.</p>
+      <p class="muted" style="margin-top:0;font-size:13px" id="autofillHint" data-en="ISBN for an exact match, or a title to search. Sources: BNF, Google Books, Open Library.">ISBN pour une correspondance exacte, ou titre pour une recherche. Sources : BNF, Google Books, Open Library.</p>
       <div style="display:flex;gap:8px;margin-bottom:20px">
         <input type="text" id="autofillQuery" placeholder="ISBN (ex: 9782203001046) ou titre…" data-en-ph="ISBN (e.g. 9782203001046) or title…" style="flex:1" onkeydown="if(event.key==='Enter') autofillSearch()">
         <button class="secondary" id="scanBtn" title="Scanner le code-barres au dos de l'album" data-en-title="Scan the barcode on the back cover" onclick="openBarcodeScanner()" style="display:none">📷</button>
@@ -3542,10 +3542,22 @@ function applyArchetype(arch){
   if(sigSec && !arch.showEphemere) sigSec.style.display = '';
 }
 
+// Archétype de repli quand aucune catégorie n'est encore choisie : si toutes
+// les catégories prévues pour la collection active partagent le même archétype
+// (la CDthèque : CD, Vinyle, DVD → « disque »), c'est forcément celui-là. Sans
+// cela, une fiche vierge de CDthèque s'ouvrirait avec la mise en page du livre.
+function _archetypeParDefautCollection(){
+  const par = (moduleById(_activeCollection)?.defaultCategories) || [];
+  if(!par.length) return null;
+  const ids = [...new Set(par.map(c=>archetypeForCategory(c).id))];
+  return ids.length === 1 ? FICHE_ARCHETYPES[ids[0]] : null;
+}
+
 // Point d'entrée conservé (appelé partout) : résout l'archétype de la
 // catégorie courante et l'applique au formulaire.
 function adaptFormToCategory(cat){
-  applyArchetype(archetypeForCategory(cat));
+  const arch = (!cat && _archetypeParDefautCollection()) || archetypeForCategory(cat);
+  applyArchetype(arch);
 }
 
 function adaptAuthorFormToCollection(){
@@ -10941,6 +10953,13 @@ function openAutofillModal(){
   const resEl = document.getElementById("autofillResults");
   qEl.value = currentTitle;
   resEl.innerHTML = "";
+  // Annoncer la source réellement interrogée : un disque ne va pas chez les libraires.
+  const hint = document.getElementById('autofillHint');
+  if(hint) hint.textContent = _rechercheDisque()
+    ? T("Code-barres (EAN) pour une correspondance exacte, ou « artiste titre » pour une recherche. Source : MusicBrainz, pochettes Cover Art Archive.",
+        "Barcode (EAN) for an exact match, or “artist title” to search. Source: MusicBrainz, covers from the Cover Art Archive.")
+    : T("ISBN pour une correspondance exacte, ou titre pour une recherche. Sources : BNF, Google Books, Open Library.",
+        "ISBN for an exact match, or a title to search. Sources: BNF, Google Books, Open Library.");
   _syncScanBtn();          // bouton 📷 seulement si la caméra est utilisable (HTTPS)
   openModal("autofillModal");
   if(currentTitle){
@@ -10962,10 +10981,17 @@ async function autofillSearch(){
 
   const isISBN = /^[\d\-Xx ]{9,17}$/.test(query);
   const cleanISBN = query.replace(/[\s\-]/g,"").toUpperCase();
+  // Un disque ne se cherche pas dans un catalogue de livres : on aiguille
+  // vers MusicBrainz dès que la collection (ou la catégorie) est un disque.
+  const disque = _rechercheDisque();
 
   try {
     let results = [];
-    if(isISBN){
+    if(disque){
+      results = estCodeBarresDisque(cleanISBN)
+        ? await fetchMusicBrainzBarcode(cleanISBN)
+        : await fetchMusicBrainzTitre(query);
+    } else if(isISBN){
       // Les ouvrages antérieurs à 2007 sont catalogués sous leur ISBN-10, alors que
       // le code-barres encode l'ISBN-13 : deux chaînes différentes. On interroge donc
       // les deux formes. (Vérifié sur la BnF : « L'Incal noir » est introuvable en
@@ -11001,28 +11027,37 @@ async function autofillSearch(){
       const q = encodeURIComponent(cleanISBN || query);
       el.innerHTML = `
         <div class="autofill-loading" style="text-align:left">
-          ${T("Aucun résultat dans les catalogues (BnF, Google Books, Open Library).","No results in the catalogues (BnF, Google Books, Open Library).")}
-          ${isISBN?`<div class="muted" style="font-size:12px;margin-top:6px">${T("Les catalogues couvrent mal la BD ancienne ou de petit éditeur.","Catalogues poorly cover older or small-publisher comics.")}</div>`:''}
+          ${disque
+            ? T("Aucun résultat dans MusicBrainz.","No results in MusicBrainz.")
+            : T("Aucun résultat dans les catalogues (BnF, Google Books, Open Library).","No results in the catalogues (BnF, Google Books, Open Library).")}
+          ${(isISBN && !disque)?`<div class="muted" style="font-size:12px;margin-top:6px">${T("Les catalogues couvrent mal la BD ancienne ou de petit éditeur.","Catalogues poorly cover older or small-publisher comics.")}</div>`:''}
+          ${disque?`<div class="muted" style="font-size:12px;margin-top:6px">${T("MusicBrainz couvre bien les CD et vinyles, moins bien les DVD et les pressages confidentiels.","MusicBrainz covers CDs and vinyl well, DVDs and small pressings less so.")}</div>`:''}
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
             <button class="secondary" onclick="window.open('https://www.google.com/search?q=${q}','_blank','noopener')">🌐 ${T("Chercher sur le web","Search the web")}</button>
-            <button class="secondary" onclick="window.open('https://www.google.com/search?q=site%3Abedetheque.com+${q}','_blank','noopener')">📚 ${T("Chercher sur Bédéthèque","Search Bédéthèque")}</button>
+            ${disque
+              ? `<button class="secondary" onclick="window.open('https://www.discogs.com/search/?q=${q}','_blank','noopener')">💿 ${T("Chercher sur Discogs","Search Discogs")}</button>`
+              : `<button class="secondary" onclick="window.open('https://www.google.com/search?q=site%3Abedetheque.com+${q}','_blank','noopener')">📚 ${T("Chercher sur Bédéthèque","Search Bédéthèque")}</button>`}
           </div>
           <div class="muted" style="font-size:12px;margin-top:10px">
-            ${T("Recopiez le titre trouvé dans le champ ci-dessus, puis relancez la recherche : les catalogues répondent souvent bien mieux au titre qu'à l'ISBN.",
-                "Copy the title you find into the field above, then search again: catalogues usually answer far better to a title than to an ISBN.")}
+            ${disque
+              ? T("Recopiez le titre et l'artiste trouvés dans le champ ci-dessus, puis relancez la recherche : MusicBrainz répond souvent mieux au titre qu'au code-barres.",
+                  "Copy the title and artist you find into the field above, then search again: MusicBrainz often answers better to a title than to a barcode.")
+              : T("Recopiez le titre trouvé dans le champ ci-dessus, puis relancez la recherche : les catalogues répondent souvent bien mieux au titre qu'à l'ISBN.",
+                  "Copy the title you find into the field above, then search again: catalogues usually answer far better to a title than to an ISBN.")}
           </div>
         </div>`;
     } else {
-      const srcColor = {BNF:"#003189", "Google Books":"#ea4335", "Open Library":"#2e7d32"};
+      const srcColor = {BNF:"#003189", "Google Books":"#ea4335", "Open Library":"#2e7d32", MusicBrainz:"#ba478f"};
       el.innerHTML = results.map((r,i)=>`
         <div class="autofill-result" onclick="applyAutofill(${i})">
-          <div class="autofill-thumb">${r.cover?`<img src="${_safeUrl(r.cover)}" onerror="this.style.display='none'">`:'📖'}</div>
+          <div class="autofill-thumb">${r.cover?`<img src="${_safeUrl(r.cover)}" onerror="this.style.display='none'">`:(r.disque?'💿':'📖')}</div>
           <div class="autofill-info">
             <strong>${escapeHTML(r.title)}</strong>
             ${r.subtitle?`<div class="sub">${escapeHTML(r.subtitle)}</div>`:''}
             ${r.serie?`<div class="sub" style="color:var(--accent-dark)">Cycle : ${escapeHTML(r.serie)}</div>`:''}
             <div class="sub">${[r.authors?.join(", "), r.publisher, r.year, r.pages?r.pages+" p.":null].filter(Boolean).map(escapeHTML).join(' · ')}</div>
-            ${r.isbn?`<div class="isbn-tag">ISBN : ${escapeHTML(r.isbn)}</div>`:''}
+            ${r.disque?`<div class="sub">${[r.disque.support, r.disque.nb>1?`${r.disque.nb} disques`:null, r.disque.duree, _paysDepuisCode(r.disque.pays), r.disque.ref].filter(Boolean).map(escapeHTML).join(' · ')}</div>`:''}
+            ${r.isbn?`<div class="isbn-tag">${r.disque?T('Code-barres','Barcode'):'ISBN'} : ${escapeHTML(r.isbn)}</div>`:''}
           </div>
           <span class="autofill-source" style="background:${srcColor[r.source]||'#666'};color:#fff;border:none">${escapeHTML(r.source)}</span>
         </div>`).join("");
@@ -11043,6 +11078,124 @@ async function autofillSearch(){
     toast(T(`${_autofillResults.length} notices trouvées — choisissez la bonne édition`,
             `${_autofillResults.length} records found — pick the right edition`));
   }
+}
+
+// ============================================================
+// MUSICBRAINZ — catalogue des disques (CD, vinyles, DVD-Video)
+// ------------------------------------------------------------
+// Les catalogues de LIVRES (BnF, Google Books, Open Library) ne
+// connaissent pas les disques : un EAN de CD n'y donne rien. On
+// interroge donc MusicBrainz, base libre et ouverte, qui indexe
+// justement le code-barres des éditions (« releases »).
+//   · pas de clé d'API, pas d'inscription ;
+//   · CORS autorisé, donc appelable depuis la page ;
+//   · une requête par seconde maximum (on n'en fait qu'une ou deux).
+// Les pochettes viennent de la Cover Art Archive, adossée à
+// MusicBrainz : l'URL se déduit de l'identifiant de l'édition, donc
+// aucune requête supplémentaire — si l'image manque, onerror la masque.
+// ============================================================
+const MB_WS = 'https://musicbrainz.org/ws/2';
+
+// Codes pays ISO renvoyés par MusicBrainz → libellés de la liste « dl-pays ».
+// XE = Europe, XW = monde : ce ne sont pas des pays, on les laisse tels quels.
+const _MB_PAYS = { FR:'France', BE:'Belgique', CH:'Suisse', CA:'Canada', IT:'Italie',
+  ES:'Espagne', US:'États-Unis', JP:'Japon', GB:'Royaume-Uni', UK:'Royaume-Uni',
+  DE:'Allemagne', AR:'Argentine', BR:'Brésil', CN:'Chine', KR:'Corée du Sud',
+  PT:'Portugal', NL:'Pays-Bas', AU:'Australie', MX:'Mexique', SE:'Suède',
+  DK:'Danemark', NO:'Norvège', FI:'Finlande', AT:'Autriche', IE:'Irlande',
+  PL:'Pologne', RU:'Russie', GR:'Grèce', XE:'Europe', XW:'International' };
+function _paysDepuisCode(c){
+  const k = String(c||'').trim().toUpperCase();
+  return _MB_PAYS[k] || (k.length>2 ? c : '');
+}
+
+// Un code-barres de disque est un EAN-13 ou un UPC-12 : que des chiffres.
+// (Un ISBN-10 se terminant par X n'en est donc jamais un.)
+function estCodeBarresDisque(q){ return /^\d{12,13}$/.test(String(q||'').replace(/[\s-]/g,'')); }
+
+// Le format d'un support MusicBrainz (« 12\" Vinyl », « CD », « DVD-Video »)
+// ramené au vocabulaire de la fiche disque.
+function _mbSupport(fmt, nb){
+  const f = String(fmt||'').toLowerCase();
+  if(f.includes('7"'))  return 'Vinyle 45 tours';
+  if(f.includes('10"')) return 'Maxi 45 tours';
+  if(f.includes('12"')) return nb>1 ? 'Coffret' : 'Vinyle 33 tours';
+  if(f.includes('vinyl')) return 'Vinyle 33 tours';
+  if(f.includes('blu-ray')) return 'Blu-ray';
+  if(f.includes('dvd')) return 'DVD';
+  if(f.includes('cassette')) return 'Cassette';
+  if(f.includes('cd')) return nb>1 ? 'Coffret' : 'CD';
+  return '';
+}
+
+// Durée totale d'une édition, en mm:ss — MusicBrainz la donne piste par piste.
+function _mbDuree(media){
+  const ms = (media||[]).reduce((t,m)=>t + (m.tracks||[]).reduce((u,x)=>u + (x.length||0), 0), 0);
+  if(!ms) return '';
+  const sec = Math.round(ms/1000);
+  return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+}
+
+function parseMusicBrainzRelease(rel){
+  const media  = rel.media || [];
+  const nb     = media.length || (rel['medium-count'] || 1);
+  const format = media[0]?.format || rel['medium-list']?.[0]?.format || '';
+  const label  = (rel['label-info']||[])[0] || {};
+  const artistes = (rel['artist-credit']||[]).map(a=>a.name || a.artist?.name || '').filter(Boolean);
+  return {
+    source: 'MusicBrainz',
+    title: rel.title || '', subtitle: rel.disambiguation || '',
+    authors: artistes, publisher: label.label?.name || '',
+    year: (rel.date||'').slice(0,4),
+    isbn: rel.barcode || '',                       // le champ « code-barres » de la fiche
+    cover: rel.id ? `https://coverartarchive.org/release/${rel.id}/front-500` : '',
+    pages: '', category: '', serie: '', description: '', language: '',
+    // Champs propres à la section « Disque »
+    disque: {
+      support:  _mbSupport(format, nb),
+      nb:       nb || '',
+      duree:    _mbDuree(media),
+      pays:     rel.country || '',
+      ref:      label['catalog-number'] || '',
+      pressage: '',
+    },
+  };
+}
+
+async function fetchMusicBrainzBarcode(ean){
+  try {
+    // Un UPC-A (12 chiffres, pressages américains) est souvent catalogué en
+    // EAN-13 avec un zéro devant — et inversement. On interroge les deux formes
+    // en une seule requête, comme on le fait déjà pour l'ISBN-10/13 des livres.
+    const brut = String(ean).replace(/[\s-]/g,'');
+    const formes = [...new Set([brut,
+      brut.length===12 ? '0'+brut : null,
+      (brut.length===13 && brut.startsWith('0')) ? brut.slice(1) : null].filter(Boolean))];
+    const q = formes.map(v=>`barcode:${v}`).join(' OR ');
+    const url = `${MB_WS}/release?query=${encodeURIComponent(q)}&fmt=json&limit=8`;
+    const r = await fetch(url, {headers:{Accept:'application/json'}});
+    if(!r.ok) return [];
+    const d = await r.json();
+    return (d.releases||[]).map(parseMusicBrainzRelease);
+  } catch { return []; }
+}
+
+async function fetchMusicBrainzTitre(q){
+  try {
+    const url = `${MB_WS}/release?query=${encodeURIComponent(q)}&fmt=json&limit=10`;
+    const r = await fetch(url, {headers:{Accept:'application/json'}});
+    if(!r.ok) return [];
+    const d = await r.json();
+    return (d.releases||[]).map(parseMusicBrainzRelease);
+  } catch { return []; }
+}
+
+// La recherche doit-elle viser les disques plutôt que les livres ?
+// Deux indices : la collection active, et la catégorie déjà choisie dans la fiche.
+function _rechercheDisque(){
+  if(_activeCollection === 'vinyle-cd-dvd') return true;
+  const cat = document.getElementById('itemCategory')?.value || '';
+  return archetypeForCategory(cat).id === 'disque';
 }
 
 async function fetchGoogleBooksISBN(isbn){
@@ -11316,6 +11469,25 @@ async function applyAutofill(idx){
     const langMap = { fr:"Français", en:"Anglais", de:"Allemand", es:"Espagnol",
                       nl:"Néerlandais", it:"Italien", pt:"Portugais", ja:"Japonais" };
     addLangue(langMap[r.language]||r.language);
+  }
+
+  // Section « Disque » — renseignée seulement quand la source est musicale
+  if(r.disque){
+    const poser = (id,v)=>{ const el=document.getElementById(id); if(el && v) el.value = v; };
+    poser('itemDisqueSupport', r.disque.support);
+    poser('itemDisqueNb',      r.disque.nb && r.disque.nb>0 ? String(r.disque.nb) : '');
+    poser('itemDisqueDuree',   r.disque.duree);
+    poser('itemDisquePays',    _paysDepuisCode(r.disque.pays));
+    poser('itemDisqueRef',     r.disque.ref);
+    // La catégorie suit le support quand elle n'a pas déjà été choisie à la main.
+    const catSel = document.getElementById('itemCategory');
+    if(catSel && archetypeForCategory(catSel.value).id !== 'disque'){
+      const cible = /Vinyle|Maxi/.test(r.disque.support) ? 'Vinyle'
+                  : /Blu-ray/.test(r.disque.support) ? 'Blu-ray'
+                  : /DVD/.test(r.disque.support) ? 'DVD' : 'CD';
+      const opt = [...catSel.options].find(o=>o.value===cible);
+      if(opt){ catSel.value = cible; adaptFormToCategory(cible); }
+    }
   }
 
   // Cover image
