@@ -1754,7 +1754,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               </select>
             </div>
           </div>
-          <p class="muted" style="font-size:11px;margin:8px 0 0" data-en="Label, year and barcode are in the section below; artists and performers in “Contributors”.">Le label, l'année et le code-barres sont dans la section suivante ; les artistes et interprètes dans « Auteurs et contributeurs ».</p>
+          <p class="muted" style="font-size:11px;margin:8px 0 0" data-en="Label, year and barcode are in the section below; artists and performers in “Contributors”.">Le label, l'année et le code-barres sont dans la section suivante ; les artistes et interprètes dans « Artistes et contributeurs ».</p>
         </div>
         <datalist id="dl-genres-disque">
           <option>Rock</option><option>Rock progressif</option><option>Pop</option><option>Jazz</option>
@@ -1763,7 +1763,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <option>Metal</option><option>Punk</option><option>Reggae</option><option>World</option>
         </datalist>
         <div class="form-section" id="formSection-authors">
-          <h3>Auteurs et contributeurs</h3>
+          <h3 id="formSection-authors-title">Auteurs et contributeurs</h3>
           <!-- La portée de la liste (collectionnés / tous) se règle directement
                dans le menu déroulant de chaque ligne : pas de case séparée. -->
           <div id="itemAuthorsList"></div>
@@ -2763,9 +2763,33 @@ async function saveActiveCategories(){
   else await saveModuleCategories(_activeCollection);
 }
 
+// Rôles proposés dans le menu déroulant d'une ligne « auteur ». ROLES reste la
+// liste de la BD (et le repli de toute collection qui n'en déclare pas d'autre) ;
+// un module peut fournir la sienne via son champ `roles`.
 const ROLES = [
   "Dessinateur","Scénariste","Idée originale","Écrivain","Coloriste","Encreur","Couverture","Préface","Auteur (texte)","Journaliste","Traducteur","Directeur artistique"
 ];
+
+// Musique et vidéo : on ne crédite pas un disque comme un album de BD.
+// L'ordre compte — c'est celui du menu et celui du tri des étiquettes de rôle
+// sur les fiches d'artiste : d'abord qui joue, puis qui écrit, puis qui fabrique.
+const ROLES_DISQUE = [
+  "Artiste principal","Interprète","Chant","Musicien","Groupe",
+  "Compositeur","Parolier","Auteur-compositeur","Arrangeur",
+  "Chef d'orchestre","Orchestre / Ensemble","Soliste",
+  "Producteur","Ingénieur du son","Mixage","Mastering",
+  "Réalisateur","Pochette / Illustration","Photographe",
+];
+
+// Rôles de la collection active. « Ma Collection » accepte tout : on présente
+// l'union, sans doublon, pour qu'aucun rôle existant ne devienne inatteignable.
+function _capitaliser(t){ t=String(t||''); return t.charAt(0).toUpperCase()+t.slice(1); }
+
+function rolesActifs(){
+  if(_activeCollection === ALL_COLL)
+    return [...new Set(MODULES.flatMap(m=>m.roles||[]).concat(ROLES))];
+  return (moduleById(_activeCollection)?.roles) || ROLES;
+}
 
 const CONDITIONS = ["Neuf","Très bon","Bon","Moyen","Mauvais"];
 
@@ -2829,6 +2853,7 @@ const MODULES = [
     libraryLabel:{ fr:'CDthèque', en:'Disc library' },
     libraryUnit:{ fr:['disque','disques'], en:['disc','discs'] },
     defaultCategories:['CD','Vinyle','DVD'],
+    roles:ROLES_DISQUE,
     tabs:{ wishlist:false, library:true },
   },
 ];
@@ -3196,7 +3221,8 @@ const FICHE_ARCHETYPES = {
             'emboitage','contenu','formatManga','formatComics'],
     showDisque:true,
     formClass:'disque-simple',
-    sectionTitles:{ edition:{fr:'Label et parution',en:'Label and release'} },
+    sectionTitles:{ edition:{fr:'Label et parution',en:'Label and release'},
+                    authors:{fr:'Artistes et contributeurs',en:'Artists and contributors'} },
     fieldLabels:{
       itemPublisher:{fr:'Label / Éditeur',       en:'Label / Publisher'},
       itemIsbn:     {fr:'Code-barres (EAN)',     en:'Barcode (EAN)'},
@@ -3480,6 +3506,7 @@ function archetypeForCategory(cat){
 const _ARCH_LABEL_FIELDS = ['itemPublisher','itemIsbn','itemCountry','itemCondition'];
 const _ARCH_EDITION_TITLES = ['Édition','Edition','Caractéristiques','Characteristics','Réalisation','Creation','Identité','Identity','Label et parution','Label and release'];
 const _ARCH_ACQ_TITLES     = ['Acquisition et valeur','Acquisition and value','Localisation','Location','Conservation'];
+const _ARCH_AUTH_TITLES    = ['Auteurs et contributeurs','Authors and contributors','Artistes et contributeurs','Artists and contributors'];
 
 // Moteur déclaratif : applique un archétype au formulaire œuvre.
 function applyArchetype(arch){
@@ -3504,6 +3531,11 @@ function applyArchetype(arch){
   if(edTitle){
     if(st.edition) edTitle.textContent = T(st.edition.fr, st.edition.en);
     else if(_ARCH_EDITION_TITLES.includes(edTitle.textContent.trim())) edTitle.textContent = T('Édition','Edition');
+  }
+  const authTitle = document.getElementById('formSection-authors-title');
+  if(authTitle){
+    if(st.authors) authTitle.textContent = T(st.authors.fr, st.authors.en);
+    else if(_ARCH_AUTH_TITLES.includes(authTitle.textContent.trim())) authTitle.textContent = T('Auteurs et contributeurs','Authors and contributors');
   }
   const acqTitle = document.getElementById('formSection-acquisition-title');
   if(acqTitle){
@@ -3568,6 +3600,14 @@ function adaptAuthorFormToCollection(){
   // Champs à masquer en mode pins (rôles → non pertinent pour fabricants)
   const rolesField = document.getElementById('authorFieldRoles');
   if(rolesField) rolesField.style.display = isPins ? 'none' : '';
+  // L'exemple de saisie doit parler le vocabulaire de la collection :
+  // proposer « Scénariste, Dessinateur » sur une fiche d'artiste musical
+  // laisse croire que les rôles de la BD sont les seuls prévus.
+  const rolesInput = document.getElementById('authorRoles');
+  if(rolesInput){
+    const ex = rolesActifs().slice(0,3).join(', ');
+    rolesInput.placeholder = T(`ex: ${ex}`, `e.g. ${ex}`);
+  }
   // Adapter les labels
   const set = (id, txt) => { const el=document.getElementById(id); if(el) el.textContent=txt; };
   if(isPins){
@@ -5670,17 +5710,18 @@ function addAuthorRow(auteurId="", roles=[]){
   const authorsOptions = _authorOptionsHTML(auteurId, true);   // portée commune à toutes les lignes
   const initialLabel = roles.length ? roles.join(", ") : T("— Rôles —","— Roles —");
   // Rôles standards + rôles non-standards préservés (ex: ancien format)
-  const extraRoles = roles.filter(r => !ROLES.includes(r));
-  const allRoles = [...ROLES, ...extraRoles];
+  const rolesDispo = rolesActifs();
+  const extraRoles = roles.filter(r => !rolesDispo.includes(r));
+  const allRoles = [...rolesDispo, ...extraRoles];
   const checksHTML = allRoles.map(r=>{
     const checked = roles.includes(r) ? "checked" : "";
-    const isExtra = !ROLES.includes(r);
+    const isExtra = !rolesDispo.includes(r);
     return `<label class="role-check-item"${isExtra?' style="font-style:italic"':''}><input type="checkbox" name="role_${rowId}" value="${escapeHTML(r)}" ${checked}>${escapeHTML(r)}</label>`;
   }).join("");
   row.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start">
       <div>
-        <label>${T("Auteur","Author")}</label>
+        <label>${T(_capitaliser(currentModule().terms?.creator || 'auteur'),"Author")}</label>
         <div class="author-pick">
           <select class="item-author-select">
             ${_authorSelectHeader()}
@@ -8147,8 +8188,10 @@ function applyAuthorFilters(){
     const countLabel = _isPinsAuthors ? `${c} pin${c>1?"s":""}` : `${c} ${T(`œuvre${c>1?"s":""}`,`work${c>1?"s":""}`)}`;
     const editTitle  = _isPinsAuthors ? T("Modifier cet éditeur","Edit this publisher") : T("Modifier cet auteur","Edit this author");
     const starTitle  = _isPinsAuthors ? T("Éditeur collectionné","Collected publisher") : T("Auteur collectionné","Collected author");
-    const ROLE_ORDER = ["Dessinateur","Scénariste","Écrivain","Coloriste","Encreur","Couverture","Préface"];
-    const roleRank = r => { const i = ROLE_ORDER.indexOf(r); return i === -1 ? ROLE_ORDER.length - 1 : i; };
+    // L'ordre d'affichage suit celui de la collection active : sur une fiche
+    // d'artiste, « Artiste principal » doit primer, pas « Dessinateur ».
+    const ROLE_ORDER = rolesActifs();
+    const roleRank = r => { const i = ROLE_ORDER.indexOf(r); return i === -1 ? ROLE_ORDER.length : i; };
     const rolesOfAuthor = [...new Set([...(rolesByAuthor[a.id]||new Set()), ...(a.roles||[])])].sort((x,y)=>roleRank(x)-roleRank(y));
     return `<div class="card author-card${a.estCollectionne?' collected-author':''}" role="button" tabindex="0" aria-label="${escapeHTML(authorDisplay(a))}" onclick="renderAuthorDetail('${a.id}')" style="${a.estCollectionne?'border-color:rgba(226,184,106,.35)':''}">
       <button class="card-edit-btn" title="${editTitle}" onclick="event.stopPropagation();openAuthorForm('${a.id}')">✏️</button>
