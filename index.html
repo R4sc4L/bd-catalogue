@@ -7333,6 +7333,14 @@ const _NAT_FLAG = {
   "sud-africaine":"🇿🇦","nigeriane":"🇳🇬","malienne":"🇲🇱","senegalaise":"🇸🇳",
   "marocaine":"🇲🇦","algerienne":"🇩🇿","tunisienne":"🇹🇳","egyptienne":"🇪🇬",
 };
+// Comment nommer le champ « nationalité » selon la collection affichée : une
+// marque de pin's a un pays d'origine, pas une nationalité. On reprend le mot
+// employé par la fiche de saisie pour que les deux vues se répondent.
+function libelleNationalite(){
+  return _activeCollection === 'pins' ? T("Pays d'origine",'Country of origin')
+                                      : T('Nationalité','Nationality');
+}
+
 function nationaliteFlag(nat){
   const k = _normLang(nat);            // même normalisation : minuscules, sans accents
   return _NAT_FLAG[k] || countryFlag(nat) || "";
@@ -8359,7 +8367,7 @@ function applyAuthorFilters(){
       <div class="card-img ${a.photoUrl?"":"placeholder"}">${a.photoUrl?`<img src="${_safeUrl(a.photoUrl)}">`:""}</div>
       <div class="card-body">
         <div class="card-title">${escapeHTML(authorDisplay(a))}</div>
-        <div class="card-sub">${escapeHTML(a.nationalite||"")}</div>
+        <div class="card-sub">${a.nationalite?`<span class="muted">${escapeHTML(libelleNationalite())} :</span> ${escapeHTML(a.nationalite)}`:""}</div>
         <div class="card-roles">${rolesOfAuthor.map(r=>`<span class="tag">${escapeHTML(r)}</span>`).join(" ")}</div>
         <div class="card-meta card-meta-auteur">
           <span>${countLabel}</span>
@@ -10071,7 +10079,7 @@ function renderAuthorDetail(id, pushHistory=true){
         <h2>${escapeHTML(authorDisplay(a))}${a.estCollectionne?` <span title="${T(`Auteur collectionné`,`Collected author`)}" style="font-size:18px;vertical-align:middle;opacity:.85">⭐</span>`:""}</h2>
         ${a.pseudonyme && (a.nom||a.prenom)?`<p class="muted" style="font-size:16px">${escapeHTML([a.prenom,a.nom].filter(Boolean).join(" "))}</p>`:""}
         <div class="meta-row">
-          ${a.nationalite?`<span>🌍 ${escapeHTML(a.nationalite)}</span>`:""}
+          ${a.nationalite?`<span>🌍 ${escapeHTML(libelleNationalite())} : ${escapeHTML(a.nationalite)}</span>`:""}
           ${lifeSpan?`<span>📅 ${lifeSpan}</span>`:""}
           ${a.siteWeb&&_safeHref(a.siteWeb)?`<span>🔗 <a href="${_safeHref(a.siteWeb)}" target="_blank" rel="noopener noreferrer">Site web</a></span>`:""}
         </div>
