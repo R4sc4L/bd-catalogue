@@ -426,6 +426,7 @@
   #itemForm.disque-simple #formSection-caracteristiques,
   #itemForm.disque-simple #formSection-contenu,
   #itemForm.disque-simple #formSection-objets-associes{display:none}
+  #itemForm.disque-simple #tab-infos .form-grid > div:has(#itemSubtitle),
   #itemForm.disque-simple #formFieldCatSec,
   #itemForm.disque-simple #formFieldFormat,
   #itemForm.disque-simple #formFieldPaperQuality,
@@ -1764,6 +1765,12 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <option>Neuf / scellé</option><option>Très bon</option><option>Bon</option>
                 <option>Moyen</option><option>Usé</option>
               </select>
+            </div>
+            <div class="span-2" style="align-self:end;padding-bottom:6px">
+              <div class="checkbox-row">
+                <input type="checkbox" id="itemDisqueCompilation">
+                <label for="itemDisqueCompilation" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)" data-en="Compilation (various artists or a selection of tracks)">Compilation <span class="muted" style="font-size:12px">(artistes variés ou sélection de titres)</span></label>
+              </div>
             </div>
           </div>
           <p class="muted" style="font-size:11px;margin:8px 0 0" data-en="Label, year and barcode are in the section below; artists and performers in “Contributors”.">Le label, l'année et le code-barres sont dans la section suivante ; les artistes et interprètes dans « Artistes et contributeurs ».</p>
@@ -3910,7 +3917,7 @@ const SB = (() => {
     'colleDansAlbum','lu','dateLecture','preteA','datePret','retourPrevu',
     // Disques (CD / Vinyle / DVD) — même sac JSONB, aucune colonne SQL à créer
     'disqueSupport','disqueNb','disqueDuree','disqueGenre','disquePressage',
-    'disquePays','disqueRef','disqueEtatPochette'];
+    'disquePays','disqueRef','disqueEtatPochette','disqueCompilation'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
     'pinsReference','pinsEditionLimitee'];
   // [cléLegacy, colonne, type] — s:texte(''), n:nombre(null), z:nombre(0), b:bool, d:date('')
@@ -5680,6 +5687,8 @@ function openItemForm(id=null, opts={}){
     _setD("itemDisquePays", it.disquePays);
     _setD("itemDisqueRef", it.disqueRef);
     _setD("itemDisqueEtatPochette", it.disqueEtatPochette);
+    const _comp = document.getElementById("itemDisqueCompilation");
+    if(_comp) _comp.checked = !!it.disqueCompilation;
     // Pin's specific fields
     if(document.getElementById("itemPinsMarque")) document.getElementById("itemPinsMarque").value = it.pinsMarque||"";
     if(document.getElementById("itemPinsTheme"))  document.getElementById("itemPinsTheme").value  = it.pinsTheme||"";
@@ -6089,6 +6098,7 @@ async function saveItem(e){
     disquePays:         document.getElementById("itemDisquePays")?.value.trim()||"",
     disqueRef:          document.getElementById("itemDisqueRef")?.value.trim()||"",
     disqueEtatPochette: document.getElementById("itemDisqueEtatPochette")?.value||"",
+    disqueCompilation:  !!document.getElementById("itemDisqueCompilation")?.checked,
     // Pin's specific fields
     pinsMarque:        document.getElementById("itemPinsMarque")?.value.trim()||"",
     pinsTheme:         document.getElementById("itemPinsTheme")?.value||"",
@@ -7280,6 +7290,57 @@ function itemLangues(it){ return (it.langues && it.langues.length) ? it.langues 
 // Drapeaux d'un item (séparés d'une fine espace), pour les vues collection
 function langFlags(it){ return itemLangues(it).map(languageFlag).filter(Boolean).join(" "); }
 
+// ============================================================
+// DRAPEAU DE L'ARTISTE (disques)
+// ------------------------------------------------------------
+// Sur un livre, le drapeau dit la LANGUE : c'est ce qui distingue
+// deux éditions d'un même album. Sur un disque, la langue ne veut
+// pas dire grand-chose — un album de jazz instrumental n'en a pas,
+// et « anglais » ne distingue pas Bowie de Pharoah Sanders. Ce qui
+// parle, c'est le pays de l'artiste. La fiche auteur stocke une
+// NATIONALITÉ (un adjectif : « Américaine »), pas un pays ; d'où
+// cette table, complétée par countryFlag() si l'utilisateur a saisi
+// un nom de pays.
+// ============================================================
+const _NAT_FLAG = {
+  "francaise":"🇫🇷","belge":"🇧🇪","suisse":"🇨🇭","quebecoise":"🇨🇦","canadienne":"🇨🇦",
+  "americaine":"🇺🇸","britannique":"🇬🇧","anglaise":"🇬🇧","irlandaise":"🇮🇪",
+  "italienne":"🇮🇹","espagnole":"🇪🇸","portugaise":"🇵🇹","allemande":"🇩🇪","autrichienne":"🇦🇹",
+  "neerlandaise":"🇳🇱","hollandaise":"🇳🇱","danoise":"🇩🇰","suedoise":"🇸🇪","norvegienne":"🇳🇴",
+  "finlandaise":"🇫🇮","islandaise":"🇮🇸","polonaise":"🇵🇱","tcheque":"🇨🇿","hongroise":"🇭🇺",
+  "roumaine":"🇷🇴","grecque":"🇬🇷","russe":"🇷🇺","ukrainienne":"🇺🇦","turque":"🇹🇷",
+  "japonaise":"🇯🇵","chinoise":"🇨🇳","coreenne":"🇰🇷","indienne":"🇮🇳","israelienne":"🇮🇱",
+  "argentine":"🇦🇷","bresilienne":"🇧🇷","mexicaine":"🇲🇽","chilienne":"🇨🇱","colombienne":"🇨🇴",
+  "cubaine":"🇨🇺","jamaicaine":"🇯🇲","australienne":"🇦🇺","neo-zelandaise":"🇳🇿",
+  "sud-africaine":"🇿🇦","nigeriane":"🇳🇬","malienne":"🇲🇱","senegalaise":"🇸🇳",
+  "marocaine":"🇲🇦","algerienne":"🇩🇿","tunisienne":"🇹🇳","egyptienne":"🇪🇬",
+};
+function nationaliteFlag(nat){
+  const k = _normLang(nat);            // même normalisation : minuscules, sans accents
+  return _NAT_FLAG[k] || countryFlag(nat) || "";
+}
+// Nationalités des INTERPRÈTES d'un disque. On écarte les rôles de fabrication
+// (producteur, ingénieur du son, pochette…) : le drapeau doit dire d'où vient la
+// musique, pas où elle a été gravée. Sans aucun rôle d'interprétation crédité, on
+// se rabat sur le premier auteur — mieux vaut un drapeau approximatif qu'aucun.
+const _ROLES_INTERPRETE = /artiste principal|interpr|chant|musicien|groupe|soliste|orchestre|chef d'orchestre/i;
+function itemNationalites(it){
+  const roles = a => (a.roles && a.roles.length) ? a.roles : (a.role ? [a.role] : []);
+  const credits = it.auteurs || [];
+  const interpretes = credits.filter(a=>roles(a).some(r=>_ROLES_INTERPRETE.test(r)));
+  const retenus = interpretes.length ? interpretes : credits.slice(0,1);
+  return [...new Set(retenus.map(a=>authorById(a.auteurId)?.nationalite).filter(Boolean))];
+}
+function artistFlags(it){
+  return [...new Set(itemNationalites(it).map(nationaliteFlag).filter(Boolean))].slice(0,3).join(" ");
+}
+// Quel drapeau montrer ? La langue pour un livre, le pays de l'artiste pour un disque.
+function _drapeauxItem(it){
+  if(archetypeForCategory(it.categorie).id === 'disque')
+    return { flags: artistFlags(it), titre: itemNationalites(it).join(', ') };
+  return { flags: langFlags(it), titre: itemLangues(it).join(', ') };
+}
+
 let _langues = [];
 let _langDropdownBound = false;
 function initLangTagInput(selected=[]) {
@@ -7954,7 +8015,7 @@ function applyFilters(){
             <td style="white-space:nowrap">${i.editionOriginale?'<span class="badge-eo">EO</span> ':""} ${i.signe?`<span class="badge-signed">${T('Signé','Signed')}</span> `:""}${(i.dedicaceSignature||i.dedicaceCheck)?`<span class="badge-signed">${T('Déd. sig.','Ded. sig.')}</span> `:""}${i.dedicaceDessin?`<span class="badge-signed">${T('Déd. dessin','Ded. drawing')}</span> `:""}${i.dedicaceTampon?`<span class="badge-signed">${T('Déd. tampon','Ded. stamp')}</span>`:"" }</td>
             <td><span class="tag cat">${escapeHTML(i.categorie||"")}</span></td>
             <td style="line-height:1.6">${authors}</td>
-            <td style="text-align:center;font-size:18px" title="${escapeHTML(itemLangues(i).join(', '))}">${langFlags(i)}</td>
+            <td style="text-align:center;font-size:18px" title="${escapeHTML(_drapeauxItem(i).titre)}">${_drapeauxItem(i).flags}</td>
             <td>${escapeHTML(i.editeur||"")}</td>
             <td>${i.anneeEdition||""}</td>
             <td>${escapeHTML(i.etat||"")}</td>
@@ -8036,7 +8097,7 @@ function cardItemHTML(i, compact=false){
   return `<div class="card${selClass}" role="button" tabindex="0" aria-label="${escapeHTML(i.titre||T('Sans titre','Untitled'))}" style="position:relative" ${isCoverLocked ? adultClickHandler : clickHandler} oncontextmenu="showCardContextMenu(event,'${i.id}')">
     ${locateBtn}
     <div class="card-img${isCoverLocked?' card-img-adult':''}">
-      ${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}">`:(isPins?"📌":"📖")}
+      ${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}">`:(isPins?"📌":(archetypeForCategory(i.categorie).id==='disque'?"💿":"📖"))}
       ${isCoverLocked?`<div class="adult-overlay"><span class="adult-lock-icon">🔒</span><span class="adult-badge">🔞 ADULTE</span></div>`:""}
       ${selCb}
       ${i.lu?(()=>{const _t=termesSuivi(i.categorie);return `<span class="card-lu" title="${escapeHTML(T(_t.fait.fr,_t.fait.en)+(i.dateLecture?` — ${i.dateLecture}`:''))}">${_t.icone}</span>`;})():""}
@@ -8053,7 +8114,7 @@ function cardItemHTML(i, compact=false){
         ${isAllCollection()?(()=>{const m=moduleById(i.collectionType||'bd');return `<span class="tag" title="${escapeHTML(m.label)}" style="background:${m.accent}22;border-color:${m.accent}66;color:var(--ink)">${m.icon} ${escapeHTML(m.label)}</span>`;})():""}
         <span class="tag cat">${escapeHTML(i.categorie||"—")}</span>
         ${(i.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}
-        ${(()=>{const f=langFlags(i);return f?`<span title="${escapeHTML(itemLangues(i).join(', '))}" style="font-size:16px;line-height:1">${f}</span>`:""})()}
+        ${(()=>{const d=_drapeauxItem(i);return d.flags?`<span title="${escapeHTML(d.titre)}" style="font-size:16px;line-height:1">${d.flags}</span>`:""})()}
         ${(i.objetsAssocies||[]).length?`<span title="${T(`Objets associés :`,`Related objects:`)} ${escapeHTML([...new Set((i.objetsAssocies||[]).map(o=>moduleById(o.type).label))].join(', '))}" style="font-size:13px;line-height:1;opacity:.85">🔗${[...new Set((i.objetsAssocies||[]).map(o=>moduleById(o.type).icon))].join('')}</span>`:""}
         <span>${i.anneeEdition||""}</span>
       </div>
@@ -9733,6 +9794,7 @@ function renderItemDetail(id, pushHistory=true){
     [T('Pays de pressage','Pressed in'), it.disquePays],
     [T('Référence catalogue','Catalogue no.'), it.disqueRef],
     [T('État de la pochette','Sleeve condition'), it.disqueEtatPochette],
+    [T('Compilation','Compilation'), it.disqueCompilation ? T('oui','yes') : ''],
   ].filter(([,v])=>v!==null && v!==undefined && v!=='')
    .map(([l,v])=>`<dt>${escapeHTML(l)}</dt><dd>${escapeHTML(String(v))}</dd>`).join('');
   const hasDiaporama = !!(it.diaporama ?? isPortfolio); // rétrocompat : Portfolio = diapo par défaut
@@ -11295,7 +11357,11 @@ function parseMusicBrainzRelease(rel){
   const artistes = (rel['artist-credit']||[]).map(a=>a.name || a.artist?.name || '').filter(Boolean);
   return {
     source: 'MusicBrainz',
-    title: rel.title || '', subtitle: rel.disambiguation || '',
+    title: rel.title || '', subtitle: '',
+    // « remastered », « reissue », « mono »… : MusicBrainz range cela dans
+    // `disambiguation`. Le sous-titre étant masqué sur une fiche disque, la
+    // mention irait se perdre : on la met dans « Précisions sur l'édition ».
+    editionInfo: rel.disambiguation || '',
     authors: artistes, publisher: label.label?.name || '',
     year: (rel.date||'').slice(0,4),
     isbn: rel.barcode || '',                       // le champ « code-barres » de la fiche
@@ -11608,6 +11674,7 @@ async function applyAutofill(idx){
   if(r.year)        document.getElementById("itemYear").value        = r.year;
   if(r.isbn)        document.getElementById("itemIsbn").value        = r.isbn;
   if(r.description) document.getElementById("itemNotes").value       = r.description;
+  if(r.editionInfo) document.getElementById("itemEditionInfo").value  = r.editionInfo;
   if(r.serie)       document.getElementById("itemSerie").value       = r.serie;
   if(r.pages)       document.getElementById("itemPages").value       = r.pages;
   if(r.category){
