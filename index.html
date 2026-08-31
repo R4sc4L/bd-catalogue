@@ -169,6 +169,13 @@
   /* Fiche auteur : le compteur est calé à gauche et s'arrête avant le bouton
      « Modifier » (32 px + 8 px de marge, 44 px en tactile) qui flotte à droite. */
   .card-meta-auteur{justify-content:flex-start;padding-right:44px}
+  /* « Remplir automatiquement » + scan : un seul bloc, pour qu'on lise deux
+     manières de faire la même chose plutôt que deux commandes sans rapport. */
+  .autofill-duo{display:flex;align-items:stretch}
+  .autofill-duo > button:first-child{border-top-right-radius:0;border-bottom-right-radius:0}
+  .autofill-duo > button:last-child{border-top-left-radius:0;border-bottom-left-radius:0;
+    border-left-width:0;padding:6px 11px;display:flex;align-items:center;justify-content:center}
+  .autofill-duo > button:last-child:hover{border-left-width:0}
   .card-roles{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 8px}
   .card-roles .tag{font-size:10px;padding:2px 6px}
   .tag{display:inline-block;background:var(--accent-soft);color:var(--gold);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid rgba(200,144,74,.2)}
@@ -1607,7 +1614,15 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
   <div class="modal">
     <div class="modal-header">
       <h2 id="itemModalTitle" data-en="Add a work">Ajouter une œuvre</h2>
-      <button class="secondary" style="font-size:13px;padding:6px 12px" data-en="🔍 Autofill" onclick="openAutofillModal()">🔍 Remplir automatiquement</button>
+      <div class="autofill-duo">
+        <button class="secondary" style="font-size:13px;padding:6px 12px" data-en="🔍 Autofill" onclick="openAutofillModal()">🔍 Remplir automatiquement</button>
+        <button class="secondary" id="scanDirectBtn" title="Scanner le code-barres" data-en-title="Scan the barcode" onclick="scannerDirectement()" style="display:none">
+          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
+            <path d="M7 8v8M10 8v8M13 8v8M17 8v8"/>
+          </svg>
+        </button>
+      </div>
       <button class="ghost" onclick="closeModal('itemModal')">✕</button>
     </div>
     <div class="modal-body">
@@ -4810,6 +4825,7 @@ function dbClear(store){
 let cache = { items:[], authors:[], wishlist:[] };
 
 async function reloadCache(){
+  oublierGenresArtistes();
   cache.items = await dbAll("items");
   // Migrate legacy items: ensure all have a collectionType
   cache.items.forEach(it=>{ if(!it.collectionType) it.collectionType='bd'; });
@@ -5484,6 +5500,7 @@ function openBulkEditForm(){
 
 function openItemForm(id=null, opts={}){
   if(GUEST) return;                 // page invité : aucune écriture possible
+  _syncScanDirectBtn();             // bouton de scan accolé à « Remplir automatiquement »
   _fbReturn = null;
   _lastSavedItemId = null;
   _bulkEditIds = null;
@@ -6874,6 +6891,7 @@ let tableSort = {col: null, dir: 1}; // col: clé de colonne, dir: 1=asc -1=desc
 let _lastItemList = [];
 
 function renderCollection(){
+  oublierGenresArtistes();
   // Masquer / adapter les filtres selon la collection active
   const isPins = _activeCollection === 'pins';
   // Filtres BD-seulement
@@ -11159,7 +11177,23 @@ function closeBarcodeScanner(){
   _scanState = null;
 }
 
-function openAutofillModal(){
+// Scan direct depuis la fiche : ouvrir la fenêtre de recherche puis viser la
+// caméra faisait trois clics pour un geste qui n'en demande qu'un. On prépare
+// la fenêtre en arrière-plan (le scan y déverse le code et y affiche le résultat)
+// et on lance la caméra dans la foulée.
+function scannerDirectement(){
+  openAutofillModal({ sansRecherche:true });
+  openBarcodeScanner();
+}
+
+// Le bouton de scan de la fiche n'a de sens que là où la caméra fonctionne
+// (HTTPS) — même règle que le 📷 de la fenêtre de recherche.
+function _syncScanDirectBtn(){
+  const b = document.getElementById('scanDirectBtn');
+  if(b) b.style.display = scanDisponible() ? '' : 'none';
+}
+
+function openAutofillModal(opts){
   // Pré-remplir avec le titre déjà saisi dans la fiche
   const currentTitle = document.getElementById("itemTitle")?.value.trim() || "";
   const qEl = document.getElementById("autofillQuery");
@@ -11175,6 +11209,9 @@ function openAutofillModal(){
         "ISBN for an exact match, or a title to search. Sources: BNF, Google Books, Open Library.");
   _syncScanBtn();          // bouton 📷 seulement si la caméra est utilisable (HTTPS)
   openModal("autofillModal");
+  // Appelé depuis le scan direct : ne rien chercher, le code-barres arrive dans
+  // la seconde et relancerait la recherche par-dessus.
+  if(opts && opts.sansRecherche) return;
   if(currentTitle){
     setTimeout(()=>autofillSearch(), 200);
   } else {
@@ -12027,6 +12064,111 @@ const SPINE_PALETTE = [
   "#486078"  // bleu marine sourd
 ];
 
+// ============================================================
+// COULEUR DE TRANCHE D'UN DISQUE : LE GENRE MUSICAL
+// ------------------------------------------------------------
+// Sur une étagère de BD, la couleur dit la catégorie — c'est ce qui
+// structure la collection. Dans une CDthèque, toutes les tranches
+// seraient de la même couleur (« CD »), ce qui n'apprend rien. Le
+// genre, lui, dessine des zones reconnaissables : le bleu du jazz,
+// le rouge du rock, l'or du classique.
+// Teintes choisies dans le même registre sourd que SPINE_PALETTE :
+// une étagère reste un meuble, pas un nuancier.
+// ============================================================
+const GENRE_COULEURS = {
+  "rock":               "#a84040",  // rouge brique
+  "rock progressif":    "#7a5090",  // violet profond
+  "pop":                "#c46888",  // rose
+  "jazz":               "#3f6b8c",  // bleu nuit
+  "blues":              "#3d5a80",  // indigo
+  "classique":          "#c4b068",  // or pâle
+  "electronique":       "#3f8a8a",  // cyan sourd
+  "chanson francaise":  "#b06a80",  // vieux rose
+  "folk":               "#6a8a50",  // vert sauge
+  "funk / soul":        "#c47840",  // orange brûlé
+  "hip-hop":            "#5a5a78",  // ardoise violacée
+  "musique de film":    "#8a6a40",  // bronze
+  "metal":              "#4a4a52",  // gris acier
+  "punk":               "#9a3a5a",  // magenta sombre
+  "reggae":             "#4a8a52",  // vert
+  "world":              "#b07a4a",  // terre de Sienne
+};
+// Familles : un genre libre (« hard rock », « jazz modal », « techno ») rejoint sa
+// famille au lieu de tomber sur une couleur arbitraire. L'ordre compte — « rock
+// progressif » doit être reconnu avant « rock ».
+const _GENRE_FAMILLES = [
+  // « rock progressif » comme « psychedelic rock » : l'ordre des mots varie d'une
+  // langue à l'autre, on accepte les deux sens.
+  [/(rock.*(prog|psych|psy?ch[eé]))|((prog|psych|psy?ch[eé]).*rock)|progressif|krautrock/, "rock progressif"],
+  [/jazz|bebop|swing|be-bop|hard bop|fusion/,  "jazz"],
+  [/blues|rhythm and blues|r&b|rnb/,           "blues"],
+  [/classiq|classical|baroque|op[eé]ra|symph|romantique|contemporain/, "classique"],
+  [/electro|techno|house|ambient|trance|synth|idm|dub ?step/, "electronique"],
+  [/chanson|vari[eé]t[eé]|yé-?yé|ye-?ye/,      "chanson francaise"],
+  [/folk|country|bluegrass|americana/,          "folk"],
+  [/funk|soul|disco|motown|gospel/,             "funk / soul"],
+  [/hip.?hop|rap|trip.?hop/,                    "hip-hop"],
+  [/bande originale|musique de film|soundtrack|\bost\b|b\.?o\.?\b/, "musique de film"],
+  [/metal|hardcore|grind/,                      "metal"],
+  [/punk|new wave|post.?punk/,                  "punk"],
+  [/reggae|ska|dub|roots/,                      "reggae"],
+  [/world|afro|latin|salsa|cumbia|ra[iï]|musique du monde|traditionnel/, "world"],
+  [/rock|garage|indie|alternatif/,              "rock"],
+  [/pop|variety/,                               "pop"],
+];
+function couleurGenre(genre){
+  const g = _normLang(genre);                    // minuscules, sans accents
+  if(!g) return null;
+  if(GENRE_COULEURS[g]) return GENRE_COULEURS[g];
+  for(const [motif, famille] of _GENRE_FAMILLES)
+    if(motif.test(g)) return GENRE_COULEURS[famille];
+  // Genre inconnu : couleur stable tirée de la palette générale, jamais au hasard,
+  // pour que deux disques du même genre se ressemblent toujours.
+  let h = 0;
+  for(let i=0;i<g.length;i++) h = (h*31 + g.charCodeAt(i)) & 0x7fff;
+  return SPINE_PALETTE[h % SPINE_PALETTE.length];
+}
+
+// Genre d'un disque : celui de l'album, sinon le genre dominant de son artiste
+// principal — un album sans genre saisi prend la couleur du reste de son rayon
+// plutôt qu'une couleur neutre isolée.
+let _genreParArtiste = null;
+function _majGenresArtistes(){
+  _genreParArtiste = new Map();
+  const comptes = new Map();                     // auteurId → {genre: n}
+  for(const it of (cache.items||[])){
+    if(!it.disqueGenre) continue;
+    for(const a of (it.auteurs||[])){
+      if(!a.auteurId) continue;
+      const m = comptes.get(a.auteurId) || {};
+      m[it.disqueGenre] = (m[it.disqueGenre]||0) + 1;
+      comptes.set(a.auteurId, m);
+    }
+  }
+  for(const [id, m] of comptes){
+    const dominant = Object.entries(m).sort((x,y)=>y[1]-x[1])[0];
+    if(dominant) _genreParArtiste.set(id, dominant[0]);
+  }
+}
+function oublierGenresArtistes(){ _genreParArtiste = null; }
+function genreDeItem(it){
+  if(it.disqueGenre) return it.disqueGenre;
+  if(!_genreParArtiste) _majGenresArtistes();
+  for(const a of (it.auteurs||[]))
+    if(_genreParArtiste.has(a.auteurId)) return _genreParArtiste.get(a.auteurId);
+  return "";
+}
+
+// Couleur de tranche d'une œuvre : le genre pour un disque, la catégorie sinon.
+function itemSpineColor(it){
+  if(it && archetypeForCategory(it.categorie).id === 'disque'){
+    const c = couleurGenre(genreDeItem(it));
+    if(c) return c;
+    return "#8a7a6a";                            // disque sans genre : brun neutre
+  }
+  return spineColor(it && it.categorie);
+}
+
 function spineColor(cat){
   if(!cat) return "#7f8c8d";
   if(CAT_COLORS_OVERRIDE[cat]) return CAT_COLORS_OVERRIDE[cat];
@@ -12141,7 +12283,7 @@ function buildPileBlockHTML(pile, shelfId, scaleF=1){
   const stripsHTML = books.map(it=>{
     const bt = pileStripHeightPx(it);
     const bw = Math.max(8, Math.round(pileStripWidthPx(it)*scaleF)); // largeur = hauteur réelle de l'album, à l'échelle de la rangée
-    const c = spineColor(it.categorie);
+    const c = itemSpineColor(it);
     const t = escapeHTML(it.titre||"?")+(it.tome?` T${it.tome}`:"");
     const cover = (it.images && it.images[0])
       ? `<img src="${escapeHTML(it.images[0])}" alt="">`
@@ -12325,6 +12467,7 @@ async function saveItem_lib(item){
 }
 
 async function renderLibrary(){
+  oublierGenresArtistes();
   // Page invité : pas de meubles — ils diraient où les pièces sont rangées. On propose
   // seulement les classeurs, dont la liseuse feuilletable est une expérience de lecture.
   if(GUEST) return _renderGuestBinders();
@@ -12433,10 +12576,10 @@ function renderFurniturePlan(container, _secondePasse){
   // Livres d'une étagère (albums + albums des piles posées dessus) : couleur + hauteur réelle
   const shelfBooks = (shelf)=>{
     if(!shelf) return [];
-    const arr = (byShelf[shelf.name]||[]).map(b=>({color:spineColor(b.categorie), hcm:itemHeightCm(b)}));
+    const arr = (byShelf[shelf.name]||[]).map(b=>({color:itemSpineColor(b), hcm:itemHeightCm(b)}));
     libraryPiles.filter(p=>p.localisation===shelf.name).forEach(p=>{
       if(p.kind==="classeur"){ arr.push({color:p.color||"#6d3c3c", hcm:32}); return; } // classeur : une seule tranche à sa couleur
-      getPileBooks(p).forEach(b=>arr.push({color:spineColor(b.categorie), hcm:itemHeightCm(b), flat:true}));
+      getPileBooks(p).forEach(b=>arr.push({color:itemSpineColor(b), hcm:itemHeightCm(b), flat:true}));
     });
     return arr;
   };
@@ -13149,7 +13292,7 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
       return buildPileBlockHTML(item, shelf.id, scaleF);
     }
     const it = item;
-    const color = spineColor(it.categorie);
+    const color = itemSpineColor(it);
     const title = escapeHTML(it.titre||"?");
     const tomeInfo = it.tome ? ` T${it.tome}` : "";
     const w = Math.max(2, Math.round(spineWidth(it.nbPages)*scaleF));
@@ -13164,7 +13307,9 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
     return `<div class="book-spine${_pret?' spine-pret':''}" draggable="true"
         data-item-id="${it.id}" data-shelf-id="${escapeHTML(shelf.id)}"
         style="background:${color};width:${w}px;height:${h}px"
-        title="${title}${tomeInfo} (${it.nbPages?it.nbPages+"p":T("pages inconnues","unknown pages")}${hcm?", "+hcm+" cm":""} / ${h}px)${it.format?" — "+T("Format stocké:","Stored format:")+" "+escapeHTML(it.format):""}${_pretInfo} — ${T("glisser pour réordonner, double-clic pour ouvrir","drag to reorder, double-click to open")}"
+        title="${title}${tomeInfo} (${archetypeForCategory(it.categorie).id==='disque'
+            ? [it.disqueSupport, genreDeItem(it)].filter(Boolean).map(escapeHTML).join(' · ') || T("genre non renseigné","genre not set")
+            : (it.nbPages?it.nbPages+"p":T("pages inconnues","unknown pages"))}${hcm?", "+hcm+" cm":""})${it.format?" — "+T("Format stocké:","Stored format:")+" "+escapeHTML(it.format):""}${_pretInfo} — ${T("glisser pour réordonner, double-clic pour ouvrir","drag to reorder, double-click to open")}"
         data-open-id="${it.id}">
       ${_pret?`<span class="spine-pret-mark">📤</span>`:''}
       <span class="book-spine-title" style="max-height:${h-8}px">${title}${tomeInfo}</span>
@@ -14264,7 +14409,7 @@ function renderDrawerModalList(){
     return;
   }
   el.innerHTML = books.map(it=>{
-    const color = spineColor(it.categorie);
+    const color = itemSpineColor(it);
     const t = escapeHTML(it.titre||"?")+(it.tome?` T${it.tome}`:"");
     return `<div class="pile-modal-item">
       <span class="item-color" style="background:${color}"></span>
@@ -14669,7 +14814,7 @@ function renderPileModalList(){
     return;
   }
   el.innerHTML = books.map(it=>{
-    const color = spineColor(it.categorie);
+    const color = itemSpineColor(it);
     const t = escapeHTML(it.titre||"?")+(it.tome?` T${it.tome}`:"");
     const num = (it.pageOrder!=null && it.pageOrder!=="" && !isNaN(Number(it.pageOrder))) ? Number(it.pageOrder) : "—";
     return `<div class="pile-modal-item" draggable="true" data-id="${it.id}"
