@@ -870,6 +870,14 @@
   .plan-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-style:italic;font-size:14px;pointer-events:none}
   .meuble3d{position:absolute;cursor:grab;width:var(--w);transform-style:preserve-3d}
   .meuble3d.dragging{cursor:grabbing;z-index:60}
+  /* Alt + glisser : fantôme de la copie pendant le geste. Semi-transparent et cerné
+     de pointillés pour qu'on le distingue au premier coup d'œil du meuble d'origine,
+     qui, lui, ne bouge pas. `pointer-events:none` : il ne doit jamais capter la souris. */
+  .meuble-fantome{opacity:.55;z-index:70;pointer-events:none;outline:2px dashed var(--gold);outline-offset:3px}
+  .meuble-fantome::after{content:"⧉";position:absolute;top:-10px;left:-10px;z-index:2;
+    width:22px;height:22px;border-radius:50%;background:var(--gold);color:#1a1206;
+    font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+  body.curseur-copie,body.curseur-copie *{cursor:copy !important}
   .m3d-name{position:absolute;left:50%;top:-30px;transform:translateX(-50%);white-space:nowrap;font-size:17px;font-weight:800;color:var(--gold);text-shadow:0 1px 4px rgba(0,0,0,.9);pointer-events:none;z-index:4;text-align:center}
   .m3d-title{position:absolute;white-space:nowrap;font-size:14px;font-weight:800;color:var(--gold);text-shadow:0 1px 4px rgba(0,0,0,.9);pointer-events:none;z-index:4;text-align:center;max-width:180px;overflow:hidden;text-overflow:ellipsis}
   /* Repère en équerre reliant un nom au meuble qu'il désigne */
@@ -12503,7 +12511,7 @@ function renderFurniturePlan(container, _secondePasse){
   const titleBaseline = maxBottom + GAP;
   const titlesHTML = labels.map(l=>`<div class="m3d-title" data-cx="${l.cx.toFixed(1)}" data-bas="${l.bottom.toFixed(1)}" style="left:${l.cx}px;top:${titleBaseline}px;transform:translateX(-50%);text-align:center" title="${escapeHTML(l.name)}">${escapeHTML(l.name)}</div>`).join("");
   container.innerHTML = `
-    <p class="muted" style="margin:0 0 10px;font-size:13px">${T(`Vue en perspective — glisse les meubles pour reproduire ta pièce, clique sur un meuble pour l'ouvrir et le remplir. ⟳ incline le meuble (face → mur droit → mur gauche) ; ⬆ ⬇ le font passer devant ou derrière ses voisins (alt+clic : tout devant / tout derrière).`,`Perspective view — drag the bookcases to reproduce your room, click a bookcase to open and fill it. ⟳ tilts the bookcase (front → right wall → left wall); ⬆ ⬇ move it in front of or behind its neighbours (alt+click: all the way front / back).`)}</p>
+    <p class="muted" style="margin:0 0 10px;font-size:13px">${T(`Vue en perspective — glisse les meubles pour reproduire ta pièce, clique sur un meuble pour l'ouvrir et le remplir. ⟳ incline le meuble (face → mur droit → mur gauche) ; ⬆ ⬇ le font passer devant ou derrière ses voisins (alt+clic : tout devant / tout derrière). Alt + glisser dépose une copie vide du meuble.`,`Perspective view — drag the bookcases to reproduce your room, click a bookcase to open and fill it. ⟳ tilts the bookcase (front → right wall → left wall); ⬆ ⬇ move it in front of or behind its neighbours (alt+click: all the way front / back). Alt + drag drops an empty copy of the bookcase.`)}</p>
     <div class="meuble-scene" id="meubleScene" style="height:${Math.round(dispoH + BANDE_TITRES + RESERVE_ACTIONS)}px;min-height:0"><div class="floor-grid"></div>${boxes || `<div class="plan-empty">${T('Aucun meuble. Clique sur « + Nouveau meuble » pour commencer.','No bookcases. Click « + New bookcase » to get started.')}</div>`}${titlesHTML}</div>`;
   container.querySelectorAll(".meuble3d").forEach(tile=>{
     const id = tile.dataset.meubleId;
@@ -13338,10 +13346,72 @@ async function rotateMeuble(id, remiseAZero){
   toast(T(`« ${m.name} » : ${_libelleYaw(deg)}.`, `“${m.name}”: ${_libelleYaw(deg)}.`));
 }
 
+// ── Alt + glisser : dupliquer un meuble en le déposant ────────────────────────
+// On ne crée rien tant que la souris n'est pas relâchée : pendant le geste, seul un
+// fantôme (clone visuel de la tuile) suit le curseur. Créer le meuble au premier
+// mouvement obligerait à re-dessiner tout le plan en plein glissé, et laisserait un
+// meuble parasite si l'utilisateur annule par Échap.
+function _demarrerCopieParGlisser(e, id, tile, scene){
+  const m = libraryFurniture.find(x=>x.id===id);
+  if(!m || !scene) return;
+  const startX = e.clientX, startY = e.clientY;
+  const ox = m.x ?? 40, oy = m.y ?? 60;
+  const k = _planVue.k || 1;
+
+  const fantome = tile.cloneNode(true);
+  fantome.classList.add("meuble-fantome");
+  fantome.removeAttribute("data-meuble-id");     // ne pas créer de doublon d'identifiant
+  fantome.querySelectorAll(".m3d-actions").forEach(a=>a.remove());
+  // La copie naît VIDE : le fantôme doit le montrer, sinon on croit emporter les œuvres.
+  fantome.querySelectorAll(".m3d-shelf i, .m3d-drawers b").forEach(x=>x.remove());
+  fantome.querySelectorAll(".m3d-title, .m3d-lien").forEach(x=>x.remove());
+  scene.appendChild(fantome);
+  document.body.classList.add("curseur-copie");
+
+  let nx = ox, ny = oy, bouge = false, annule = false;
+
+  function mv(ev){
+    const dx = ev.clientX-startX, dy = ev.clientY-startY;
+    if(Math.abs(dx)>3 || Math.abs(dy)>3) bouge = true;
+    nx = Math.max(0, ox + dx/k);
+    ny = Math.max(0, oy + dy/k);
+    fantome.style.left = ((nx - _planVue.gauche)*k + _planVue.MARGE).toFixed(1)+"px";
+    fantome.style.top  = ((ny - _planVue.haut)*k + (_planVue.HAUT ?? 84)).toFixed(1)+"px";
+  }
+  function echap(ev){ if(ev.key === "Escape"){ annule = true; up(); } }
+
+  async function up(){
+    document.removeEventListener("mousemove", mv);
+    document.removeEventListener("mouseup", up);
+    document.removeEventListener("keydown", echap);
+    fantome.remove();
+    document.body.classList.remove("curseur-copie");
+    _meubleDragMoved = true;                 // empêche le clic d'ouvrir le meuble source
+    setTimeout(()=>{ _meubleDragMoved = false; }, 60);
+    if(annule || !bouge) return;             // Échap, ou simple clic Alt sans déplacement
+
+    const copie = await _dupliquerMeuble(m, c=>{ c.x = nx; c.y = ny; });
+    if(!copie) return;
+    await renderLibrary();
+    _cadrerMeuble(copie.id);
+    const cases = (copie.cols||1)*(copie.rows||1);
+    toast(T(`Copie déposée : « ${copie.name} » — ${cases} case(s) vides.`,
+            `Copy dropped: “${copie.name}” — ${cases} empty compartment(s).`));
+  }
+  document.addEventListener("mousemove", mv);
+  document.addEventListener("mouseup", up);
+  document.addEventListener("keydown", echap);
+}
+
 function startMeubleDrag(e, id, tile){
   if(e.button!==0 || e.target.closest(".m3d-actions")) return;
   e.preventDefault();
   const scene = document.getElementById("meubleScene");
+  // Alt enfoncé au clic : on glisse une COPIE, l'original ne bouge pas — le geste
+  // habituel des logiciels de dessin. Le choix se fait au clic et ne change plus
+  // ensuite : relâcher Alt en cours de glissé ne ramène pas au simple déplacement.
+  if(e.altKey && !libraryLinked){ return _demarrerCopieParGlisser(e, id, tile, scene); }
+
   // Si les meubles sont liés, on déplace tout l'ensemble ; sinon seulement celui saisi.
   const src = libraryLinked ? libraryFurniture : libraryFurniture.filter(x=>x.id===id);
   const targets = src.map(m=>({ m, el: scene && scene.querySelector(`.meuble3d[data-meuble-id="${m.id}"]`), ox:m.x||40, oy:m.y||60 }))
@@ -13676,17 +13746,21 @@ function _cadrerMeuble(id){
 // Duplique le meuble en cours d'édition : mêmes dimensions, même teinte, même structure
 // de colonnes, étagères et blocs de tiroirs — mais VIDE. Les albums rangés ne suivent pas,
 // une œuvre n'étant rangée qu'à un seul endroit.
-async function duplicateMeuble(){
-  const m = libraryFurniture.find(x=>x.id===_editingMeubleId);
-  if(!m){ toast(T("Aucun meuble à dupliquer.","No bookcase to duplicate."), "error"); return; }
-
-  // Numérotation plutôt que « (copie) » : dupliquer sert à aligner des modules d'une même
-  // structure. « Colonne CD » → « Colonne CD 2 » → « Colonne CD 3 »… et dupliquer « Colonne
-  // CD 2 » ne donne pas « Colonne CD 2 2 » mais le premier numéro encore libre.
-  const base = m.name.replace(/\s+\d+$/, '').trim() || m.name;
+// Nom de la copie : numérotation plutôt que « (copie) », car dupliquer sert à aligner
+// des modules d'une même structure. « Colonne CD » → « Colonne CD 2 » → « Colonne CD 3 »…
+// et dupliquer « Colonne CD 2 » ne donne pas « Colonne CD 2 2 » mais le premier numéro libre.
+function _nomDeCopie(nomSource){
+  const base = String(nomSource||'').replace(/\s+\d+$/, '').trim() || String(nomSource||'Meuble');
   let n = 2, nom;
   do { nom = `${base} ${n++}`; } while(libraryFurniture.some(x=>x.name === nom));
+  return nom;
+}
 
+// Duplique un meuble et l'enregistre. `placer(copie)` positionne la copie : le bouton du
+// modal la pose accolée à droite, l'alt+glisser la dépose où la souris l'a lâchée.
+// Retourne la copie, ou null si la création a échoué (nom de tiroir en conflit).
+async function _dupliquerMeuble(m, placer){
+  const nom = _nomDeCopie(m.name);
   const cols = m.cols||1, rows = m.rows||1;
   const copie = {
     id: "meuble-"+Date.now(), name: nom,
@@ -13698,13 +13772,13 @@ async function duplicateMeuble(){
     pieds: m.pieds||'aucun', piedsCm: m.piedsCm ?? null,
     drawers: [],
   };
-  _poserALaSuite(m, copie);   // accolée à droite, sur le même sol
+  placer(copie);
   // Les tiroirs sont recopiés sans leurs noms — tableau NEUF, sans quoi on partagerait
   // (et renommerait) celui du meuble d'origine. _finalizeDrawerNames les renomme d'après
   // le nouveau meuble, faute de quoi deux tiroirs porteraient la même localisation.
   const nouveauxTiroirs = (m.drawers||[]).map(d=>({ ...d, id:_newDrawerBlockId(), names:[] }));
   const err = _finalizeDrawerNames(nom, nouveauxTiroirs, copie.id);
-  if(err){ toast(err, "error"); return; }
+  if(err){ toast(err, "error"); return null; }
   copie.drawers = nouveauxTiroirs;
 
   libraryFurniture.push(copie);
@@ -13717,14 +13791,23 @@ async function duplicateMeuble(){
   }
   await saveLibraryFurniture();
   await saveLibraryShelves();
+  return copie;
+}
+
+async function duplicateMeuble(){
+  const m = libraryFurniture.find(x=>x.id===_editingMeubleId);
+  if(!m){ toast(T("Aucun meuble à dupliquer.","No bookcase to duplicate."), "error"); return; }
+  const copie = await _dupliquerMeuble(m, c=>_poserALaSuite(m, c));   // accolée à droite, même sol
+  if(!copie) return;
   // On reste sur le PLAN : la copie se voit à côté de l'original, prête à être glissée.
   _currentMeubleId = null;
   _editingMeubleId = null;
   closeModal("meubleModal");
   await renderLibrary();
   _cadrerMeuble(copie.id);
-  toast(T(`Meuble dupliqué : « ${nom} » — ${cols*rows} case(s) vides, posé à droite de « ${m.name} ».`,
-          `Bookcase duplicated: “${nom}” — ${cols*rows} empty compartment(s), placed to the right of “${m.name}”.`));
+  const cases = (copie.cols||1)*(copie.rows||1);
+  toast(T(`Meuble dupliqué : « ${copie.name} » — ${cases} case(s) vides, posé à droite de « ${m.name} ».`,
+          `Bookcase duplicated: “${copie.name}” — ${cases} empty compartment(s), placed to the right of “${m.name}”.`));
 }
 
 async function saveMeubleModal(){
