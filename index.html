@@ -1118,8 +1118,10 @@
   /* header wrapper needs position:relative for picker to anchor */
   header{position:sticky;top:0;z-index:60}
   /* Pin's accent override when active */
-  body.coll-pins{--accent:#7a9fc8;--accent-dark:#5d7fa0;--gold:#9bc0e0;--accent-soft:rgba(122,159,200,.10);--border-warm:rgba(122,159,200,.2)}
-  body.coll-vinyle-cd-dvd{--accent:#9b7fc0;--accent-dark:#7d63a0;--gold:#bda6da;--accent-soft:rgba(155,127,192,.10);--border-warm:rgba(155,127,192,.2)}
+  body.coll-pins{--accent:#7a9fc8;--accent-dark:#5d7fa0;--gold:#9bc0e0;--accent-soft:rgba(122,159,200,.10);--border-warm:rgba(122,159,200,.2);
+    --accent-bg:#7a9fc8;--gold-bg:#9bc0e0;--on-accent:#0b1119}
+  body.coll-vinyle-cd-dvd{--accent:#9b7fc0;--accent-dark:#7d63a0;--gold:#bda6da;--accent-soft:rgba(155,127,192,.10);--border-warm:rgba(155,127,192,.2);
+    --accent-bg:#9b7fc0;--gold-bg:#bda6da;--on-accent:#140e1e}
   /* ── HUB ── */
   .hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-bottom:28px}
   .hub-tile{position:relative;display:flex;flex-direction:column;gap:8px;padding:22px;border-radius:14px;cursor:pointer;background:var(--bg-panel);border:1px solid color-mix(in oklab,var(--mod-accent,var(--accent)) 32%,var(--border-warm));transition:transform .14s,box-shadow .14s,border-color .14s;overflow:hidden}
@@ -1811,8 +1813,11 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div class="span-2"><label data-en="Inserts and extras">Encarts et suppléments</label>
               <input type="text" id="itemDisqueEncarts" placeholder="ex: poster, obi, autocollant, carte postale…" data-en-ph="e.g. poster, obi, sticker, postcard…">
             </div>
-            <div class="span-2"><label data-en="Band / line-up">Groupe / Formation</label>
+            <div><label data-en="Band / line-up">Groupe / Formation</label>
               <input type="text" id="itemDisqueGroupe" list="dl-groupes" placeholder="ex: Pharoah Sanders Quintet, Pink Floyd…" data-en-ph="e.g. Pharoah Sanders Quintet, Pink Floyd…">
+            </div>
+            <div><label data-en="Band nationality">Nationalité du groupe</label>
+              <input type="text" id="itemDisqueGroupeNat" list="dl-nationalities" placeholder="ex: Américaine" data-en-ph="e.g. American">
             </div>
             <div><label data-en="First release / concert date">Parution originale / concert</label>
               <input type="text" id="itemDisqueDateOrigine" placeholder="ex: 1977 ou 19/01/1973" data-en-ph="e.g. 1977 or 19/01/1973">
@@ -3193,7 +3198,9 @@ function switchCollection(id){
   _cw.classList.remove('open');
   _cw.setAttribute('aria-expanded','false');
   // Body class for accent theming
-  document.body.className = document.body.className.replace(/\bcoll-\w+\b/g,'').trim();
+  // \w ne couvre pas le tiret : « coll-vinyle-cd-dvd » n'était nettoyé qu'à moitié
+  // et laissait « -cd-dvd » accroché au body à chaque changement de collection.
+  document.body.className = document.body.className.replace(/\bcoll-[\w-]+/g,'').replace(/\s+/g,' ').trim();
   document.body.classList.add('coll-'+id);
   // Adapt page title
   document.title = `${T('Ma Collection','My Collection')} ${_modLabel(ct)}`;
@@ -3768,14 +3775,15 @@ function _adaptCollectionLabels(){
   const isPins = _activeCollection === 'pins';
   // Nav button
   const navBtn = document.getElementById('navAuthorsBtn');
-  if(navBtn) navBtn.textContent = isPins ? T('Éditeurs','Publishers') : T('Auteurs','Authors');
+  if(navBtn) navBtn.textContent = libelleCreateurs();
   const addBtn = document.getElementById('addAuthorBtn');
-  if(addBtn) addBtn.textContent = isPins ? T('+ Ajouter un éditeur','+ Add a publisher') : T('+ Ajouter un auteur','+ Add an author');
+  if(addBtn) addBtn.textContent = libelleAjoutCreateur();
   // View title (keep the count span)
   const vTitle = document.getElementById('authorsViewTitle');
   if(vTitle){
     const countSpan = document.getElementById('authorsCount');
-    vTitle.innerHTML = (isPins ? T('🏷️ Éditeurs ','🏷️ Publishers ') : T('✒️ Auteurs ','✒️ Authors ')) + (countSpan ? countSpan.outerHTML : '<span class="muted" id="authorsCount"></span>');
+    const icone = isPins ? '🏷️' : (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : '✒️');
+    vTitle.innerHTML = `${icone} ${libelleCreateurs()} ` + (countSpan ? countSpan.outerHTML : '<span class="muted" id="authorsCount"></span>');
   }
   // "Souhaités" nav tab: hide in non-BD collections
   const wishBtn = document.querySelector('button[data-view="souhaites"]');
@@ -3974,7 +3982,7 @@ const SB = (() => {
     // Disques (CD / Vinyle / DVD) — même sac JSONB, aucune colonne SQL à créer
     'disqueSupport','disqueNb','disqueDuree','disqueGenre','disquePressage',
     'disquePays','disqueRef','disqueEtatPochette','disqueCompilation',
-    'disqueGroupe','disqueMusiciens','disqueDateOrigine',
+    'disqueGroupe','disqueGroupeNat','disqueMusiciens','disqueDateOrigine',
     'disqueBoitier','disqueLivret','disqueLivretPages','disqueEncarts'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
     'pinsReference','pinsEditionLimitee'];
@@ -5749,6 +5757,7 @@ function openItemForm(id=null, opts={}){
     _setD("itemDisqueRef", it.disqueRef);
     _setD("itemDisqueEtatPochette", it.disqueEtatPochette);
     _setD("itemDisqueGroupe", it.disqueGroupe);
+    _setD("itemDisqueGroupeNat", it.disqueGroupeNat);
     _setD("itemDisqueMusiciens", it.disqueMusiciens);
     _setD("itemDisqueDateOrigine", it.disqueDateOrigine);
     _setD("itemDisqueBoitier", _boitierNormalise(it.disqueBoitier));
@@ -6170,6 +6179,7 @@ async function saveItem(e){
     disqueEtatPochette: document.getElementById("itemDisqueEtatPochette")?.value||"",
     disqueCompilation:  !!document.getElementById("itemDisqueCompilation")?.checked,
     disqueGroupe:       document.getElementById("itemDisqueGroupe")?.value.trim()||"",
+    disqueGroupeNat:    document.getElementById("itemDisqueGroupeNat")?.value.trim()||"",
     disqueMusiciens:    document.getElementById("itemDisqueMusiciens")?.value.trim()||"",
     disqueDateOrigine:  document.getElementById("itemDisqueDateOrigine")?.value.trim()||"",
     disqueBoitier:      document.getElementById("itemDisqueBoitier")?.value||"",
@@ -6783,7 +6793,7 @@ function renderDashboard(){
   const masquees = new Set((moduleById(_activeCollection)?.dashboard?.statsMasquees) || []);
   const html = [
     {cle:'items',   num:totalItems, lbl: isPins ? T("Pin's","Pins") : T("Œuvres","Works")},
-    {cle:'auteurs', num:totalAuthors, lbl:T("Auteurs / Créateurs","Authors / Creators")},
+    {cle:'auteurs', num:totalAuthors, lbl:T(`${libelleCreateurs()} / Créateurs`, `${libelleCreateurs()} / Creators`)},
     {cle:'eo',      num:eoCount, lbl: isPins ? T("Éditions limitées","Limited editions") : T("Éditions originales","First editions")},
     {cle:'signes',  num:signedCount, lbl:T("Signés / Dédicacés","Signed / Dedicated")},
     {cle:'cats',    num:categoriesUsed+"/"+activeCategories().length, lbl:T("Catégories","Categories")},
@@ -6823,7 +6833,7 @@ function renderDashboard(){
       </div>`;
     }).join("") : `<div class="empty"><div class="icon">🏷️</div>${T('Aucun éditeur pour le moment','No publishers yet')}</div>`;
   } else {
-    if(titleEl) titleEl.innerHTML = `${T('✨ Auteurs les plus représentés','✨ Most represented authors')} <button class="ghost" onclick="goToAuthors()">${T('Tout voir →','See all →')}</button>`;
+    if(titleEl) titleEl.innerHTML = `✨ ${T(`${libelleCreateurs()} les plus représentés`, `Most represented ${libelleCreateurs().toLowerCase()}`)} <button class="ghost" onclick="goToAuthors()">${T('Tout voir →','See all →')}</button>`;
     const counts = {};
     collItems.forEach(i=>(i.auteurs||[]).forEach(a=>{ if(a.auteurId) counts[a.auteurId]=(counts[a.auteurId]||0)+1; }));
     const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6);
@@ -7422,6 +7432,25 @@ const _NAT_FLAG = {
 // Comment nommer le champ « nationalité » selon la collection affichée : une
 // marque de pin's a un pays d'origine, pas une nationalité. On reprend le mot
 // employé par la fiche de saisie pour que les deux vues se répondent.
+// Chaque module nomme déjà ses créateurs (`terms.creatorsTab`) : « Auteurs »
+// en BD, « Artistes » pour les disques, « Éditeurs » pour les pin's. Le mot
+// était jusqu'ici codé en dur par un test `=== 'pins'` répété à cinq endroits.
+const _CREATEURS_EN = { 'Auteurs':'Authors', 'Artistes':'Artists', 'Éditeurs':'Publishers' };
+const _CREATEUR_EN  = { 'auteur':'author', 'artiste':'artist', 'éditeur':'publisher' };
+function libelleCreateurs(){
+  const fr = moduleById(_activeCollection)?.terms?.creatorsTab || 'Auteurs';
+  return T(fr, _CREATEURS_EN[fr] || fr);
+}
+function libelleCreateur(){
+  const fr = moduleById(_activeCollection)?.terms?.creator || 'auteur';
+  return T(fr, _CREATEUR_EN[fr] || fr);
+}
+// Article indéfini du mot : « un auteur », « un artiste », « un éditeur ».
+function libelleAjoutCreateur(){
+  const fr = moduleById(_activeCollection)?.terms?.creator || 'auteur';
+  return T(`+ Ajouter un ${fr}`, `+ Add ${/^[aeiouéèê]/i.test(_CREATEUR_EN[fr]||fr)?'an':'a'} ${_CREATEUR_EN[fr]||fr}`);
+}
+
 function libelleNationalite(){
   return _activeCollection === 'pins' ? T("Pays d'origine",'Country of origin')
                                       : T('Nationalité','Nationality');
@@ -7462,7 +7491,12 @@ function itemNationalites(it){
   const credits = it.auteurs || [];
   const interpretes = credits.filter(a=>roles(a).some(r=>_ROLES_INTERPRETE.test(r)));
   const retenus = interpretes.length ? interpretes : credits.slice(0,1);
-  return [...new Set(retenus.map(a=>authorById(a.auteurId)?.nationalite).filter(Boolean))];
+  const nats = [...new Set(retenus.map(a=>authorById(a.auteurId)?.nationalite).filter(Boolean))];
+  // Aucun artiste rattaché — ou aucun d'eux n'a de nationalité renseignée : on prend
+  // celle du groupe saisi en texte libre. Sans cela, un album de groupe n'aurait
+  // jamais de drapeau, faute de fiche artiste à interroger.
+  if(!nats.length && it.disqueGroupeNat) return [it.disqueGroupeNat];
+  return nats;
 }
 function artistFlags(it){
   return [...new Set(itemNationalites(it).map(nationaliteFlag).filter(Boolean))].slice(0,3).join(" ");
@@ -9312,7 +9346,7 @@ function applyLang() {
   document.querySelectorAll('nav button[data-view]').forEach(btn => {
     // Le bouton "Auteurs/Éditeurs" est géré dynamiquement selon la collection active
     if(btn.dataset.view === 'authors'){
-      btn.textContent = _activeCollection === 'pins' ? T('Éditeurs','Publishers') : S('nav.authors');
+      btn.textContent = libelleCreateurs();
       return;
     }
     // « Bibliothèque » dépend de la collection : CDthèque pour les disques
@@ -9927,7 +9961,10 @@ function renderItemDetail(id, pushHistory=true){
   // et les libellés d'édition parlent musique (Label, code-barres).
   const isDisque = archetypeForCategory(it.categorie).id === 'disque';
   const disqueDl = !isDisque ? '' : [
-    [T('Groupe / Formation','Band / line-up'), it.disqueGroupe],
+    [T('Groupe / Formation','Band / line-up'),
+      it.disqueGroupe && it.disqueGroupeNat
+        ? `${it.disqueGroupe} — ${nationaliteFlag(it.disqueGroupeNat)} ${it.disqueGroupeNat}`.trim()
+        : it.disqueGroupe],
     [T('Parution originale / concert','First release / concert'), it.disqueDateOrigine],
     [T('Support','Format'),            it.disqueSupport],
     [T('Nombre de disques','Discs'),   it.disqueNb],
