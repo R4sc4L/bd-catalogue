@@ -2888,6 +2888,14 @@ const MODULES = [
     libraryUnit:{ fr:['disque','disques'], en:['disc','discs'] },
     defaultCategories:['CD','Vinyle','DVD'],
     roles:ROLES_DISQUE,
+    // Tableau de bord : accroche propre à la collection, et compteurs de BD retirés
+    // (l'édition originale et la dédicace d'auteur n'ont pas d'équivalent ici).
+    dashboard:{
+      welcome:{fr:'Bienvenue dans votre bibliothèque musicale', en:'Welcome to your music library'},
+      desc:{fr:"Gérez votre collection de disques : CD, vinyles et DVD. Organisez vos albums par artiste, label, genre et bien plus. N'oubliez pas d'exporter régulièrement vos données pour les sauvegarder dans votre cloud.",
+            en:'Manage your record collection: CDs, vinyl and DVDs. Organise your albums by artist, label, genre and more. Remember to regularly export your data to save it to your cloud.'},
+      statsMasquees:['eo','signes'],
+    },
     tabs:{ wishlist:false, library:true },
   },
 ];
@@ -6635,7 +6643,19 @@ function confirmImgRename(idx){
 }
 
 // --------- Dashboard ---------
+// Accroche du tableau de bord : celle du module quand il en fournit une,
+// sinon le texte générique (traduit) de la BD. Appelée aussi par applyI18n,
+// qui réécrit ces deux nœuds à chaque changement de langue.
+function _majHeroTableauDeBord(){
+  const d = moduleById(_activeCollection)?.dashboard;
+  const h2 = document.querySelector('#view-dashboard .hero h2');
+  const pp = document.querySelector('#view-dashboard .hero p');
+  if(h2) h2.textContent = d?.welcome ? T(d.welcome.fr, d.welcome.en) : t('dash.welcome');
+  if(pp) pp.textContent = d?.desc    ? T(d.desc.fr,    d.desc.en)    : t('dash.desc');
+}
+
 function renderDashboard(){
+  _majHeroTableauDeBord();
   const collItems = cache.items.filter(i=>itemInActiveCollection(i));
   const isPins = _activeCollection === 'pins';
   const totalItems = collItems.length;
@@ -6645,14 +6665,16 @@ function renderDashboard(){
   const eoCount = isPins ? collItems.filter(i=>i.pinsEditionLimitee).length : collItems.filter(i=>i.editionOriginale).length;
   const totalValue = collItems.reduce((s,i)=>s+(i.cote||i.prixAchat||0),0);
   const categoriesUsed = new Set(collItems.map(i=>i.categorie).filter(Boolean)).size;
+  const masquees = new Set((moduleById(_activeCollection)?.dashboard?.statsMasquees) || []);
   const html = [
-    {num:totalItems, lbl: isPins ? T("Pin's","Pins") : T("Œuvres","Works")},
-    {num:totalAuthors, lbl:T("Auteurs / Créateurs","Authors / Creators")},
-    {num:eoCount, lbl: isPins ? T("Éditions limitées","Limited editions") : T("Éditions originales","First editions")},
-    {num:signedCount, lbl:T("Signés / Dédicacés","Signed / Dedicated")},
-    {num:categoriesUsed+"/"+activeCategories().length, lbl:T("Catégories","Categories")},
-    {num:totalValue.toLocaleString("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}), lbl:T("Valeur estimée","Estimated value")}
-  ].map(s=>`<div class="stat-card"><div class="num">${s.num}</div><div class="lbl">${s.lbl}</div></div>`).join("");
+    {cle:'items',   num:totalItems, lbl: isPins ? T("Pin's","Pins") : T("Œuvres","Works")},
+    {cle:'auteurs', num:totalAuthors, lbl:T("Auteurs / Créateurs","Authors / Creators")},
+    {cle:'eo',      num:eoCount, lbl: isPins ? T("Éditions limitées","Limited editions") : T("Éditions originales","First editions")},
+    {cle:'signes',  num:signedCount, lbl:T("Signés / Dédicacés","Signed / Dedicated")},
+    {cle:'cats',    num:categoriesUsed+"/"+activeCategories().length, lbl:T("Catégories","Categories")},
+    {cle:'valeur',  num:totalValue.toLocaleString("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}), lbl:T("Valeur estimée","Estimated value")}
+  ].filter(s=>!masquees.has(s.cle))
+   .map(s=>`<div class="stat-card"><div class="num">${s.num}</div><div class="lbl">${s.lbl}</div></div>`).join("");
   document.getElementById("statGrid").innerHTML = html;
 
   // Recent items (filtered by current collection)
@@ -9097,6 +9119,7 @@ function applyLang() {
   // ── Dashboard ──
   setText('#view-dashboard .hero h2', S('dash.welcome'));
   setText('#view-dashboard .hero p', S('dash.desc'));
+  _majHeroTableauDeBord();   // le module a le dernier mot sur le texte générique
 
   // ── Collection toolbar ──
   setLabel('filterSearch', S('filter.search'));
