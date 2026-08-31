@@ -1781,6 +1781,36 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <option>Moyen</option><option>Usé</option>
               </select>
             </div>
+            <div><label data-en="Packaging">Conditionnement</label>
+              <select id="itemDisqueBoitier">
+                <option value=""></option>
+                <optgroup label="CD / DVD">
+                  <option>Boîtier jewel</option><option>Boîtier jewel double</option>
+                  <option>Boîtier slim</option><option>Boîtier Amaray (DVD)</option>
+                  <option>Digipack</option><option>Digisleeve</option>
+                  <option>Fourreau carton</option><option>Pochette carton</option>
+                </optgroup>
+                <optgroup label="Vinyle">
+                  <option>Pochette simple</option><option>Pochette ouvrante (gatefold)</option>
+                  <option>Pochette à rabat</option>
+                </optgroup>
+                <optgroup label="Autres">
+                  <option>Coffret / Box</option><option>Étui plastique</option><option>Sans boîtier</option>
+                </optgroup>
+              </select>
+            </div>
+            <div><label data-en="Booklet">Livret</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <div class="checkbox-row" style="margin:0">
+                  <input type="checkbox" id="itemDisqueLivret" onchange="_syncLivretPages()">
+                  <label for="itemDisqueLivret" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)" data-en="Present">présent</label>
+                </div>
+                <input type="number" id="itemDisqueLivretPages" min="1" max="400" placeholder="pages" data-en-ph="pages" style="width:96px" title="Nombre de pages du livret" data-en-title="Number of booklet pages">
+              </div>
+            </div>
+            <div class="span-2"><label data-en="Inserts and extras">Encarts et suppléments</label>
+              <input type="text" id="itemDisqueEncarts" placeholder="ex: poster, obi, autocollant, carte postale…" data-en-ph="e.g. poster, obi, sticker, postcard…">
+            </div>
             <div class="span-2"><label data-en="Band / line-up">Groupe / Formation</label>
               <input type="text" id="itemDisqueGroupe" list="dl-groupes" placeholder="ex: Pharoah Sanders Quintet, Pink Floyd…" data-en-ph="e.g. Pharoah Sanders Quintet, Pink Floyd…">
             </div>
@@ -3944,7 +3974,8 @@ const SB = (() => {
     // Disques (CD / Vinyle / DVD) — même sac JSONB, aucune colonne SQL à créer
     'disqueSupport','disqueNb','disqueDuree','disqueGenre','disquePressage',
     'disquePays','disqueRef','disqueEtatPochette','disqueCompilation',
-    'disqueGroupe','disqueMusiciens','disqueDateOrigine'];
+    'disqueGroupe','disqueMusiciens','disqueDateOrigine',
+    'disqueBoitier','disqueLivret','disqueLivretPages','disqueEncarts'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
     'pinsReference','pinsEditionLimitee'];
   // [cléLegacy, colonne, type] — s:texte(''), n:nombre(null), z:nombre(0), b:bool, d:date('')
@@ -5562,6 +5593,7 @@ function openItemForm(id=null, opts={}){
   initObjetsAssocies([]);
   const diaElNew = document.getElementById("itemDiaporama");
   if(diaElNew){ diaElNew.checked = false; delete diaElNew.dataset.userSet; }
+  _syncLivretPages();   // fiche neuve : le nombre de pages reste inerte sans livret
 
   if(id){
     const it = cache.items.find(i=>i.id===id);
@@ -5719,6 +5751,12 @@ function openItemForm(id=null, opts={}){
     _setD("itemDisqueGroupe", it.disqueGroupe);
     _setD("itemDisqueMusiciens", it.disqueMusiciens);
     _setD("itemDisqueDateOrigine", it.disqueDateOrigine);
+    _setD("itemDisqueBoitier", _boitierNormalise(it.disqueBoitier));
+    _setD("itemDisqueEncarts", it.disqueEncarts);
+    const _liv = document.getElementById("itemDisqueLivret");
+    if(_liv) _liv.checked = !!it.disqueLivret;
+    _setD("itemDisqueLivretPages", it.disqueLivretPages);
+    _syncLivretPages();
     const _comp = document.getElementById("itemDisqueCompilation");
     if(_comp) _comp.checked = !!it.disqueCompilation;
     // Pin's specific fields
@@ -6134,6 +6172,10 @@ async function saveItem(e){
     disqueGroupe:       document.getElementById("itemDisqueGroupe")?.value.trim()||"",
     disqueMusiciens:    document.getElementById("itemDisqueMusiciens")?.value.trim()||"",
     disqueDateOrigine:  document.getElementById("itemDisqueDateOrigine")?.value.trim()||"",
+    disqueBoitier:      document.getElementById("itemDisqueBoitier")?.value||"",
+    disqueLivret:       !!document.getElementById("itemDisqueLivret")?.checked,
+    disqueLivretPages:  parseInt(document.getElementById("itemDisqueLivretPages")?.value)||null,
+    disqueEncarts:      document.getElementById("itemDisqueEncarts")?.value.trim()||"",
     // Pin's specific fields
     pinsMarque:        document.getElementById("itemPinsMarque")?.value.trim()||"",
     pinsTheme:         document.getElementById("itemPinsTheme")?.value||"",
@@ -6458,6 +6500,26 @@ function _formatDuree(j){
   const a = Math.floor(j/365);
   return T(`${a} an${a>1?'s':''}`,`${a} year${a>1?'s':''}`);
 }
+// Le nombre de pages du livret ne veut rien dire sans livret : le champ reste
+// inerte tant que la case n'est pas cochée, et se vide si on la décoche.
+// « Cristal » était le mot employé au premier jet ; le terme d'usage chez les
+// collectionneurs est « jewel ». On traduit à la lecture des fiches déjà saisies.
+function _boitierNormalise(v){
+  const t = String(v||'');
+  if(/cristal/i.test(t)) return /double/i.test(t) ? 'Boîtier jewel double' : 'Boîtier jewel';
+  return t;
+}
+
+function _syncLivretPages(){
+  const c = document.getElementById('itemDisqueLivret');
+  const n = document.getElementById('itemDisqueLivretPages');
+  if(!c || !n) return;
+  n.disabled = !c.checked;
+  n.style.opacity = c.checked ? '' : '.45';
+  if(!c.checked) n.value = '';
+  else if(document.activeElement === c) n.focus();
+}
+
 // Coche « Lu » → propose la date du jour si aucune n'est saisie
 function _syncLuDate(){
   const lu = document.getElementById('itemLu');
@@ -9874,6 +9936,11 @@ function renderItemDetail(id, pushHistory=true){
     [T('Pressage','Pressing'),         it.disquePressage],
     [T('Pays de pressage','Pressed in'), it.disquePays],
     [T('Référence catalogue','Catalogue no.'), it.disqueRef],
+    [T('Conditionnement','Packaging'), it.disqueBoitier],
+    [T('Livret','Booklet'), it.disqueLivret
+        ? (it.disqueLivretPages ? T(`oui — ${it.disqueLivretPages} pages`, `yes — ${it.disqueLivretPages} pages`) : T('oui','yes'))
+        : ''],
+    [T('Encarts et suppléments','Inserts and extras'), it.disqueEncarts],
     [T('État de la pochette','Sleeve condition'), it.disqueEtatPochette],
     [T('Compilation','Compilation'), it.disqueCompilation ? T('oui','yes') : ''],
     [T('Musiciens','Musicians'),     it.disqueMusiciens],
