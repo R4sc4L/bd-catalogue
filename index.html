@@ -1781,6 +1781,16 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <option>Moyen</option><option>Usé</option>
               </select>
             </div>
+            <div class="span-2"><label data-en="Band / line-up">Groupe / Formation</label>
+              <input type="text" id="itemDisqueGroupe" list="dl-groupes" placeholder="ex: Pharoah Sanders Quintet, Pink Floyd…" data-en-ph="e.g. Pharoah Sanders Quintet, Pink Floyd…">
+            </div>
+            <div><label data-en="First release / concert date">Parution originale / concert</label>
+              <input type="text" id="itemDisqueDateOrigine" placeholder="ex: 1977 ou 19/01/1973" data-en-ph="e.g. 1977 or 19/01/1973">
+            </div>
+            <div></div>
+            <div class="span-2"><label data-en="Musicians (free text, no artist record created)">Musiciens <span class="muted" style="font-size:11px;text-transform:none;letter-spacing:0">(texte libre — ne crée aucune fiche artiste)</span></label>
+              <textarea id="itemDisqueMusiciens" rows="2" placeholder="ex: Donald Byrd (trompette), Herbie Hancock (piano), Butch Warren (contrebasse)…" data-en-ph="e.g. Donald Byrd (trumpet), Herbie Hancock (piano)…"></textarea>
+            </div>
             <div class="span-2" style="align-self:end;padding-bottom:6px">
               <div class="checkbox-row">
                 <input type="checkbox" id="itemDisqueCompilation">
@@ -1790,6 +1800,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           </div>
           <p class="muted" style="font-size:11px;margin:8px 0 0" data-en="Label, year and barcode are in the section below; artists and performers in “Contributors”.">Le label, l'année et le code-barres sont dans la section suivante ; les artistes et interprètes dans « Artistes et contributeurs ».</p>
         </div>
+        <datalist id="dl-groupes"></datalist>
         <datalist id="dl-genres-disque">
           <option>Rock</option><option>Rock progressif</option><option>Pop</option><option>Jazz</option>
           <option>Blues</option><option>Classique</option><option>Électronique</option><option>Chanson française</option>
@@ -3932,7 +3943,8 @@ const SB = (() => {
     'colleDansAlbum','lu','dateLecture','preteA','datePret','retourPrevu',
     // Disques (CD / Vinyle / DVD) — même sac JSONB, aucune colonne SQL à créer
     'disqueSupport','disqueNb','disqueDuree','disqueGenre','disquePressage',
-    'disquePays','disqueRef','disqueEtatPochette','disqueCompilation'];
+    'disquePays','disqueRef','disqueEtatPochette','disqueCompilation',
+    'disqueGroupe','disqueMusiciens','disqueDateOrigine'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
     'pinsReference','pinsEditionLimitee'];
   // [cléLegacy, colonne, type] — s:texte(''), n:nombre(null), z:nombre(0), b:bool, d:date('')
@@ -5704,6 +5716,9 @@ function openItemForm(id=null, opts={}){
     _setD("itemDisquePays", it.disquePays);
     _setD("itemDisqueRef", it.disqueRef);
     _setD("itemDisqueEtatPochette", it.disqueEtatPochette);
+    _setD("itemDisqueGroupe", it.disqueGroupe);
+    _setD("itemDisqueMusiciens", it.disqueMusiciens);
+    _setD("itemDisqueDateOrigine", it.disqueDateOrigine);
     const _comp = document.getElementById("itemDisqueCompilation");
     if(_comp) _comp.checked = !!it.disqueCompilation;
     // Pin's specific fields
@@ -6116,6 +6131,9 @@ async function saveItem(e){
     disqueRef:          document.getElementById("itemDisqueRef")?.value.trim()||"",
     disqueEtatPochette: document.getElementById("itemDisqueEtatPochette")?.value||"",
     disqueCompilation:  !!document.getElementById("itemDisqueCompilation")?.checked,
+    disqueGroupe:       document.getElementById("itemDisqueGroupe")?.value.trim()||"",
+    disqueMusiciens:    document.getElementById("itemDisqueMusiciens")?.value.trim()||"",
+    disqueDateOrigine:  document.getElementById("itemDisqueDateOrigine")?.value.trim()||"",
     // Pin's specific fields
     pinsMarque:        document.getElementById("itemPinsMarque")?.value.trim()||"",
     pinsTheme:         document.getElementById("itemPinsTheme")?.value||"",
@@ -6951,6 +6969,12 @@ function renderCollection(){
   document.getElementById("dl-series").innerHTML = series.map(s=>`<option>${escapeHTML(s)}</option>`).join("");
   const univers = [...new Set(cache.items.map(i=>i.univers).filter(Boolean))].sort();
   document.getElementById("dl-univers").innerHTML = univers.map(u=>`<option>${escapeHTML(u)}</option>`).join("");
+  // Groupes déjà saisis : proposés à la frappe, pour éviter deux orthographes du
+  // même ensemble (« Pharoah Sanders Quintet » / « P. Sanders quintet »).
+  const groupes = [...new Set(cache.items.map(i=>i.disqueGroupe).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,'fr'));
+  const dlg = document.getElementById("dl-groupes");
+  if(dlg) dlg.innerHTML = groupes.map(g=>`<option>${escapeHTML(g)}</option>`).join("");
   _refreshLocationDatalist();
 
   applyFilters();
@@ -7345,6 +7369,27 @@ function nationaliteFlag(nat){
   const k = _normLang(nat);            // même normalisation : minuscules, sans accents
   return _NAT_FLAG[k] || countryFlag(nat) || "";
 }
+// Qui joue, tel qu'on l'affiche : les artistes rattachés d'abord ; à défaut, le
+// nom de groupe saisi librement sur la fiche. Un groupe entier (« Pharoah Sanders
+// Quintet ») n'a pas à devenir une fiche artiste pour apparaître sur la vignette.
+function interpreteAffiche(it){
+  const lies = (it.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean);
+  if(lies.length) return lies.slice(0,2).join(", ");
+  return (it.disqueGroupe||"").trim();
+}
+
+// Date à mettre en avant sur la vignette : la parution ORIGINALE (ou la date du
+// concert) plutôt que l'année du pressage qu'on possède — un remaster de 1999
+// n'apprend rien sur l'œuvre. On retombe sur l'année d'édition si elle manque.
+function dateAffichee(it){
+  if(archetypeForCategory(it.categorie).id === 'disque' && it.disqueDateOrigine)
+    return { texte: it.disqueDateOrigine,
+             titre: it.anneeEdition ? T(`Parution originale — pressage ${it.anneeEdition}`,
+                                        `Original release — pressing ${it.anneeEdition}`)
+                                    : T('Parution originale','Original release') };
+  return { texte: it.anneeEdition || "", titre: "" };
+}
+
 // Nationalités des INTERPRÈTES d'un disque. On écarte les rôles de fabrication
 // (producteur, ingénieur du son, pochette…) : le drapeau doit dire d'où vient la
 // musique, pas où elle a été gravée. Sans aucun rôle d'interprétation crédité, on
@@ -7860,6 +7905,9 @@ function applyFilters(){
     const tokens = norm(search).split(/\s+/).filter(Boolean);   // recherche par mots (ET)
     list = list.filter(i=>{
       const txt = norm([i.titre,i.sousTitre,i.serie,i.univers,i.collection,i.numeroSerie,i.editeur,i.notes,(i.tags||[]).join(" "),
+        // Groupe et musiciens sont du texte libre : sans eux, chercher « Herbie
+        // Hancock » ne trouverait rien alors que son nom est bien sur la fiche.
+        i.disqueGroupe, i.disqueMusiciens, i.disqueGenre,
         i._isWish ? i._wishAuteurs : (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).join(" ")
       ].join(" "));
       return tokens.every(t=>txt.includes(t));   // chaque mot doit être présent (peu importe le champ)
@@ -8032,7 +8080,10 @@ function applyFilters(){
             <td class="right"><button class="secondary" style="font-size:11px;padding:3px 8px" title="${T('Ajouter cette œuvre à ma collection','Add this work to my collection')}" onclick="event.stopPropagation();acquireWish('${i.id}')">➕ ${T('Ajouter','Add')}</button></td>
           </tr>`);
         } else {
-          const authors = (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2).map(a=>escapeHTML(a)).join("<br>");
+          const authors = (archetypeForCategory(i.categorie).id === 'disque'
+            ? [interpreteAffiche(i)].filter(Boolean)
+            : (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2)
+            ).map(a=>escapeHTML(a)).join("<br>");
           const trSel = _selectedItems.has(i.id) ? " selected" : "";
           const trClick = `onclick="bulkTableRowClick('${i.id}',event)"`;
           rows.push(`<tr class="${trSel}" ${trClick}>
@@ -8043,7 +8094,7 @@ function applyFilters(){
             <td style="line-height:1.6">${authors}</td>
             <td style="text-align:center;font-size:18px" title="${escapeHTML(_drapeauxItem(i).titre)}">${_drapeauxItem(i).flags}</td>
             <td>${escapeHTML(i.editeur||"")}</td>
-            <td>${i.anneeEdition||""}</td>
+            <td>${(()=>{const d=dateAffichee(i);return d.titre?`<span title="${escapeHTML(d.titre)}">${escapeHTML(d.texte)}</span>`:escapeHTML(d.texte);})()}</td>
             <td>${escapeHTML(i.etat||"")}</td>
             <td class="right">${i.cote?i.cote.toLocaleString("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}):""}</td>
           </tr>`);
@@ -8077,7 +8128,9 @@ function cardItemHTML(i, compact=false){
   const collectedAuthorName  = collectedAuthorEntry ? authorDisplay(authorById(collectedAuthorEntry.auteurId)) : null;
   const authors = isPins
     ? (i.pinsMarque || i.editeur || "—")
-    : (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2).join(", ");
+    : (archetypeForCategory(i.categorie).id === 'disque'
+        ? interpreteAffiche(i)
+        : (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2).join(", "));
   // Auteurs hors auteur collectionné (évite de citer deux fois la vedette ⭐ sur la vignette)
   const otherAuthors = (!isPins && collectedAuthorEntry)
     ? (i.auteurs||[]).filter(a=>a.auteurId!==collectedAuthorEntry.auteurId).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2).join(", ")
@@ -8142,7 +8195,7 @@ function cardItemHTML(i, compact=false){
         ${(i.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}
         ${(()=>{const d=_drapeauxItem(i);return d.flags?`<span title="${escapeHTML(d.titre)}" style="font-size:16px;line-height:1">${d.flags}</span>`:""})()}
         ${(i.objetsAssocies||[]).length?`<span title="${T(`Objets associés :`,`Related objects:`)} ${escapeHTML([...new Set((i.objetsAssocies||[]).map(o=>moduleById(o.type).label))].join(', '))}" style="font-size:13px;line-height:1;opacity:.85">🔗${[...new Set((i.objetsAssocies||[]).map(o=>moduleById(o.type).icon))].join('')}</span>`:""}
-        <span>${i.anneeEdition||""}</span>
+        ${(()=>{const d=dateAffichee(i);return `<span${d.titre?` title="${escapeHTML(d.titre)}"`:''}>${escapeHTML(d.texte)}</span>`;})()}
       </div>
     </div>
   </div>`;
@@ -9812,6 +9865,8 @@ function renderItemDetail(id, pushHistory=true){
   // et les libellés d'édition parlent musique (Label, code-barres).
   const isDisque = archetypeForCategory(it.categorie).id === 'disque';
   const disqueDl = !isDisque ? '' : [
+    [T('Groupe / Formation','Band / line-up'), it.disqueGroupe],
+    [T('Parution originale / concert','First release / concert'), it.disqueDateOrigine],
     [T('Support','Format'),            it.disqueSupport],
     [T('Nombre de disques','Discs'),   it.disqueNb],
     [T('Durée','Running time'),        it.disqueDuree],
@@ -9821,6 +9876,7 @@ function renderItemDetail(id, pushHistory=true){
     [T('Référence catalogue','Catalogue no.'), it.disqueRef],
     [T('État de la pochette','Sleeve condition'), it.disqueEtatPochette],
     [T('Compilation','Compilation'), it.disqueCompilation ? T('oui','yes') : ''],
+    [T('Musiciens','Musicians'),     it.disqueMusiciens],
   ].filter(([,v])=>v!==null && v!==undefined && v!=='')
    .map(([l,v])=>`<dt>${escapeHTML(l)}</dt><dd>${escapeHTML(String(v))}</dd>`).join('');
   const hasDiaporama = !!(it.diaporama ?? isPortfolio); // rétrocompat : Portfolio = diapo par défaut
@@ -9881,7 +9937,9 @@ function renderItemDetail(id, pushHistory=true){
         ${it.sousTitre?`<p class="muted" style="font-size:18px;margin-top:-8px">${escapeHTML(it.sousTitre)}</p>`:""}
         ${isPortfolio&&it.univers?`<p class="muted" style="font-size:14px;margin-top:-4px">${t('detail.univers_label')} : <strong>${escapeHTML(it.univers)}</strong></p>`:""}
         ${!isPortfolio&&it.serie?`<p class="muted">${t('detail.cycle_label')} : ${escapeHTML(it.serie)}${it.numeroSerie?` — N°${escapeHTML(it.numeroSerie)}`:""}</p>`:""}
-        <div style="margin:12px 0">${authors||`<span class="muted">${t('detail.no_author')}</span>`}</div>
+        <div style="margin:12px 0">${authors
+          || (isDisque && it.disqueGroupe ? `<span class="author-badge">${escapeHTML(it.disqueGroupe)}</span>` : '')
+          || `<span class="muted">${t('detail.no_author')}</span>`}</div>
         <dl>${infoDl}</dl>
         ${it.tags&&it.tags.length?`<div style="margin-top:12px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
