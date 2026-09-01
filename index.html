@@ -118,8 +118,15 @@
   .stat-card{background:var(--bg-panel);padding:22px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow)}
   .stat-card .num{font-size:36px;font-weight:600;color:var(--accent);font-family:"Orbitron",sans-serif}
   .stat-card .lbl{color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.8px;margin-top:4px}
-  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
-  @media(max-width:900px){.two-col{grid-template-columns:1fr}}
+  /* minmax(0,…) et non 1fr : sans le minimum à zéro, une colonne de grille se
+     dilate jusqu'au min-content de son contenu. Un titre d'œuvre en
+     white-space:nowrap (les « Dernières acquisitions ») imposait ainsi 504 px
+     au panneau, donc 514 px à la page : iOS Safari calait sa fenêtre de mise en
+     page sur cette largeur et rapetissait toute l'application après le premier
+     rendu — d'où l'écran qui « se réduit au bout de quelques secondes ». */
+  .two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;margin-bottom:24px}
+  .two-col > *{min-width:0}
+  @media(max-width:900px){.two-col{grid-template-columns:minmax(0,1fr)}}
   .panel{background:var(--bg-panel);border-radius:var(--radius);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow)}
   .panel h3{margin-top:0;font-size:20px;display:flex;justify-content:space-between;align-items:center;font-family:"Orbitron",sans-serif}
   /* Toolbar */
@@ -1159,6 +1166,14 @@
   .table-scroll table{min-width:620px}
 
   @media(max-width:700px){
+    /* Garde-fou. Sur iPhone, un seul élément plus large que l'écran suffit à
+       faire caler Safari sa fenêtre de mise en page sur cette largeur : toute
+       l'application est alors redessinée en plus petit, quelques secondes après
+       le chargement. On coupe le débordement horizontal à la racine plutôt que
+       de laisser un futur oubli rétrécir la page entière. La règle est portée
+       par <html> (elle se propage à la fenêtre) et non par <body>, afin que
+       l'en-tête et la barre d'outils collants continuent de coller. */
+    html{overflow-x:hidden}
     header{padding:10px 12px;gap:8px 10px}
     header h1{font-size:18px}
     nav{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin;padding-bottom:4px;-webkit-overflow-scrolling:touch}
@@ -6877,7 +6892,7 @@ function renderDashboard(){
       : ((i.auteurs||[]).map(x=>authorDisplay(authorById(x.auteurId))).filter(Boolean).join(", ") || "—");
     const itemIcon = isPins ? "📌" : "📖";
     return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="renderItemDetail('${i.id}')">
-      <div style="width:40px;height:60px;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}" style="max-width:100%;max-height:100%;object-fit:contain;background:transparent">`:"${itemIcon}"}</div>
+      <div style="width:40px;height:60px;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}" style="max-width:100%;max-height:100%;object-fit:contain;background:transparent">`:itemIcon}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(i.titre)}</div>
         <div class="muted" style="font-size:12px">${escapeHTML(subtitle)}</div>
