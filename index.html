@@ -1152,11 +1152,76 @@
     .search-global{flex:1 1 180px;min-width:140px}
     .search-global input{min-width:0;width:100%;flex:1}
   }
+  /* Un tableau plus large que l'écran défile dans son cadre. Sans cela il
+     élargissait la PAGE : iOS Safari fixe alors sa fenêtre de mise en page sur
+     cette largeur et tout le reste de l'application se retrouve rétréci. */
+  .table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius)}
+  .table-scroll table{min-width:620px}
+
   @media(max-width:700px){
     header{padding:10px 12px;gap:8px 10px}
     header h1{font-size:18px}
     nav{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin;padding-bottom:4px;-webkit-overflow-scrolling:touch}
     nav button{white-space:nowrap;flex-shrink:0}
+  }
+
+  /* ══ TÉLÉPHONE ══════════════════════════════════════════════════════
+     Sur un iPhone, la largeur utile est la ressource rare : les marges de
+     l'ordinateur (24 px de chaque côté, cartes de 220 px minimum) laissaient
+     une seule colonne et beaucoup de vide. On resserre les marges et on passe
+     les grilles à deux colonnes — sans toucher à l'affichage sur grand écran. */
+  @media(max-width:560px){
+    /* En-tête : trois rangées hautes mangeaient un cinquième de l'écran. La
+       recherche prend sa propre ligne (pleine largeur, elle n'a plus de
+       minimum de 240 px à défendre), le reste se resserre sur une seule. */
+    header{padding:8px 10px;gap:6px 8px}
+    header h1{font-size:16px;gap:6px}
+    .search-global{flex:1 1 100%;order:6;min-width:0;padding:2px 10px}
+    .hdr-btn{padding:5px 9px;font-size:12px}
+    #app-version{display:none}          /* information de développement */
+    nav{gap:4px;padding-bottom:2px}
+    nav button{padding:8px 12px;font-size:13px}
+    /* Les six onglets ne tenaient pas sur 390 px : il fallait faire défiler la
+       barre pour atteindre « Bibliothèque ». Réduits à leur icône, ils tiennent
+       tous. Le texte reste dans le bouton (font-size:0 le masque à l'œil mais
+       le laisse aux lecteurs d'écran) et repart en infobulle. */
+    nav button[data-icone]{font-size:0;padding:9px 0;min-width:46px;text-align:center}
+    nav button[data-icone]::before{content:attr(data-icone);font-size:20px;line-height:1.1}
+    /* « Plus ▾ » réduit à un chevron seul se lisait mal : on lui donne les trois
+       points, signe usuel d'un menu qui en cache d'autres. */
+    .nav-more-label,.nav-more-trigger .caret{display:none}
+    .nav-more-trigger{min-width:46px;padding:9px 0;justify-content:center;font-size:0}
+    .nav-more-trigger::before{content:"⋯";font-size:22px;line-height:1;letter-spacing:0}
+
+    main{padding:14px 10px}
+    .hero{padding:18px 16px;margin-bottom:16px}
+    .hero h2{font-size:20px;line-height:1.25}
+    .hero p{font-size:13px}
+    .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+    .stat-card{padding:12px 14px}
+    .stat-card .num{font-size:26px}
+    .stat-card .lbl{font-size:10px;letter-spacing:.4px}
+    .panel{padding:14px 12px}
+    .two-col{gap:14px}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+    .grid.grid-sm{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+    .filters{padding:12px;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+    .toolbar{padding:8px 0;gap:8px;margin-bottom:14px}
+    .card-body{padding:9px}
+    .card-title{font-size:13px}
+    .card-meta{font-size:11px;padding-top:6px}
+    /* La fenêtre de saisie occupe tout l'écran : une modale flottante sur
+       390 px de large ne laissait qu'une colonne de champs très étroite. */
+    .modal-backdrop{padding:0}
+    .modal{max-width:100%;width:100%;margin:0;border-radius:0;min-height:100dvh}
+    /* Le titre garde sa ligne : coincé à côté de « Remplir automatiquement »,
+       il se coupait en deux sur un écran de 390 px. */
+    .modal-header{padding:12px 14px;flex-wrap:wrap;gap:8px}
+    .modal-header h2{font-size:17px;flex:1 1 100%}
+    .autofill-duo{flex:1 1 auto}
+    .autofill-duo > button:first-child{flex:1;font-size:12px;padding:6px 10px}
+    .modal-body{padding:14px 12px}
+    .form-section{margin-bottom:16px}
   }
 
   /* ── Cibles tactiles ≥ 44px sur écrans tactiles ── */
@@ -1310,12 +1375,12 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
   <small id="app-version" style="font-size:10px;color:var(--ink-soft);margin-left:8px;opacity:0.5">v2026-05-18</small>
   <span id="env-badge" title=""></span>
   <nav id="nav" aria-label="Navigation principale">
-    <button data-view="hub">🏠 Hub</button>
-    <button data-view="dashboard" class="active">Tableau de bord</button>
-    <button data-view="collection">Collection</button>
-    <button data-view="authors" id="navAuthorsBtn">Auteurs</button>
-    <button data-view="souhaites">Souhaités</button>
-    <button data-view="library">Bibliothèque</button>
+    <button data-view="hub" data-icone="🏠">🏠 Hub</button>
+    <button data-view="dashboard" data-icone="📊" class="active">Tableau de bord</button>
+    <button data-view="collection" data-icone="🗂️">Collection</button>
+    <button data-view="authors" data-icone="✒️" id="navAuthorsBtn">Auteurs</button>
+    <button data-view="souhaites" data-icone="🎯">Souhaités</button>
+    <button data-view="library" data-icone="🗄️">Bibliothèque</button>
     <div class="nav-more" id="navMore">
       <button type="button" class="nav-more-trigger" id="navMoreBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="navMoreMenu" onclick="toggleNavMore(event)"><span class="nav-more-label" data-en="More">Plus</span> <span class="caret" aria-hidden="true">▾</span></button>
       <div class="nav-more-menu" id="navMoreMenu" role="menu" aria-label="Plus de vues">
@@ -3775,7 +3840,9 @@ function _adaptCollectionLabels(){
   const isPins = _activeCollection === 'pins';
   // Nav button
   const navBtn = document.getElementById('navAuthorsBtn');
-  if(navBtn) navBtn.textContent = libelleCreateurs();
+  if(navBtn){ navBtn.textContent = libelleCreateurs(); _majInfobulleNav(navBtn); }
+  _majIconeNavCreateurs();
+  _majInfobullesNav();
   const addBtn = document.getElementById('addAuthorBtn');
   if(addBtn) addBtn.textContent = libelleAjoutCreateur();
   // View title (keep the count span)
@@ -3790,7 +3857,7 @@ function _adaptCollectionLabels(){
   if(wishBtn) wishBtn.style.display = isPins ? 'none' : '';
   // Library tab: hide in non-BD collections
   const libBtn = document.querySelector('button[data-view="library"]');
-  if(libBtn){ libBtn.style.display = isPins ? 'none' : ''; libBtn.textContent = libraryLabel(); }
+  if(libBtn){ libBtn.style.display = isPins ? 'none' : ''; libBtn.textContent = libraryLabel(); _majInfobulleNav(libBtn); }
   const libH2 = document.querySelector('#view-library h2');
   if(libH2) libH2.textContent = '🗄️ ' + libraryLabel();
   // L'invite des étagères vides vient d'un ::before : elle passe par une variable CSS.
@@ -7437,6 +7504,27 @@ const _NAT_FLAG = {
 // était jusqu'ici codé en dur par un test `=== 'pins'` répété à cinq endroits.
 const _CREATEURS_EN = { 'Auteurs':'Authors', 'Artistes':'Artists', 'Éditeurs':'Publishers' };
 const _CREATEUR_EN  = { 'auteur':'author', 'artiste':'artist', 'éditeur':'publisher' };
+// Réduit à son icône sur petit écran, un onglet doit encore pouvoir se nommer :
+// on recopie son libellé dans l'infobulle après chaque changement de texte.
+function _majInfobulleNav(btn){
+  // « 🏠 Hub » : l'émoji du libellé ferait doublon avec l'icône affichée.
+  const t = (btn.textContent||'').replace(/^[^\p{L}\p{N}]+/u,'').trim();
+  if(t) btn.title = t;
+}
+// Toutes les infobulles d'un coup : appelé à l'ouverture et à chaque
+// changement de collection, sans attendre un changement de langue.
+function _majInfobullesNav(){
+  document.querySelectorAll('nav button[data-view]').forEach(_majInfobulleNav);
+}
+// L'icône des créateurs suit la collection, comme leur nom : plume pour la BD,
+// micro pour les disques, étiquette pour les pin's.
+function _majIconeNavCreateurs(){
+  const b = document.getElementById('navAuthorsBtn');
+  if(!b) return;
+  b.dataset.icone = _activeCollection === 'pins' ? '🏷️'
+                  : (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : '✒️');
+}
+
 function libelleCreateurs(){
   const fr = moduleById(_activeCollection)?.terms?.creatorsTab || 'Auteurs';
   return T(fr, _CREATEURS_EN[fr] || fr);
@@ -8131,7 +8219,7 @@ function applyFilters(){
     }
     const thClass = col => tableSort.col===col ? (tableSort.dir>0?"sort-asc":"sort-desc") : "";
     const colSpan = _bulkMode ? 10 : 9;
-    container.innerHTML = `<table><thead><tr>
+    container.innerHTML = `<div class="table-scroll"><table><thead><tr>
       ${_bulkMode?`<th class="table-cb-col"><input type="checkbox" title="${T(`Tout sélectionner`,`Select all`)}" onclick="toggleSelectAllTable(this)"></th>`:""}
       <th class="${thClass("titre")}"        onclick="setTableSort('titre')">${T("Titre","Title")}</th>
       <th style="width:100px"></th>
@@ -8197,7 +8285,7 @@ function applyFilters(){
         }
       });
       return rows.join("");
-    })()}</tbody></table>`;
+    })()}</tbody></table></div>`;
   }
 }
 
@@ -9347,12 +9435,14 @@ function applyLang() {
     // Le bouton "Auteurs/Éditeurs" est géré dynamiquement selon la collection active
     if(btn.dataset.view === 'authors'){
       btn.textContent = libelleCreateurs();
+      _majInfobulleNav(btn);
       return;
     }
     // « Bibliothèque » dépend de la collection : CDthèque pour les disques
-    if(btn.dataset.view === 'library'){ btn.textContent = libraryLabel(); return; }
+    if(btn.dataset.view === 'library'){ btn.textContent = libraryLabel(); _majInfobulleNav(btn); return; }
     const key = 'nav.' + btn.dataset.view.replace('-','_').replace('import-export','import').replace('souhaites','wishlist');
     if(STRINGS[_lang][key]) btn.textContent = S(key);
+    _majInfobulleNav(btn);
   });
   setText('nav button[data-view="import-export"]', S('nav.import'));
   setText('nav button[data-view="souhaites"]', S('nav.wishlist'));
@@ -10965,7 +11055,7 @@ function applyWishFilters(items){
     container.innerHTML = `<div class="empty"><div class="icon">🎯</div>${T('Aucun souhait pour le moment.','No wishes yet.')}</div>`;
     return;
   }
-  container.innerHTML = `<table><thead><tr>
+  container.innerHTML = `<div class="table-scroll"><table><thead><tr>
     <th>${T("Priorité","Priority")}</th><th></th><th>${T("Titre","Title")}</th><th>${T("Auteur(s)","Author(s)")}</th><th>Collection</th><th>${T("Catégorie","Category")}</th><th>${T("Éditeur","Publisher")}</th><th>${T("Année","Year")}</th><th>Actions</th><th>${T("Achat","Purchase")}</th>
   </tr></thead><tbody>${list.map(w=>`
     <tr>
@@ -10985,7 +11075,7 @@ function applyWishFilters(items){
         <button class="secondary" style="font-size:12px;padding:4px 8px" onclick="acquireWish('${w.id}')" title="${T(`Cette œuvre rejoint la collection ; elle quitte la liste des souhaits`,`This work joins the collection and leaves the wishlist`)}">➕ ${T("Ajouter à ma collection","Add to my collection")}</button>
       </td>
     </tr>`).join("")}
-  </tbody></table>`;
+  </tbody></table></div>`;
 }
 
 // ── Souhaits : suggestions tirées de la collection ──────────────────────────
