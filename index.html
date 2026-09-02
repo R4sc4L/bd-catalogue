@@ -2315,8 +2315,8 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div id="authorFieldPrenom"><label data-en="First name">Prénom</label><input type="text" id="authorFirstName"></div>
             <div id="authorFieldPseudo"><label data-en="Pen name">Pseudonyme</label><input type="text" id="authorPseudo" placeholder="ex: Hergé, Moebius..." data-en-ph="e.g. Hergé, Moebius..."></div>
             <div><label id="authorLabelNat" data-en="Nationality">Nationalité</label><input type="text" id="authorNat" list="dl-nationalities"></div>
-            <div><label id="authorLabelBirth" data-en="Date of birth">Date de naissance</label><input type="date" id="authorBirth"></div>
-            <div><label id="authorLabelDeath" data-en="Date of death">Date de décès</label><input type="date" id="authorDeath"></div>
+            <div id="authorFieldBirth"><label id="authorLabelBirth" data-en="Date of birth">Date de naissance</label><input type="date" id="authorBirth"></div>
+            <div id="authorFieldDeath"><label id="authorLabelDeath" data-en="Date of death">Date de décès</label><input type="date" id="authorDeath"></div>
             <div class="span-2"><label data-en="Website / Link">Site web / Lien</label><input type="url" id="authorWebsite" placeholder="https://..."></div>
           </div>
         </div>
@@ -6594,18 +6594,16 @@ function _majFormulaireArtisteSelonType(){
   const g = _authorEstGroupe;
   const montrer = (id, oui)=>{ const el=document.getElementById(id); if(el) el.style.display = oui ? '' : 'none'; };
   montrer('authorFieldMembres', g);
+  // Un groupe n'a ni prénom, ni pseudonyme, ni dates de vie ; un artiste seul,
+  // si. Les deux sens comptent : sans la remise en place, une fiche ouverte
+  // après un groupe perdait ses dates.
+  ['authorFieldPrenom','authorFieldPseudo','authorFieldBirth','authorFieldDeath']
+    .forEach(id=>montrer(id, !g));
   // « Modifier l'auteur » sur la fiche d'un quintet sonne faux.
   const titre = document.getElementById('authorModalTitle');
   if(titre && g){
     const modif = !!document.getElementById('authorId')?.value;
     titre.textContent = modif ? T('Modifier le groupe','Edit band') : T('Ajouter un groupe','Add a band');
-  }
-  if(g){
-    ['authorFieldPrenom','authorFieldPseudo'].forEach(id=>montrer(id,false));
-    const nais = document.getElementById('authorBirth')?.closest('div');
-    const dec  = document.getElementById('authorDeath')?.closest('div');
-    if(nais) nais.style.display='none';
-    if(dec)  dec.style.display='none';
   }
   const set = (id, txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; };
   // On mémorise le libellé d'origine au premier passage : sans cela, revenir de
@@ -6623,6 +6621,13 @@ function _majFormulaireArtisteSelonType(){
     set('authorLabelNat', T('Nationalité du groupe','Band nationality'));
     const bio = document.getElementById('authorBio');
     if(bio) bio.placeholder = T('Formation, line-up successifs, albums majeurs…','Formation, successive line-ups, major albums…');
+  } else {
+    // adaptAuthorFormToCollection repose les libellés propres à la collection ;
+    // on ne le double que lorsque la bascule est actionnée après coup.
+    set('authorLabelNom', T('Nom *','Last name *'));
+    set('authorLabelNat', T('Nationalité','Nationality'));
+    const bio = document.getElementById('authorBio');
+    if(bio) bio.placeholder = T('Parcours, style, œuvres majeures...','Career, style, major works...');
   }
 }
 function _ligneMembre(m){
