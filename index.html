@@ -1620,6 +1620,11 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       <p class="muted" data-en="Detects works whose category actually belongs to another collection (Pin's, Postcards, Playing cards, Vinyl/CD/DVD) and offers to move them, case by case, to their real collection. The list is shown first — nothing is moved without your approval.">Détecte les œuvres dont la catégorie correspond en réalité à une autre collection (Pin's, Cartes postales, Cartes à jouer, Vinyle/CD/DVD) et te propose de les déplacer, au cas par cas, vers leur vraie collection. La liste s'affiche d'abord — rien n'est déplacé sans ta validation.</p>
       <button class="secondary" data-en="🔍 Scan my BD collection" onclick="openMigrationAssistant()" style="margin-top:12px">🔍 Analyser ma collection BD</button>
     </div>
+    <div class="panel" style="margin-top:24px" id="panneauRangementArtistes">
+      <h3 data-en="👤 File artists in the right collection">👤 Ranger les artistes dans la bonne collection</h3>
+      <p class="muted" data-en="A record created from the aggregate view used to be filed under Comics whatever it was, so musicians ended up in the comics author list. This compares each record with the works that cite it and proposes to move those that are clearly misfiled. Nothing moves without your approval.">Une fiche créée depuis la vue agrégée partait en bande dessinée quoi qu'il arrive : des musiciens se sont ainsi retrouvés dans la liste des auteurs de BD. L'assistant compare chaque fiche aux œuvres qui la citent et propose de déplacer celles qui sont manifestement mal rangées. Rien ne bouge sans votre validation.</p>
+      <button class="secondary" data-en="👤 Scan my artist records" onclick="ouvrirRangementArtistes()" style="margin-top:12px">👤 Analyser mes fiches</button>
+    </div>
     <div class="panel" style="margin-top:24px" id="panneauRepriseGroupes">
       <h3 data-en="👥 Turn bands into records">👥 Convertir les groupes en fiches</h3>
       <p class="muted" data-en="Before, a band was three text fields repeated on every album. Now it is an artist record, with its nationality and its members. This reads your albums, proposes one record per band — nationality and musicians included — and attaches the albums to it. Nothing is created without your approval.">Autrefois, un groupe était trois champs de texte redonnés sur chaque album. C'est désormais une fiche d'artiste, avec sa nationalité et ses membres. L'assistant lit vos albums, propose une fiche par groupe — nationalité et musiciens compris — et y rattache les albums. Rien n'est créé sans votre validation.</p>
@@ -2303,6 +2308,13 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <input type="hidden" id="authorId">
         <div class="form-section">
           <h3 id="authorFormIdentityTitle" data-en="Identity">Identité</h3>
+          <div id="authorFieldCollection" style="margin-bottom:16px;display:none">
+            <label data-en="Collection">Collection</label>
+            <!-- Une fiche appartient à une collection et à une seule. Sans ce
+                 champ, une fiche créée depuis la vue agrégée partait en BD :
+                 les musiciens se retrouvaient dans la liste des auteurs de BD. -->
+            <select id="authorCollection" style="max-width:320px" onchange="_surChoixCollectionArtiste()"></select>
+          </div>
           <div id="authorFieldType" style="margin-bottom:16px;display:none">
             <label data-en="Type of record">Nature de la fiche</label>
             <div class="type-fiche" role="group" aria-label="Nature de la fiche">
@@ -2473,6 +2485,21 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     <div class="modal-footer">
       <button class="secondary" onclick="closeModal('migrationModal')" data-en="Close">Fermer</button>
       <button id="migrationApplyBtn" data-en="Move selection" onclick="applyMigration()">Déplacer la sélection</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fiches d'artiste rangées dans la mauvaise collection -->
+<div class="modal-backdrop" id="artistesModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <h2 data-en="👤 File artists in the right collection">👤 Ranger les artistes dans la bonne collection</h2>
+      <button class="ghost" onclick="closeModal('artistesModal')">✕</button>
+    </div>
+    <div class="modal-body" id="artistesBody"></div>
+    <div class="modal-footer">
+      <button class="secondary" onclick="closeModal('artistesModal')" data-en="Close">Fermer</button>
+      <button id="artistesApplyBtn" data-en="Move the selection" onclick="appliquerRangementArtistes()">Déplacer la sélection</button>
     </div>
   </div>
 </div>
@@ -6159,7 +6186,7 @@ function addAuthorRow(auteurId="", roles=[]){
       openAuthorForm(null,(newId)=>{
         sel.innerHTML = _authorSelectHeader() + _authorOptionsHTML(newId, true);
         sel.value = newId;
-      });
+      }, { collection: _collPourNouvelleFiche(document.getElementById('itemCategory')?.value) });
     }
   });
 }
@@ -6573,9 +6600,47 @@ function ouvrirFicheGroupeDeLOeuvre(){
 function _surChoixGroupeOeuvre(e){
   if(e.target.value !== _GROUPE_NOUVEAU){ _majBoutonFicheGroupe(); return; }
   e.target.value = '';
-  openAuthorForm(null, (nouvelId)=>{ _majListeGroupesOeuvre(nouvelId); });
+  openAuthorForm(null, (nouvelId)=>{ _majListeGroupesOeuvre(nouvelId); },
+    { collection: _collPourNouvelleFiche(document.getElementById('itemCategory')?.value) });
   setAuthorTypeGroupe(true);
   if(!document.querySelector('#authorMembresList .membre-row')) ajouterMembre();
+}
+
+// ── La collection d'appartenance d'une fiche d'artiste ───────────────────
+// Un auteur, un artiste, un éditeur : chacun appartient à une collection et à
+// une seule, et c'est ce qui cloisonne les listes. La vue agrégée n'en désigne
+// aucune ; jusqu'ici tout y partait en bande dessinée, d'où des musiciens dans
+// la liste des auteurs de BD. Le champ rend le choix visible et rectifiable.
+function _majListeCollectionsArtiste(selection){
+  const sel = document.getElementById('authorCollection');
+  const champ = document.getElementById('authorFieldCollection');
+  if(!sel || !champ) return;
+  const voulue = selection || (isAllCollection() ? 'bd' : _activeCollection);
+  // Les modules activés, plus — sans faute — la collection où l'on se trouve et
+  // celle de la fiche ouverte. Sans ce filet, une collection absente de la liste
+  // ferait retomber la fiche en bande dessinée : le bug même que l'on corrige.
+  const ids = new Set(enabledModules().map(m=>m.id));
+  if(!isAllCollection()) ids.add(_activeCollection);
+  if(voulue) ids.add(voulue);
+  const mods = MODULES.filter(m=>ids.has(m.id));
+  // Une seule collection possible : le choix n'a pas lieu d'être.
+  champ.style.display = mods.length > 1 ? '' : 'none';
+  sel.innerHTML = mods.map(m=>`<option value="${m.id}">${m.icon} ${escapeHTML(_modLabel(m))}</option>`).join('');
+  sel.value = mods.some(m=>m.id===voulue) ? voulue : (mods[0]?.id || 'bd');
+}
+// La bascule Artiste/Groupe suit la collection choisie : ranger une fiche en
+// bande dessinée, qui ignore les groupes, la ramène à « Artiste seul ».
+function _surChoixCollectionArtiste(){
+  const coll = document.getElementById('authorCollection')?.value || 'bd';
+  const permet = !!moduleById(coll)?.groupes;
+  const champType = document.getElementById('authorFieldType');
+  if(champType) champType.style.display = permet ? '' : 'none';
+  if(!permet && _authorEstGroupe) setAuthorTypeGroupe(false);
+}
+function _collectionChoisieArtiste(existing){
+  const sel = document.getElementById('authorCollection');
+  if(sel && sel.value) return sel.value;
+  return existing?.collectionType || (isAllCollection() ? 'bd' : _activeCollection);
 }
 
 // ── Formulaire d'artiste : nature de la fiche et membres ─────────────────
@@ -6720,7 +6785,7 @@ function _lireMembresDuFormulaire(){
   })).filter(m=>m.nom);
 }
 
-function openAuthorForm(id=null, callback=null){
+function openAuthorForm(id=null, callback=null, opts={}){
   if(GUEST) return;                 // page invité : aucune écriture possible
   authorFormCallback = callback;
   currentAuthorImage = null;
@@ -6730,9 +6795,11 @@ function openAuthorForm(id=null, callback=null){
   document.getElementById("authorDeleteBtn").style.display = "none";
   document.getElementById("authorMembresList").innerHTML = "";
   // La bascule n'apparaît que là où un groupe a un sens (collections musicales).
-  const champType = document.getElementById('authorFieldType');
-  if(champType) champType.style.display = collectionAvecGroupes() ? '' : 'none';
+  // `opts.collection` : la collection imposée par l'appelant — le formulaire
+  // d'œuvre qui crée un artiste à la volée sait à quelle collection il appartient.
+  _majListeCollectionsArtiste(opts.collection);
   setAuthorTypeGroupe(false);
+  _surChoixCollectionArtiste();
   adaptAuthorFormToCollection();
   document.getElementById("authorModalTitle").textContent = libelleAjoutCreateur().replace(/^\+\s*/,'');
   if(id){
@@ -6743,6 +6810,8 @@ function openAuthorForm(id=null, callback=null){
       T(`Modifier ${/^[aeiouéèê]/i.test(_mot)?"l'":'le '}${_mot}`, `Edit ${_mot}`);
     document.getElementById("authorDeleteBtn").style.display = "inline-block";
     document.getElementById("authorId").value = a.id;
+    _majListeCollectionsArtiste(a.collectionType || 'bd');
+    _surChoixCollectionArtiste();
     document.getElementById("authorLastName").value = a.nom||"";
     document.getElementById("authorFirstName").value = a.prenom||"";
     document.getElementById("authorPseudo").value = a.pseudonyme||"";
@@ -6773,7 +6842,9 @@ async function saveAuthor(e){
   const isPins = _activeCollection === 'pins';
   const obj = {
     id,
-    collectionType: existing?.collectionType || (isAllCollection() ? 'bd' : _activeCollection),
+    // La collection est choisie explicitement — y compris pour une fiche
+    // existante que l'on déplace d'une collection à l'autre.
+    collectionType: _collectionChoisieArtiste(existing),
     nom: document.getElementById("authorLastName").value.trim(),
     prenom: document.getElementById("authorFirstName").value.trim(),
     pseudonyme: document.getElementById("authorPseudo").value.trim(),
@@ -8169,6 +8240,94 @@ function _migrationCandidates(){
   return out;
 }
 function openMigrationAssistant(){ renderMigration(); openModal('migrationModal'); }
+
+// ── Fiches d'artiste rangées dans la mauvaise collection ─────────────────
+// Le juge de paix, ce sont les œuvres : si toutes celles qui citent une fiche
+// appartiennent à une même collection, et que ce n'est pas celle de la fiche,
+// le rangement est faux. Une fiche citée par plusieurs collections, ou par
+// aucune, ne se décide pas toute seule — on la laisse à l'écart.
+function _artistesMalRanges(){
+  const parAuteur = new Map();     // id → Set des collections des œuvres
+  (cache.items||[]).forEach(it=>{
+    const coll = it.collectionType || 'bd';
+    const cites = new Set((it.auteurs||[]).map(a=>a.auteurId).filter(Boolean));
+    const g = groupeDeItem(it); if(g) cites.add(g.id);
+    cites.forEach(id=>{
+      if(!parAuteur.has(id)) parAuteur.set(id, new Set());
+      parAuteur.get(id).add(coll);
+    });
+  });
+  const out = [];
+  (cache.authors||[]).forEach(a=>{
+    const colls = parAuteur.get(a.id);
+    if(!colls || colls.size !== 1) return;          // ambigu ou jamais cité
+    const vraie = [...colls][0];
+    const actuelle = a.collectionType || 'bd';
+    if(vraie === actuelle) return;
+    if(!isModuleEnabled(vraie)) return;             // collection désactivée
+    out.push({ id:a.id, nom:authorDisplay(a), de:actuelle, vers:vraie,
+               oeuvres:(cache.items||[]).filter(it=>(it.collectionType||'bd')===vraie &&
+                 ((it.auteurs||[]).some(x=>x.auteurId===a.id) || groupeDeItem(it)?.id===a.id)).length });
+  });
+  return out.sort((x,y)=>y.oeuvres-x.oeuvres || x.nom.localeCompare(y.nom,'fr'));
+}
+function ouvrirRangementArtistes(){ renderRangementArtistes(); openModal('artistesModal'); }
+let _rangementArtistesListe = [];
+function renderRangementArtistes(){
+  const body = document.getElementById('artistesBody');
+  const btn  = document.getElementById('artistesApplyBtn');
+  const liste = _artistesMalRanges();
+  _rangementArtistesListe = liste;
+  if(!liste.length){
+    body.innerHTML = `<p class="muted" style="margin:0">${T('Aucune fiche mal rangée : chaque artiste est dans la collection de ses œuvres. 🎉','Nothing misfiled: every artist sits in the collection of their works. 🎉')}</p>
+      <p class="muted" style="font-size:13px">${T('Les fiches qu\'aucune œuvre ne cite ne peuvent pas être jugées ici : ouvrez-les et choisissez leur collection dans le champ « Collection ».','Records cited by no work cannot be judged here: open them and pick their collection in the “Collection” field.')}</p>`;
+    if(btn) btn.style.display = 'none';
+    return;
+  }
+  if(btn) btn.style.display = '';
+  const parCible = {};
+  liste.forEach(c=>{ (parCible[c.vers] = parCible[c.vers]||[]).push(c); });
+  body.innerHTML = `<p class="muted" style="margin-top:0;font-size:13px">${T(
+      `${liste.length} fiche(s) dont toutes les œuvres appartiennent à une autre collection que celle où elles sont rangées.`,
+      `${liste.length} record(s) whose works all belong to a collection other than the one they are filed in.`)}</p>` +
+    Object.entries(parCible).map(([cible,list])=>{
+      const m = moduleById(cible);
+      return `<div style="margin:14px 0"><div style="font-weight:700;color:${m.accent};margin-bottom:6px">${m.icon} ${T('Vers','To')} « ${escapeHTML(_modLabel(m))} » <span class="muted" style="font-weight:400">(${list.length})</span></div>` +
+        list.map(c=>`<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px;cursor:pointer">
+          <input type="checkbox" class="rang-cb" value="${c.id}" checked style="width:15px;height:15px">
+          <span>${escapeHTML(c.nom)}</span>
+          <span class="muted" style="font-size:12px">— ${T(`aujourd'hui en ${_modLabel(moduleById(c.de))}`,`currently in ${_modLabel(moduleById(c.de))}`)} · ${c.oeuvres} ${T(`œuvre${c.oeuvres>1?'s':''}`,`work${c.oeuvres>1?'s':''}`)}</span>
+        </label>`).join('') + `</div>`;
+    }).join('') +
+    `<p class="muted" style="font-size:13px;margin-top:14px">${T('Les fiches qu\'aucune œuvre ne cite n\'apparaissent pas ici : ouvrez-les et choisissez leur collection dans le champ « Collection ».','Records cited by no work do not appear here: open them and pick their collection in the “Collection” field.')}</p>`;
+}
+async function appliquerRangementArtistes(){
+  const choisis = [...document.querySelectorAll('.rang-cb:checked')]
+    .map(cb=>_rangementArtistesListe.find(c=>c.id===cb.value)).filter(Boolean);
+  if(!choisis.length){ toast(T('Aucune fiche sélectionnée','No record selected'),'error'); return; }
+  if(!confirm(T(`Déplacer ${choisis.length} fiche(s) vers la collection de leurs œuvres ?`,`Move ${choisis.length} record(s) to the collection of their works?`))) return;
+  const btn = document.getElementById('artistesApplyBtn');
+  if(btn) btn.disabled = true;
+  let faits = 0;
+  try {
+    for(const c of choisis){
+      const a = cache.authors.find(x=>x.id===c.id);
+      if(!a) continue;
+      a.collectionType = c.vers;
+      a.updatedAt = new Date().toISOString();
+      await dbPut('authors', a);
+      faits++;
+    }
+  } catch(e){
+    console.warn('[Artistes] rangement interrompu', e);
+    toast(T(`Rangement interrompu après ${faits} fiche(s)`,`Filing stopped after ${faits} record(s)`),'error');
+  }
+  if(btn) btn.disabled = false;
+  await reloadCache();
+  toast(T(`${faits} fiche(s) déplacée(s)`,`${faits} record(s) moved`));
+  renderRangementArtistes();
+  refreshCurrentView();
+}
 
 // ── Reprise des groupes saisis en texte libre ────────────────────────────
 // Analyse « Donald Byrd (trompette), Herbie Hancock (piano) » en membres.
