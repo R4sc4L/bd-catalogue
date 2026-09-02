@@ -173,8 +173,17 @@
      sélecteur — et un filet plus marqué en haut la donne à lire d'un coup
      d'œil, sans peser sur la vignette. La couleur est portée par une variable
      posée en ligne : chaque module apporte la sienne. */
-  .card.card-coll{border-color:var(--coll-accent);box-shadow:var(--shadow),inset 0 3px 0 -1px var(--coll-accent)}
-  .card.card-coll:hover{border-color:var(--coll-accent);box-shadow:var(--shadow-lg),inset 0 3px 0 -1px var(--coll-accent)}
+  /* Un vrai contour de 2 px plutôt qu'un filet intérieur : ce dernier passait
+     sous la couverture des fiches illustrées et ne se voyait que sur les fiches
+     sans image — d'où deux aspects pour une même information. */
+  .card.card-coll{border:2px solid var(--coll-bord);box-shadow:var(--shadow)}
+  .card.card-coll:hover{border-color:var(--coll-accent);box-shadow:var(--shadow-lg)}
+  /* Le titre suit le contour : la couleur devient la marque de la collection,
+     lisible même quand la vignette est réduite. Sur fond clair, la teinte est
+     assombrie — le même ambre serait trop pâle sur du papier. */
+  .card.card-coll .card-title{color:var(--coll-accent)}
+  body.theme-light .card.card-coll .card-title{color:var(--coll-texte-clair)}
+  body.theme-light .auteurs-groupe{color:var(--coll-texte-clair);border-bottom-color:var(--coll-texte-clair)}
   /* Intertitre du classement par collection : il traverse la grille entière,
      et son filet reprend la couleur de la collection qu'il annonce. */
   .auteurs-groupe{grid-column:1/-1;margin:8px 0 -2px;padding-bottom:7px;font-size:16px;
@@ -3391,6 +3400,20 @@ async function saveEntityColl(){
   await dbPut('meta',{ key:'entity-collection', value:_entityColl||{} });
 }
 function collOf(id){ return (_entityColl && _entityColl[id]) || 'bd'; }
+
+// ── La teinte d'une collection, telle qu'une carte la porte ───────────────
+// Trois variables issues d'une même couleur : la teinte pleine (titre, survol),
+// une version adoucie pour le contour, et une version assombrie pour le thème
+// clair, où l'ambre de la BD serait illisible sur fond blanc.
+function _assombrir(hex, part){
+  const n = parseInt(String(hex).replace('#',''), 16);
+  const c = i => Math.round(((n >> i) & 255) * (1 - part)).toString(16).padStart(2,'0');
+  return '#' + c(16) + c(8) + c(0);
+}
+function _teinteCollection(m){
+  if(!m || !m.accent) return '';
+  return `--coll-accent:${m.accent};--coll-bord:${m.accent}99;--coll-texte-clair:${_assombrir(m.accent,.42)}`;
+}
 
 // ── Groupes et formations ─────────────────────────────────────────────────
 // Un groupe est une fiche d'artiste comme une autre : il a un nom, une
@@ -9081,7 +9104,7 @@ function cardItemHTML(i, compact=false){
   // Même repère que sur les fiches d'artiste : en vue agrégée, la vignette
   // porte la couleur de sa collection. L'étiquette nommée reste plus bas.
   const _mCollIt = isAllCollection() ? moduleById(i.collectionType||'bd') : null;
-  return `<div class="card${selClass}${_mCollIt?' card-coll':''}" role="button" tabindex="0" aria-label="${escapeHTML(i.titre||T('Sans titre','Untitled'))}" style="position:relative${_mCollIt?`;--coll-accent:${_mCollIt.accent}88`:''}" ${isCoverLocked ? adultClickHandler : clickHandler} oncontextmenu="showCardContextMenu(event,'${i.id}')">
+  return `<div class="card${selClass}${_mCollIt?' card-coll':''}" role="button" tabindex="0" aria-label="${escapeHTML(i.titre||T('Sans titre','Untitled'))}" style="position:relative${_mCollIt?`;${_teinteCollection(_mCollIt)}`:''}" ${isCoverLocked ? adultClickHandler : clickHandler} oncontextmenu="showCardContextMenu(event,'${i.id}')">
     ${locateBtn}
     <div class="card-img${isCoverLocked?' card-img-adult':''}">
       ${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}">`:(isPins?"📌":(archetypeForCategory(i.categorie).id==='disque'?"💿":"📖"))}
@@ -9369,7 +9392,7 @@ function applyAuthorFilters(){
     // fiches collectionnées : l'étoile suffit à signaler celles-ci.
     const _mColl = _isAllAuthors ? moduleById(a.collectionType||'bd') : null;
     const _styleColl = _mColl
-      ? ` card-coll" style="--coll-accent:${_mColl.accent}88`
+      ? ` card-coll" style="${_teinteCollection(_mColl)}`
       : `${a.estCollectionne?'" style="border-color:rgba(226,184,106,.35)':'" style="'}`;
     return `<div class="card author-card${a.estCollectionne?' collected-author':''}${_styleColl}" role="button" tabindex="0" aria-label="${escapeHTML(authorDisplay(a))}"${_mColl?` title="${escapeHTML(_modLabel(_mColl))}"`:''} onclick="renderAuthorDetail('${a.id}')">
       <button class="card-edit-btn" title="${editTitle}" onclick="event.stopPropagation();openAuthorForm('${a.id}')">✏️</button>
@@ -9396,7 +9419,7 @@ function applyAuthorFilters(){
       if(cid !== precedent){
         const m = moduleById(cid);
         const n = list.filter(x=>(x.collectionType||'bd')===cid).length;
-        morceaux.push(`<h3 class="auteurs-groupe" style="--coll-accent:${m.accent}">${m.icon} ${escapeHTML(_modLabel(m))} <span class="muted">${n}</span></h3>`);
+        morceaux.push(`<h3 class="auteurs-groupe" style="${_teinteCollection(m)}">${m.icon} ${escapeHTML(_modLabel(m))} <span class="muted">${n}</span></h3>`);
         precedent = cid;
       }
       morceaux.push(cartes[k]);
