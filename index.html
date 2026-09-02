@@ -498,6 +498,42 @@
   .role-dropdown-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:var(--bg-alt);border:1px solid var(--border-warm);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.5);padding:6px;min-width:180px;display:none}
   .role-dropdown-menu.open{display:block}
   .secondary.active-toggle{background:var(--accent-bg);color:var(--on-accent);border-color:var(--accent)}
+  /* Nature d'une fiche d'artiste : une personne, ou un groupe. Deux choix
+     exclusifs et permanents — un segment plutôt qu'une liste déroulante. */
+  .type-fiche{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;background:var(--bg-panel)}
+  .type-fiche button{background:transparent;color:var(--ink-soft);border:none;border-radius:0;padding:7px 16px;font-size:14px;font-weight:600;
+    display:inline-flex;align-items:center;gap:7px;touch-action:manipulation;-webkit-tap-highlight-color:rgba(226,184,106,.25)}
+  .type-fiche button + button{border-left:1px solid var(--border)}
+  @media(hover:hover){ .type-fiche button:hover{background:var(--surface-tint);color:var(--ink);box-shadow:none} }
+  .type-fiche button[aria-pressed="true"]{background:var(--accent-bg);color:var(--on-accent)}
+  .type-fiche button[aria-pressed="true"]:hover{background:var(--accent-bg);box-shadow:none}
+  /* Membres d'un groupe : nom, instrument, et le rattachement facultatif à une
+     fiche existante. La troisième colonne reste étroite — c'est l'exception. */
+  .membre-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:center;margin-bottom:8px}
+  .membre-row input{margin:0}
+  .membre-row .membre-lien{width:38px;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
+  .membre-row .membre-lien .ico{width:19px;height:19px;color:var(--ink-soft);opacity:.55;transition:opacity .15s,color .15s}
+  .membre-row .membre-lien.lie .ico{color:var(--gold);opacity:1}
+  @media(hover:hover){ .membre-row .membre-lien:hover .ico{opacity:1} }
+  .membre-vide{color:var(--ink-soft);font-size:13px;margin:2px 0 10px}
+  /* Les membres sur la fiche : deux colonnes, nom et instrument, alignées d'une
+     ligne à l'autre pour qu'un line-up se lise comme un générique. */
+  .membres-liste{display:grid;gap:2px}
+  .membre-item{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding:7px 0;border-bottom:1px solid var(--border);font-size:14px}
+  .membre-item:last-child{border-bottom:none}
+  .membre-item .membre-nom-aff{font-weight:600;color:var(--ink)}
+  .membre-item .muted{font-size:13px}
+  @media(max-width:560px){ .membre-item{grid-template-columns:1fr;gap:0} .membre-item .muted{font-size:12px} }
+  /* Sur un téléphone, quatre colonnes ne tiennent pas. Le nom garde la première
+     ligne avec ses deux boutons ; l'instrument passe dessous, sur toute la
+     largeur — on lit « qui », puis « quoi ». */
+  @media(max-width:700px){
+    .membre-row{grid-template-columns:minmax(0,1fr) auto auto;gap:6px;margin-bottom:14px}
+    .membre-row input:nth-child(1){grid-column:1;grid-row:1}
+    .membre-row .membre-lien{grid-column:2;grid-row:1}
+    .membre-row > button:last-child{grid-column:3;grid-row:1}
+    .membre-row input:nth-child(2){grid-column:1/-1;grid-row:2}
+  }
   .role-check-item{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;cursor:pointer;font-size:14px;user-select:none;color:var(--ink)}
   .role-check-item:hover{background:var(--accent-soft)}
   .role-check-item input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
@@ -1106,15 +1142,27 @@
   /* Toolbar + version */
   #app-version{color:var(--ink-soft)!important;opacity:.4}
   /* ── Collection switcher ── */
-  .collection-switcher{color:var(--gold);cursor:pointer;position:relative;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 6px;border-radius:6px;border:1px solid rgba(226,184,106,.25);transition:background .15s,border-color .15s;user-select:none}
-  .collection-switcher:hover{background:rgba(226,184,106,.08);border-color:rgba(226,184,106,.45)}
+  .collection-switcher{color:var(--gold);cursor:pointer;position:relative;display:inline-flex;align-items:center;gap:4px;
+    padding:4px 10px 4px 8px;border-radius:6px;border:1px solid rgba(226,184,106,.25);
+    background:transparent;font:inherit;font-size:inherit;letter-spacing:inherit;line-height:1.2;
+    touch-action:manipulation;-webkit-tap-highlight-color:rgba(226,184,106,.25);
+    transition:background .15s,border-color .15s;user-select:none}
+  @media(hover:hover){
+    .collection-switcher:hover{background:rgba(226,184,106,.08);border-color:rgba(226,184,106,.45)}
+  }
+  .collection-switcher:hover,.collection-switcher:active{box-shadow:none}
+  .collection-switcher:active{background:rgba(226,184,106,.18);border-color:rgba(226,184,106,.55)}
+  .collection-switcher[disabled]{opacity:1;cursor:default}
   .collection-switcher .caret{font-size:10px;opacity:.6;transition:transform .15s}
   .collection-switcher.open .caret{transform:rotate(180deg)}
   .collection-picker{position:absolute;top:calc(100% + 10px);left:0;z-index:500;background:var(--bg-alt);border:1px solid var(--border-warm);border-radius:10px;box-shadow:var(--shadow-lg);padding:6px;min-width:220px;display:none}
   .collection-picker.open{display:block;animation:pickerIn .15s ease}
   @keyframes pickerIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-  .coll-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .12s;font-size:14px;color:var(--ink)}
-  .coll-option:hover:not(.soon){background:var(--accent-soft)}
+  .coll-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .12s;font-size:14px;color:var(--ink);touch-action:manipulation;-webkit-tap-highlight-color:rgba(226,184,106,.25)}
+  @media(hover:hover){
+    .coll-option:hover:not(.soon){background:var(--accent-soft)}
+  }
+  .coll-option:active:not(.soon){background:var(--accent-soft)}
   .coll-option.active{background:rgba(200,144,74,.12);color:var(--gold)}
   .coll-option.soon{opacity:.4;cursor:default}
   .coll-option .coll-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0}
@@ -1382,9 +1430,9 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
 
 <header>
   <h1>📚
-    <span id="collectionWord" class="collection-switcher" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" aria-label="Changer de collection" onclick="toggleCollectionPicker(event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCollectionPicker(event)}" title="Changer de collection" data-en-title="Switch collection">
+    <button type="button" id="collectionWord" class="collection-switcher" aria-haspopup="menu" aria-expanded="false" aria-label="Changer de collection" onclick="toggleCollectionPicker(event)" title="Changer de collection" data-en-title="Switch collection">
       <span id="collectionLabel">BD</span><span class="caret" aria-hidden="true">▾</span>
-    </span>
+    </button>
   </h1>
   <div id="collectionPicker" class="collection-picker" role="menu" aria-label="Collections"></div>
   <small id="app-version" style="font-size:10px;color:var(--ink-soft);margin-left:8px;opacity:0.5">v2026-05-18</small>
@@ -1502,6 +1550,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     <div class="filters">
       <div class="field"><label data-en="Search">Recherche</label><input type="text" id="authorSearch" placeholder="Nom, pseudonyme..."></div>
       <div class="field"><label data-en="Nationality">Nationalité</label><select id="authorNationality"><option value="" data-en="All">Toutes</option></select></div>
+      <div class="field" id="authorFilterNature" style="display:none"><label data-en="Type">Nature</label><select id="authorNature" onchange="applyAuthorFilters()"><option value="" data-en="All">Tous</option><option value="solo" data-en="👤 Solo artists">👤 Artistes seuls</option><option value="groupe" data-en="👥 Bands">👥 Groupes</option></select></div>
       <div class="field"><label data-en="Role">Rôle</label><select id="authorRole"><option value="" data-en="All">Tous</option></select></div>
       <div class="field"><label data-en="Sort by">Trier par</label><select id="authorSort"><option value="collected_first" data-en="⭐ Collected first">⭐ Collectionnés en premier</option><option value="nom" data-en="Name (A-Z)">Nom (A-Z)</option><option value="count_desc" data-en="Number of works">Nombre d'œuvres</option><option value="birth_asc" data-en="Birth (oldest)">Naissance (plus ancien)</option><option value="birth_desc" data-en="Birth (newest)">Naissance (plus récent)</option></select></div>
       <div class="field" style="display:flex;align-items:flex-end;padding-bottom:6px">
@@ -1570,6 +1619,11 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       <h3 data-en="🔀 Reorganise collections">🔀 Réorganiser les collections</h3>
       <p class="muted" data-en="Detects works whose category actually belongs to another collection (Pin's, Postcards, Playing cards, Vinyl/CD/DVD) and offers to move them, case by case, to their real collection. The list is shown first — nothing is moved without your approval.">Détecte les œuvres dont la catégorie correspond en réalité à une autre collection (Pin's, Cartes postales, Cartes à jouer, Vinyle/CD/DVD) et te propose de les déplacer, au cas par cas, vers leur vraie collection. La liste s'affiche d'abord — rien n'est déplacé sans ta validation.</p>
       <button class="secondary" data-en="🔍 Scan my BD collection" onclick="openMigrationAssistant()" style="margin-top:12px">🔍 Analyser ma collection BD</button>
+    </div>
+    <div class="panel" style="margin-top:24px" id="panneauRepriseGroupes">
+      <h3 data-en="👥 Turn bands into records">👥 Convertir les groupes en fiches</h3>
+      <p class="muted" data-en="Before, a band was three text fields repeated on every album. Now it is an artist record, with its nationality and its members. This reads your albums, proposes one record per band — nationality and musicians included — and attaches the albums to it. Nothing is created without your approval.">Autrefois, un groupe était trois champs de texte redonnés sur chaque album. C'est désormais une fiche d'artiste, avec sa nationalité et ses membres. L'assistant lit vos albums, propose une fiche par groupe — nationalité et musiciens compris — et y rattache les albums. Rien n'est créé sans votre validation.</p>
+      <button class="secondary" data-en="👥 Scan my albums" onclick="ouvrirRepriseGroupes()" style="margin-top:12px">👥 Analyser mes albums</button>
     </div>
     <div class="panel" style="margin-top:24px">
       <h3>🖼️ <span data-en="Ex-libris delivered with albums">Ex-libris livrés avec des albums</span></h3>
@@ -1894,17 +1948,16 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               <input type="text" id="itemDisqueEncarts" placeholder="ex: poster, obi, autocollant, carte postale…" data-en-ph="e.g. poster, obi, sticker, postcard…">
             </div>
             <div><label data-en="Band / line-up">Groupe / Formation</label>
-              <input type="text" id="itemDisqueGroupe" list="dl-groupes" placeholder="ex: Pharoah Sanders Quintet, Pink Floyd…" data-en-ph="e.g. Pharoah Sanders Quintet, Pink Floyd…">
-            </div>
-            <div><label data-en="Band nationality">Nationalité du groupe</label>
-              <input type="text" id="itemDisqueGroupeNat" list="dl-nationalities" placeholder="ex: Américaine" data-en-ph="e.g. American">
+              <!-- Le groupe est une fiche d'artiste : on le choisit, on ne le
+                   ressaisit plus. Sa nationalité et ses musiciens vivent dans sa
+                   fiche, plus sur chaque album. -->
+              <div class="author-pick">
+                <select id="itemDisqueGroupe" onchange="_surChoixGroupeOeuvre(event)"></select>
+                <button type="button" class="author-open ghost" id="itemDisqueGroupeOpen" title="Ouvrir la fiche du groupe" data-en-title="Open the band's record" onclick="ouvrirFicheGroupeDeLOeuvre()"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-person"></use></svg></button>
+              </div>
             </div>
             <div><label data-en="First release / concert date">Parution originale / concert</label>
               <input type="text" id="itemDisqueDateOrigine" placeholder="ex: 1977 ou 19/01/1973" data-en-ph="e.g. 1977 or 19/01/1973">
-            </div>
-            <div></div>
-            <div class="span-2"><label data-en="Musicians (free text, no artist record created)">Musiciens <span class="muted" style="font-size:11px;text-transform:none;letter-spacing:0">(texte libre — ne crée aucune fiche artiste)</span></label>
-              <textarea id="itemDisqueMusiciens" rows="2" placeholder="ex: Donald Byrd (trompette), Herbie Hancock (piano), Butch Warren (contrebasse)…" data-en-ph="e.g. Donald Byrd (trumpet), Herbie Hancock (piano)…"></textarea>
             </div>
             <div class="span-2" style="align-self:end;padding-bottom:6px">
               <div class="checkbox-row">
@@ -1916,6 +1969,14 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <p class="muted" style="font-size:11px;margin:8px 0 0" data-en="Label, year and barcode are in the section below; artists and performers in “Contributors”.">Le label, l'année et le code-barres sont dans la section suivante ; les artistes et interprètes dans « Artistes et contributeurs ».</p>
         </div>
         <datalist id="dl-groupes"></datalist>
+        <datalist id="dl-membres"></datalist>
+        <datalist id="dl-instruments">
+          <option>Trompette</option><option>Saxophone ténor</option><option>Saxophone alto</option><option>Piano</option>
+          <option>Contrebasse</option><option>Basse</option><option>Batterie</option><option>Guitare</option>
+          <option>Guitare basse</option><option>Chant</option><option>Orgue</option><option>Vibraphone</option>
+          <option>Percussions</option><option>Violon</option><option>Violoncelle</option><option>Flûte</option>
+          <option>Clarinette</option><option>Trombone</option><option>Harmonica</option><option>Synthétiseur</option>
+        </datalist>
         <datalist id="dl-genres-disque">
           <option>Rock</option><option>Rock progressif</option><option>Pop</option><option>Jazz</option>
           <option>Blues</option><option>Classique</option><option>Électronique</option><option>Chanson française</option>
@@ -2242,6 +2303,13 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <input type="hidden" id="authorId">
         <div class="form-section">
           <h3 id="authorFormIdentityTitle" data-en="Identity">Identité</h3>
+          <div id="authorFieldType" style="margin-bottom:16px;display:none">
+            <label data-en="Type of record">Nature de la fiche</label>
+            <div class="type-fiche" role="group" aria-label="Nature de la fiche">
+              <button type="button" id="authorTypeSolo" aria-pressed="true" onclick="setAuthorTypeGroupe(false)">👤 <span data-en="Solo artist">Artiste seul</span></button>
+              <button type="button" id="authorTypeGroupe" aria-pressed="false" onclick="setAuthorTypeGroupe(true)">👥 <span data-en="Band / line-up">Groupe</span></button>
+            </div>
+          </div>
           <div class="form-grid">
             <div id="authorFieldNom"><label id="authorLabelNom" data-en="Last name *">Nom *</label><input type="text" id="authorLastName" required></div>
             <div id="authorFieldPrenom"><label data-en="First name">Prénom</label><input type="text" id="authorFirstName"></div>
@@ -2251,6 +2319,12 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div><label id="authorLabelDeath" data-en="Date of death">Date de décès</label><input type="date" id="authorDeath"></div>
             <div class="span-2"><label data-en="Website / Link">Site web / Lien</label><input type="url" id="authorWebsite" placeholder="https://..."></div>
           </div>
+        </div>
+        <div class="form-section" id="authorFieldMembres" style="display:none">
+          <h3 data-en="Members">Membres</h3>
+          <p class="muted" style="margin:-6px 0 12px;font-size:13px" data-en="One line per musician. A member only gets their own artist record if you attach one — otherwise the name stays plain text.">Une ligne par musicien. Un membre n'a sa propre fiche d'artiste que si vous l'y rattachez — sinon son nom reste du texte.</p>
+          <div id="authorMembresList"></div>
+          <button type="button" class="secondary" onclick="ajouterMembre()" data-en="+ Add a member">＋ Ajouter un membre</button>
         </div>
         <div class="form-section">
           <h3 id="authorFormPhotoTitle">Photo / Portrait</h3>
@@ -2399,6 +2473,21 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     <div class="modal-footer">
       <button class="secondary" onclick="closeModal('migrationModal')" data-en="Close">Fermer</button>
       <button id="migrationApplyBtn" data-en="Move selection" onclick="applyMigration()">Déplacer la sélection</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reprise des groupes saisis en texte libre avant qu'ils n'aient leur fiche -->
+<div class="modal-backdrop" id="groupesModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <h2 data-en="👥 Turn bands into records">👥 Convertir les groupes en fiches</h2>
+      <button class="ghost" onclick="closeModal('groupesModal')">✕</button>
+    </div>
+    <div class="modal-body" id="groupesBody"></div>
+    <div class="modal-footer">
+      <button class="secondary" onclick="closeModal('groupesModal')" data-en="Close">Fermer</button>
+      <button id="groupesApplyBtn" data-en="Create the selection" onclick="appliquerRepriseGroupes()">Créer la sélection</button>
     </div>
   </div>
 </div>
@@ -3044,6 +3133,9 @@ const MODULES = [
     libraryUnit:{ fr:['disque','disques'], en:['disc','discs'] },
     defaultCategories:['CD','Vinyle','DVD'],
     roles:ROLES_DISQUE,
+    // Une fiche d'artiste peut y décrire un groupe plutôt qu'une personne.
+    // Les autres collections ignorent tout de cette notion.
+    groupes:true,
     // Tableau de bord : accroche propre à la collection, et compteurs de BD retirés
     // (l'édition originale et la dédicace d'auteur n'ont pas d'équivalent ici).
     dashboard:{
@@ -3059,10 +3151,12 @@ const MODULES = [
 // COLLECTION_TYPES conservé (dérivé) pour compatibilité avec le picker existant.
 const COLLECTION_TYPES = MODULES.map(m=>({ id:m.id, label:m.label, labelEn:m.labelEn, icon:m.icon, desc:m.desc, descEn:m.descEn, soon: m.status!=='ready' }));
 
-// Pseudo-collection « Ma Collection » : agrège tous les items de toutes les collections.
+// Pseudo-collection « Mes Collections » : agrège tous les items de toutes les
+// collections. Son ancien nom, « Ma Collection », était aussi celui de
+// l'application : on ne savait plus si l'on parlait du tout ou d'une partie.
 const ALL_COLL = 'all';
 const ALL_MODULE = {
-  id:ALL_COLL, label:'Ma Collection', labelEn:'My Collection', icon:'⭐', desc:'Mes auteurs & artistes favoris, toutes collections', descEn:'My favourite authors & artists, all collections',
+  id:ALL_COLL, label:'Mes Collections', labelEn:'My Collections', icon:'⭐', desc:'Mes auteurs & artistes favoris, toutes collections', descEn:'My favourite authors & artists, all collections',
   accent:'#caa45a', core:false, status:'ready',
   terms:{ item:'objet', itemPlural:'objets', creator:'auteur', creatorsTab:'Auteurs',
           addItem:'Ajouter', addCreator:'Ajouter un auteur' },
@@ -3162,7 +3256,7 @@ async function toggleModule(id){
 function buildCollectionPicker(){
   const picker = document.getElementById('collectionPicker');
   if(!picker) return;
-  const entries = [{ id:ALL_COLL, label:'Ma Collection', labelEn:'My Collection', icon:'⭐', desc:'Mes auteurs & artistes favoris', descEn:'My favourite authors & artists', soon:false }, ...COLLECTION_TYPES];
+  const entries = [{ ...ALL_MODULE, soon:false }, ...COLLECTION_TYPES];
   picker.innerHTML = entries.map(c=>`
     <div class="coll-option${c.id===_activeCollection?' active':''}${c.soon?' soon':''}"
          role="menuitem" ${c.soon?'aria-disabled="true"':'tabindex="0"'}
@@ -3255,6 +3349,73 @@ async function saveEntityColl(){
   await dbPut('meta',{ key:'entity-collection', value:_entityColl||{} });
 }
 function collOf(id){ return (_entityColl && _entityColl[id]) || 'bd'; }
+
+// ── Groupes et formations ─────────────────────────────────────────────────
+// Un groupe est une fiche d'artiste comme une autre : il a un nom, une
+// nationalité, une photo, une biographie. Ce qui le distingue — le fait d'en
+// être un, et la liste de ses membres — n'a pas de colonne dans la table
+// « auteurs ». Plutôt que d'imposer une migration SQL, on le range dans les
+// préférences du profil, comme la carte entity-collection : une entrée par
+// fiche de groupe, absente pour un artiste seul.
+//   _groupes[auteurId] = { membres:[{nom, instrument, auteurId}] }
+// « auteurId » n'est renseigné que si le membre possède déjà sa propre fiche ;
+// sinon le membre reste du texte, et aucune fiche n'est créée en douce.
+let _groupes = {};
+async function loadGroupes(){
+  try { const r = await dbGet('meta','groupes'); _groupes = (r && r.value) || {}; }
+  catch(e){ _groupes = {}; }
+  return _groupes;
+}
+async function saveGroupes(){ await dbPut('meta',{ key:'groupes', value:_groupes||{} }); }
+function estGroupe(a){
+  const id = (a && a.id) || a;
+  return !!(id && _groupes && _groupes[id]);
+}
+function membresDuGroupe(a){
+  const id = (a && a.id) || a;
+  const g = id && _groupes ? _groupes[id] : null;
+  return (g && Array.isArray(g.membres)) ? g.membres : [];
+}
+function definirGroupe(id, membres){
+  if(!_groupes) _groupes = {};
+  _groupes[id] = { membres: (membres||[]).filter(m=>m && (m.nom||'').trim()) };
+}
+function retirerGroupe(id){ if(_groupes) delete _groupes[id]; }
+// La collection active gère-t-elle les groupes ? (la BD n'en a pas l'usage)
+function collectionAvecGroupes(){
+  if(isAllCollection()) return MODULES.some(m=>m.groupes);
+  return !!moduleById(_activeCollection)?.groupes;
+}
+// Les fiches de groupe visibles ici, triées par nom.
+function groupesDeLaCollection(){
+  return cache.authors.filter(a=>estGroupe(a) && authorInActiveCollection(a))
+    .sort((a,b)=>(a.nom||'').localeCompare(b.nom||'','fr'));
+}
+// Le groupe d'une œuvre : sa fiche si elle existe, sinon rien.
+function groupeDeItem(it){
+  if(!it) return null;
+  if(it.disqueGroupeId){ const a = authorById(it.disqueGroupeId); if(a) return a; }
+  const nom = (it.disqueGroupe||'').trim().toLowerCase();
+  if(!nom) return null;
+  return cache.authors.find(a=>estGroupe(a) && (a.nom||'').trim().toLowerCase()===nom) || null;
+}
+// Nom affichable du groupe, fiche ou ancien texte libre.
+// Les membres du groupe d'une œuvre, à plat, pour la recherche plein texte.
+// Mémorisé : applyFilters repasse sur toute la collection à chaque frappe.
+let _memoMembresRecherche = new Map();
+function oublierMembresRecherche(){ _memoMembresRecherche = new Map(); }
+function _membresPourRecherche(it){
+  const g = groupeDeItem(it);
+  if(!g) return '';
+  if(_memoMembresRecherche.has(g.id)) return _memoMembresRecherche.get(g.id);
+  const txt = membresDuGroupe(g).map(m=>`${m.nom} ${m.instrument||''}`).join(' ');
+  _memoMembresRecherche.set(g.id, txt);
+  return txt;
+}
+function nomGroupeDeItem(it){
+  const g = groupeDeItem(it);
+  return g ? (g.nom||'') : ((it && it.disqueGroupe) || '');
+}
 function setCollOf(id, slug){ if(!_entityColl) _entityColl = {}; _entityColl[id] = slug || 'bd'; }
 // Élément visible dans la collection courante ? La vue agrégée « Ma Collection » montre tout.
 function inActiveColl(id){ return isAllCollection() || collOf(id) === _activeCollection; }
@@ -3283,7 +3444,7 @@ function switchCollection(id){
   document.body.className = document.body.className.replace(/\bcoll-[\w-]+/g,'').replace(/\s+/g,' ').trim();
   document.body.classList.add('coll-'+id);
   // Adapt page title
-  document.title = `${T('Ma Collection','My Collection')} ${_modLabel(ct)}`;
+  document.title = _titreOnglet(ct);
   // Adapt nav + view labels
   _adaptCollectionLabels();
   // Le mobilier et les souhaits diffèrent d'une collection à l'autre : il faut les relire.
@@ -3881,11 +4042,19 @@ function _adaptCollectionLabels(){
 }
 
 // Apply collection on init
+// Titre de l'onglet du navigateur : « Ma Collection » est le nom de
+// l'application, « Mes Collections » celui de la vue agrégée — les accoler
+// donnait « Ma Collection Mes Collections ». Sur la vue agrégée, le nom de
+// l'application suffit.
+function _titreOnglet(ct){
+  const app = T('Ma Collection','My Collection');
+  return (ct && ct.id === ALL_COLL) ? app : `${app} ${_modLabel(ct)}`;
+}
 function initCollection(){
   const ct = _collInfo(_activeCollection);
   document.getElementById('collectionLabel').textContent = _modLabel(ct);
   document.body.classList.add('coll-'+_activeCollection);
-  document.title = `${T('Ma Collection','My Collection')} ${_modLabel(ct)}`;
+  document.title = _titreOnglet(ct);
   _adaptCollectionLabels();
 }
 
@@ -4064,7 +4233,7 @@ const SB = (() => {
     // Disques (CD / Vinyle / DVD) — même sac JSONB, aucune colonne SQL à créer
     'disqueSupport','disqueNb','disqueDuree','disqueGenre','disquePressage',
     'disquePays','disqueRef','disqueEtatPochette','disqueCompilation',
-    'disqueGroupe','disqueGroupeNat','disqueMusiciens','disqueDateOrigine',
+    'disqueGroupe','disqueGroupeId','disqueGroupeNat','disqueMusiciens','disqueDateOrigine',
     'disqueBoitier','disqueLivret','disqueLivretPages','disqueEncarts'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
     'pinsReference','pinsEditionLimitee'];
@@ -4958,7 +5127,7 @@ function dbClear(store){
 let cache = { items:[], authors:[], wishlist:[] };
 
 async function reloadCache(){
-  oublierGenresArtistes();
+  oublierGenresArtistes(); oublierMembresRecherche();
   cache.items = await dbAll("items");
   // Migrate legacy items: ensure all have a collectionType
   cache.items.forEach(it=>{ if(!it.collectionType) it.collectionType='bd'; });
@@ -5234,10 +5403,10 @@ function renderCategoriesManager(){
   const ct = _collInfo(_activeCollection);
   // Adapter le titre et la description selon la collection active
   const h2 = document.querySelector('#view-categories .toolbar h2');
-  if(h2) h2.textContent = isAll ? T("🏷️ Catégories — Ma Collection","🏷️ Categories — My Collection") : (isPins ? T("📌 Catégories Pin's","📌 Pin categories") : T("🏷️ Catégories","🏷️ Categories"));
+  if(h2) h2.textContent = isAll ? T("🏷️ Catégories — Mes Collections","🏷️ Categories — My Collections") : (isPins ? T("📌 Catégories Pin's","📌 Pin categories") : T("🏷️ Catégories","🏷️ Categories"));
   const desc = document.querySelector('#view-categories > p.muted');
   if(desc) desc.textContent = isAll
-    ? T("Ma Collection accepte les catégories de toutes les collections (lecture seule). Pour ajouter ou retirer une catégorie, sélectionnez la collection concernée dans le menu en haut à gauche.","My Collection accepts categories from every collection (read-only). To add or remove a category, select the relevant collection in the top-left menu.")
+    ? T("Mes Collections accepte les catégories de toutes les collections (lecture seule). Pour ajouter ou retirer une catégorie, sélectionnez la collection concernée dans le menu en haut à gauche.","My Collections accepts categories from every collection (read-only). To add or remove a category, select the relevant collection in the top-left menu.")
     : (isPins
       ? T("Définissez vos propres catégories pour vos pin's. Réordonnez-les par glisser-déposer ou supprimez-les.","Define your own categories for your pins. Reorder them by drag and drop or delete them.")
       : T("Personnalisez la liste des catégories disponibles dans votre catalogue. Activez des catégories depuis la liste de référence, réordonnez-les par glisser-déposer, ou créez vos propres catégories.","Customise the list of categories available in your catalogue. Activate categories from the reference list, reorder them by drag and drop, or create your own categories."));
@@ -5660,6 +5829,10 @@ function openItemForm(id=null, opts={}){
   catSel.innerHTML = _buildItemCategoryOptions();
   if(opts.categorie) catSel.value = opts.categorie;
   adaptFormToCategory(catSel.value);
+  // La liste des groupes est reconstruite à l'ouverture ; le remplissage d'une
+  // fiche existante la refera avec sa sélection. opts.groupeId : on arrive
+  // depuis la fiche d'un groupe, l'album lui appartient d'avance.
+  _majListeGroupesOeuvre(opts.groupeId || "", "");
   document.getElementById("itemTypeDocument").innerHTML = _buildTypeDocumentOptions(opts.typeDocument||"");
   adaptEphemereType(opts.typeDocument||"");
   // Suivi personnel : masquer les actions de prêt tant qu'aucun emprunteur n'est saisi
@@ -5838,9 +6011,10 @@ function openItemForm(id=null, opts={}){
     _setD("itemDisquePays", it.disquePays);
     _setD("itemDisqueRef", it.disqueRef);
     _setD("itemDisqueEtatPochette", it.disqueEtatPochette);
-    _setD("itemDisqueGroupe", it.disqueGroupe);
-    _setD("itemDisqueGroupeNat", it.disqueGroupeNat);
-    _setD("itemDisqueMusiciens", it.disqueMusiciens);
+    // La liste des groupes se reconstruit à chaque ouverture : une fiche créée
+    // entre-temps doit y figurer. On lui passe la valeur à présélectionner,
+    // sinon un album rattaché à un groupe rouvrirait sur « aucun ».
+    _majListeGroupesOeuvre(groupeDeItem(it)?.id || "", it.disqueGroupe);
     _setD("itemDisqueDateOrigine", it.disqueDateOrigine);
     _setD("itemDisqueBoitier", _boitierNormalise(it.disqueBoitier));
     _setD("itemDisqueEncarts", it.disqueEncarts);
@@ -6249,7 +6423,7 @@ async function saveItem(e){
     images: [...currentItemImages],
     imageNames: [...currentItemImageNames],
     exlibrisImageIdx: (_exlibrisImgIdx>=0 && _exlibrisImgIdx < currentItemImages.length) ? _exlibrisImgIdx : null,
-    collectionType: existing?.collectionType || (isAllCollection() ? 'bd' : _activeCollection),
+    collectionType: existing?.collectionType || _collPourNouvelleFiche(document.getElementById("itemCategory").value),
     // Disque (CD / Vinyle / DVD)
     disqueSupport:      document.getElementById("itemDisqueSupport")?.value||"",
     disqueNb:           parseInt(document.getElementById("itemDisqueNb")?.value)||null,
@@ -6260,9 +6434,17 @@ async function saveItem(e){
     disqueRef:          document.getElementById("itemDisqueRef")?.value.trim()||"",
     disqueEtatPochette: document.getElementById("itemDisqueEtatPochette")?.value||"",
     disqueCompilation:  !!document.getElementById("itemDisqueCompilation")?.checked,
-    disqueGroupe:       document.getElementById("itemDisqueGroupe")?.value.trim()||"",
-    disqueGroupeNat:    document.getElementById("itemDisqueGroupeNat")?.value.trim()||"",
-    disqueMusiciens:    document.getElementById("itemDisqueMusiciens")?.value.trim()||"",
+    // Le nom reste écrit sur l'œuvre à côté de l'identifiant : un export CSV, une
+    // sauvegarde ou une fiche dont le groupe a été supprimé restent lisibles.
+    // Le nom reste écrit sur l'œuvre à côté de l'identifiant : un export CSV, une
+    // sauvegarde, ou une fiche dont le groupe a été supprimé restent lisibles.
+    disqueGroupeId:     _groupeSaisiDansLOeuvre(existing).id,
+    disqueGroupe:       _groupeSaisiDansLOeuvre(existing).nom,
+    // Nationalité et musiciens ont quitté le formulaire pour la fiche du groupe.
+    // On ne les efface pas pour autant : l'assistant de reprise en a besoin, et
+    // un album non encore repris continue de les afficher.
+    disqueGroupeNat:    existing?.disqueGroupeNat || "",
+    disqueMusiciens:    existing?.disqueMusiciens || "",
     disqueDateOrigine:  document.getElementById("itemDisqueDateOrigine")?.value.trim()||"",
     disqueBoitier:      document.getElementById("itemDisqueBoitier")?.value||"",
     disqueLivret:       !!document.getElementById("itemDisqueLivret")?.checked,
@@ -6350,6 +6532,158 @@ let currentAuthorImage = null;
 let currentWishImage = null;
 let authorFormCallback = null;
 
+// ── Le groupe d'une œuvre ────────────────────────────────────────────────
+// La liste ne propose que des fiches ; un album saisi avant la bascule garde
+// pourtant son nom en texte libre, qu'on lui présente tel quel plutôt que de
+// l'effacer au premier enregistrement.
+const _GROUPE_TEXTE = '__texte__', _GROUPE_NOUVEAU = '__nouveau__';
+function _majListeGroupesOeuvre(selection, nomLegacy){
+  const sel = document.getElementById('itemDisqueGroupe');
+  if(!sel) return;
+  const groupes = groupesDeLaCollection();
+  const orphelin = (nomLegacy||'').trim();
+  sel.innerHTML =
+    `<option value="">${T('— Aucun —','— None —')}</option>` +
+    (orphelin ? `<option value="${_GROUPE_TEXTE}">${escapeHTML(orphelin)} — ${T('texte libre, sans fiche','free text, no record')}</option>` : '') +
+    groupes.map(g=>`<option value="${g.id}">${escapeHTML(g.nom||'')}</option>`).join('') +
+    `<option value="${_GROUPE_NOUVEAU}">${T('＋ Créer un groupe…','＋ Create a band…')}</option>`;
+  sel.value = selection || (orphelin ? _GROUPE_TEXTE : '');
+  _majBoutonFicheGroupe();
+}
+function _groupeSaisiDansLOeuvre(existing){
+  const v = document.getElementById('itemDisqueGroupe')?.value || '';
+  if(v === _GROUPE_TEXTE) return { id:'', nom: existing?.disqueGroupe || '' };
+  if(!v || v === _GROUPE_NOUVEAU) return { id:'', nom:'' };
+  return { id:v, nom: authorById(v)?.nom || '' };
+}
+function _majBoutonFicheGroupe(){
+  const sel = document.getElementById('itemDisqueGroupe');
+  const btn = document.getElementById('itemDisqueGroupeOpen');
+  if(!sel || !btn) return;
+  const reel = sel.value && sel.value !== _GROUPE_TEXTE && sel.value !== _GROUPE_NOUVEAU;
+  btn.disabled = !reel;
+  btn.style.opacity = reel ? '' : '.35';
+}
+function ouvrirFicheGroupeDeLOeuvre(){
+  const v = document.getElementById('itemDisqueGroupe')?.value || '';
+  if(v && v !== _GROUPE_TEXTE && v !== _GROUPE_NOUVEAU) openAuthorForm(v, ()=>_majListeGroupesOeuvre(v));
+}
+// « ＋ Créer un groupe… » ouvre le formulaire d'artiste en mode groupe, et
+// revient sur l'œuvre avec la fiche fraîchement créée déjà sélectionnée.
+function _surChoixGroupeOeuvre(e){
+  if(e.target.value !== _GROUPE_NOUVEAU){ _majBoutonFicheGroupe(); return; }
+  e.target.value = '';
+  openAuthorForm(null, (nouvelId)=>{ _majListeGroupesOeuvre(nouvelId); });
+  setAuthorTypeGroupe(true);
+  if(!document.querySelector('#authorMembresList .membre-row')) ajouterMembre();
+}
+
+// ── Formulaire d'artiste : nature de la fiche et membres ─────────────────
+let _authorEstGroupe = false;
+function setAuthorTypeGroupe(estGroupe){
+  _authorEstGroupe = !!estGroupe;
+  const solo = document.getElementById('authorTypeSolo');
+  const grp  = document.getElementById('authorTypeGroupe');
+  if(solo) solo.setAttribute('aria-pressed', _authorEstGroupe ? 'false' : 'true');
+  if(grp)  grp.setAttribute('aria-pressed', _authorEstGroupe ? 'true'  : 'false');
+  _majFormulaireArtisteSelonType();
+}
+// Un groupe n'a ni prénom, ni pseudonyme, ni date de naissance : ces champs
+// disparaissent, et les libellés restants parlent du groupe.
+function _majFormulaireArtisteSelonType(){
+  const g = _authorEstGroupe;
+  const montrer = (id, oui)=>{ const el=document.getElementById(id); if(el) el.style.display = oui ? '' : 'none'; };
+  montrer('authorFieldMembres', g);
+  // « Modifier l'auteur » sur la fiche d'un quintet sonne faux.
+  const titre = document.getElementById('authorModalTitle');
+  if(titre && g){
+    const modif = !!document.getElementById('authorId')?.value;
+    titre.textContent = modif ? T('Modifier le groupe','Edit band') : T('Ajouter un groupe','Add a band');
+  }
+  if(g){
+    ['authorFieldPrenom','authorFieldPseudo'].forEach(id=>montrer(id,false));
+    const nais = document.getElementById('authorBirth')?.closest('div');
+    const dec  = document.getElementById('authorDeath')?.closest('div');
+    if(nais) nais.style.display='none';
+    if(dec)  dec.style.display='none';
+  }
+  const set = (id, txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; };
+  if(g){
+    set('authorLabelNom', T('Nom du groupe *','Band name *'));
+    set('authorLabelNat', T('Nationalité du groupe','Band nationality'));
+    const bio = document.getElementById('authorBio');
+    if(bio) bio.placeholder = T('Formation, line-up successifs, albums majeurs…','Formation, successive line-ups, major albums…');
+  }
+}
+function _ligneMembre(m){
+  const li = document.createElement('div');
+  li.className = 'membre-row';
+  const lie = !!(m && m.auteurId);
+  li.dataset.auteurId = lie ? m.auteurId : '';
+  li.innerHTML = `
+    <input type="text" class="membre-nom" value="${escapeHTML((m&&m.nom)||'')}" placeholder="${T('Nom du musicien','Musician name')}" list="dl-membres">
+    <input type="text" class="membre-instrument" value="${escapeHTML((m&&m.instrument)||'')}" placeholder="${T('Instrument','Instrument')}" list="dl-instruments">
+    <button type="button" class="secondary membre-lien${lie?' lie':''}" onclick="basculerLienMembre(this)"
+      title="${lie?T('Rattaché à une fiche d\'artiste — cliquer pour détacher','Attached to an artist record — click to detach'):T('Rattacher à une fiche d\'artiste existante','Attach to an existing artist record')}">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-person"></use></svg>
+    </button>
+    <button type="button" class="ghost" title="${T('Retirer','Remove')}" onclick="this.parentNode.remove()">✕</button>`;
+  return li;
+}
+function ajouterMembre(m){
+  const list = document.getElementById('authorMembresList');
+  if(!list) return;
+  list.appendChild(_ligneMembre(m));
+}
+// Rattacher un membre : on cherche une fiche portant ce nom. Rien n'est créé
+// automatiquement — si la fiche n'existe pas, on propose de l'ouvrir.
+function basculerLienMembre(btn){
+  const row = btn.closest('.membre-row');
+  if(row.dataset.auteurId){
+    row.dataset.auteurId = '';
+    btn.classList.remove('lie');
+    btn.title = T("Rattacher à une fiche d'artiste existante","Attach to an existing artist record");
+    toast(T('Membre détaché de sa fiche','Member detached from its record'));
+    return;
+  }
+  const nom = (row.querySelector('.membre-nom').value||'').trim();
+  if(!nom){ toast(T("Renseignez d'abord le nom du musicien","Enter the musician's name first"),'error'); return; }
+  const cible = _chercherArtisteParNom(nom);
+  if(!cible){
+    toast(T(`Aucune fiche d'artiste au nom de « ${nom} »`,`No artist record named “${nom}”`),'error');
+    return;
+  }
+  row.dataset.auteurId = cible.id;
+  btn.classList.add('lie');
+  btn.title = T("Rattaché à une fiche d'artiste — cliquer pour détacher","Attached to an artist record — click to detach");
+  toast(T(`Membre rattaché à ${authorDisplay(cible)}`,`Member attached to ${authorDisplay(cible)}`));
+}
+// Recherche d'une fiche par son nom : on réutilise _trouverAuteur, qui sait
+// déjà retrouver « BYRD / Donald » à partir de « Donald Byrd », tolère les
+// pseudonymes et les variantes de prénom. Un groupe n'est pas un membre.
+function _chercherArtisteParNom(nom){
+  const a = _trouverAuteur(nom);
+  return (a && !estGroupe(a)) ? a : null;
+}
+// Suggestions de noms : les fiches d'artistes seuls, plus les membres déjà
+// cités ailleurs — pour qu'un même musicien ne s'écrive pas de deux façons.
+function _majListesMembres(){
+  const dl = document.getElementById('dl-membres');
+  if(!dl) return;
+  const noms = new Set();
+  cache.authors.forEach(a=>{ if(!estGroupe(a)){ const n=authorDisplay(a); if(n) noms.add(n); } });
+  Object.values(_groupes||{}).forEach(g=>(g.membres||[]).forEach(m=>{ if(m.nom) noms.add(m.nom); }));
+  dl.innerHTML = [...noms].sort((a,b)=>a.localeCompare(b,'fr'))
+    .map(n=>`<option>${escapeHTML(n)}</option>`).join('');
+}
+function _lireMembresDuFormulaire(){
+  return [...document.querySelectorAll('#authorMembresList .membre-row')].map(r=>({
+    nom: (r.querySelector('.membre-nom').value||'').trim(),
+    instrument: (r.querySelector('.membre-instrument').value||'').trim(),
+    auteurId: r.dataset.auteurId || ''
+  })).filter(m=>m.nom);
+}
+
 function openAuthorForm(id=null, callback=null){
   if(GUEST) return;                 // page invité : aucune écriture possible
   authorFormCallback = callback;
@@ -6358,12 +6692,19 @@ function openAuthorForm(id=null, callback=null){
   document.getElementById("authorId").value = "";
   document.getElementById("authorImagePreview").innerHTML = "";
   document.getElementById("authorDeleteBtn").style.display = "none";
+  document.getElementById("authorMembresList").innerHTML = "";
+  // La bascule n'apparaît que là où un groupe a un sens (collections musicales).
+  const champType = document.getElementById('authorFieldType');
+  if(champType) champType.style.display = collectionAvecGroupes() ? '' : 'none';
+  setAuthorTypeGroupe(false);
   adaptAuthorFormToCollection();
-  document.getElementById("authorModalTitle").textContent = _activeCollection === 'pins' ? T("Ajouter un éditeur","Add a publisher") : T("Ajouter un auteur","Add an author");
+  document.getElementById("authorModalTitle").textContent = libelleAjoutCreateur().replace(/^\+\s*/,'');
   if(id){
     const a = cache.authors.find(x=>x.id===id);
     if(!a) return;
-    document.getElementById("authorModalTitle").textContent = _activeCollection === 'pins' ? T("Modifier l'éditeur","Edit publisher") : T("Modifier l'auteur","Edit author");
+    const _mot = libelleCreateur();
+    document.getElementById("authorModalTitle").textContent =
+      T(`Modifier ${/^[aeiouéèê]/i.test(_mot)?"l'":'le '}${_mot}`, `Edit ${_mot}`);
     document.getElementById("authorDeleteBtn").style.display = "inline-block";
     document.getElementById("authorId").value = a.id;
     document.getElementById("authorLastName").value = a.nom||"";
@@ -6377,9 +6718,15 @@ function openAuthorForm(id=null, callback=null){
     document.getElementById("authorRoles").value = (a.roles||[]).join(", ");
     document.getElementById("authorNotes").value = a.notes||"";
     document.getElementById("authorEstCollectionne").checked = !!a.estCollectionne;
+    if(estGroupe(a)){
+      membresDuGroupe(a).forEach(m=>ajouterMembre(m));
+      setAuthorTypeGroupe(true);   // après authorId, pour que le titre soit juste
+    }
     currentAuthorImage = a.photoUrl || null;
     renderImagePreview("author");
   }
+  if(_authorEstGroupe && !document.querySelector('#authorMembresList .membre-row')) ajouterMembre();
+  _majListesMembres();
   openModal("authorModal");
 }
 
@@ -6407,8 +6754,16 @@ async function saveAuthor(e){
     updatedAt: new Date().toISOString()
   };
   await dbPut("authors", obj);
+  // La nature de la fiche et ses membres vivent hors de la table « auteurs ».
+  if(collectionAvecGroupes() || estGroupe(id)){
+    if(_authorEstGroupe) definirGroupe(id, _lireMembresDuFormulaire());
+    else retirerGroupe(id);
+    try { await saveGroupes(); } catch(err){ console.warn('[Groupes] enregistrement impossible', err); }
+  }
   await reloadCache();
-  toast(existing ? (isPins ? T("Éditeur mis à jour","Publisher updated") : T("Auteur mis à jour","Author updated")) : (isPins ? T("Éditeur ajouté","Publisher added") : T("Auteur ajouté","Author added")));
+  const estUnGroupe = _authorEstGroupe;
+  toast(estUnGroupe ? (existing ? T("Groupe mis à jour","Band updated") : T("Groupe ajouté","Band added"))
+    : existing ? (isPins ? T("Éditeur mis à jour","Publisher updated") : T("Auteur mis à jour","Author updated")) : (isPins ? T("Éditeur ajouté","Publisher added") : T("Auteur ajouté","Author added")));
   closeModal("authorModal");
   if(authorFormCallback){
     const cb = authorFormCallback;
@@ -6435,9 +6790,20 @@ async function deleteAuthor(){
   } else {
     if(!confirm(T("Supprimer cet auteur définitivement ?","Delete this author permanently?"))) return;
   }
+  const etaitGroupe = estGroupe(id);
+  if(etaitGroupe){
+    // Les albums qui le désignaient gardent son nom en clair, mais plus le lien.
+    for(const it of cache.items){
+      if(it.disqueGroupeId === id){ it.disqueGroupeId = ''; await dbPut("items", it); }
+    }
+    retirerGroupe(id);
+    // Un membre rattaché à cette fiche ailleurs n'a plus de cible.
+    Object.values(_groupes||{}).forEach(g=>(g.membres||[]).forEach(m=>{ if(m.auteurId===id) m.auteurId=''; }));
+    try { await saveGroupes(); } catch(err){ console.warn('[Groupes] nettoyage impossible', err); }
+  }
   await dbDelete("authors", id);
   await reloadCache();
-  toast(T("Auteur supprimé","Author deleted"));
+  toast(etaitGroupe ? T("Groupe supprimé","Band deleted") : T("Auteur supprimé","Author deleted"));
   closeModal("authorModal");
   refreshCurrentView();
 }
@@ -7063,7 +7429,7 @@ let tableSort = {col: null, dir: 1}; // col: clé de colonne, dir: 1=asc -1=desc
 let _lastItemList = [];
 
 function renderCollection(){
-  oublierGenresArtistes();
+  oublierGenresArtistes(); oublierMembresRecherche();
   // Masquer / adapter les filtres selon la collection active
   const isPins = _activeCollection === 'pins';
   // Filtres BD-seulement
@@ -7123,12 +7489,10 @@ function renderCollection(){
   document.getElementById("dl-series").innerHTML = series.map(s=>`<option>${escapeHTML(s)}</option>`).join("");
   const univers = [...new Set(cache.items.map(i=>i.univers).filter(Boolean))].sort();
   document.getElementById("dl-univers").innerHTML = univers.map(u=>`<option>${escapeHTML(u)}</option>`).join("");
-  // Groupes déjà saisis : proposés à la frappe, pour éviter deux orthographes du
-  // même ensemble (« Pharoah Sanders Quintet » / « P. Sanders quintet »).
-  const groupes = [...new Set(cache.items.map(i=>i.disqueGroupe).filter(Boolean))]
-    .sort((a,b)=>a.localeCompare(b,'fr'));
-  const dlg = document.getElementById("dl-groupes");
-  if(dlg) dlg.innerHTML = groupes.map(g=>`<option>${escapeHTML(g)}</option>`).join("");
+  // Les groupes ne se saisissent plus à la frappe sur l'œuvre : ils se
+  // choisissent parmi les fiches. La liste de suggestion n'a plus d'emploi,
+  // mais les noms des membres, eux, se proposent dans la fiche d'un groupe.
+  _majListesMembres();
   _refreshLocationDatalist();
 
   applyFilters();
@@ -7569,7 +7933,7 @@ function nationaliteFlag(nat){
 function interpreteAffiche(it){
   const lies = (it.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean);
   if(lies.length) return lies.slice(0,2).join(", ");
-  return (it.disqueGroupe||"").trim();
+  return nomGroupeDeItem(it).trim();
 }
 
 // Date à mettre en avant sur la vignette : la parution ORIGINALE (ou la date du
@@ -7595,10 +7959,14 @@ function itemNationalites(it){
   const interpretes = credits.filter(a=>roles(a).some(r=>_ROLES_INTERPRETE.test(r)));
   const retenus = interpretes.length ? interpretes : credits.slice(0,1);
   const nats = [...new Set(retenus.map(a=>authorById(a.auteurId)?.nationalite).filter(Boolean))];
-  // Aucun artiste rattaché — ou aucun d'eux n'a de nationalité renseignée : on prend
-  // celle du groupe saisi en texte libre. Sans cela, un album de groupe n'aurait
-  // jamais de drapeau, faute de fiche artiste à interroger.
-  if(!nats.length && it.disqueGroupeNat) return [it.disqueGroupeNat];
+  // Aucun artiste rattaché — ou aucun d'eux n'a de nationalité renseignée : on
+  // interroge la fiche du groupe. Sans cela, un album de groupe n'aurait jamais
+  // de drapeau. À défaut de fiche, l'ancien champ libre fait encore l'affaire.
+  if(!nats.length){
+    const g = groupeDeItem(it);
+    if(g && g.nationalite) return [g.nationalite];
+    if(it.disqueGroupeNat) return [it.disqueGroupeNat];
+  }
   return nats;
 }
 function artistFlags(it){
@@ -7765,6 +8133,131 @@ function _migrationCandidates(){
   return out;
 }
 function openMigrationAssistant(){ renderMigration(); openModal('migrationModal'); }
+
+// ── Reprise des groupes saisis en texte libre ────────────────────────────
+// Analyse « Donald Byrd (trompette), Herbie Hancock (piano) » en membres.
+// Les séparateurs varient d'une saisie à l'autre : virgule, point-virgule,
+// retour à la ligne. L'instrument, lui, est presque toujours entre parenthèses.
+function _analyserMusiciens(texte){
+  return String(texte||'')
+    .split(/[;\n]+|,(?![^(]*\))/)
+    .map(m=>m.trim()).filter(Boolean)
+    .map(m=>{
+      const par = m.match(/^(.*?)\s*[（(]\s*([^)）]*)\s*[)）]\s*$/);
+      const nom = (par ? par[1] : m).trim();
+      const instrument = par ? par[2].trim() : '';
+      const fiche = nom ? _chercherArtisteParNom(nom) : null;
+      return { nom, instrument, auteurId: fiche ? fiche.id : '' };
+    })
+    .filter(m=>m.nom);
+}
+// Un groupe par nom distinct. Deux albums qui l'orthographient pareil donnent
+// une seule fiche ; la nationalité et les musiciens les plus complets gagnent.
+function _groupesARepriser(){
+  const parNom = new Map();
+  cache.items.forEach(it=>{
+    if(archetypeForCategory(it.categorie).id !== 'disque') return;
+    const nom = (it.disqueGroupe||'').trim();
+    if(!nom) return;
+    if(groupeDeItem(it)) return;                 // déjà une fiche : rien à faire
+    const cle = nom.toLowerCase();
+    const e = parNom.get(cle) || { nom, nationalite:'', musiciens:'', items:[] };
+    e.items.push(it.id);
+    if(!e.nationalite && it.disqueGroupeNat) e.nationalite = it.disqueGroupeNat.trim();
+    if((it.disqueMusiciens||'').length > e.musiciens.length) e.musiciens = (it.disqueMusiciens||'').trim();
+    parNom.set(cle, e);
+  });
+  return [...parNom.values()]
+    .map(e=>({ ...e, membres:_analyserMusiciens(e.musiciens) }))
+    .sort((a,b)=>b.items.length-a.items.length || a.nom.localeCompare(b.nom,'fr'));
+}
+function ouvrirRepriseGroupes(){ renderRepriseGroupes(); openModal('groupesModal'); }
+function renderRepriseGroupes(){
+  const body = document.getElementById('groupesBody');
+  const btn  = document.getElementById('groupesApplyBtn');
+  const liste = _groupesARepriser();
+  if(!liste.length){
+    body.innerHTML = `<p class="muted" style="margin:0">${T('Aucun groupe à reprendre : tous vos albums pointent déjà vers une fiche, ou aucun ne mentionne de groupe. 🎉','Nothing to convert: every album already points to a record, or none mentions a band. 🎉')}</p>`;
+    if(btn) btn.style.display = 'none';
+    return;
+  }
+  if(btn) btn.style.display = '';
+  body.innerHTML = `<p class="muted" style="margin-top:0;font-size:13px">${T(
+      `${liste.length} groupe(s) trouvé(s) dans vos albums. Chacun deviendra une fiche d'artiste ; les albums concernés y seront rattachés et cesseront de porter le texte. Un membre déjà fiché est repéré et rattaché — ✓ le signale.`,
+      `${liste.length} band(s) found in your albums. Each becomes an artist record; the albums concerned are attached to it and stop carrying the text. A member who already has a record is spotted and attached — ✓ marks it.`)}</p>` +
+    liste.map((g,k)=>{
+      const membres = g.membres.length
+        ? g.membres.map(m=>`<span class="tag" title="${m.auteurId?T('Rattaché à une fiche existante','Attached to an existing record'):T('Texte libre, sans fiche','Free text, no record')}">${m.auteurId?'✓ ':''}${escapeHTML(m.nom)}${m.instrument?` <span class="muted">${escapeHTML(m.instrument)}</span>`:''}</span>`).join(' ')
+        : `<span class="muted" style="font-size:12px">${T('aucun musicien saisi','no musicians entered')}</span>`;
+      return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+          <input type="checkbox" class="grp-cb" value="${k}" checked style="width:15px;height:15px">
+          <span style="font-weight:700;font-size:15px">${escapeHTML(g.nom)}</span>
+          ${g.nationalite?`<span class="muted" style="font-size:13px">${nationaliteFlag(g.nationalite)} ${escapeHTML(g.nationalite)}</span>`:''}
+          <span class="muted" style="font-size:12px;margin-left:auto">${g.items.length} ${T(`album${g.items.length>1?'s':''}`,`album${g.items.length>1?'s':''}`)}</span>
+        </label>
+        <div style="margin:6px 0 0 23px;display:flex;flex-wrap:wrap;gap:4px">${membres}</div>
+      </div>`;
+    }).join('');
+  // La liste est relue à l'application : on la fige le temps de la fenêtre.
+  _repriseGroupesListe = liste;
+}
+let _repriseGroupesListe = [];
+async function appliquerRepriseGroupes(){
+  const choisis = [...document.querySelectorAll('.grp-cb:checked')].map(cb=>_repriseGroupesListe[+cb.value]).filter(Boolean);
+  if(!choisis.length){ toast(T('Aucun groupe sélectionné','No band selected'),'error'); return; }
+  if(!confirm(T(`Créer ${choisis.length} fiche(s) de groupe et y rattacher les albums ?`,`Create ${choisis.length} band record(s) and attach the albums?`))) return;
+  const btn = document.getElementById('groupesApplyBtn');
+  if(btn) btn.disabled = true;
+  let faits = 0;
+  try {
+    for(const g of choisis){
+      const id = uuid();
+      await dbPut('authors', {
+        id,
+        collectionType: 'vinyle-cd-dvd',
+        nom: g.nom, prenom:'', pseudonyme:'',
+        nationalite: g.nationalite || '',
+        dateNaissance:'', dateDeces:'', siteWeb:'', bio:'',
+        roles: [], notes:'', estCollectionne:false, photoUrl:null,
+        createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
+      });
+      definirGroupe(id, g.membres);
+      // Les albums pointent désormais vers la fiche. On laisse leur ancien texte
+      // (nationalité, musiciens) en place : il ne s'affiche plus, mais une
+      // sauvegarde antérieure reste comparable, et rien n'est perdu.
+      for(const itemId of g.items){
+        const it = cache.items.find(x=>x.id===itemId);
+        if(!it) continue;
+        it.disqueGroupeId = id;
+        it.disqueGroupe = g.nom;
+        it.updatedAt = new Date().toISOString();
+        await dbPut('items', it);
+      }
+      faits++;
+    }
+    await saveGroupes();
+  } catch(e){
+    console.warn('[Groupes] reprise interrompue', e);
+    toast(T(`Reprise interrompue après ${faits} groupe(s)`,`Conversion stopped after ${faits} band(s)`),'error');
+  }
+  if(btn) btn.disabled = false;
+  await reloadCache();
+  toast(T(`${faits} fiche(s) de groupe créée(s)`,`${faits} band record(s) created`));
+  renderRepriseGroupes();
+  refreshCurrentView();
+}
+
+// Collection d'accueil d'une fiche que l'on crée.
+// Dans une collection donnée, la réponse est évidente : c'est celle-là. Dans la vue
+// agrégée « Ma Collection », il n'y en a pas — et tout partait en bande dessinée,
+// si bien qu'un CD saisi depuis cette vue se retrouvait dans les « Dernières
+// acquisitions » de la BD. On déduit alors la collection de la catégorie choisie
+// (CD, Vinyle, DVD…), avec la bande dessinée pour seul recours.
+function _collPourNouvelleFiche(categorie){
+  if(!isAllCollection()) return _activeCollection;
+  return _detectCrossCollection(categorie||'') || 'bd';
+}
 
 // ===== Prêts en cours =====
 function openPretsEnCours(){
@@ -8104,9 +8597,12 @@ function applyFilters(){
     const tokens = norm(search).split(/\s+/).filter(Boolean);   // recherche par mots (ET)
     list = list.filter(i=>{
       const txt = norm([i.titre,i.sousTitre,i.serie,i.univers,i.collection,i.numeroSerie,i.editeur,i.notes,(i.tags||[]).join(" "),
-        // Groupe et musiciens sont du texte libre : sans eux, chercher « Herbie
-        // Hancock » ne trouverait rien alors que son nom est bien sur la fiche.
+        // Le groupe et ses musiciens : chercher « Herbie Hancock » doit ramener
+        // les albums du quintet, même si son nom n'est plus sur l'album mais
+        // dans la fiche du groupe. L'ancien texte libre reste interrogé pour
+        // les albums que la reprise n'a pas encore traités.
         i.disqueGroupe, i.disqueMusiciens, i.disqueGenre,
+        _membresPourRecherche(i),
         i._isWish ? i._wishAuteurs : (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).join(" ")
       ].join(" "));
       return tokens.every(t=>txt.includes(t));   // chaque mot doit être présent (peu importe le champ)
@@ -8531,6 +9027,12 @@ function _syncAuthorsScopeBtn(nCollected, nTotal){
 }
 
 function renderAuthors(){
+  const champNature = document.getElementById('authorFilterNature');
+  if(champNature){
+    const utile = collectionAvecGroupes();
+    champNature.style.display = utile ? '' : 'none';
+    if(!utile){ const sel=document.getElementById('authorNature'); if(sel) sel.value=''; }
+  }
   const natSel = document.getElementById("authorNationality");
   const nats = [...new Set(cache.authors.map(a=>a.nationalite).filter(Boolean))].sort();
   natSel.innerHTML = '<option value="">Toutes</option>'+nats.map(n=>`<option>${escapeHTML(n)}</option>`).join("");
@@ -8565,8 +9067,14 @@ function applyAuthorFilters(){
   const role = document.getElementById("authorRole").value;
   const sort = document.getElementById("authorSort").value;
   const filterCollectedOnly = !_authorsViewAll;   // par défaut : uniquement les collectionnés
-  if(s) list = list.filter(a=>[a.nom,a.prenom,a.pseudonyme,a.bio,a.notes].join(" ").toLowerCase().includes(s));
+  // Un groupe se retrouve aussi par le nom d'un de ses membres : c'est souvent
+  // par le musicien que l'on se souvient de la formation.
+  if(s) list = list.filter(a=>[a.nom,a.prenom,a.pseudonyme,a.bio,a.notes,
+    ...membresDuGroupe(a).map(m=>`${m.nom} ${m.instrument||''}`)].join(" ").toLowerCase().includes(s));
   if(n) list = list.filter(a=>a.nationalite===n);
+  const nature = document.getElementById("authorNature")?.value || "";
+  if(nature==='groupe') list = list.filter(a=>estGroupe(a));
+  else if(nature==='solo') list = list.filter(a=>!estGroupe(a));
   _syncAuthorsScopeBtn(list.filter(a=>a.estCollectionne).length, list.length);
   if(filterCollectedOnly) list = list.filter(a=>a.estCollectionne);
 
@@ -8581,6 +9089,10 @@ function applyAuthorFilters(){
 
   const counts = {};
   collItems.forEach(i=>(i.auteurs||[]).forEach(a=>{ if(a.auteurId) counts[a.auteurId]=(counts[a.auteurId]||0)+1; }));
+  // Un groupe n'est pas cité dans la liste des artistes de l'album mais dans son
+  // champ « Groupe » : sans cela toutes ses fiches afficheraient « 0 œuvre ».
+  collItems.forEach(i=>{ const g=groupeDeItem(i);
+    if(g && !(i.auteurs||[]).some(a=>a.auteurId===g.id)) counts[g.id]=(counts[g.id]||0)+1; });
   list.sort((a,b)=>{
     if(sort==="collected_first"){
       if(a.estCollectionne !== b.estCollectionne) return a.estCollectionne ? -1 : 1;
@@ -8613,13 +9125,21 @@ function applyAuthorFilters(){
     const ROLE_ORDER = rolesActifs();
     const roleRank = r => { const i = ROLE_ORDER.indexOf(r); return i === -1 ? ROLE_ORDER.length : i; };
     const rolesOfAuthor = [...new Set([...(rolesByAuthor[a.id]||new Set()), ...(a.roles||[])])].sort((x,y)=>roleRank(x)-roleRank(y));
+    const grp = estGroupe(a);
+    const membres = grp ? membresDuGroupe(a) : [];
+    // Un groupe ne se distingue pas d'un artiste par sa photo : il lui faut une
+    // marque. Elle prend la place du crayon d'édition, en haut à droite.
+    const marqueGroupe = grp
+      ? `<span title="${T('Groupe / formation','Band / line-up')}" style="position:absolute;top:8px;right:40px;z-index:2;font-size:15px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))">👥</span>`
+      : "";
     return `<div class="card author-card${a.estCollectionne?' collected-author':''}" role="button" tabindex="0" aria-label="${escapeHTML(authorDisplay(a))}" onclick="renderAuthorDetail('${a.id}')" style="${a.estCollectionne?'border-color:rgba(226,184,106,.35)':''}">
       <button class="card-edit-btn" title="${editTitle}" onclick="event.stopPropagation();openAuthorForm('${a.id}')">✏️</button>
+      ${marqueGroupe}
       ${a.estCollectionne?`<span title="${starTitle}" style="position:absolute;top:8px;left:8px;z-index:2;font-size:16px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))">⭐</span>`:""}
-      <div class="card-img ${a.photoUrl?"":"placeholder"}">${a.photoUrl?`<img src="${_safeUrl(a.photoUrl)}">`:""}</div>
+      <div class="card-img ${a.photoUrl?"":"placeholder"}">${a.photoUrl?`<img src="${_safeUrl(a.photoUrl)}">`:(grp?'<span style="font-size:34px;opacity:.5">👥</span>':"")}</div>
       <div class="card-body">
         <div class="card-title">${escapeHTML(authorDisplay(a))}</div>
-        <div class="card-sub">${a.nationalite?`<span class="muted">${escapeHTML(libelleNationalite())} :</span> ${escapeHTML(a.nationalite)}`:""}</div>
+        <div class="card-sub">${a.nationalite?`<span class="muted">${escapeHTML(libelleNationalite())} :</span> ${escapeHTML(a.nationalite)}`:""}${grp&&membres.length?`<div class="muted" style="font-size:11px;margin-top:2px">${membres.length} ${T(`membre${membres.length>1?'s':''}`,`member${membres.length>1?'s':''}`)}</div>`:""}</div>
         <div class="card-roles">${rolesOfAuthor.map(r=>`<span class="tag">${escapeHTML(r)}</span>`).join(" ")}</div>
         <div class="card-meta card-meta-auteur">
           <span>${countLabel}</span>
@@ -10065,11 +10585,20 @@ function renderItemDetail(id, pushHistory=true){
   // Disque : mêmes panneaux que l'album, mais les lignes du support passent en tête
   // et les libellés d'édition parlent musique (Label, code-barres).
   const isDisque = archetypeForCategory(it.categorie).id === 'disque';
+  // Le groupe : sa fiche si elle existe (nom cliquable, nationalité et membres
+  // lus dessus), sinon l'ancien texte libre de l'album, tel qu'il a été saisi.
+  const _grp = isDisque ? groupeDeItem(it) : null;
+  const _grpNat = _grp ? (_grp.nationalite||'') : (it.disqueGroupeNat||'');
+  const _grpNom = _grp ? (_grp.nom||'') : (it.disqueGroupe||'');
+  const _grpLigne = !_grpNom ? '' :
+    (_grp ? `<a href="#" onclick="event.preventDefault();renderAuthorDetail('${_grp.id}')">${escapeHTML(_grpNom)}</a>` : escapeHTML(_grpNom))
+    + (_grpNat ? ` — ${nationaliteFlag(_grpNat)} ${escapeHTML(_grpNat)}`.trimEnd() : '');
+  const _grpMembres = _grp ? membresDuGroupe(_grp) : [];
+  const _membresLigne = _grpMembres.length
+    ? _grpMembres.map(m=>escapeHTML(m.nom + (m.instrument?` (${m.instrument})`:''))).join(', ')
+    : (it.disqueMusiciens ? escapeHTML(it.disqueMusiciens) : '');
   const disqueDl = !isDisque ? '' : [
-    [T('Groupe / Formation','Band / line-up'),
-      it.disqueGroupe && it.disqueGroupeNat
-        ? `${it.disqueGroupe} — ${nationaliteFlag(it.disqueGroupeNat)} ${it.disqueGroupeNat}`.trim()
-        : it.disqueGroupe],
+    [T('Groupe / Formation','Band / line-up'), _grpLigne, true],
     [T('Parution originale / concert','First release / concert'), it.disqueDateOrigine],
     [T('Support','Format'),            it.disqueSupport],
     [T('Nombre de disques','Discs'),   it.disqueNb],
@@ -10085,9 +10614,13 @@ function renderItemDetail(id, pushHistory=true){
     [T('Encarts et suppléments','Inserts and extras'), it.disqueEncarts],
     [T('État de la pochette','Sleeve condition'), it.disqueEtatPochette],
     [T('Compilation','Compilation'), it.disqueCompilation ? T('oui','yes') : ''],
-    [T('Musiciens','Musicians'),     it.disqueMusiciens],
+    // Les musiciens viennent de la fiche du groupe ; l'ancien texte libre de
+    // l'album prend le relais tant que la reprise n'a pas été faite.
+    [T('Musiciens','Musicians'), _membresLigne, true],
   ].filter(([,v])=>v!==null && v!==undefined && v!=='')
-   .map(([l,v])=>`<dt>${escapeHTML(l)}</dt><dd>${escapeHTML(String(v))}</dd>`).join('');
+   // Le troisième élément dit que la valeur est déjà du HTML sûr (un lien vers
+   // la fiche du groupe) : elle a été échappée à la construction.
+   .map(([l,v,brut])=>`<dt>${escapeHTML(l)}</dt><dd>${brut?String(v):escapeHTML(String(v))}</dd>`).join('');
   const hasDiaporama = !!(it.diaporama ?? isPortfolio); // rétrocompat : Portfolio = diapo par défaut
   // Init carousel state si diaporama activé
   if(hasDiaporama){ _pcImgs = imgs; _pcNames = imgNames; _pcIdx = 0; }
@@ -10147,7 +10680,7 @@ function renderItemDetail(id, pushHistory=true){
         ${isPortfolio&&it.univers?`<p class="muted" style="font-size:14px;margin-top:-4px">${t('detail.univers_label')} : <strong>${escapeHTML(it.univers)}</strong></p>`:""}
         ${!isPortfolio&&it.serie?`<p class="muted">${t('detail.cycle_label')} : ${escapeHTML(it.serie)}${it.numeroSerie?` — N°${escapeHTML(it.numeroSerie)}`:""}</p>`:""}
         <div style="margin:12px 0">${authors
-          || (isDisque && it.disqueGroupe ? `<span class="author-badge">${escapeHTML(it.disqueGroupe)}</span>` : '')
+          || (isDisque && _grpNom ? `<span class="author-badge">${escapeHTML(_grpNom)}</span>` : '')
           || `<span class="muted">${t('detail.no_author')}</span>`}</div>
         <dl>${infoDl}</dl>
         ${it.tags&&it.tags.length?`<div style="margin-top:12px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
@@ -10325,7 +10858,10 @@ function renderItemDetail(id, pushHistory=true){
 function renderAuthorDetail(id, pushHistory=true){
   const a = cache.authors.find(x=>x.id===id);
   if(!a) return;
-  const items = cache.items.filter(i=>(i.auteurs||[]).some(x=>x.auteurId===id))
+  const grp = estGroupe(a);
+  const membres = grp ? membresDuGroupe(a) : [];
+  const items = cache.items.filter(i=>(i.auteurs||[]).some(x=>x.auteurId===id)
+      || (grp && groupeDeItem(i)?.id === id))
     .sort((x,y)=>(x.anneeEdition||9999)-(y.anneeEdition||9999) || (x.titre||"").localeCompare(y.titre||"","fr",_CMP_NUM));
 
   // Group by category
@@ -10340,10 +10876,10 @@ function renderAuthorDetail(id, pushHistory=true){
   const html = `
     <div class="detail-header">
       <div>
-        <div class="detail-cover" style="aspect-ratio:1/1;border-radius:50%;">${a.photoUrl?`<img src="${_safeUrl(a.photoUrl)}">`:'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:80px;color:var(--ink-soft)">👤</div>'}</div>
+        <div class="detail-cover" style="aspect-ratio:1/1;border-radius:50%;">${a.photoUrl?`<img src="${_safeUrl(a.photoUrl)}">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:80px;color:var(--ink-soft)">${grp?'👥':'👤'}</div>`}</div>
       </div>
       <div class="detail-info">
-        <h2>${escapeHTML(authorDisplay(a))}${a.estCollectionne?` <span title="${T(`Auteur collectionné`,`Collected author`)}" style="font-size:18px;vertical-align:middle;opacity:.85">⭐</span>`:""}</h2>
+        <h2>${escapeHTML(authorDisplay(a))}${grp?` <span title="${T('Groupe / formation','Band / line-up')}" style="font-size:18px;vertical-align:middle;opacity:.85">👥</span>`:""}${a.estCollectionne?` <span title="${T(`Auteur collectionné`,`Collected author`)}" style="font-size:18px;vertical-align:middle;opacity:.85">⭐</span>`:""}</h2>
         ${a.pseudonyme && (a.nom||a.prenom)?`<p class="muted" style="font-size:16px">${escapeHTML([a.prenom,a.nom].filter(Boolean).join(" "))}</p>`:""}
         <div class="meta-row">
           ${a.nationalite?`<span>🌍 ${escapeHTML(libelleNationalite())} : ${escapeHTML(a.nationalite)}</span>`:""}
@@ -10353,14 +10889,25 @@ function renderAuthorDetail(id, pushHistory=true){
         ${(a.roles||[]).length?`<div style="margin:8px 0">${a.roles.map(r=>`<span class="tag">${escapeHTML(r)}</span>`).join(" ")}</div>`:""}
         ${a.bio?`<p style="white-space:pre-wrap;margin-top:12px">${escapeHTML(a.bio)}</p>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-          ${GUEST?'':`<button onclick="openItemForm(null,{authorId:'${a.id}'})">${T('+ Ajouter une œuvre','+ Add a work')}</button>`}
+          ${GUEST?'':`<button onclick="${grp?`openItemForm(null,{groupeId:'${a.id}'})`:`openItemForm(null,{authorId:'${a.id}'})`}">${T('+ Ajouter une œuvre','+ Add a work')}</button>`}
           <button class="secondary" onclick="openAuthorForm('${a.id}')">✏️ Modifier la fiche</button>
         </div>
       </div>
     </div>
+    ${grp?`<div class="panel" style="margin-bottom:20px">
+      <h3><span>👥 ${T('Membres','Members')} <span class="muted" style="font-weight:normal;font-size:14px">(${membres.length})</span></span></h3>
+      ${membres.length ? `<div class="membres-liste">${membres.map(m=>{
+        const fiche = m.auteurId ? authorById(m.auteurId) : null;
+        const nom = escapeHTML(fiche ? authorDisplay(fiche) : (m.nom||''));
+        return `<div class="membre-item">
+          <span class="membre-nom-aff">${fiche?`<a href="#" onclick="event.preventDefault();renderAuthorDetail('${fiche.id}')">${nom}</a>`:nom}</span>
+          ${m.instrument?`<span class="muted">${escapeHTML(m.instrument)}</span>`:''}
+        </div>`;
+      }).join('')}</div>` : `<p class="muted" style="margin:0">${T('Aucun membre listé pour ce groupe.','No members listed for this band.')}</p>`}
+    </div>`:""}
     ${a.notes?`<div class="panel" style="margin-bottom:20px"><h3>${T("Notes privées","Private notes")}</h3><div style="white-space:pre-wrap">${escapeHTML(a.notes)}</div></div>`:""}
     <div class="panel">
-      <h3>📚 Œuvres dans la collection (${items.length})</h3>
+      <h3><span>${grp?'💿':'📚'} ${T('Œuvres dans la collection','Works in the collection')} (${items.length})</span></h3>
       ${items.length ? Object.entries(byCat).map(([cat,its])=>`
         <h4 style="margin-top:16px;color:var(--accent-dark)">${escapeHTML(cat)} <span class="muted" style="font-weight:normal;font-size:14px">(${its.length})</span></h4>
         <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
@@ -10557,12 +11104,18 @@ async function genererVersionInvite(){
       .filter(p=>p.kind === 'classeur')
       .map(p=>({ id:p.id, name:p.name, kind:'classeur', color:p.color||'', itemOrder:p.itemOrder||[] }));
 
+    // Les groupes publiés : uniquement ceux dont la fiche part dans l'instantané.
+    const idsPublies = new Set(authors.map(a=>a.id));
+    const groupes = {};
+    Object.entries(_groupes||{}).forEach(([id,g])=>{
+      if(idsPublies.has(id)) groupes[id] = { membres:(g.membres||[]).map(m=>({...m})) };
+    });
     const donnees = {
-      version: 1,
+      version: 2,
       genereLe: new Date().toISOString(),
       expireLe: CLOUD ? new Date(Date.now()+GUEST_TTL*1000).toISOString() : null,
       titre: '',
-      items, authors, piles,
+      items, authors, piles, groupes,
     };
 
     // 3. Copie de l'application + injection de l'instantané
@@ -15392,6 +15945,7 @@ async function _initApp(){
     _initEnvBadge();
     await openDB();
     await loadEntityColl();     // avant toute lecture de la bibliothèque ou des souhaits
+    await loadGroupes();        // fiches de groupe : lues avant le premier rendu des artistes
     await reloadCache();
     // Migration : corriger les catégories mal capitalisées
     const catFixes = {"livre illustré":"Livre illustré"};
@@ -15569,6 +16123,7 @@ function _initGuest(){
 
     cache.items    = G.items   || [];
     cache.authors  = G.authors || [];
+    _groupes       = G.groupes || {};          // instantané v1 : aucun groupe
     cache.wishlist = [];                       // jamais publiée
     libraryPiles   = (G.piles  || []).filter(p=>p.kind === 'classeur');
     libraryShelves = [];
@@ -15610,6 +16165,7 @@ function _guestTrimUI(G){
   const sw = document.getElementById('collectionWord');
   if(sw){ sw.removeAttribute('onclick'); sw.removeAttribute('onkeydown'); sw.removeAttribute('role');
           sw.removeAttribute('tabindex'); sw.style.cursor='default';
+          sw.disabled = true; sw.removeAttribute('aria-haspopup');
           sw.querySelector('.caret')?.remove(); }
   document.getElementById('env-badge')?.remove();
   ['logoutBtn','themeBtn','langBtn'].forEach(id=>document.getElementById(id)?.remove());
