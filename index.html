@@ -2361,7 +2361,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <div style="margin-top:14px;padding:10px 14px;background:rgba(226,184,106,.07);border:1px solid rgba(226,184,106,.25);border-radius:var(--radius)">
             <div class="checkbox-row" style="margin:0">
               <input type="checkbox" id="authorEstCollectionne">
-              <label for="authorEstCollectionne" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)"><span data-en="⭐ <strong>Collected author</strong> — highlighted on works">⭐ <strong>Auteur collectionné</strong> — mis en avant sur les œuvres</span></label>
+              <label for="authorEstCollectionne" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)"><span id="authorLabelCollectionne" data-en="⭐ <strong>Collected author</strong> — highlighted on works">⭐ <strong>Auteur collectionné</strong> — mis en avant sur les œuvres</span></label>
             </div>
           </div>
         </div>
@@ -6608,6 +6608,16 @@ function _majFormulaireArtisteSelonType(){
     if(dec)  dec.style.display='none';
   }
   const set = (id, txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; };
+  // On mémorise le libellé d'origine au premier passage : sans cela, revenir de
+  // « Groupe » à « Artiste seul » laisserait le texte du groupe en place.
+  const collec = document.getElementById('authorLabelCollectionne');
+  if(collec){
+    if(collec.dataset.libelleOrigine === undefined) collec.dataset.libelleOrigine = collec.innerHTML;
+    collec.innerHTML = g
+      ? T('⭐ <strong>Groupe collectionné</strong> — mis en avant sur les œuvres',
+          '⭐ <strong>Collected band</strong> — highlighted on works')
+      : collec.dataset.libelleOrigine;
+  }
   if(g){
     set('authorLabelNom', T('Nom du groupe *','Band name *'));
     set('authorLabelNat', T('Nationalité du groupe','Band nationality'));
@@ -6660,20 +6670,41 @@ function basculerLienMembre(btn){
 }
 // Recherche d'une fiche par son nom : on réutilise _trouverAuteur, qui sait
 // déjà retrouver « BYRD / Donald » à partir de « Donald Byrd », tolère les
-// pseudonymes et les variantes de prénom. Un groupe n'est pas un membre.
-function _chercherArtisteParNom(nom){
+// pseudonymes et les variantes de prénom. Un groupe n'est pas un membre, et une
+// fiche d'une autre collection non plus : un homonyme en BD ne doit pas devenir
+// le trompettiste d'un quintet.
+// `coll` : collection d'accueil imposée (l'assistant de reprise crée des fiches
+// dans la CDthèque quelle que soit la vue d'où on le lance). Sans elle, on suit
+// la collection active. `refs` évite de recalculer l'ensemble des auteurs cités
+// à chaque musicien d'une longue liste.
+function _chercherArtisteParNom(nom, coll, refs){
   const a = _trouverAuteur(nom);
-  return (a && !estGroupe(a)) ? a : null;
+  if(!a || estGroupe(a)) return null;
+  if(coll) return (a.collectionType||'bd') === coll ? a : null;
+  return authorInActiveCollection(a, refs) ? a : null;
 }
 // Suggestions de noms : les fiches d'artistes seuls, plus les membres déjà
 // cités ailleurs — pour qu'un même musicien ne s'écrive pas de deux façons.
 function _majListesMembres(){
   const dl = document.getElementById('dl-membres');
   if(!dl) return;
+  // Cloisonnement : un quintet de jazz ne se compose pas de dessinateurs de
+  // bande dessinée. On s'en tient aux fiches de la collection active — même
+  // règle que les menus d'auteur d'une œuvre.
+  const _refs = authorsReferencedInActiveCollection();
   const noms = new Set();
-  cache.authors.forEach(a=>{ if(!estGroupe(a)){ const n=authorDisplay(a); if(n) noms.add(n); } });
-  Object.values(_groupes||{}).forEach(g=>(g.membres||[]).forEach(m=>{ if(m.nom) noms.add(m.nom); }));
-  dl.innerHTML = [...noms].sort((a,b)=>a.localeCompare(b,'fr'))
+  cache.authors.forEach(a=>{
+    if(estGroupe(a) || !authorInActiveCollection(a, _refs)) return;
+    const n = authorDisplay(a); if(n) noms.add(n);
+  });
+  // Les musiciens déjà cités dans un groupe d'ici, même sans fiche à eux.
+  cache.authors.forEach(a=>{
+    if(!estGroupe(a) || !authorInActiveCollection(a, _refs)) return;
+    membresDuGroupe(a).forEach(m=>{ if(m.nom) noms.add(m.nom); });
+  });
+  const vues = new Map();   // clé normalisée → première forme rencontrée
+  [...noms].forEach(n=>{ const k=n.toLowerCase(); if(!vues.has(k)) vues.set(k,n); });
+  dl.innerHTML = [...vues.values()].sort((a,b)=>a.localeCompare(b,'fr'))
     .map(n=>`<option>${escapeHTML(n)}</option>`).join('');
 }
 function _lireMembresDuFormulaire(){
@@ -8138,7 +8169,7 @@ function openMigrationAssistant(){ renderMigration(); openModal('migrationModal'
 // Analyse « Donald Byrd (trompette), Herbie Hancock (piano) » en membres.
 // Les séparateurs varient d'une saisie à l'autre : virgule, point-virgule,
 // retour à la ligne. L'instrument, lui, est presque toujours entre parenthèses.
-function _analyserMusiciens(texte){
+function _analyserMusiciens(texte, coll){
   return String(texte||'')
     .split(/[;\n]+|,(?![^(]*\))/)
     .map(m=>m.trim()).filter(Boolean)
@@ -8146,7 +8177,7 @@ function _analyserMusiciens(texte){
       const par = m.match(/^(.*?)\s*[（(]\s*([^)）]*)\s*[)）]\s*$/);
       const nom = (par ? par[1] : m).trim();
       const instrument = par ? par[2].trim() : '';
-      const fiche = nom ? _chercherArtisteParNom(nom) : null;
+      const fiche = nom ? _chercherArtisteParNom(nom, coll) : null;
       return { nom, instrument, auteurId: fiche ? fiche.id : '' };
     })
     .filter(m=>m.nom);
@@ -8168,7 +8199,7 @@ function _groupesARepriser(){
     parNom.set(cle, e);
   });
   return [...parNom.values()]
-    .map(e=>({ ...e, membres:_analyserMusiciens(e.musiciens) }))
+    .map(e=>({ ...e, membres:_analyserMusiciens(e.musiciens, 'vinyle-cd-dvd') }))
     .sort((a,b)=>b.items.length-a.items.length || a.nom.localeCompare(b.nom,'fr'));
 }
 function ouvrirRepriseGroupes(){ renderRepriseGroupes(); openModal('groupesModal'); }
