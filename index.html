@@ -178,11 +178,22 @@
      sans image — d'où deux aspects pour une même information. */
   .card.card-coll{border:2px solid var(--coll-bord);box-shadow:var(--shadow)}
   .card.card-coll:hover{border-color:var(--coll-accent);box-shadow:var(--shadow-lg)}
-  /* Le titre suit le contour : la couleur devient la marque de la collection,
-     lisible même quand la vignette est réduite. Sur fond clair, la teinte est
-     assombrie — le même ambre serait trop pâle sur du papier. */
+  /* Tout le texte de la carte suit le contour : la couleur devient la marque de
+     la collection. La hiérarchie tient à l'intensité, pas à la teinte — titre en
+     pleine couleur, lignes secondaires adoucies, étiquettes de rôle sur un fond
+     très pâle. Sans cela, les étiquettes gardaient l'accent de la vue agrégée
+     (un ambre) sur une carte cerclée de violet : deux collections sur une même
+     fiche. Sur fond clair, la teinte est assombrie — le même ambre serait trop
+     pâle sur du papier. */
   .card.card-coll .card-title{color:var(--coll-accent)}
-  body.theme-light .card.card-coll .card-title{color:var(--coll-texte-clair)}
+  .card.card-coll .card-sub,
+  .card.card-coll .card-meta{color:var(--coll-accent);opacity:.78}
+  .card.card-coll .card-meta{border-top-color:var(--coll-bord)}
+  .card.card-coll .tag{background:var(--coll-fond);color:var(--coll-accent);border-color:var(--coll-bord)}
+  body.theme-light .card.card-coll .card-title,
+  body.theme-light .card.card-coll .card-sub,
+  body.theme-light .card.card-coll .card-meta,
+  body.theme-light .card.card-coll .tag{color:var(--coll-texte-clair)}
   body.theme-light .auteurs-groupe{color:var(--coll-texte-clair);border-bottom-color:var(--coll-texte-clair)}
   /* Intertitre du classement par collection : il traverse la grille entière,
      et son filet reprend la couleur de la collection qu'il annonce. */
@@ -3412,7 +3423,8 @@ function _assombrir(hex, part){
 }
 function _teinteCollection(m){
   if(!m || !m.accent) return '';
-  return `--coll-accent:${m.accent};--coll-bord:${m.accent}99;--coll-texte-clair:${_assombrir(m.accent,.42)}`;
+  return `--coll-accent:${m.accent};--coll-bord:${m.accent}99;--coll-fond:${m.accent}1f;`
+       + `--coll-texte-clair:${_assombrir(m.accent,.42)}`;
 }
 
 // ── Groupes et formations ─────────────────────────────────────────────────
