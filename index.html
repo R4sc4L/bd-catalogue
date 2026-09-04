@@ -522,7 +522,19 @@
   .author-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px;align-items:start}
   /* Accès direct à la fiche de l'auteur, accolé à sa liste déroulante. */
   .author-pick{display:flex;gap:6px;align-items:stretch}
-  .author-pick select{flex:1;min-width:0}
+  .author-pick select,.author-pick input{flex:1;min-width:0}
+  /* Un lien vers l'extérieur, dessiné comme le bouton « ouvrir la fiche »
+     qui l'accompagne, mais qui reste une ancre : clic milieu, copier
+     l'adresse, ouvrir dans un onglet — tout ce qu'un bouton ne sait pas faire. */
+  .lien-ext{flex:none;width:38px;padding:0;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--border);border-radius:var(--radius);background:transparent;text-decoration:none}
+  .lien-ext .ico{width:18px;height:18px;color:var(--gold);opacity:.8;transition:opacity .15s}
+  .lien-ext:hover{background:var(--bg-panel)}
+  .lien-ext:hover .ico{opacity:1}
+  .lien-ext[hidden]{display:none}
+  /* Sur la fiche, le même renvoi mais en toutes lettres, à côté du code. */
+  .lien-fiche{color:var(--gold);text-decoration:none;font-size:13px;margin-left:8px;white-space:nowrap}
+  .lien-fiche:hover{text-decoration:underline}
   .author-open{flex:none;width:38px;padding:0;display:flex;align-items:center;justify-content:center}
   .author-open .ico{width:19px;height:19px;color:var(--gold);opacity:.8;transition:opacity .15s}
   .author-open:hover .ico{opacity:1}
@@ -1554,6 +1566,8 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     <div class="filters" id="itemFilters">
       <div class="field"><label data-en="Search">Recherche</label><div style="position:relative;display:flex;align-items:center"><input type="text" id="filterSearch" placeholder="Titre, série, notes..." style="width:100%;padding-right:28px"><button id="filterSearchClear" onclick="document.getElementById('filterSearch').value='';document.getElementById('filterSearchClear').style.display='none';applyFilters()" style="display:none;position:absolute;right:6px;background:none;border:none;color:var(--ink-soft);font-size:16px;cursor:pointer;padding:0;line-height:1" title="Effacer" data-en-title="Clear">✕</button></div></div>
       <div class="field" id="filterFieldCategory"><label id="filterCategoryLabel">Catégorie</label><select id="filterCategory"><option value="">Toutes</option></select></div>
+      <div class="field" id="filterFieldGenre" style="display:none"><label data-en="Genre">Genre</label><select id="filterGenre"><option value="">Tous</option></select></div>
+      <div class="field" id="filterFieldStyle" style="display:none"><label data-en="Style">Style</label><select id="filterStyle"><option value="">Tous</option></select></div>
       <div class="field" id="filterFieldAuthor"><label data-en="Author">Auteur</label><select id="filterAuthor"><option value="">Tous</option></select></div>
       <div class="field adv-filter"><label data-en="Publisher">Éditeur</label><select id="filterPublisher"><option value="">Tous</option></select></div>
       <div class="field adv-filter"><label data-en="Year from">Année de</label><input type="number" id="filterYearFrom" placeholder="1950"></div>
@@ -1654,6 +1668,11 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       <h3 data-en="🔀 Reorganise collections">🔀 Réorganiser les collections</h3>
       <p class="muted" data-en="Detects works whose category actually belongs to another collection (Pin's, Postcards, Playing cards, Vinyl/CD/DVD) and offers to move them, case by case, to their real collection. The list is shown first — nothing is moved without your approval.">Détecte les œuvres dont la catégorie correspond en réalité à une autre collection (Pin's, Cartes postales, Cartes à jouer, Vinyle/CD/DVD) et te propose de les déplacer, au cas par cas, vers leur vraie collection. La liste s'affiche d'abord — rien n'est déplacé sans ta validation.</p>
       <button class="secondary" data-en="🔍 Scan my BD collection" onclick="openMigrationAssistant()" style="margin-top:12px">🔍 Analyser ma collection BD</button>
+    </div>
+    <div class="panel" style="margin-top:24px" id="panneauScissionGenres">
+      <h3 data-en="🎼 Split Genre and Style">🎼 Séparer le genre et le style</h3>
+      <p class="muted" data-en="Discogs distinguishes the genre (Jazz) from the style (Hard Bop). Your discs carry a single field, often filled with a style. This reads them, proposes “Hard Bop” → genre Jazz + style Hard Bop, and lets you approve disc by disc. Nothing changes without your approval.">Discogs distingue le genre (Jazz) du style (Hard Bop). Vos disques ne portent qu'un champ, souvent rempli avec un style. L'assistant les lit, propose « Hard Bop » → genre Jazz + style Hard Bop, et vous laisse valider disque par disque. Rien ne change sans votre accord.</p>
+      <button class="secondary" data-en="🎼 Scan my discs" onclick="ouvrirScissionGenres()" style="margin-top:12px">🎼 Analyser mes disques</button>
     </div>
     <div class="panel" style="margin-top:24px" id="panneauRangementArtistes">
       <h3 data-en="👤 File artists in the right collection">👤 Ranger les artistes dans la bonne collection</h3>
@@ -1940,7 +1959,12 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             </div>
             <div><label data-en="Number of discs">Nombre de disques</label><input type="number" id="itemDisqueNb" min="1" max="99" placeholder="1"></div>
             <div><label data-en="Total running time">Durée totale</label><input type="text" id="itemDisqueDuree" placeholder="ex: 42:15" data-en-ph="e.g. 42:15"></div>
-            <div><label data-en="Genre">Genre</label><input type="text" id="itemDisqueGenre" list="dl-genres-disque" placeholder="ex: Rock progressif" data-en-ph="e.g. Progressive rock"></div>
+            <div><label data-en="Genre">Genre</label>
+              <select id="itemDisqueGenre" onchange="_majStylesProposes()"></select>
+            </div>
+            <div><label data-en="Style (Discogs: sub-genre)">Style <span class="muted" style="font-size:11px;text-transform:none;letter-spacing:0">(plusieurs, séparés par des virgules)</span></label>
+              <input type="text" id="itemDisqueStyle" list="dl-styles-disque" autocomplete="off" placeholder="ex: Hard Bop, Jazz modal" data-en-ph="e.g. Hard Bop, Modal">
+            </div>
             <div><label data-en="Pressing">Pressage</label>
               <select id="itemDisquePressage">
                 <option value=""></option>
@@ -1987,15 +2011,6 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div class="span-2"><label data-en="Inserts and extras">Encarts et suppléments</label>
               <input type="text" id="itemDisqueEncarts" placeholder="ex: poster, obi, autocollant, carte postale…" data-en-ph="e.g. poster, obi, sticker, postcard…">
             </div>
-            <div><label data-en="Band / line-up">Groupe / Formation</label>
-              <!-- Le groupe est une fiche d'artiste : on le choisit, on ne le
-                   ressaisit plus. Sa nationalité et ses musiciens vivent dans sa
-                   fiche, plus sur chaque album. -->
-              <div class="author-pick">
-                <select id="itemDisqueGroupe" onchange="_surChoixGroupeOeuvre(event)"></select>
-                <button type="button" class="author-open ghost" id="itemDisqueGroupeOpen" title="Ouvrir la fiche du groupe" data-en-title="Open the band's record" onclick="ouvrirFicheGroupeDeLOeuvre()"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-person"></use></svg></button>
-              </div>
-            </div>
             <div><label data-en="First release / concert date">Parution originale / concert</label>
               <input type="text" id="itemDisqueDateOrigine" placeholder="ex: 1977 ou 19/01/1973" data-en-ph="e.g. 1977 or 19/01/1973">
             </div>
@@ -2006,7 +2021,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               </div>
             </div>
           </div>
-          <p class="muted" style="font-size:11px;margin:8px 0 0" data-en="Label, year and barcode are in the section below; artists and performers in “Contributors”.">Le label, l'année et le code-barres sont dans la section suivante ; les artistes et interprètes dans « Artistes et contributeurs ».</p>
+          <p class="muted" style="font-size:11px;margin:8px 0 0" data-en="Label, year and barcode are in the section below; the band, the artists and the performers in “Artists and contributors”.">Le label, l'année et le code-barres sont dans la section suivante ; le groupe, les artistes et les interprètes dans « Artistes et contributeurs ».</p>
         </div>
         <datalist id="dl-groupes"></datalist>
         <datalist id="dl-membres"></datalist>
@@ -2017,14 +2032,22 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <option>Percussions</option><option>Violon</option><option>Violoncelle</option><option>Flûte</option>
           <option>Clarinette</option><option>Trombone</option><option>Harmonica</option><option>Synthétiseur</option>
         </datalist>
-        <datalist id="dl-genres-disque">
-          <option>Rock</option><option>Rock progressif</option><option>Pop</option><option>Jazz</option>
-          <option>Blues</option><option>Classique</option><option>Électronique</option><option>Chanson française</option>
-          <option>Folk</option><option>Funk / Soul</option><option>Hip-hop</option><option>Musique de film</option>
-          <option>Metal</option><option>Punk</option><option>Reggae</option><option>World</option>
-        </datalist>
+        <!-- Les styles proposés dépendent du genre choisi : la liste est
+             reconstruite par _majStylesProposes(). -->
+        <datalist id="dl-styles-disque"></datalist>
         <div class="form-section" id="formSection-authors">
           <h3 id="formSection-authors-title">Auteurs et contributeurs</h3>
+          <!-- Le groupe est une fiche d'artiste : sa place est parmi les
+               interprètes, en tête, et non plus dans la section « Disque ».
+               Sa nationalité et ses musiciens vivent dans sa propre fiche. -->
+          <div class="form-grid" id="itemFieldGroupe" style="display:none;margin-bottom:16px">
+            <div><label data-en="Band / line-up">Groupe / Formation</label>
+              <div class="author-pick">
+                <select id="itemDisqueGroupe" onchange="_surChoixGroupeOeuvre(event)"></select>
+                <button type="button" class="author-open ghost" id="itemDisqueGroupeOpen" title="Ouvrir la fiche du groupe" data-en-title="Open the band's record" onclick="ouvrirFicheGroupeDeLOeuvre()"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-person"></use></svg></button>
+              </div>
+            </div>
+          </div>
           <!-- La portée de la liste (collectionnés / tous) se règle directement
                dans le menu déroulant de chaque ligne : pas de case séparée. -->
           <div id="itemAuthorsList"></div>
@@ -2046,7 +2069,12 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               </div>
             </div>
             <div><label data-en="Country of publication">Pays d'édition</label><input type="text" id="itemCountry" list="dl-countries"></div>
-            <div><label data-en="ISBN / Reference">ISBN / Référence</label><input type="text" id="itemIsbn"></div>
+            <div><label data-en="ISBN / Reference">ISBN / Référence</label>
+              <div class="author-pick">
+                <input type="text" id="itemIsbn" oninput="_majLienDiscogs()">
+                <a class="lien-ext" id="itemIsbnDiscogs" href="#" target="_blank" rel="noopener noreferrer" hidden title="Chercher ce code-barres sur Discogs" data-en-title="Look this barcode up on Discogs"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></a>
+              </div>
+            </div>
             <div><label data-en="Number of pages">Nombre de pages</label><input type="number" id="itemPages" min="1" placeholder="ex: 48"></div>
             <div id="formFieldFormat"><label>Format</label><input type="text" id="itemFormat" placeholder="ex: 32x24 cm (Hauteur × Largeur)"></div>
             <div id="formFieldPaperQuality"><label data-en="Paper quality">Qualité du papier</label><input type="text" id="itemPaperQuality" list="dl-paperquality" placeholder="ex: Vélin d'Arches 250g, offset mat…" data-en-ph="e.g. Arches vellum 250g, matte offset…"></div>
@@ -2057,7 +2085,8 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               <div class="checkbox-row"><input type="checkbox" id="itemFirstEdition"><label for="itemFirstEdition" style="margin:0"><strong>EO</strong> <span style="color:var(--ink-soft);font-size:12px" data-en="Original Edition">Édition Originale</span></label></div>
             </div>
             <div><label data-en="Condition">État</label><select id="itemCondition"><option value="">—</option><option>Neuf</option><option>Très bon</option><option>Bon</option><option>Moyen</option><option>Mauvais</option></select></div>
-            <div class="span-2"><label data-en="Condition details">Précisions sur l'état</label><input type="text" id="itemEtatDetail" placeholder="ex: dos légèrement insolé, coin inférieur frotté, papier jauni…" data-en-ph="e.g. slightly sunned spine, rubbed corner, tanned paper…"></div>
+            <div class="span-2"><label data-en="Condition details">Précisions sur l'état</label><input type="text" id="itemEtatDetail" list="dl-etat-detail" autocomplete="off" placeholder="ex: dos légèrement insolé, coin inférieur frotté, papier jauni…" data-en-ph="e.g. slightly sunned spine, rubbed corner, tanned paper…">
+              <datalist id="dl-etat-detail"></datalist></div>
           </div>
         </div>
         <!-- ── PIN'S SECTION (hidden by default) ── -->
@@ -2520,6 +2549,21 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     <div class="modal-footer">
       <button class="secondary" onclick="closeModal('migrationModal')" data-en="Close">Fermer</button>
       <button id="migrationApplyBtn" data-en="Move selection" onclick="applyMigration()">Déplacer la sélection</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scission de l'ancien champ Genre en Genre + Style (modèle Discogs) -->
+<div class="modal-backdrop" id="genresModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <h2 data-en="🎼 Split Genre and Style">🎼 Séparer le genre et le style</h2>
+      <button class="ghost" onclick="closeModal('genresModal')">✕</button>
+    </div>
+    <div class="modal-body" id="genresBody"></div>
+    <div class="modal-footer">
+      <button class="secondary" onclick="closeModal('genresModal')" data-en="Close">Fermer</button>
+      <button id="genresApplyBtn" data-en="Apply the selection" onclick="appliquerScissionGenres()">Appliquer la sélection</button>
     </div>
   </div>
 </div>
@@ -3667,6 +3711,17 @@ const FICHE_ARCHETYPES = {
       itemCountry:  {fr:'Pays de parution',      en:'Country of release'},
       itemCondition:{fr:'État du disque',        en:'Disc condition'},
     },
+    // Un disque ne se décrit pas comme un album : ni pliure, ni papier jauni,
+    // ni coiffe. Le vocabulaire suit le support.
+    etatDetail:{
+      ph:{fr:'ex: rayures légères, boîtier fêlé, pochette gondolée…',
+          en:'e.g. light scratches, cracked case, warped sleeve…'},
+      exemples:['rayures légères sur le disque','disque impeccable','boîtier fêlé',
+                'boîtier remplacé','pochette gondolée','dos de pochette insolé',
+                'coins de pochette émoussés','livret jauni','jaquette froissée',
+                'trace d\'humidité au dos','encoche promotionnelle (cut-out)',
+                'craquements en début de face'],
+    },
   },
   // Éphémères : petit imprimé non relié (ex-libris, invitations, marque-pages,
   // flyers, coupures de presse…). Fiche épurée + section « Éphémère » dédiée
@@ -3940,6 +3995,17 @@ function archetypeForCategory(cat){
 // Titres de section « gérés » par les archétypes : on ne les réinitialise
 // que si le titre courant en fait partie, pour ne pas écraser un libellé
 // posé par un autre contexte (ex. « Informations générales » des pin's).
+// Précisions sur l'état : vocabulaire par défaut, celui de l'imprimé. Un
+// archétype peut le remplacer (voir `etatDetail` sur le disque). La liste ne
+// sert qu'à suggérer : le champ reste du texte libre.
+const ETAT_DETAIL_DEFAUT = {
+  ph:{fr:'ex: dos légèrement insolé, coin inférieur frotté, papier jauni…',
+      en:'e.g. slightly sunned spine, rubbed corner, tanned paper…'},
+  exemples:['dos légèrement insolé','coin inférieur frotté','papier jauni',
+            'coiffe du bas légèrement décollée','pliure sur certaines pages',
+            'coins frottés','marque de pliage au milieu','papier de couleur crème',
+            'quelques coups dans la couverture'],
+};
 // Champs dont un archétype peut réécrire le libellé (voir `fieldLabels`).
 const _ARCH_LABEL_FIELDS = ['itemPublisher','itemIsbn','itemCountry','itemCondition'];
 const _ARCH_EDITION_TITLES = ['Édition','Edition','Caractéristiques','Characteristics','Réalisation','Creation','Identité','Identity','Label et parution','Label and release'];
@@ -3991,7 +4057,7 @@ function applyArchetype(arch){
   const fl = arch.fieldLabels || {};
   for(const key of _ARCH_LABEL_FIELDS){
     const input = document.getElementById(key);
-    const lbl = input && (input.parentElement||input).querySelector('label');
+    const lbl = input && (input.closest('.form-grid > div') || input.parentElement || input).querySelector('label');
     if(!lbl) continue;
     if(lbl.dataset.archFr === undefined){
       lbl.dataset.archFr = lbl.textContent;
@@ -4001,9 +4067,16 @@ function applyArchetype(arch){
     lbl.textContent = o ? T(o.fr, o.en) : T(lbl.dataset.archFr, lbl.dataset.archEn);
     lbl.setAttribute('data-en', o ? o.en : lbl.dataset.archEn);
   }
+  // Précisions sur l'état : exemple de saisie et suggestions propres au support.
+  _majEtatDetail(arch);
   // Section « Disque » (CD / Vinyle / DVD)
   const disqueSec = document.getElementById('formSection-disque');
   if(disqueSec) disqueSec.style.display = arch.showDisque ? '' : 'none';
+  // Le « Groupe / Formation » siège dans « Artistes et contributeurs », mais
+  // reste un champ du disque : il ne s'affiche que pour ces archétypes-là.
+  const grpChamp = document.getElementById('itemFieldGroupe');
+  if(grpChamp) grpChamp.style.display = arch.showDisque ? '' : 'none';
+  _majLienDiscogs();
   // Section « Éphémère » (type de document + sous-blocs)
   const ephSec = document.getElementById('formSection-ephemere');
   if(ephSec) ephSec.style.display = arch.showEphemere ? '' : 'none';
@@ -4025,6 +4098,30 @@ function _archetypeParDefautCollection(){
 
 // Point d'entrée conservé (appelé partout) : résout l'archétype de la
 // catégorie courante et l'applique au formulaire.
+// Les suggestions de « Précisions sur l'état » : le vocabulaire du support,
+// enrichi de ce que l'on a déjà écrit sur des œuvres de la MÊME collection.
+// C'est le cloisonnement qui compte ici : sans lui, l'historique du navigateur
+// proposait « coiffe du bas légèrement décollée » sur la fiche d'un CD.
+function _majEtatDetail(arch){
+  const inp = document.getElementById('itemEtatDetail');
+  const dl  = document.getElementById('dl-etat-detail');
+  if(!inp || !dl) return;
+  const cfg = (arch && arch.etatDetail) || ETAT_DETAIL_DEFAUT;
+  inp.placeholder = T(cfg.ph.fr, cfg.ph.en);
+  inp.setAttribute('data-en-ph', cfg.ph.en);
+  const coll = _collPourNouvelleFiche(document.getElementById('itemCategory')?.value || '');
+  const dejaEcrits = (cache.items||[])
+    .filter(i=>(i.collectionType||'bd') === coll
+            && archetypeForCategory(i.categorie).id === arch.id)
+    .map(i=>(i.etatDetail||'').trim()).filter(Boolean);
+  const vues = new Map();
+  [...dejaEcrits, ...(cfg.exemples||[])].forEach(v=>{
+    const k = v.toLowerCase(); if(!vues.has(k)) vues.set(k, v);
+  });
+  dl.innerHTML = [...vues.values()].sort((a,b)=>a.localeCompare(b,'fr'))
+    .map(v=>`<option>${escapeHTML(v)}</option>`).join('');
+}
+
 function adaptFormToCategory(cat){
   const arch = (!cat && _archetypeParDefautCollection()) || archetypeForCategory(cat);
   applyArchetype(arch);
@@ -4308,7 +4405,7 @@ const SB = (() => {
     'titrePromu','support','diffusion','matiere','quantite','expediteur','destinataire','dateCorrespondance','supportCorr',
     'colleDansAlbum','lu','dateLecture','preteA','datePret','retourPrevu',
     // Disques (CD / Vinyle / DVD) — même sac JSONB, aucune colonne SQL à créer
-    'disqueSupport','disqueNb','disqueDuree','disqueGenre','disquePressage',
+    'disqueSupport','disqueNb','disqueDuree','disqueGenre','disqueStyle','disquePressage',
     'disquePays','disqueRef','disqueEtatPochette','disqueCompilation',
     'disqueGroupe','disqueGroupeId','disqueGroupeNat','disqueMusiciens','disqueDateOrigine',
     'disqueBoitier','disqueLivret','disqueLivretPages','disqueEncarts'];
@@ -5910,6 +6007,7 @@ function openItemForm(id=null, opts={}){
   // fiche existante la refera avec sa sélection. opts.groupeId : on arrive
   // depuis la fiche d'un groupe, l'album lui appartient d'avance.
   _majListeGroupesOeuvre(opts.groupeId || "", "");
+  _majListeGenres(""); _majStylesProposes();
   document.getElementById("itemTypeDocument").innerHTML = _buildTypeDocumentOptions(opts.typeDocument||"");
   adaptEphemereType(opts.typeDocument||"");
   // Suivi personnel : masquer les actions de prêt tant qu'aucun emprunteur n'est saisi
@@ -6000,6 +6098,7 @@ function openItemForm(id=null, opts={}){
     initObjetsAssocies(it.objetsAssocies||[]);
     document.getElementById("itemCountry").value = it.paysEdition||"";
     document.getElementById("itemIsbn").value = it.isbn||"";
+    _majLienDiscogs();
     document.getElementById("itemPages").value = it.nbPages||"";
     document.getElementById("itemPrintRun").value = it.tirage||"";
     document.getElementById("itemCopyNumber").value = it.numeroExemplaire||"";
@@ -6083,7 +6182,9 @@ function openItemForm(id=null, opts={}){
     _setD("itemDisqueSupport", it.disqueSupport);
     _setD("itemDisqueNb", it.disqueNb);
     _setD("itemDisqueDuree", it.disqueDuree);
-    _setD("itemDisqueGenre", it.disqueGenre);
+    _majListeGenres(it.disqueGenre);
+    _setD("itemDisqueStyle", it.disqueStyle);
+    _majStylesProposes();
     _setD("itemDisquePressage", it.disquePressage);
     _setD("itemDisquePays", it.disquePays);
     _setD("itemDisqueRef", it.disqueRef);
@@ -6506,6 +6607,7 @@ async function saveItem(e){
     disqueNb:           parseInt(document.getElementById("itemDisqueNb")?.value)||null,
     disqueDuree:        document.getElementById("itemDisqueDuree")?.value.trim()||"",
     disqueGenre:        document.getElementById("itemDisqueGenre")?.value.trim()||"",
+    disqueStyle:        document.getElementById("itemDisqueStyle")?.value.trim()||"",
     disquePressage:     document.getElementById("itemDisquePressage")?.value||"",
     disquePays:         document.getElementById("itemDisquePays")?.value.trim()||"",
     disqueRef:          document.getElementById("itemDisqueRef")?.value.trim()||"",
@@ -6613,6 +6715,30 @@ let authorFormCallback = null;
 // La liste ne propose que des fiches ; un album saisi avant la bascule garde
 // pourtant son nom en texte libre, qu'on lui présente tel quel plutôt que de
 // l'effacer au premier enregistrement.
+// ── Le renvoi vers Discogs ──────────────────────────────────────────────
+// Discogs sait chercher un disque par son code-barres : c'est le chemin le
+// plus court entre un EAN relevé au dos d'un boîtier et la fiche du pressage
+// exact. On n'y envoie qu'un code plausible (8 à 14 chiffres, tirets et
+// espaces tolérés) et seulement pour un disque : un ISBN n'y trouverait rien.
+function eanDiscogs(valeur){
+  const brut = String(valeur||'').replace(/[\s.\-]/g,'');
+  return /^\d{8,14}$/.test(brut) ? brut : '';
+}
+function lienDiscogsEan(valeur){
+  const ean = eanDiscogs(valeur);
+  return ean ? `https://www.discogs.com/search/?barcode=${encodeURIComponent(ean)}&type=release` : '';
+}
+function _majLienDiscogs(){
+  const a = document.getElementById('itemIsbnDiscogs');
+  const champ = document.getElementById('itemIsbn');
+  if(!a || !champ) return;
+  const cat = document.getElementById('itemCategory')?.value || '';
+  const disque = !!archetypeForCategory(cat).showDisque;
+  const url = disque ? lienDiscogsEan(champ.value) : '';
+  a.hidden = !url;
+  if(url) a.href = url;
+}
+
 const _GROUPE_TEXTE = '__texte__', _GROUPE_NOUVEAU = '__nouveau__';
 function _majListeGroupesOeuvre(selection, nomLegacy){
   const sel = document.getElementById('itemDisqueGroupe');
@@ -7585,6 +7711,100 @@ let collectionLayout = "grid"; // "grid" | "grid-sm" | "table"
 let tableSort = {col: null, dir: 1}; // col: clé de colonne, dir: 1=asc -1=desc
 let _lastItemList = [];
 
+// ── Genre et style dans le formulaire ────────────────────────────────────
+// La liste des genres est fermée : dix-sept entrées, pas une de plus. Un disque
+// saisi avant la bascule peut pourtant porter « Hard Bop » ; on lui garde son
+// libellé en tête de liste, signalé comme non repris, plutôt que de l'effacer
+// au premier enregistrement. L'assistant de scission s'en charge quand tu veux.
+function _majListeGenres(valeur){
+  const sel = document.getElementById('itemDisqueGenre');
+  if(!sel) return;
+  const v = (valeur||'').trim();
+  const connu = v && GENRE_PAR_ID[_normLang(v)];
+  const options = GENRES_DISQUE.map(g=>`<option value="${escapeHTML(genreLabel(g.id))}">${escapeHTML(genreLabel(g.id))}</option>`).join('');
+  sel.innerHTML = `<option value="">${T('— Aucun —','— None —')}</option>`
+    + (v && !connu ? `<option value="${escapeHTML(v)}">${escapeHTML(v)} — ${T('à reprendre','to convert')}</option>` : '')
+    + options;
+  sel.value = connu ? genreLabel(_normLang(v)) : v;
+}
+// Les styles proposés suivent le genre choisi, et l'on y ajoute ceux déjà écrits
+// sur des disques du même genre : le vocabulaire de la collection compte autant
+// que celui de Discogs. La saisie reste libre — une virgule sépare deux styles.
+function _majStylesProposes(){
+  const dl = document.getElementById('dl-styles-disque');
+  const sel = document.getElementById('itemDisqueGenre');
+  if(!dl || !sel) return;
+  const gid = familleGenre(sel.value);
+  const vus = new Map();
+  stylesDuGenre(gid).forEach(v=>vus.set(v.toLowerCase(), v));
+  (cache.items||[]).forEach(i=>{
+    if(familleGenre(i.disqueGenre) !== gid) return;
+    stylesDeItem(i).forEach(v=>{ const k=v.toLowerCase(); if(!vus.has(k)) vus.set(k, v); });
+  });
+  dl.innerHTML = [...vus.values()].sort((a,b)=>a.localeCompare(b,'fr'))
+    .map(v=>`<option>${escapeHTML(v)}</option>`).join('');
+}
+// Les styles d'une œuvre, découpés sur les virgules et débarrassés du vide.
+function stylesDeItem(it){
+  return String((it && it.disqueStyle) || '').split(/\s*[,;]\s*/)
+    .map(x=>x.trim()).filter(Boolean);
+}
+
+// Les filtres « Genre » et « Style », sur le modèle de Discogs : le genre
+// d'abord, fermé ; le style ensuite, dont la liste ne montre que ce qui existe
+// sous le genre retenu. Les deux ne paraissent que là où il y a des disques.
+function _majFiltreGenre(){
+  const champG = document.getElementById('filterFieldGenre');
+  const champS = document.getElementById('filterFieldStyle');
+  const selG   = document.getElementById('filterGenre');
+  const selS   = document.getElementById('filterStyle');
+  if(!champG || !selG || !champS || !selS) return;
+  const disques = cache.items.filter(i=>itemInActiveCollection(i)
+    && archetypeForCategory(i.categorie).id === 'disque');
+  if(!disques.length){
+    champG.style.display='none'; champS.style.display='none';
+    selG.value=''; selS.value='';
+    selG.innerHTML = selS.innerHTML = `<option value="">${T('Tous','All')}</option>`;
+    return;
+  }
+  champG.style.display=''; champS.style.display='';
+  // Les genres réellement présents, dans l'ordre de la table (pas alphabétique :
+  // c'est celui de la liste de saisie, on ne le contredit pas).
+  const presents = new Set(disques.map(i=>familleGenre(i.disqueGenre)).filter(Boolean));
+  const connus = GENRES_DISQUE.filter(g=>presents.has(g.id));
+  const inconnus = [...presents].filter(id=>!GENRE_PAR_ID[id]).sort((a,b)=>a.localeCompare(b,'fr'));
+  const prevG = selG.value;
+  selG.innerHTML = `<option value="">${T('Tous','All')}</option>`
+    + connus.map(g=>`<option value="${escapeHTML(g.id)}">${escapeHTML(genreLabel(g.id))}</option>`).join('')
+    + (inconnus.length ? `<optgroup label="${T('Non repris','Not converted')}">`
+        + inconnus.map(id=>`<option value="${escapeHTML(id)}">${escapeHTML(libelleFamilleGenre(id))}</option>`).join('')
+        + `</optgroup>` : '');
+  selG.value = [...selG.options].some(o=>o.value===prevG) ? prevG : '';
+  _majFiltreStyle();
+}
+// Le style dépend du genre : choisir Jazz ne propose que les styles portés par
+// des disques de jazz. Sans genre choisi, tous les styles de la collection.
+function _majFiltreStyle(){
+  const selG = document.getElementById('filterGenre');
+  const selS = document.getElementById('filterStyle');
+  if(!selG || !selS) return;
+  const gid = selG.value;
+  const vus = new Map();
+  cache.items.filter(i=>itemInActiveCollection(i)
+      && archetypeForCategory(i.categorie).id === 'disque'
+      && (!gid || familleGenre(i.disqueGenre) === gid))
+    .forEach(i=>stylesDeItem(i).forEach(v=>{ const k=v.toLowerCase(); if(!vus.has(k)) vus.set(k, v); }));
+  const prev = selS.value;
+  selS.innerHTML = `<option value="">${T('Tous','All')}</option>`
+    + [...vus.values()].sort((a,b)=>a.localeCompare(b,'fr'))
+        .map(v=>`<option value="${escapeHTML(v)}">${escapeHTML(v)}</option>`).join('');
+  selS.value = [...selS.options].some(o=>o.value===prev) ? prev : '';
+  // Un style sans disque à montrer n'a pas à occuper une colonne.
+  const champS = document.getElementById('filterFieldStyle');
+  if(champS && champS.style.display !== 'none')
+    champS.style.visibility = vus.size ? 'visible' : 'hidden';
+}
+
 function renderCollection(){
   oublierGenresArtistes(); oublierMembresRecherche();
   // Masquer / adapter les filtres selon la collection active
@@ -7630,6 +7850,7 @@ function renderCollection(){
   pubSel.value = ""; // Force reset
   condSel.innerHTML = '<option value="">Tous</option>'+CONDITIONS.map(c=>`<option>${escapeHTML(c)}</option>`).join("");
   condSel.value = ""; // Force reset
+  _majFiltreGenre();
   const locs = [...new Set(cache.items.filter(i=>itemInActiveCollection(i)).map(i=>i.localisation).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"fr"));
   locSel.innerHTML  = '<option value="">Toutes</option>'+locs.map(l=>`<option>${escapeHTML(l)}</option>`).join("");
   locSel.value = ""; // Force reset
@@ -8291,6 +8512,93 @@ function _migrationCandidates(){
 }
 function openMigrationAssistant(){ renderMigration(); openModal('migrationModal'); }
 
+// ── Scission de l'ancien champ Genre en Genre + Style ────────────────────
+// Un seul champ portait « Hard Bop » ou « Jazz Fusion » : un style, pas un
+// genre. familleGenre sait déjà les rattacher — c'est elle qui donne sa couleur
+// à la tranche. On propose donc genre = la famille, style = le libellé d'origine
+// quand il ne se confond pas avec elle.
+function _genresAScinder(){
+  const parLibelle = new Map();
+  (cache.items||[]).forEach(it=>{
+    if(archetypeForCategory(it.categorie).id !== 'disque') return;
+    const brut = (it.disqueGenre||'').trim();
+    if(!brut) return;
+    const gid = familleGenre(brut);
+    if(!GENRE_PAR_ID[gid]) return;                    // genre inconnu : à la main
+    const dejaStyle = stylesDeItem(it).some(v=>_normLang(v) === _normLang(brut));
+    // Déjà au bon format : genre reconnu ET libellé identique au genre.
+    if(_normLang(brut) === gid && !brut.includes(',')) return;
+    const cle = brut.toLowerCase();
+    const e = parLibelle.get(cle) || { brut, genre:gid, styles:[], items:[] };
+    if(!e.styles.length && _normLang(brut) !== gid && !dejaStyle) e.styles = [brut];
+    e.items.push(it.id);
+    parLibelle.set(cle, e);
+  });
+  return [...parLibelle.values()]
+    .sort((a,b)=>b.items.length-a.items.length || a.brut.localeCompare(b.brut,'fr'));
+}
+function ouvrirScissionGenres(){ renderScissionGenres(); openModal('genresModal'); }
+let _scissionGenresListe = [];
+function renderScissionGenres(){
+  const body = document.getElementById('genresBody');
+  const btn  = document.getElementById('genresApplyBtn');
+  const liste = _genresAScinder();
+  _scissionGenresListe = liste;
+  if(!liste.length){
+    body.innerHTML = `<p class="muted" style="margin:0">${T('Rien à séparer : vos disques portent déjà un genre de la liste. 🎉','Nothing to split: your discs already carry a genre from the list. 🎉')}</p>
+      <p class="muted" style="font-size:13px">${T('Un genre que l\'application ne reconnaît pas n\'est jamais rangé de force : ouvrez la fiche et choisissez son genre.','A genre the app does not recognise is never filed by force: open the record and pick its genre.')}</p>`;
+    if(btn) btn.style.display='none';
+    return;
+  }
+  if(btn) btn.style.display='';
+  const parGenre = {};
+  liste.forEach((c,k)=>{ (parGenre[c.genre] = parGenre[c.genre]||[]).push({...c, k}); });
+  body.innerHTML = `<p class="muted" style="margin-top:0;font-size:13px">${T(
+      `${liste.length} libellé(s) à séparer. Le genre passe dans la liste fermée, le libellé d'origine devient un style. Rien n'est perdu : un style se réécrit à la main sur la fiche.`,
+      `${liste.length} label(s) to split. The genre moves to the closed list, the original label becomes a style. Nothing is lost: a style can be rewritten by hand on the record.`)}</p>` +
+    Object.entries(parGenre).map(([gid,list])=>`
+      <div style="margin:14px 0"><div style="font-weight:700;color:${GENRE_PAR_ID[gid].couleur};margin-bottom:6px">${escapeHTML(genreLabel(gid))} <span class="muted" style="font-weight:400">(${list.length})</span></div>` +
+      list.map(c=>`<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px;cursor:pointer">
+        <input type="checkbox" class="scis-cb" value="${c.k}" checked style="width:15px;height:15px">
+        <span style="font-weight:600">${escapeHTML(c.brut)}</span>
+        <span class="muted" style="font-size:12px">→ ${escapeHTML(genreLabel(gid))}${c.styles.length?` + ${T('style','style')} « ${escapeHTML(c.styles[0])} »`:''}</span>
+        <span class="muted" style="font-size:12px;margin-left:auto">${c.items.length} ${T(`disque${c.items.length>1?'s':''}`,`disc${c.items.length>1?'s':''}`)}</span>
+      </label>`).join('') + `</div>`).join('');
+}
+async function appliquerScissionGenres(){
+  const choisis = [...document.querySelectorAll('.scis-cb:checked')]
+    .map(cb=>_scissionGenresListe[+cb.value]).filter(Boolean);
+  if(!choisis.length){ toast(T('Aucun libellé sélectionné','No label selected'),'error'); return; }
+  if(!confirm(T(`Séparer ${choisis.length} libellé(s) en genre et style ?`,`Split ${choisis.length} label(s) into genre and style?`))) return;
+  const btn = document.getElementById('genresApplyBtn');
+  if(btn) btn.disabled = true;
+  let faits = 0;
+  try {
+    for(const c of choisis){
+      for(const id of c.items){
+        const it = cache.items.find(x=>x.id===id);
+        if(!it) continue;
+        it.disqueGenre = genreLabel(c.genre);
+        // Le style d'origine rejoint ceux déjà présents, sans doublon.
+        const styles = stylesDeItem(it);
+        c.styles.forEach(v=>{ if(!styles.some(x=>x.toLowerCase()===v.toLowerCase())) styles.push(v); });
+        it.disqueStyle = styles.join(', ');
+        it.updatedAt = new Date().toISOString();
+        await dbPut('items', it);
+      }
+      faits++;
+    }
+  } catch(e){
+    console.warn('[Genres] scission interrompue', e);
+    toast(T(`Scission interrompue après ${faits} libellé(s)`,`Split stopped after ${faits} label(s)`),'error');
+  }
+  if(btn) btn.disabled = false;
+  await reloadCache();
+  toast(T(`${faits} libellé(s) séparé(s)`,`${faits} label(s) split`));
+  renderScissionGenres();
+  refreshCurrentView();
+}
+
 // ── Fiches d'artiste rangées dans la mauvaise collection ─────────────────
 // Le juge de paix, ce sont les œuvres : si toutes celles qui citent une fiche
 // appartiennent à une même collection, et que ce n'est pas celle de la fiche,
@@ -8809,11 +9117,13 @@ function applyFilters(){
   const fPrete = document.getElementById("filterPrete").value;
   const search = document.getElementById("filterSearch").value.trim().toLowerCase();
   const location = document.getElementById("filterLocation").value;
+  const genre = document.getElementById("filterGenre")?.value || "";
+  const style = document.getElementById("filterStyle")?.value || "";
   const filterCollected = document.getElementById("filterCollected").checked;
   const sort = document.getElementById("sortBy").value;
   // Souhaités : dans la collection BD si l'option est activée, MAIS jamais dès qu'une recherche/un filtre est actif
   const _showWish = localStorage.getItem('bd_show_wish_in_coll') === '1';
-  const anyFilterActive = !!(search || cat || auth || pub || yFrom || yTo || cond || signed || dedicaceSig || dedicaceDes || firstEd || location || filterCollected);
+  const anyFilterActive = !!(search || cat || auth || pub || yFrom || yTo || cond || signed || dedicaceSig || dedicaceDes || firstEd || location || genre || style || filterCollected);
   const wishForColl = (_activeCollection === 'bd' && _showWish && !anyFilterActive) ? wishItems : [];
   let list = [...cache.items.filter(i=>itemInActiveCollection(i)), ...wishForColl];
 
@@ -8836,6 +9146,13 @@ function applyFilters(){
   if(fLu)    list = list.filter(i=>!i._isWish && (fLu==="true") === !!i.lu);
   if(fPrete) list = list.filter(i=>!i._isWish && (fPrete==="late" ? pretEnRetard(i) : (fPrete==="true") === estPrete(i)));
   if(location) list = list.filter(i=>!i._isWish && (i.localisation||"") === location);
+  // Genre : la valeur est l'identifiant normalisé, si bien qu'un disque encore
+  // marqué « Hard Bop » répond à « Jazz » avant même d'avoir été repris.
+  if(genre) list = list.filter(i=>!i._isWish && familleGenre(genreDeItem(i)) === genre);
+  if(style){
+    const st = style.toLowerCase();
+    list = list.filter(i=>!i._isWish && stylesDeItem(i).some(v=>v.toLowerCase() === st));
+  }
   if(filterCollected) list = list.filter(i=>!i._isWish && (i.auteurs||[]).some(a=>{ const auth=authorById(a.auteurId); return auth?.estCollectionne; }));
   if(search){
     const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
@@ -8846,7 +9163,7 @@ function applyFilters(){
         // les albums du quintet, même si son nom n'est plus sur l'album mais
         // dans la fiche du groupe. L'ancien texte libre reste interrogé pour
         // les albums que la reprise n'a pas encore traités.
-        i.disqueGroupe, i.disqueMusiciens, i.disqueGenre,
+        i.disqueGroupe, i.disqueMusiciens, i.disqueGenre, i.disqueStyle,
         _membresPourRecherche(i),
         i._isWish ? i._wishAuteurs : (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).join(" ")
       ].join(" "));
@@ -9144,8 +9461,13 @@ function cardItemHTML(i, compact=false){
   </div>`;
 }
 
-["filterCategory","filterAuthor","filterPublisher","filterYearFrom","filterYearTo","filterCondition","filterSigned","filterDedicaceSignature","filterDedicaceDessin","filterFirstEdition","filterLu","filterPrete","filterCollected","sortBy"].forEach(id=>{
-  document.getElementById(id).addEventListener("change", applyFilters);
+["filterCategory","filterAuthor","filterPublisher","filterYearFrom","filterYearTo","filterCondition","filterSigned","filterDedicaceSignature","filterDedicaceDessin","filterFirstEdition","filterLu","filterPrete","filterCollected","filterGenre","filterStyle","sortBy"].forEach(id=>{
+  document.getElementById(id).addEventListener("change", ()=>{
+    // Changer de genre restreint les styles proposés : on refait la liste avant
+    // de filtrer, sinon un style d'un autre genre resterait sélectionné.
+    if(id === 'filterGenre') _majFiltreStyle();
+    applyFilters();
+  });
 });
 // Cocher « Auteur collectionné » réduit aussi la liste Auteur aux favoris
 document.getElementById("filterCollected").addEventListener("change", ()=>{ refreshAuthorFilterOptions(); applyFilters(); });
@@ -9188,7 +9510,7 @@ function refreshAuthorFilterOptions(){
 }
 
 function resetFilters(){
-  ["filterCategory","filterAuthor","filterPublisher","filterYearFrom","filterYearTo","filterCondition","filterSigned","filterDedicaceSignature","filterDedicaceDessin","filterFirstEdition","filterLu","filterPrete","filterSearch","filterLocation"].forEach(id=>{
+  ["filterCategory","filterAuthor","filterPublisher","filterYearFrom","filterYearTo","filterCondition","filterSigned","filterDedicaceSignature","filterDedicaceDessin","filterFirstEdition","filterLu","filterPrete","filterSearch","filterLocation","filterGenre","filterStyle"].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value = "";
   });
@@ -9206,7 +9528,7 @@ function goToCollection(){
   // Reset all filters so the full collection is visible
   ["filterCategory","filterAuthor","filterPublisher","filterYearFrom","filterYearTo",
    "filterCondition","filterSigned","filterDedicaceSignature","filterDedicaceDessin",
-   "filterFirstEdition","filterSearch","filterLocation","filterCollected"
+   "filterFirstEdition","filterSearch","filterLocation","filterCollected","filterGenre","filterStyle"
   ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
   const fsc=document.getElementById("filterSearchClear");
   if(fsc) fsc.style.display="none";
@@ -10897,6 +11219,7 @@ function renderItemDetail(id, pushHistory=true){
     [T('Nombre de disques','Discs'),   it.disqueNb],
     [T('Durée','Running time'),        it.disqueDuree],
     [T('Genre','Genre'),               it.disqueGenre],
+    [T('Style','Style'),               stylesDeItem(it).join(', ')],
     [T('Pressage','Pressing'),         it.disquePressage],
     [T('Pays de pressage','Pressed in'), it.disquePays],
     [T('Référence catalogue','Catalogue no.'), it.disqueRef],
@@ -10925,7 +11248,7 @@ function renderItemDetail(id, pushHistory=true){
     ${it.anneeEdition?`<dt>${t('detail.release_label')}</dt><dd>${it.moisEdition?t('month.'+it.moisEdition)+" ":""}${it.anneeEdition}</dd>`:""}
     ${itemLangues(it).length?`<dt>${t('detail.lang_label')}</dt><dd>${itemLangues(it).map(l=>{const f=languageFlag(l);return (f?f+' ':'')+escapeHTML(l)}).join(', ')}</dd>`:""}
     ${it.paysEdition?`<dt>${t('detail.country_label')}</dt><dd>${escapeHTML(it.paysEdition)}</dd>`:""}
-    ${it.isbn?`<dt>${isDisque?T('Code-barres','Barcode'):t('detail.isbn_label')}</dt><dd>${escapeHTML(it.isbn)}</dd>`:""}
+    ${it.isbn?`<dt>${isDisque?T('Code-barres','Barcode'):t('detail.isbn_label')}</dt><dd>${escapeHTML(it.isbn)}${(isDisque&&lienDiscogsEan(it.isbn))?` <a class="lien-fiche" href="${lienDiscogsEan(it.isbn)}" target="_blank" rel="noopener noreferrer" title="${T('Chercher ce code-barres sur Discogs','Look this barcode up on Discogs')}">Discogs ↗</a>`:''}</dd>`:""}
     ${it.nbPages?`<dt>${isPortfolio?t('detail.planches_label'):t('detail.pages_label')}</dt><dd>${it.nbPages}${isPortfolio?" pl.":" p."}</dd>`:""}
     ${it.tirage?`<dt>${t('detail.print_label')}</dt><dd>${escapeHTML(it.tirage)}${it.numeroExemplaire?` · ${_lang==='en'?'copy':'exemplaire'} ${escapeHTML(it.numeroExemplaire)}`:""}</dd>`:""}
     ${it.format?`<dt>${t('detail.format_label')}</dt><dd>${escapeHTML(it.format)}</dd>`:""}
@@ -12087,7 +12410,7 @@ async function acquireWish(id){
     if(w.titre)      document.getElementById("itemTitle").value      = w.titre;
     if(w.editeur)    document.getElementById("itemPublisher").value   = w.editeur;
     if(w.annee)      document.getElementById("itemYear").value        = w.annee;
-    if(w.isbn)       document.getElementById("itemIsbn").value        = w.isbn;
+    if(w.isbn){       document.getElementById("itemIsbn").value        = w.isbn; _majLienDiscogs(); }
     if(w.notes)      document.getElementById("itemNotes").value       = w.notes;
     if(w.categorie)  document.getElementById("itemCategory").value    = w.categorie;
     if(w.collection) document.getElementById("itemSeries").value      = w.collection;
@@ -12830,7 +13153,7 @@ async function applyAutofill(idx){
   if(r.subtitle)    document.getElementById("itemSubtitle").value    = r.subtitle;
   if(r.publisher)   document.getElementById("itemPublisher").value   = r.publisher;
   if(r.year)        document.getElementById("itemYear").value        = r.year;
-  if(r.isbn)        document.getElementById("itemIsbn").value        = r.isbn;
+  if(r.isbn){        document.getElementById("itemIsbn").value        = r.isbn; _majLienDiscogs(); }
   if(r.description) document.getElementById("itemNotes").value       = r.description;
   if(r.editionInfo) document.getElementById("itemEditionInfo").value  = r.editionInfo;
   if(r.serie)       document.getElementById("itemSerie").value       = r.serie;
@@ -13196,53 +13519,98 @@ const SPINE_PALETTE = [
 // Teintes choisies dans le même registre sourd que SPINE_PALETTE :
 // une étagère reste un meuble, pas un nuancier.
 // ============================================================
-const GENRE_COULEURS = {
-  "rock":               "#a84040",  // rouge brique
-  "rock progressif":    "#7a5090",  // violet profond
-  "pop":                "#c46888",  // rose
-  "jazz":               "#3f6b8c",  // bleu nuit
-  "blues":              "#3d5a80",  // indigo
-  "classique":          "#c4b068",  // or pâle
-  "electronique":       "#3f8a8a",  // cyan sourd
-  "chanson francaise":  "#b06a80",  // vieux rose
-  "folk":               "#6a8a50",  // vert sauge
-  "funk / soul":        "#c47840",  // orange brûlé
-  "hip-hop":            "#5a5a78",  // ardoise violacée
-  "musique de film":    "#8a6a40",  // bronze
-  "metal":              "#4a4a52",  // gris acier
-  "punk":               "#9a3a5a",  // magenta sombre
-  "reggae":             "#4a8a52",  // vert
-  "world":              "#b07a4a",  // terre de Sienne
-};
-// Familles : un genre libre (« hard rock », « jazz modal », « techno ») rejoint sa
-// famille au lieu de tomber sur une couleur arbitraire. L'ordre compte — « rock
-// progressif » doit être reconnu avant « rock ».
-const _GENRE_FAMILLES = [
-  // « rock progressif » comme « psychedelic rock » : l'ordre des mots varie d'une
-  // langue à l'autre, on accepte les deux sens.
-  [/(rock.*(prog|psych|psy?ch[eé]))|((prog|psych|psy?ch[eé]).*rock)|progressif|krautrock/, "rock progressif"],
-  [/jazz|bebop|swing|be-bop|hard bop|fusion/,  "jazz"],
-  [/blues|rhythm and blues|r&b|rnb/,           "blues"],
-  [/classiq|classical|baroque|op[eé]ra|symph|romantique|contemporain/, "classique"],
-  [/electro|techno|house|ambient|trance|synth|idm|dub ?step/, "electronique"],
-  [/chanson|vari[eé]t[eé]|yé-?yé|ye-?ye/,      "chanson francaise"],
-  [/folk|country|bluegrass|americana/,          "folk"],
-  [/funk|soul|disco|motown|gospel/,             "funk / soul"],
-  [/hip.?hop|rap|trip.?hop/,                    "hip-hop"],
-  [/bande originale|musique de film|soundtrack|\bost\b|b\.?o\.?\b/, "musique de film"],
-  [/metal|hardcore|grind/,                      "metal"],
-  [/punk|new wave|post.?punk/,                  "punk"],
-  [/reggae|ska|dub|roots/,                      "reggae"],
-  [/world|afro|latin|salsa|cumbia|ra[iï]|musique du monde|traditionnel/, "world"],
-  [/rock|garage|indie|alternatif/,              "rock"],
-  [/pop|variety/,                               "pop"],
+// ── Genres et styles, sur le modèle de Discogs ───────────────────────────
+// Discogs sépare le GENRE (une quinzaine, stable) du STYLE (précis, nombreux) :
+// Jazz / BeBop, Rock / Krautrock. On reprend ses quinze genres, traduits, plus
+// deux que cette collection traite comme des genres à part entière — la chanson
+// française et le rock progressif. La couleur de tranche suit le genre ; les
+// styles ne servent qu'à préciser, jamais à colorer.
+//   id      : forme normalisée (minuscules, sans accents) — c'est la clé stable
+//   fr / en : ce qui s'affiche
+//   couleur : la tranche dans la CDthèque
+//   styles  : suggestions, jamais une contrainte
+const GENRES_DISQUE = [
+  { id:'blues', fr:'Blues', en:'Blues', couleur:'#3d5a80',
+    styles:['Chicago Blues','Delta Blues','Electric Blues','Country Blues','Jump Blues','Rhythm & Blues','Boogie Woogie'] },
+  { id:'chanson francaise', fr:'Chanson française', en:'French chanson', couleur:'#b06a80',
+    styles:['Chanson à texte','Yéyé','Nouvelle chanson','Variété','Réaliste'] },
+  { id:'classique', fr:'Classique', en:'Classical', couleur:'#c4b068',
+    styles:['Baroque','Renaissance','Romantique','Moderne','Contemporain','Opéra','Musique de chambre','Symphonie','Minimalisme','Médiéval'] },
+  { id:'electronique', fr:'Électronique', en:'Electronic', couleur:'#3f8a8a',
+    styles:['Techno','House','Ambient','Downtempo','Drum n Bass','IDM','Trance','Electro','Synth-pop','Experimental','Berlin-School','Dub Techno'] },
+  { id:'enfants', fr:'Enfants', en:"Children's", couleur:'#8ab0c4',
+    styles:['Conte','Comptine','Éducatif','Livre-disque'] },
+  { id:'fanfare & militaire', fr:'Fanfare & Militaire', en:'Brass & Military', couleur:'#8a8a5a',
+    styles:['Marche','Fanfare','Brass Band','Pipe & Drum'] },
+  { id:'folk / monde / country', fr:'Folk / Monde / Country', en:'Folk, World & Country', couleur:'#6a8a50',
+    styles:['Folk','Country','Bluegrass','Celtique','Afrobeat','Éthio-jazz','Highlife','Fado','Flamenco','Musique arabe','Musique indienne','Cajun','Zydeco','Traditionnel'] },
+  { id:'funk & soul', fr:'Funk & Soul', en:'Funk / Soul', couleur:'#c47840',
+    styles:['Funk','Soul','Disco','Rhythm & Blues','Gospel','Neo Soul','P.Funk','Boogie','Motown'] },
+  { id:'hip-hop', fr:'Hip-Hop', en:'Hip Hop', couleur:'#5a5a78',
+    styles:['Boom Bap','Conscious','Gangsta','Instrumental','Jazzy Hip-Hop','Trip Hop','Rap','Turntablism'] },
+  { id:'jazz', fr:'Jazz', en:'Jazz', couleur:'#3f6b8c',
+    styles:['Bebop','Hard Bop','Cool Jazz','Free Jazz','Jazz modal','Fusion','Acid Jazz','Soul-Jazz','Swing','Big Band','Post Bop','Spiritual Jazz','Latin Jazz','Dixieland','Contemporary Jazz'] },
+  { id:'latin', fr:'Latin', en:'Latin', couleur:'#c46850',
+    styles:['Salsa','Bossa Nova','Samba','Cumbia','Tango','Son','Mambo','Boléro','MPB','Chachachá'] },
+  { id:'non-musical', fr:'Non-musical', en:'Non-Music', couleur:'#6a6a6a',
+    styles:['Spoken Word','Field Recording','Interview','Poésie','Humour','Bruitage'] },
+  { id:'pop', fr:'Pop', en:'Pop', couleur:'#c46888',
+    styles:['Synth-pop','Europop','Indie Pop','Ballade','Vocal','J-Pop','Power Pop'] },
+  { id:'reggae', fr:'Reggae', en:'Reggae', couleur:'#4a8a52',
+    styles:['Roots Reggae','Dub','Ska','Rocksteady','Dancehall','Lovers Rock'] },
+  { id:'rock', fr:'Rock', en:'Rock', couleur:'#a84040',
+    styles:['Blues Rock','Hard Rock','Garage Rock','Psychedelic Rock','Rock & Roll','Indie Rock','Alternative Rock','Punk','Post-Punk','New Wave','Heavy Metal','Folk Rock','Southern Rock','Surf','Grunge','Stoner Rock','Noise','Shoegaze'] },
+  { id:'rock progressif', fr:'Rock progressif', en:'Progressive rock', couleur:'#7a5090',
+    styles:['Prog Rock','Krautrock','Canterbury Scene','Symphonic Prog','Space Rock','Zeuhl','Art Rock','Rock In Opposition'] },
+  { id:'scene & ecran', fr:'Scène & Écran', en:'Stage & Screen', couleur:'#8a6a40',
+    styles:['Bande originale de film','Musique de série','Comédie musicale','Score','Théâtre','Jeu vidéo'] },
 ];
+const GENRE_PAR_ID = Object.fromEntries(GENRES_DISQUE.map(g=>[g.id, g]));
+function genreLabel(id){ const g = GENRE_PAR_ID[id]; return g ? T(g.fr, g.en) : id; }
+function stylesDuGenre(id){ return (GENRE_PAR_ID[id]?.styles) || []; }
+
+// Rattachement d'un genre écrit librement à l'un des dix-sept. « Acid Jazz »,
+// « Hard Bop » et « jazz modal » répondent tous « jazz » — c'est ce qui permet
+// de scinder l'ancien champ unique en Genre + Style. L'ordre compte : le rock
+// progressif doit être reconnu avant le rock, le latin avant le monde.
+const _GENRE_FAMILLES = [
+  [/(rock.*(prog|psych[eé]?d|psych\b))|((prog|psych[eé]?d)\.?.*rock)|progressif|krautrock|canterbury|zeuhl|space rock/, 'rock progressif'],
+  [/jazz|bebop|be-bop|hard bop|post bop|swing|big band|dixieland|fusion/,        'jazz'],
+  [/blues|rhythm and blues|r&b|rnb|boogie woogie/,                               'blues'],
+  [/classiq|classical|baroque|op[eé]ra|symph|romantique|renaissance|m[eé]di[eé]val|minimalis/, 'classique'],
+  [/electro|techno|house|ambient|trance|synth|idm|dub ?step|downtempo|drum ?n ?bass/, 'electronique'],
+  [/chanson|vari[eé]t[eé]|y[eé]-?y[eé]|r[eé]aliste/,                             'chanson francaise'],
+  [/funk|soul|disco|motown|gospel/,                                              'funk & soul'],
+  [/hip.?hop|rap|trip.?hop|boom bap|turntablis/,                                 'hip-hop'],
+  [/bande originale|musique de film|soundtrack|\bost\b|com[eé]die musicale|score|th[eé][aâ]tre|jeu vid[eé]o/, 'scene & ecran'],
+  [/salsa|bossa|samba|cumbia|tango|mambo|bol[eé]ro|chachach|\bson\b|\bmpb\b|latin/, 'latin'],
+  [/reggae|ska|\bdub\b|rocksteady|dancehall/,                                   'reggae'],
+  [/fanfare|militaire|marche|brass band|pipe ?& ?drum/,                          'fanfare & militaire'],
+  [/enfant|comptine|conte|[eé]ducatif|livre.?disque/,                            'enfants'],
+  [/spoken|field recording|interview|po[eé]sie|humour|bruitage|non.?music/,       'non-musical'],
+  [/folk|country|bluegrass|americana|celtiq|afro|highlife|fado|flamenco|world|musique du monde|traditionnel|ra[iï]\b|[eé]thio/, 'folk / monde / country'],
+  [/metal|hardcore|grind|punk|new wave|rock|garage|indie|alternatif|grunge|shoegaze|surf/, 'rock'],
+  [/pop|variety/,                                                                'pop'],
+];
+// À quel genre appartient un libellé écrit à la main ? Chaîne vide s'il n'y a
+// rien à ranger ; le libellé normalisé lui-même si aucun motif ne le reconnaît.
+function familleGenre(genre){
+  const g = _normLang(genre);
+  if(!g) return '';
+  if(GENRE_PAR_ID[g]) return g;
+  for(const [motif, famille] of _GENRE_FAMILLES)
+    if(motif.test(g)) return famille;
+  return g;
+}
+function libelleFamilleGenre(fam){
+  if(GENRE_PAR_ID[fam]) return genreLabel(fam);
+  return String(fam).replace(/(^|[\s/-])([a-z])/g, (m,a,b)=>a+b.toUpperCase());
+}
 function couleurGenre(genre){
   const g = _normLang(genre);                    // minuscules, sans accents
   if(!g) return null;
-  if(GENRE_COULEURS[g]) return GENRE_COULEURS[g];
-  for(const [motif, famille] of _GENRE_FAMILLES)
-    if(motif.test(g)) return GENRE_COULEURS[famille];
+  const fam = familleGenre(g);
+  if(GENRE_PAR_ID[fam]) return GENRE_PAR_ID[fam].couleur;
   // Genre inconnu : couleur stable tirée de la palette générale, jamais au hasard,
   // pour que deux disques du même genre se ressemblent toujours.
   let h = 0;
