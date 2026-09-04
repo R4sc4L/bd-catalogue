@@ -317,6 +317,10 @@
   .add-group button:hover{background:var(--accent-bg);color:var(--on-accent)}
   .badge-xlibris{background:#7fae9a;color:#0e0d13;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700}
   .grid.grid-sm .badge-xlibris{font-size:9px;padding:1px 4px}
+  /* La remasterisation : un bleu froid, qui ne se confond ni avec l'or des
+     signatures ni avec le vert des ex-libris. */
+  .badge-remaster{background:#6f8fc4;color:#0b1018;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px}
+  .grid.grid-sm .badge-remaster{font-size:9px;padding:1px 4px}
   /* Prêté : état temporaire et actionnable → bien visible (orange) */
   .badge-pret{background:#d98324;color:#1a1206;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700}
   .badge-pret.late{background:#c0392b;color:#fff}
@@ -1972,6 +1976,13 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <option>Édition limitée</option><option>Promo</option><option>Test pressing</option>
               </select>
             </div>
+            <div><label data-en="Remastering">Remasterisation</label>
+              <!-- « Remasterisé » tout court ne dit rien : c'est la résolution
+                   ou le procédé qui distingue deux rééditions du même album.
+                   Champ libre, mais la liste rassemble les mentions qu'on
+                   trouve réellement au dos des boîtiers. -->
+              <input type="text" id="itemDisqueRemaster" list="dl-remaster" autocomplete="off" placeholder="ex: 24 bits / 96 kHz, SHM-CD, RVG Edition…" data-en-ph="e.g. 24-bit / 96 kHz, SHM-CD, RVG Edition…">
+            </div>
             <div><label data-en="Country of pressing">Pays de pressage</label><input type="text" id="itemDisquePays" list="dl-pays" placeholder="ex: France"></div>
             <div><label data-en="Catalogue number">Référence catalogue</label><input type="text" id="itemDisqueRef" placeholder="ex: 2C 068-14022"></div>
             <div><label data-en="Sleeve condition">État de la pochette</label>
@@ -2035,6 +2046,9 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <!-- Les styles proposés dépendent du genre choisi : la liste est
              reconstruite par _majStylesProposes(). -->
         <datalist id="dl-styles-disque"></datalist>
+        <!-- Les mentions de remasterisation : un socle de mentions courantes,
+             complété par ce qui a déjà été saisi dans la même collection. -->
+        <datalist id="dl-remaster"></datalist>
         <div class="form-section" id="formSection-authors">
           <h3 id="formSection-authors-title">Auteurs et contributeurs</h3>
           <!-- Le groupe est une fiche d'artiste : sa place est parmi les
@@ -2071,8 +2085,8 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div><label data-en="Country of publication">Pays d'édition</label><input type="text" id="itemCountry" list="dl-countries"></div>
             <div><label data-en="ISBN / Reference">ISBN / Référence</label>
               <div class="author-pick">
-                <input type="text" id="itemIsbn" oninput="_majLienDiscogs()">
-                <a class="lien-ext" id="itemIsbnDiscogs" href="#" target="_blank" rel="noopener noreferrer" hidden title="Chercher ce code-barres sur Discogs" data-en-title="Look this barcode up on Discogs"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></a>
+                <input type="text" id="itemIsbn" oninput="_majLienFiche()">
+                <a class="lien-ext" id="itemIsbnLien" href="#" target="_blank" rel="noopener noreferrer" hidden onclick="_avantOuvertureLienFiche(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></a>
               </div>
             </div>
             <div><label data-en="Number of pages">Nombre de pages</label><input type="number" id="itemPages" min="1" placeholder="ex: 48"></div>
@@ -4069,6 +4083,7 @@ function applyArchetype(arch){
   }
   // Précisions sur l'état : exemple de saisie et suggestions propres au support.
   _majEtatDetail(arch);
+  if(arch.showDisque) _majRemastersProposes();
   // Section « Disque » (CD / Vinyle / DVD)
   const disqueSec = document.getElementById('formSection-disque');
   if(disqueSec) disqueSec.style.display = arch.showDisque ? '' : 'none';
@@ -4076,7 +4091,7 @@ function applyArchetype(arch){
   // reste un champ du disque : il ne s'affiche que pour ces archétypes-là.
   const grpChamp = document.getElementById('itemFieldGroupe');
   if(grpChamp) grpChamp.style.display = arch.showDisque ? '' : 'none';
-  _majLienDiscogs();
+  _majLienFiche();
   // Section « Éphémère » (type de document + sous-blocs)
   const ephSec = document.getElementById('formSection-ephemere');
   if(ephSec) ephSec.style.display = arch.showEphemere ? '' : 'none';
@@ -4405,7 +4420,7 @@ const SB = (() => {
     'titrePromu','support','diffusion','matiere','quantite','expediteur','destinataire','dateCorrespondance','supportCorr',
     'colleDansAlbum','lu','dateLecture','preteA','datePret','retourPrevu',
     // Disques (CD / Vinyle / DVD) — même sac JSONB, aucune colonne SQL à créer
-    'disqueSupport','disqueNb','disqueDuree','disqueGenre','disqueStyle','disquePressage',
+    'disqueSupport','disqueNb','disqueDuree','disqueGenre','disqueStyle','disquePressage','disqueRemaster',
     'disquePays','disqueRef','disqueEtatPochette','disqueCompilation',
     'disqueGroupe','disqueGroupeId','disqueGroupeNat','disqueMusiciens','disqueDateOrigine',
     'disqueBoitier','disqueLivret','disqueLivretPages','disqueEncarts'];
@@ -6098,7 +6113,7 @@ function openItemForm(id=null, opts={}){
     initObjetsAssocies(it.objetsAssocies||[]);
     document.getElementById("itemCountry").value = it.paysEdition||"";
     document.getElementById("itemIsbn").value = it.isbn||"";
-    _majLienDiscogs();
+    _majLienFiche();
     document.getElementById("itemPages").value = it.nbPages||"";
     document.getElementById("itemPrintRun").value = it.tirage||"";
     document.getElementById("itemCopyNumber").value = it.numeroExemplaire||"";
@@ -6186,6 +6201,7 @@ function openItemForm(id=null, opts={}){
     _setD("itemDisqueStyle", it.disqueStyle);
     _majStylesProposes();
     _setD("itemDisquePressage", it.disquePressage);
+    _setD("itemDisqueRemaster", it.disqueRemaster);
     _setD("itemDisquePays", it.disquePays);
     _setD("itemDisqueRef", it.disqueRef);
     _setD("itemDisqueEtatPochette", it.disqueEtatPochette);
@@ -6609,6 +6625,7 @@ async function saveItem(e){
     disqueGenre:        document.getElementById("itemDisqueGenre")?.value.trim()||"",
     disqueStyle:        document.getElementById("itemDisqueStyle")?.value.trim()||"",
     disquePressage:     document.getElementById("itemDisquePressage")?.value||"",
+    disqueRemaster:     document.getElementById("itemDisqueRemaster")?.value.trim()||"",
     disquePays:         document.getElementById("itemDisquePays")?.value.trim()||"",
     disqueRef:          document.getElementById("itemDisqueRef")?.value.trim()||"",
     disqueEtatPochette: document.getElementById("itemDisqueEtatPochette")?.value||"",
@@ -6728,15 +6745,122 @@ function lienDiscogsEan(valeur){
   const ean = eanDiscogs(valeur);
   return ean ? `https://www.discogs.com/search/?barcode=${encodeURIComponent(ean)}&type=release` : '';
 }
-function _majLienDiscogs(){
-  const a = document.getElementById('itemIsbnDiscogs');
+// ── Le renvoi vers Bédéthèque ───────────────────────────────────────────
+// Bédéthèque protège sa recherche par un jeton : impossible de lui glisser un
+// ISBN dans l'adresse, contrairement à Discogs. On fait donc la moitié du
+// chemin — le code part dans le presse-papier et la page de recherche s'ouvre ;
+// il ne reste qu'à coller dans le champ « EAN / ISBN ».
+const URL_BEDETHEQUE = 'https://www.bedetheque.com/search/albums';
+function isbnBedetheque(valeur){
+  const brut = String(valeur||'').replace(/[\s.\-]/g,'').toUpperCase();
+  return (/^\d{9}[\dX]$/.test(brut) || /^\d{13}$/.test(brut)) ? brut : '';
+}
+// Le presse-papier moderne exige un contexte sûr ; en local (file://) on
+// retombe sur la vieille méthode, qui marche encore partout.
+function _copierTexte(texte){
+  try { if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(texte); return true; } }
+  catch(e){}
+  try {
+    const z = document.createElement('textarea');
+    z.value = texte; z.setAttribute('readonly','');
+    z.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(z); z.select(); document.execCommand('copy'); z.remove();
+    return true;
+  } catch(e){ return false; }
+}
+// Appelé pendant le clic, donc dans un geste de l'utilisateur : c'est la seule
+// fenêtre où le navigateur accepte une écriture dans le presse-papier.
+function _avantOuvertureLienFiche(a){
+  const code = a && a.dataset ? a.dataset.copier : '';
+  if(!code) return;
+  _copierTexte(code);
+  toast(T(`ISBN ${code} copié — collez-le dans le champ « EAN / ISBN »`,
+          `ISBN ${code} copied — paste it into the “EAN / ISBN” field`));
+}
+
+// Une œuvre imprimée va chez Bédéthèque, un disque chez Discogs, et le reste
+// nulle part : un pin's n'a rien à faire dans une base de bande dessinée.
+function _renvoiExterne(isbn, disque, collection){
+  if(disque){
+    const u = lienDiscogsEan(isbn);
+    return u ? { url:u, nom:'Discogs', copier:'',
+                 titre:T('Chercher ce code-barres sur Discogs','Look this barcode up on Discogs') } : null;
+  }
+  if((collection||'bd') !== 'bd') return null;
+  const code = isbnBedetheque(isbn);
+  return code ? { url:URL_BEDETHEQUE, nom:'Bédéthèque', copier:code,
+                  titre:T('Copier l’ISBN et ouvrir la recherche Bédéthèque',
+                          'Copy the ISBN and open the Bédéthèque search') } : null;
+}
+function _renvoiFicheHTML(it, isDisque){
+  const r = _renvoiExterne(it.isbn, isDisque, it.collectionType);
+  if(!r) return '';
+  return ` <a class="lien-fiche" href="${r.url}" target="_blank" rel="noopener noreferrer"`
+       + (r.copier ? ` data-copier="${escapeHTML(r.copier)}" onclick="_avantOuvertureLienFiche(this)"` : '')
+       + ` title="${escapeHTML(r.titre)}">${r.nom} ↗</a>`;
+}
+function _majLienFiche(){
+  const a = document.getElementById('itemIsbnLien');
   const champ = document.getElementById('itemIsbn');
   if(!a || !champ) return;
   const cat = document.getElementById('itemCategory')?.value || '';
-  const disque = !!archetypeForCategory(cat).showDisque;
-  const url = disque ? lienDiscogsEan(champ.value) : '';
-  a.hidden = !url;
-  if(url) a.href = url;
+  const r = _renvoiExterne(champ.value, !!archetypeForCategory(cat).showDisque, _collPourNouvelleFiche(cat));
+  a.hidden = !r;
+  delete a.dataset.copier;
+  if(!r) return;
+  a.href = r.url; a.title = r.titre;
+  if(r.copier) a.dataset.copier = r.copier;
+}
+
+// ── Les mentions de remasterisation ─────────────────────────────────────
+// Ce que les éditeurs impriment vraiment : la résolution du transfert
+// numérique d'abord (c'est elle qu'on cherche), puis les procédés maison et
+// les signatures d'ingénieur qui font la valeur d'une réédition.
+const REMASTERS_COURANTS = [
+  'Remasterisé 24 bits', '24 bits / 96 kHz', '24 bits / 192 kHz',
+  'Remasterisé 20 bits (K2)', 'K2HD', 'XRCD24', 'SHM-CD', 'Blu-spec CD2',
+  'HDCD', 'SACD hybride', 'DSD', 'MFSL Original Master Recording',
+  'Half-Speed Master', 'RVG Edition (Rudy Van Gelder)',
+  'Gravure AAA (tout analogique)', 'DMM (Direct Metal Mastering)',
+  'Remasterisé (sans précision)',
+];
+// Sur une vignette, la place est comptée : on ne garde que la résolution —
+// c'est elle qu'on cherche du regard — ou, à défaut, le sigle du procédé.
+// La mention complète reste dans l'infobulle et sur la fiche.
+const _REMASTER_SIGLES = [
+  [/\bSACD\b/i,'SACD'], [/\bSHM[- ]?CD\b/i,'SHM-CD'], [/\bXRCD\s*24\b/i,'XRCD24'],
+  [/\bXRCD\b/i,'XRCD'], [/\bblu[- ]?spec\b/i,'Blu-spec'], [/\bHDCD\b/i,'HDCD'],
+  [/\bK2HD\b/i,'K2HD'], [/\bK2\b/i,'K2'], [/\bDSD\b/i,'DSD'],
+  [/\bMFSL\b|original master recording/i,'MFSL'], [/half[- ]?speed/i,'Half-Speed'],
+  [/\bRVG\b|van gelder/i,'RVG'], [/\bAAA\b|tout analogique|all[- ]analog/i,'AAA'],
+  [/\bDMM\b|direct metal/i,'DMM'],
+];
+function badgeRemaster(it){
+  const v = String((it && it.disqueRemaster) || '').trim();
+  if(!v) return null;
+  const bits = v.match(/(\d{2})\s*bits?/i);
+  if(bits) return { texte:`${bits[1]} bits`, titre:v };
+  for(const [motif,sigle] of _REMASTER_SIGLES) if(motif.test(v)) return { texte:sigle, titre:v };
+  return { texte:T('Remast.','Remast.'), titre:v };
+}
+function _badgeRemasterHTML(it){
+  const b = badgeRemaster(it);
+  return b ? `<span class="badge-remaster" title="${escapeHTML(T('Remasterisation','Remastering')+' : '+b.titre)}">${escapeHTML(b.texte)}</span>` : '';
+}
+
+function _majRemastersProposes(){
+  const dl = document.getElementById('dl-remaster');
+  if(!dl) return;
+  const coll = _collPourNouvelleFiche(document.getElementById('itemCategory')?.value || '');
+  const dejaEcrits = (cache.items||[])
+    .filter(i => (i.collectionType||'bd') === coll)
+    .map(i => (i.disqueRemaster||'').trim())
+    .filter(Boolean);
+  const vues = new Set(REMASTERS_COURANTS.map(v=>v.toLowerCase()));
+  const sup = [];
+  for(const v of dejaEcrits){ const k=v.toLowerCase(); if(!vues.has(k)){ vues.add(k); sup.push(v); } }
+  dl.innerHTML = REMASTERS_COURANTS.concat(sup.sort((a,b)=>a.localeCompare(b,'fr')))
+    .map(v=>`<option value="${escapeHTML(v)}"></option>`).join('');
 }
 
 const _GROUPE_TEXTE = '__texte__', _GROUPE_NOUVEAU = '__nouveau__';
@@ -9163,7 +9287,7 @@ function applyFilters(){
         // les albums du quintet, même si son nom n'est plus sur l'album mais
         // dans la fiche du groupe. L'ancien texte libre reste interrogé pour
         // les albums que la reprise n'a pas encore traités.
-        i.disqueGroupe, i.disqueMusiciens, i.disqueGenre, i.disqueStyle,
+        i.disqueGroupe, i.disqueMusiciens, i.disqueGenre, i.disqueStyle, i.disqueRemaster,
         _membresPourRecherche(i),
         i._isWish ? i._wishAuteurs : (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).join(" ")
       ].join(" "));
@@ -9346,7 +9470,7 @@ function applyFilters(){
           rows.push(`<tr class="${trSel}" ${trClick}>
             ${_bulkMode?`<td class="table-cb-col"><input type="checkbox" class="card-select-cb" ${_selectedItems.has(i.id)?"checked":""} onclick="event.stopPropagation();bulkCheckboxClick('${i.id}',this,event)"></td>`:""}
             <td class="table-title-cell"${i.images?.[0]?` data-cover="${escapeHTML(i.images[0])}"`:""} onmouseenter="showCoverTooltip(event,this)" onmouseleave="hideCoverTooltip()"><strong>${isAllCollection()?`<span title="${escapeHTML(moduleById(i.collectionType||'bd').label)}">${moduleById(i.collectionType||'bd').icon}</span> `:""}${escapeHTML(i.titre||"")}</strong>${i.serie?`<div class="muted" style="font-size:12px">${escapeHTML(i.serie)}</div>`:""}</td>
-            <td style="white-space:nowrap">${i.editionOriginale?'<span class="badge-eo">EO</span> ':""} ${i.signe?`<span class="badge-signed">${T('Signé','Signed')}</span> `:""}${(i.dedicaceSignature||i.dedicaceCheck)?`<span class="badge-signed">${T('Déd. sig.','Ded. sig.')}</span> `:""}${i.dedicaceDessin?`<span class="badge-signed">${T('Déd. dessin','Ded. drawing')}</span> `:""}${i.dedicaceTampon?`<span class="badge-signed">${T('Déd. tampon','Ded. stamp')}</span>`:"" }</td>
+            <td style="white-space:nowrap">${i.editionOriginale?'<span class="badge-eo">EO</span> ':""}${_badgeRemasterHTML(i)?_badgeRemasterHTML(i)+' ':''} ${i.signe?`<span class="badge-signed">${T('Signé','Signed')}</span> `:""}${(i.dedicaceSignature||i.dedicaceCheck)?`<span class="badge-signed">${T('Déd. sig.','Ded. sig.')}</span> `:""}${i.dedicaceDessin?`<span class="badge-signed">${T('Déd. dessin','Ded. drawing')}</span> `:""}${i.dedicaceTampon?`<span class="badge-signed">${T('Déd. tampon','Ded. stamp')}</span>`:"" }</td>
             <td><span class="tag cat">${escapeHTML(i.categorie||"")}</span></td>
             <td style="line-height:1.6">${authors}</td>
             <td style="text-align:center;font-size:18px" title="${escapeHTML(_drapeauxItem(i).titre)}">${_drapeauxItem(i).flags}</td>
@@ -9396,6 +9520,8 @@ function cardItemHTML(i, compact=false){
   const badgesBR = [];
   if(!isPins){
     if(i.editionOriginale) badgesBL.push('<span class="badge-eo">EO</span>');
+    const _remBadge = _badgeRemasterHTML(i);
+    if(_remBadge) badgesBL.push(_remBadge);
     if(i.signe) badgesBL.push(`<span class="badge-signed">${T('Signé','Signed')}</span>`);
     if(i.dedicaceSignature||i.dedicaceCheck) badgesBL.push(`<span class="badge-signed">${T('Déd. sig.','Ded. sig.')}</span>`);
     if(i.dedicaceDessin) badgesBL.push(`<span class="badge-signed">${T('Déd. dessin','Ded. drawing')}</span>`);
@@ -11221,6 +11347,7 @@ function renderItemDetail(id, pushHistory=true){
     [T('Genre','Genre'),               it.disqueGenre],
     [T('Style','Style'),               stylesDeItem(it).join(', ')],
     [T('Pressage','Pressing'),         it.disquePressage],
+    [T('Remasterisation','Remastering'), it.disqueRemaster],
     [T('Pays de pressage','Pressed in'), it.disquePays],
     [T('Référence catalogue','Catalogue no.'), it.disqueRef],
     [T('Conditionnement','Packaging'), it.disqueBoitier],
@@ -11241,14 +11368,14 @@ function renderItemDetail(id, pushHistory=true){
   // Init carousel state si diaporama activé
   if(hasDiaporama){ _pcImgs = imgs; _pcNames = imgNames; _pcIdx = 0; }
 
-  const infoMeta = `<span class="tag cat">${escapeHTML(it.categorie||"")}</span>${(it.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}${it.editionOriginale?`<span class="badge-eo">${_lang==='en'?'Original Edition':'Édition Originale'}</span>`:""}${it.signe?`<span class="badge-signed">${_lang==='en'?'Signed':'Signé'}</span>`:""}${(it.dedicaceSignature||it.dedicaceCheck)?`<span class="badge-signed">${_lang==='en'?'Dedication sig.':'Dédicace sig.'}</span>`:""}${it.dedicaceDessin?`<span class="badge-signed">${_lang==='en'?'Dedication draw.':'Dédicace dessin'}</span>`:""}`;
+  const infoMeta = `<span class="tag cat">${escapeHTML(it.categorie||"")}</span>${(it.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}${it.editionOriginale?`<span class="badge-eo">${_lang==='en'?'Original Edition':'Édition Originale'}</span>`:""}${_badgeRemasterHTML(it)}${it.signe?`<span class="badge-signed">${_lang==='en'?'Signed':'Signé'}</span>`:""}${(it.dedicaceSignature||it.dedicaceCheck)?`<span class="badge-signed">${_lang==='en'?'Dedication sig.':'Dédicace sig.'}</span>`:""}${it.dedicaceDessin?`<span class="badge-signed">${_lang==='en'?'Dedication draw.':'Dédicace dessin'}</span>`:""}`;
   const infoDl = `
     ${disqueDl}
     ${it.editeur?`<dt>${isDisque?T('Label','Label'):t('detail.publisher_label')}</dt><dd>${escapeHTML(it.editeur)}${it.collection?` — ${escapeHTML(it.collection)}`:""}</dd>`:""}
     ${it.anneeEdition?`<dt>${t('detail.release_label')}</dt><dd>${it.moisEdition?t('month.'+it.moisEdition)+" ":""}${it.anneeEdition}</dd>`:""}
     ${itemLangues(it).length?`<dt>${t('detail.lang_label')}</dt><dd>${itemLangues(it).map(l=>{const f=languageFlag(l);return (f?f+' ':'')+escapeHTML(l)}).join(', ')}</dd>`:""}
     ${it.paysEdition?`<dt>${t('detail.country_label')}</dt><dd>${escapeHTML(it.paysEdition)}</dd>`:""}
-    ${it.isbn?`<dt>${isDisque?T('Code-barres','Barcode'):t('detail.isbn_label')}</dt><dd>${escapeHTML(it.isbn)}${(isDisque&&lienDiscogsEan(it.isbn))?` <a class="lien-fiche" href="${lienDiscogsEan(it.isbn)}" target="_blank" rel="noopener noreferrer" title="${T('Chercher ce code-barres sur Discogs','Look this barcode up on Discogs')}">Discogs ↗</a>`:''}</dd>`:""}
+    ${it.isbn?`<dt>${isDisque?T('Code-barres','Barcode'):t('detail.isbn_label')}</dt><dd>${escapeHTML(it.isbn)}${_renvoiFicheHTML(it, isDisque)}</dd>`:""}
     ${it.nbPages?`<dt>${isPortfolio?t('detail.planches_label'):t('detail.pages_label')}</dt><dd>${it.nbPages}${isPortfolio?" pl.":" p."}</dd>`:""}
     ${it.tirage?`<dt>${t('detail.print_label')}</dt><dd>${escapeHTML(it.tirage)}${it.numeroExemplaire?` · ${_lang==='en'?'copy':'exemplaire'} ${escapeHTML(it.numeroExemplaire)}`:""}</dd>`:""}
     ${it.format?`<dt>${t('detail.format_label')}</dt><dd>${escapeHTML(it.format)}</dd>`:""}
@@ -12410,7 +12537,7 @@ async function acquireWish(id){
     if(w.titre)      document.getElementById("itemTitle").value      = w.titre;
     if(w.editeur)    document.getElementById("itemPublisher").value   = w.editeur;
     if(w.annee)      document.getElementById("itemYear").value        = w.annee;
-    if(w.isbn){       document.getElementById("itemIsbn").value        = w.isbn; _majLienDiscogs(); }
+    if(w.isbn){       document.getElementById("itemIsbn").value        = w.isbn; _majLienFiche(); }
     if(w.notes)      document.getElementById("itemNotes").value       = w.notes;
     if(w.categorie)  document.getElementById("itemCategory").value    = w.categorie;
     if(w.collection) document.getElementById("itemSeries").value      = w.collection;
@@ -13153,7 +13280,7 @@ async function applyAutofill(idx){
   if(r.subtitle)    document.getElementById("itemSubtitle").value    = r.subtitle;
   if(r.publisher)   document.getElementById("itemPublisher").value   = r.publisher;
   if(r.year)        document.getElementById("itemYear").value        = r.year;
-  if(r.isbn){        document.getElementById("itemIsbn").value        = r.isbn; _majLienDiscogs(); }
+  if(r.isbn){        document.getElementById("itemIsbn").value        = r.isbn; _majLienFiche(); }
   if(r.description) document.getElementById("itemNotes").value       = r.description;
   if(r.editionInfo) document.getElementById("itemEditionInfo").value  = r.editionInfo;
   if(r.serie)       document.getElementById("itemSerie").value       = r.serie;
