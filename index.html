@@ -319,6 +319,14 @@
   .grid.grid-sm .badge-xlibris{font-size:9px;padding:1px 4px}
   /* La remasterisation : un bleu froid, qui ne se confond ni avec l'or des
      signatures ni avec le vert des ex-libris. */
+  .funk-soul-row{display:flex;align-items:center;gap:12px;justify-content:space-between;
+    padding:7px 0;border-bottom:1px solid var(--border)}
+  .funk-soul-row:last-child{border-bottom:0}
+  .funk-soul-choix{display:flex;gap:14px;flex:none}
+  .funk-soul-choix label{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:700;
+    cursor:pointer;margin:0;text-transform:none;letter-spacing:0}
+  .funk-soul-choix input{width:15px;height:15px;margin:0}
+  @media(max-width:600px){ .funk-soul-row{flex-direction:column;align-items:stretch;gap:6px} }
   .badge-remaster{background:#6f8fc4;color:#0b1018;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px}
   .grid.grid-sm .badge-remaster{font-size:9px;padding:1px 4px}
   /* Prêté : état temporaire et actionnable → bien visible (orange) */
@@ -684,6 +692,14 @@
   #linkEditionModal .lem-info{flex:1;min-width:0}
   #linkEditionModal .lem-title{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #linkEditionModal .lem-sub{font-size:11px;color:var(--ink-soft)}
+  /* Plusieurs éditions d'un même titre se lient en une fois : chaque ligne se
+     coche, le pied de fenêtre compte et valide. */
+  #linkEditionModal .lem-check{width:16px;height:16px;flex-shrink:0;margin:0;pointer-events:none}
+  #linkEditionModal .lem-row.selected{background:var(--accent-soft);box-shadow:inset 2px 0 0 var(--gold)}
+  #linkEditionModal .lem-foot{padding:10px 14px;border-top:1px solid var(--border);
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  #linkEditionModal .lem-count{font-size:13px;color:var(--ink-soft);margin-right:auto}
+  #linkEditionModal .lem-foot button{padding:6px 14px;font-size:13px}
   .edition-link-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-soft);background:var(--bg-alt);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle}
   /* Le déplacement et l'agrandissement passent par une transformation, jamais par les
      barres de défilement : c'est ce qui permet de zoomer autour du pointeur. */
@@ -1678,6 +1694,11 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       <p class="muted" data-en="Discogs distinguishes the genre (Jazz) from the style (Hard Bop). Your discs carry a single field, often filled with a style. This reads them, proposes “Hard Bop” → genre Jazz + style Hard Bop, and lets you approve disc by disc. Nothing changes without your approval.">Discogs distingue le genre (Jazz) du style (Hard Bop). Vos disques ne portent qu'un champ, souvent rempli avec un style. L'assistant les lit, propose « Hard Bop » → genre Jazz + style Hard Bop, et vous laisse valider disque par disque. Rien ne change sans votre accord.</p>
       <button class="secondary" data-en="🎼 Scan my discs" onclick="ouvrirScissionGenres()" style="margin-top:12px">🎼 Analyser mes disques</button>
     </div>
+    <div class="panel" style="margin-top:24px" id="panneauFunkSoul">
+      <h3 data-en="🎚️ Split Funk from Soul">🎚️ Séparer le funk de la soul</h3>
+      <p class="muted" data-en="Discogs files funk and soul under one label. They are now two genres, with two spine colours. This lists the discs still carrying the old “Funk / Soul”, suggests one side for each — from the style already entered — and lets you correct disc by disc. Nothing changes without your approval.">Discogs range le funk et la soul sous une seule étiquette. Ce sont désormais deux genres, avec deux couleurs de tranche. L'assistant liste les disques qui portent encore l'ancien « Funk &amp; Soul », propose un camp pour chacun — d'après le style déjà saisi — et vous laisse corriger disque par disque. Rien ne change sans votre accord.</p>
+      <button class="secondary" data-en="🎚️ Scan my discs" onclick="ouvrirPartageFunkSoul()" style="margin-top:12px">🎚️ Analyser mes disques</button>
+    </div>
     <div class="panel" style="margin-top:24px" id="panneauRangementArtistes">
       <h3 data-en="👤 File artists in the right collection">👤 Ranger les artistes dans la bonne collection</h3>
       <p class="muted" data-en="A record created from the aggregate view used to be filed under Comics whatever it was, so musicians ended up in the comics author list. This compares each record with the works that cite it and proposes to move those that are clearly misfiled. Nothing moves without your approval.">Une fiche créée depuis la vue agrégée partait en bande dessinée quoi qu'il arrive : des musiciens se sont ainsi retrouvés dans la liste des auteurs de BD. L'assistant compare chaque fiche aux œuvres qui la citent et propose de déplacer celles qui sont manifestement mal rangées. Rien ne bouge sans votre validation.</p>
@@ -2563,6 +2584,21 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     <div class="modal-footer">
       <button class="secondary" onclick="closeModal('migrationModal')" data-en="Close">Fermer</button>
       <button id="migrationApplyBtn" data-en="Move selection" onclick="applyMigration()">Déplacer la sélection</button>
+    </div>
+  </div>
+</div>
+
+<!-- Partage de l'ancien genre « Funk & Soul » en deux -->
+<div class="modal-backdrop" id="funkSoulModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <h2 data-en="🎚️ Split Funk from Soul">🎚️ Séparer le funk de la soul</h2>
+      <button class="ghost" onclick="closeModal('funkSoulModal')">✕</button>
+    </div>
+    <div class="modal-body" id="funkSoulBody"></div>
+    <div class="modal-footer">
+      <button class="secondary" onclick="closeModal('funkSoulModal')" data-en="Close">Fermer</button>
+      <button id="funkSoulApplyBtn" data-en="Apply the split" onclick="appliquerPartageFunkSoul()">Appliquer la répartition</button>
     </div>
   </div>
 </div>
@@ -8723,6 +8759,106 @@ async function appliquerScissionGenres(){
   refreshCurrentView();
 }
 
+// ── Partage de l'ancien « Funk & Soul » ─────────────────────────────────
+// Discogs range le funk et la soul sous une même étiquette. Une fois les deux
+// genres séparés, les disques qui portaient l'ancien libellé doivent être
+// répartis — et ce partage-là ne se déduit pas d'un libellé : il se décide
+// disque par disque. L'assistant propose, l'utilisateur tranche.
+const _RX_FUNK_SOUL = /^(funk|soul)\s*[&\/+et]*\s*(funk|soul)$/;
+function _estAncienFunkSoul(genre){
+  const g = _normLang(genre);
+  if(!g) return false;
+  const m = g.match(_RX_FUNK_SOUL);
+  return !!m && m[1] !== m[2];
+}
+// Le style déjà saisi est le seul indice fiable ; sans lui, on penche vers le
+// funk, qui est le plus fourni — c'est une proposition, pas une décision.
+function _pencheVersSoul(it){
+  const st = stylesDeItem(it).map(v=>_normLang(v)).join(' ');
+  if(!st) return false;
+  const soul = /soul|motown|gospel|doo.?wop/.test(st);
+  const funk = /funk|disco|boogie|go.?go/.test(st);
+  return soul && !funk;
+}
+function _disquesFunkSoul(){
+  return (cache.items||[])
+    .filter(it => archetypeForCategory(it.categorie).id === 'disque' && _estAncienFunkSoul(it.disqueGenre))
+    .map(it => ({
+      id: it.id,
+      titre: it.titre || T('(sans titre)','(untitled)'),
+      artiste: (nomGroupeDeItem(it) || (it.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean)[0] || ''),
+      styles: stylesDeItem(it).join(', '),
+      propose: _pencheVersSoul(it) ? 'soul' : 'funk',
+    }))
+    .sort((a,b)=>(a.artiste||'').localeCompare(b.artiste||'','fr') || a.titre.localeCompare(b.titre,'fr'));
+}
+let _funkSoulListe = [];
+function ouvrirPartageFunkSoul(){ renderPartageFunkSoul(); openModal('funkSoulModal'); }
+function toutEnFunkSoul(genre){
+  document.querySelectorAll(`#funkSoulBody input[type=radio][value="${genre}"]`).forEach(r=>{ r.checked = true; });
+}
+function renderPartageFunkSoul(){
+  const body = document.getElementById('funkSoulBody');
+  const btn  = document.getElementById('funkSoulApplyBtn');
+  const liste = _disquesFunkSoul();
+  _funkSoulListe = liste;
+  if(!liste.length){
+    body.innerHTML = `<p class="muted" style="margin:0">${T('Aucun disque ne porte encore l\'ancien genre « Funk & Soul ». 🎉','No disc still carries the old “Funk / Soul” genre. 🎉')}</p>`;
+    if(btn) btn.style.display = 'none';
+    return;
+  }
+  if(btn) btn.style.display = '';
+  const cf = GENRE_PAR_ID['funk'].couleur, cs = GENRE_PAR_ID['soul'].couleur;
+  body.innerHTML = `
+    <p class="muted" style="margin-top:0;font-size:13px">${T(
+      `${liste.length} disque(s) portent l'ancien genre « Funk & Soul ». Le style déjà saisi sert de proposition ; à défaut, le funk, plus fourni. Corrigez ce qui doit l'être, rien ne change avant.`,
+      `${liste.length} disc(s) carry the old “Funk / Soul” genre. The style already entered is used as a suggestion; failing that, funk, which is the larger shelf. Correct what needs it — nothing changes before.`)}</p>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button type="button" class="secondary" onclick="toutEnFunkSoul('funk')" style="border-color:${cf};color:${cf}">${T('Tout en Funk','All to Funk')}</button>
+      <button type="button" class="secondary" onclick="toutEnFunkSoul('soul')" style="border-color:${cs};color:${cs}">${T('Tout en Soul','All to Soul')}</button>
+    </div>` +
+    liste.map((d,k)=>`
+      <div class="funk-soul-row">
+        <div style="min-width:0">
+          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHTML(d.titre)}</div>
+          <div class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHTML([d.artiste, d.styles].filter(Boolean).join(' · '))}</div>
+        </div>
+        <div class="funk-soul-choix">
+          <label style="color:${cf}"><input type="radio" name="fs${k}" value="funk" ${d.propose==='funk'?'checked':''}> Funk</label>
+          <label style="color:${cs}"><input type="radio" name="fs${k}" value="soul" ${d.propose==='soul'?'checked':''}> Soul</label>
+        </div>
+      </div>`).join('');
+}
+async function appliquerPartageFunkSoul(){
+  const choix = _funkSoulListe.map((d,k)=>({
+    ...d, vers: document.querySelector(`#funkSoulBody input[name="fs${k}"]:checked`)?.value || d.propose }));
+  if(!choix.length){ toast(T('Rien à répartir','Nothing to split'),'error'); return; }
+  const nbSoul = choix.filter(c=>c.vers==='soul').length;
+  if(!confirm(T(`Ranger ${choix.length - nbSoul} disque(s) en Funk et ${nbSoul} en Soul ?`,
+                `File ${choix.length - nbSoul} disc(s) under Funk and ${nbSoul} under Soul?`))) return;
+  const btn = document.getElementById('funkSoulApplyBtn');
+  if(btn) btn.disabled = true;
+  let faits = 0;
+  try {
+    for(const c of choix){
+      const it = (cache.items||[]).find(x=>x.id===c.id);
+      if(!it) continue;
+      it.disqueGenre = genreLabel(c.vers);
+      it.updatedAt = new Date().toISOString();
+      await dbPut('items', it);
+      faits++;
+    }
+  } catch(e){
+    console.warn('[Genres] partage funk/soul interrompu', e);
+    toast(T(`Partage interrompu après ${faits} disque(s)`,`Split stopped after ${faits} disc(s)`),'error');
+  }
+  if(btn) btn.disabled = false;
+  await reloadCache();
+  toast(T(`${faits} disque(s) rangé(s)`,`${faits} disc(s) filed`));
+  renderPartageFunkSoul();
+  refreshCurrentView();
+}
+
 // ── Fiches d'artiste rangées dans la mauvaise collection ─────────────────
 // Le juge de paix, ce sont les œuvres : si toutes celles qui citent une fiche
 // appartiennent à une même collection, et que ce n'est pas celle de la fiche,
@@ -10897,24 +11033,35 @@ function hideCoverTooltip(){
 }
 
 // --------- Edition linking ---------
-async function linkEditions(id1, id2){
-  const a = cache.items.find(i=>i.id===id1);
-  const b = cache.items.find(i=>i.id===id2);
-  if(!a||!b||id1===id2) return;
-  // Construire le groupe complet : union de tous les liens existants des deux items
-  const group = new Set([id1, id2, ...(a.linkedEditions||[]), ...(b.linkedEditions||[])]);
-  // Mettre à jour chaque membre du groupe pour qu'il connaisse tous les autres
-  for(const memberId of group){
+// Un lien d'édition n'est pas une flèche mais un groupe : chaque membre connaît
+// tous les autres. Lier quatre éditions d'un même titre, c'est donc une seule
+// opération — l'union des groupes existants — et non trois liens successifs,
+// qui rechargeaient le cache à chaque fois et laissaient des états incomplets.
+async function linkEditionsMultiple(baseId, ids){
+  const base = cache.items.find(i=>i.id===baseId);
+  if(!base) return 0;
+  const cibles = [...new Set(ids||[])].filter(x=>x && x!==baseId && cache.items.some(i=>i.id===x));
+  if(!cibles.length) return 0;
+  const groupe = new Set([baseId, ...(base.linkedEditions||[])]);
+  for(const id of cibles){
+    const it = cache.items.find(i=>i.id===id);
+    groupe.add(id);
+    (it.linkedEditions||[]).forEach(x=>groupe.add(x));
+  }
+  for(const memberId of groupe){
     const member = cache.items.find(i=>i.id===memberId);
     if(!member) continue;
-    const others = [...group].filter(x=>x!==memberId);
-    member.linkedEditions = others;
+    member.linkedEditions = [...groupe].filter(x=>x!==memberId);
+    member.updatedAt = new Date().toISOString();
     await dbPut("items", member);
   }
   await reloadCache();
-  renderItemDetail(id1, false);
-  toast(T("Édition liée ✓","Edition linked ✓"));
+  renderItemDetail(baseId, false);
+  const n = cibles.length;
+  toast(T(`${n} édition${n>1?'s':''} liée${n>1?'s':''} ✓`, `${n} edition${n>1?'s':''} linked ✓`));
+  return n;
 }
+async function linkEditions(id1, id2){ return linkEditionsMultiple(id1, [id2]); }
 
 async function unlinkEdition(id1, id2){
   // Retirer id2 de la liste de id1, et retirer id1 de tous les membres que id2 connaissait
@@ -10936,9 +11083,58 @@ async function unlinkEdition(id1, id2){
   toast(T("Lien supprimé","Link removed"));
 }
 
+// Quatre éditions d'un même titre se lient en une fois : on coche, puis on
+// valide. La sélection survit à un changement de recherche — c'est ce qui
+// permet de composer un groupe à partir de plusieurs requêtes.
+let _lemSelection = new Set();
+let _lemBaseId = null;
+let _lemVisibles = [];
+function _lemBasculer(id, ligne){
+  if(_lemSelection.has(id)) _lemSelection.delete(id); else _lemSelection.add(id);
+  if(ligne){
+    ligne.classList.toggle('selected', _lemSelection.has(id));
+    const cb = ligne.querySelector('.lem-check');
+    if(cb) cb.checked = _lemSelection.has(id);
+  }
+  _lemMajPied();
+}
+function _lemToutCocher(){
+  const tout = _lemVisibles.every(id=>_lemSelection.has(id));
+  _lemVisibles.forEach(id=>{ if(tout) _lemSelection.delete(id); else _lemSelection.add(id); });
+  document.querySelectorAll('#lemList .lem-row').forEach(l=>{
+    const on = _lemSelection.has(l.dataset.id);
+    l.classList.toggle('selected', on);
+    const cb = l.querySelector('.lem-check'); if(cb) cb.checked = on;
+  });
+  _lemMajPied();
+}
+function _lemMajPied(){
+  const n = _lemSelection.size;
+  const cpt = document.getElementById('lemCount');
+  const btn = document.getElementById('lemValider');
+  const tout = document.getElementById('lemTout');
+  if(cpt) cpt.textContent = n
+    ? T(`${n} édition${n>1?'s':''} sélectionnée${n>1?'s':''}`, `${n} edition${n>1?'s':''} selected`)
+    : T('Cochez les éditions à lier','Tick the editions to link');
+  if(btn){
+    btn.disabled = !n;
+    btn.textContent = n>1 ? T(`Lier les ${n} éditions`,`Link the ${n} editions`)
+                          : T('Lier','Link');
+  }
+  if(tout) tout.textContent = (_lemVisibles.length && _lemVisibles.every(id=>_lemSelection.has(id)))
+    ? T('Tout décocher','Untick all') : T('Tout cocher','Tick all');
+}
+async function _lemValider(){
+  const ids = [..._lemSelection];
+  const base = _lemBaseId;
+  document.getElementById('linkEditionModal')?.remove();
+  _lemSelection = new Set(); _lemVisibles = [];
+  if(ids.length) await linkEditionsMultiple(base, ids);
+}
 function openLinkEditionModal(currentId){
   const existing = document.getElementById("linkEditionModal");
   if(existing) existing.remove();
+  _lemSelection = new Set(); _lemBaseId = currentId; _lemVisibles = [];
 
   const modal = document.createElement("div");
   modal.id = "linkEditionModal";
@@ -10950,6 +11146,11 @@ function openLinkEditionModal(currentId){
         <button class="secondary" style="padding:4px 10px;font-size:13px" onclick="document.getElementById('linkEditionModal').remove()">✕</button>
       </div>
       <div class="lem-list" id="lemList"></div>
+      <div class="lem-foot">
+        <span class="lem-count" id="lemCount"></span>
+        <button type="button" class="secondary" id="lemTout" onclick="_lemToutCocher()"></button>
+        <button type="button" id="lemValider" onclick="_lemValider()"></button>
+      </div>
     </div>`;
   modal.addEventListener("click", e=>{ if(e.target===modal) modal.remove(); });
   document.body.appendChild(modal);
@@ -10965,17 +11166,21 @@ function openLinkEditionModal(currentId){
         ...(i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId)))].join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
       return !q || fields.includes(q);
     }).slice(0, 40);
+    _lemVisibles = results.map(x=>x.id);
 
     const list = document.getElementById("lemList");
     if(!list) return;
     if(!results.length){
       list.innerHTML = `<p class="muted" style="padding:16px;text-align:center;font-size:13px">${t('lem.no_result')}</p>`;
+      _lemMajPied();
       return;
     }
     list.innerHTML = results.map(x=>{
       const cover = x.images?.[0];
+      const coche = _lemSelection.has(x.id);
       const authors = (x.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2).join(", ");
-      return `<div class="lem-row" onclick="linkEditions('${currentId}','${x.id}');document.getElementById('linkEditionModal').remove()">
+      return `<div class="lem-row${coche?' selected':''}" data-id="${x.id}" onclick="_lemBasculer('${x.id}', this)">
+        <input type="checkbox" class="lem-check" ${coche?'checked':''} tabindex="-1" aria-hidden="true">
         <div class="lem-cover">${cover?`<img src="${_safeUrl(cover)}">`:"📖"}</div>
         <div class="lem-info">
           <div class="lem-title">${escapeHTML(x.titre||T("Sans titre","Untitled"))}</div>
@@ -10984,10 +11189,14 @@ function openLinkEditionModal(currentId){
         <span class="tag cat" style="font-size:10px;flex-shrink:0">${escapeHTML(x.categorie||"")}</span>
       </div>`;
     }).join("");
+    _lemMajPied();
   }
 
   renderLemList("");
   document.getElementById("lemSearch").addEventListener("input", e=>renderLemList(e.target.value));
+  document.getElementById("lemSearch").addEventListener("keydown", e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); if(_lemSelection.size) _lemValider(); }
+  });
   setTimeout(()=>document.getElementById("lemSearch")?.focus(), 50);
 }
 
@@ -13671,8 +13880,8 @@ const GENRES_DISQUE = [
     styles:['Marche','Fanfare','Brass Band','Pipe & Drum'] },
   { id:'folk / monde / country', fr:'Folk / Monde / Country', en:'Folk, World & Country', couleur:'#6a8a50',
     styles:['Folk','Country','Bluegrass','Celtique','Afrobeat','Éthio-jazz','Highlife','Fado','Flamenco','Musique arabe','Musique indienne','Cajun','Zydeco','Traditionnel'] },
-  { id:'funk & soul', fr:'Funk & Soul', en:'Funk / Soul', couleur:'#c47840',
-    styles:['Funk','Soul','Disco','Rhythm & Blues','Gospel','Neo Soul','P.Funk','Boogie','Motown'] },
+  { id:'funk', fr:'Funk', en:'Funk', couleur:'#c47840',
+    styles:['Funk','P.Funk','Jazz-Funk','Funk Rock','Afro-Funk','Deep Funk','Disco','Boogie','Go-Go'] },
   { id:'hip-hop', fr:'Hip-Hop', en:'Hip Hop', couleur:'#5a5a78',
     styles:['Boom Bap','Conscious','Gangsta','Instrumental','Jazzy Hip-Hop','Trip Hop','Rap','Turntablism'] },
   { id:'jazz', fr:'Jazz', en:'Jazz', couleur:'#3f6b8c',
@@ -13691,6 +13900,12 @@ const GENRES_DISQUE = [
     styles:['Prog Rock','Krautrock','Canterbury Scene','Symphonic Prog','Space Rock','Zeuhl','Art Rock','Rock In Opposition'] },
   { id:'scene & ecran', fr:'Scène & Écran', en:'Stage & Screen', couleur:'#8a6a40',
     styles:['Bande originale de film','Musique de série','Comédie musicale','Score','Théâtre','Jeu vidéo'] },
+  // Discogs range le funk et la soul sous une seule étiquette. Une collection
+  // qui compte beaucoup de funk n'y retrouve rien : on les sépare. Le funk
+  // garde l'orange qu'il avait, la soul prend un or Motown — la teinte la plus
+  // éloignée du reste de la palette.
+  { id:'soul', fr:'Soul', en:'Soul', couleur:'#c9a227',
+    styles:['Soul','Motown','Northern Soul','Southern Soul','Philly Soul','Neo Soul','Gospel','Doo Wop','Rhythm & Blues'] },
 ];
 const GENRE_PAR_ID = Object.fromEntries(GENRES_DISQUE.map(g=>[g.id, g]));
 function genreLabel(id){ const g = GENRE_PAR_ID[id]; return g ? T(g.fr, g.en) : id; }
@@ -13707,7 +13922,10 @@ const _GENRE_FAMILLES = [
   [/classiq|classical|baroque|op[eé]ra|symph|romantique|renaissance|m[eé]di[eé]val|minimalis/, 'classique'],
   [/electro|techno|house|ambient|trance|synth|idm|dub ?step|downtempo|drum ?n ?bass/, 'electronique'],
   [/chanson|vari[eé]t[eé]|y[eé]-?y[eé]|r[eé]aliste/,                             'chanson francaise'],
-  [/funk|soul|disco|motown|gospel/,                                              'funk & soul'],
+  // Le funk est testé avant la soul : l'ancien libellé « Funk & Soul » tombe
+  // ainsi du côté le plus fourni, et l'assistant s'occupe des exceptions.
+  [/funk|disco|boogie(?! ?woogie)|\bgo.?go\b/,                                   'funk'],
+  [/soul|motown|doo.?wop|gospel/,                                                'soul'],
   [/hip.?hop|rap|trip.?hop|boom bap|turntablis/,                                 'hip-hop'],
   [/bande originale|musique de film|soundtrack|\bost\b|com[eé]die musicale|score|th[eé][aâ]tre|jeu vid[eé]o/, 'scene & ecran'],
   [/salsa|bossa|samba|cumbia|tango|mambo|bol[eé]ro|chachach|\bson\b|\bmpb\b|latin/, 'latin'],
