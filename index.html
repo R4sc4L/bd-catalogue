@@ -955,10 +955,16 @@
   .fb-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
   .fb-face-back{transform:rotateY(180deg)}
   .fb-hint{color:rgba(240,230,210,.55);font-size:12px}
-  .fb-edit{position:absolute;top:8px;right:8px;z-index:9;width:32px;height:32px;padding:0;border-radius:50%;background:rgba(14,13,19,.85);color:var(--ink);box-shadow:var(--shadow);font-size:14px;line-height:1;cursor:pointer;border:1px solid var(--border-warm);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);opacity:0;transition:opacity .15s,background .15s,border-color .15s}
-  .fb-page.fb-left .fb-edit{right:auto;left:8px}
-  .fb-page:hover .fb-edit{opacity:1}
+  /* Le crayon n'est plus seul : le diaporama le rejoint sur les œuvres qui en
+     ont un. Le positionnement passe donc du bouton à leur porte-outils. */
+  .fb-tools{position:absolute;top:8px;right:8px;z-index:9;display:flex;gap:6px;opacity:0;transition:opacity .15s}
+  .fb-page.fb-left .fb-tools{right:auto;left:8px}
+  .fb-page:hover .fb-tools{opacity:1}
+  /* Sans survol — au doigt — un bouton invisible est un bouton perdu. */
+  @media(hover:none){ .fb-tools{opacity:1} }
+  .fb-edit{width:32px;height:32px;padding:0;border-radius:50%;background:rgba(14,13,19,.85);color:var(--ink);box-shadow:var(--shadow);font-size:14px;line-height:1;cursor:pointer;border:1px solid var(--border-warm);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);transition:background .15s,border-color .15s}
   .fb-edit:hover{background:var(--accent-bg);color:var(--on-accent);border-color:transparent}
+  .fb-diapo{font-size:12px;padding-left:2px}
   .pile-manage-btn:hover{background:var(--accent-bg);color:var(--on-accent);border-color:var(--accent)}
   .pile-popup{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);min-width:180px;max-width:220px;background:var(--bg-alt);border:1px solid var(--border-warm);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.6);padding:10px;z-index:200;pointer-events:none;display:none}
   .pile-block:hover .pile-popup{display:block}
@@ -8211,6 +8217,8 @@ function _pcFinDiaporama(){
   document.getElementById('pcLightbox')?.remove();
   document.removeEventListener("keydown", _pcLbKey);
   document.getElementById('pcLbHint')?.remove();
+  // Lancé depuis la liseuse : on rend la main au classeur, resté ouvert derrière.
+  if(_pcDepuisLiseuse) return;
   // Le résumé n'existe que si l'œuvre en a un : à défaut, on revient simplement en haut.
   const cible = document.getElementById('detailSummaryPanel');
   const doux = _prefersReducedMotion() ? 'auto' : 'smooth';
@@ -12985,8 +12993,8 @@ function openAutofillModal(opts){
   if(hint) hint.textContent = _rechercheDisque()
     ? T("Code-barres (EAN) pour une correspondance exacte, ou « artiste titre » pour une recherche. Source : MusicBrainz, pochettes Cover Art Archive.",
         "Barcode (EAN) for an exact match, or “artist title” to search. Source: MusicBrainz, covers from the Cover Art Archive.")
-    : T("ISBN pour une correspondance exacte, ou titre pour une recherche. Sources : BNF, Google Books, Open Library.",
-        "ISBN for an exact match, or a title to search. Sources: BNF, Google Books, Open Library.");
+    : T("ISBN pour une correspondance exacte, ou titre, auteur, ou les deux — « moebius arzak ». Sources : BnF (dépôt légal, remonte avant l'ISBN), Google Books, Open Library.",
+        "ISBN for an exact match, or a title, an author, or both — “moebius arzak”. Sources: BnF (legal deposit, predates ISBN), Google Books, Open Library.");
   _syncScanBtn();          // bouton 📷 seulement si la caméra est utilisable (HTTPS)
   openModal("autofillModal");
   // Appelé depuis le scan direct : ne rien chercher, le code-barres arrive dans
@@ -13040,13 +13048,13 @@ async function autofillSearch(){
       results = [...bnfRes, ...gbRes, ...olRes];
     }
 
-    // Deduplicate by ISBN then title
-    const seen = new Set();
-    results = results.filter(r => {
-      const key = r.isbn || r.title.toLowerCase();
-      if(seen.has(key)) return false;
-      seen.add(key); return true;
-    }).slice(0, 12);
+    // Dédoublonner, fusionner ce que chaque catalogue apporte, puis classer.
+    // Hors recherche par identifiant : un ISBN ou un code-barres désigne déjà
+    // une édition précise, il n'y a rien à départager.
+    const motsCherches = (isISBN || disque) ? [] : _motsUtiles(query);
+    results = _fusionnerNotices(results, motsCherches);
+    if(motsCherches.length) results.sort((a,b)=> b._score - a._score);
+    results = results.slice(0, 12);
 
     _autofillResults = results;
 
@@ -13422,16 +13430,61 @@ function isbn13to10(isbn13){
 }
 
 // ---- BNF (Bibliothèque nationale de France) ----
+// Le catalogue du dépôt légal remonte bien avant l'ISBN : c'est la meilleure
+// source pour un album des années 1950-1970, à condition de ne pas l'interroger
+// comme un moteur de recherche moderne. Les notices anciennes ont été saisies à
+// la main — accents inégaux, apostrophes droites ou courbes, articles initiaux
+// tantôt gardés tantôt rejetés — et l'index CQL « all » exige que TOUS les mots
+// envoyés soient présents. Un mot vide de trop, et la notice reste introuvable.
+const _MOTS_VIDES_RECH = new Set([
+  'le','la','les','un','une','des','du','de','au','aux','et','ou','en','sur',
+  'the','of','and','a','an','to','in','el','los','las','der','die','das','und',
+]);
+function _normRecherche(s){
+  return String(s||'')
+    .replace(/[’‘`´]/g, "'")                              // apostrophes typographiques
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')       // accents
+    .replace(/[«»„“”"]/g,' ')
+    .replace(/[^\p{L}\p{N}'\- ]/gu,' ')                    // ponctuation
+    .replace(/\s+/g,' ')
+    .trim();
+}
+// Les mots qui portent vraiment le sens : ce sont eux qu'on envoie à l'index
+// « all ». « L'Incal noir » devient « incal noir », qui atteint aussi bien la
+// vedette « Incal noir (L') » que le titre tel qu'imprimé.
+function _motsUtiles(s){
+  return _normRecherche(s).toLowerCase()
+    .split(/[\s'\-]+/)
+    .filter(m => m.length > 1 && !_MOTS_VIDES_RECH.has(m));
+}
+
+const BNF_SRU = 'https://catalogue.bnf.fr/api/SRU';
+async function _bnfSRU(cql, max){
+  const url = `${BNF_SRU}?version=1.2&operation=searchRetrieve`
+            + `&query=${encodeURIComponent(cql)}`
+            + `&recordSchema=unimarcxchange&maximumRecords=${max}&startRecord=1`;
+  const r = await fetch(url);
+  if(!r.ok) return [];
+  const xml = new DOMParser().parseFromString(await r.text(), 'text/xml');
+  if(xml.querySelector('parsererror')) return [];
+  return [...xml.querySelectorAll('record')].map(parseBNFRecord).filter(x=>x.title);
+}
+
 async function fetchBNF(query, isISBN){
   try {
-    const q = isISBN
-      ? `bib.isbn all "${query}"`
-      : `bib.title all "${query.replace(/"/g,"")}"`;
-    const url = `https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve&query=${encodeURIComponent(q)}&recordSchema=unimarcxchange&maximumRecords=6&startRecord=1`;
-    const r = await fetch(url);
-    const txt = await r.text();
-    const xml = new DOMParser().parseFromString(txt, "text/xml");
-    return [...xml.querySelectorAll("record")].map(parseBNFRecord).filter(r=>r.title);
+    if(isISBN) return await _bnfSRU(`bib.isbn all "${query}"`, 6);
+    const mots = _motsUtiles(query);
+    if(!mots.length) return [];
+    const q = mots.join(' ');
+    // Trois angles d'attaque, en parallèle. Le titre d'abord ; l'auteur, parce
+    // qu'on tape souvent « moebius » seul ; et le plein texte, qui rattrape le
+    // cas le plus fréquent — « auteur titre » mélangés dans le même champ.
+    const lots = await Promise.all([
+      _bnfSRU(`bib.title all "${q}"`, 20).catch(()=>[]),
+      _bnfSRU(`bib.author all "${q}"`, 10).catch(()=>[]),
+      _bnfSRU(`bib.anywhere all "${q}"`, 20).catch(()=>[]),
+    ]);
+    return lots.flat();
   } catch { return []; }
 }
 
@@ -13479,6 +13532,62 @@ function parseBNFRecord(rec){
 
   return { source:"BNF", title, subtitle, authors, authorsParts, publisher, year, isbn,
            pages, description, serie, category, language, cover };
+}
+
+// ── Classer les notices par pertinence ──────────────────────────────────
+// Élargir la requête fait entrer du bruit : « bib.anywhere » ramène tout ce qui
+// mentionne les mots cherchés, préface et bibliographie comprises. Le tri par
+// ordre d'arrivée n'a alors plus aucun sens — c'est le recouvrement avec le
+// titre qui décide, le reste ne fait que départager.
+function _scoreNotice(r, mots){
+  if(!mots.length) return 0;
+  const motsTitre  = new Set(_motsUtiles(r.title || ''));
+  const motsAuteur = new Set(_motsUtiles((r.authors || []).join(' ')));
+  const titre = _normRecherche(r.title || '').toLowerCase();
+  const q = mots.join(' ');
+  let s = 0;
+  // Le critère principal : quelle part de ce qui a été cherché figure au titre.
+  s += 12 * (mots.filter(m => motsTitre.has(m)).length / mots.length);
+  if(titre === q) s += 8;
+  else if(titre.startsWith(q)) s += 4;
+  // Les mots absents du titre mais présents chez l'auteur : « moebius arzak ».
+  s += 3 * mots.filter(m => !motsTitre.has(m) && motsAuteur.has(m)).length;
+  // Un titre à rallonge qui contient la requête vaut moins qu'un titre juste.
+  s -= Math.min(4, Math.max(0, motsTitre.size - mots.length) * 0.4);
+  // Signes qu'une notice est exploitable plutôt qu'un fantôme de catalogue.
+  if(r.cover) s += 2;
+  if(r.isbn) s += 1;
+  if(r.year) s += 1;
+  if(r.publisher) s += 0.5;
+  if(r.category) s += 1;          // catalogué comme BD, manga ou comics
+  return s;
+}
+// Une même édition revient par plusieurs requêtes et plusieurs catalogues, jamais
+// avec les mêmes champs remplis : on garde la meilleure et on la complète avec ce
+// que les autres apportent, plutôt que de jeter la première venue.
+function _cleNotice(r){
+  if(r.isbn) return 'i:' + r.isbn;
+  return 't:' + _motsUtiles(r.title).join(' ') + '|' + (r.year || '');
+}
+function _fusionnerNotices(liste, mots){
+  const par = new Map();
+  for(const r of liste){
+    const cle = _cleNotice(r);
+    const dejaLa = par.get(cle);
+    if(!dejaLa){ par.set(cle, { ...r, _score: _scoreNotice(r, mots) }); continue; }
+    // Compléter les trous : une notice BnF précise mais sans couverture profite
+    // de la vignette rapportée par Google Books.
+    for(const k of ['cover','isbn','publisher','year','pages','description',
+                    'serie','category','language','subtitle']){
+      if(!dejaLa[k] && r[k]) dejaLa[k] = r[k];
+    }
+    if(!(dejaLa.authors||[]).length && (r.authors||[]).length){
+      dejaLa.authors = r.authors; dejaLa.authorsParts = r.authorsParts;
+    }
+    // Le score se recalcule : la notice enrichie peut avoir gagné des points.
+    dejaLa._score = Math.max(dejaLa._score, _scoreNotice(dejaLa, mots));
+  }
+  return [...par.values()];
 }
 
 async function applyAutofill(idx){
@@ -16287,6 +16396,18 @@ async function renameDrawerFromModal(){
 let _fbState = null;
 let _fbReturn = null;   // contexte pour rouvrir la liseuse après édition
 let _lastSavedItemId = null;
+// Le diaporama d'une œuvre : la case de sa fiche, avec la tolérance historique
+// qui l'accordait d'office aux portfolios. Une seule définition, pour que la
+// liseuse et la fiche disent exactement la même chose.
+function diaporamaAutorise(it){
+  if(!it) return false;
+  return !!(it.diaporama ?? (it.categorie === 'Portfolio'));
+}
+function visuelsDiaporama(it){
+  if(!it) return [];
+  const verrouille = (it.imagesAdultes || it.contenuAdulte) && !_adultUnlocked;
+  return verrouille ? [] : (it.images || []);
+}
 function _fbCaption(it){
   const authors = (it.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(n=>n&&n!=="—").join(", ");
   const num = it.numeroExemplaire ? ` · N° ${escapeHTML(it.numeroExemplaire)}` : "";
@@ -16310,7 +16431,10 @@ function _classeurPages(pile){
       const legende = autres > 0
         ? cap + ` <span style="opacity:.55">(+${autres} ${autres===1?T('visuel','visual'):T('visuels','visuals')})</span>`
         : cap;
-      return [{type:'img', src:imgs[0], id:it.id, infos, cap:legende}];
+      // Les visuels suivants ne sont pas feuilletés ; le bouton ▶ les rend
+      // accessibles sans quitter le classeur.
+      const diapo = (diaporamaAutorise(it) && imgs.length > 1) ? imgs.length : 0;
+      return [{type:'img', src:imgs[0], id:it.id, infos, cap:legende, diapo}];
     }
     return [{type:'empty', cap, id:it.id, infos}];
   };
@@ -16336,7 +16460,11 @@ function _classeurPages(pile){
 function _fbPageInner(pg){
   if(!pg) return `<div class="fb-imgwrap fb-blank"></div>`;
   if(pg.type==='cover') return `<div class="fb-imgwrap fb-cover" style="background:${pg.color||'#6d3c3c'}"></div>`;
-  const edit = (pg.id && !GUEST) ? `<button class="fb-edit" title="${T(`Éditer la fiche`,`Edit record`)}" onclick="_fbEditItem(event,'${pg.id}')">✏️</button>` : '';
+  const outils = [];
+  if(pg.id && !GUEST) outils.push(`<button class="fb-edit" title="${T(`Éditer la fiche`,`Edit record`)}" onclick="_fbEditItem(event,'${pg.id}')">✏️</button>`);
+  // Consulter n'est pas modifier : le diaporama reste offert aux invités.
+  if(pg.id && pg.diapo) outils.push(`<button class="fb-edit fb-diapo" title="${T(`Diaporama — ${pg.diapo} visuels`,`Slideshow — ${pg.diapo} visuals`)}" onclick="_fbDiaporama(event,'${pg.id}')">▶</button>`);
+  const edit = outils.length ? `<div class="fb-tools">${outils.join('')}</div>` : '';
   // Le contenu de la page ouvre la fiche du document, comme le clic sur la vignette d'un album.
   // Les marges de la page restent réservées au feuilletage (voir le rappel en bas de liseuse).
   const oc = pg.id ? ' fb-open' : '';
@@ -16369,6 +16497,33 @@ function _fbBackToBinder(){
   _fbFromBinder = null;
   showView('library');
   openClasseurReader(ctx.pileId, ctx.itemId);
+}
+// Le diaporama sans quitter le classeur : la liseuse reste ouverte derrière, on
+// y revient en refermant. Deux précautions — le clavier appartient à la
+// visionneuse tant qu'elle est là (sans quoi ← → tourneraient les pages du
+// classeur en dessous), et la fin du diaporama ne va pas chercher un résumé de
+// fiche qui n'est pas affiché.
+let _pcDepuisLiseuse = false;
+function _fbDiaporama(e, id){
+  if(e){ e.stopPropagation(); e.preventDefault(); }
+  const it = (cache.items||[]).find(x=>x.id===id);
+  const imgs = visuelsDiaporama(it);
+  if(!diaporamaAutorise(it) || imgs.length < 2) return;
+  _pcImgs = imgs;
+  _pcNames = (it.imageNames || []).slice(0, imgs.length);
+  _pcIdx = 0;
+  _pcDepuisLiseuse = true;
+  document.removeEventListener('keydown', _fbKey);
+  pcOpenLightbox(0);
+  // La visionneuse se referme par cinq chemins différents ; plutôt que de les
+  // instrumenter tous, on guette la disparition de son élément.
+  const obs = new MutationObserver(()=>{
+    if(document.getElementById('pcLightbox')) return;
+    obs.disconnect();
+    _pcDepuisLiseuse = false;
+    if(_fbState) document.addEventListener('keydown', _fbKey);
+  });
+  obs.observe(document.body, {childList:true});
 }
 function _fbEditItem(e, id){
   if(e){ e.stopPropagation(); e.preventDefault(); }
@@ -16571,6 +16726,9 @@ function _fbTurn(dir){
   const done = ()=>{
     if(finished) return; finished = true;
     leaf.removeEventListener('transitionend', done);
+    // La liseuse a pu être refermée pendant l'animation : le repli à 780 ms
+    // redessinait alors un classeur qui n'existait plus.
+    if(_fbState !== s) return;
     s.spread = target; s.busy = false;
     _fbRender();
   };
