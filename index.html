@@ -12799,12 +12799,33 @@ function _prefCameraId(){ try { return localStorage.getItem(SCAN_CAM_KEY) || '';
 function _setPrefCameraId(id){ try { id ? localStorage.setItem(SCAN_CAM_KEY, id) : localStorage.removeItem(SCAN_CAM_KEY); } catch(e){} }
 
 // Ouvre le flux : périphérique mémorisé si possible, caméra arrière par défaut.
+// La DÉFINITION est le nerf de la guerre. Sans contrainte, Safari sur iPhone
+// livre du 640×480 : un EAN-13 cadré à distance de lecture n'y fait plus que
+// deux pixels par barre, en deçà de ce que ZXing sait démêler. En demandant du
+// 1280×720 on passe à près de quatre — mesuré sur des captures simulées, où
+// 640×480 échouait et 1280 réussissait. On ne demande pas 1920 : la trame est
+// alors si lourde que chaque tentative de décodage coûte dix fois plus cher,
+// donc on en fait beaucoup moins par seconde.
+const _CONTRAINTES_SCAN = {
+  width:  { ideal: 1280 },
+  height: { ideal: 720  },
+  // Ignoré là où ce n'est pas géré ; ailleurs, évite l'image nette à l'infini
+  // et floue à 25 cm — la distance à laquelle on lit un dos d'album.
+  advanced: [{ focusMode: 'continuous' }],
+};
 async function _startScanStream(deviceId){
   if(deviceId){
-    try { return await navigator.mediaDevices.getUserMedia({ video:{ deviceId:{exact:deviceId} } }); }
+    try { return await navigator.mediaDevices.getUserMedia({
+      video: { deviceId:{exact:deviceId}, ..._CONTRAINTES_SCAN } }); }
     catch(e){ _setPrefCameraId(''); }   // périphérique absent (iPhone déconnecté) : on retombe sur le défaut
   }
-  return navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'} } });
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      video: { facingMode:{ideal:'environment'}, ..._CONTRAINTES_SCAN } });
+  } catch(e){
+    // Une caméra qui refuse ces contraintes vaut mieux que pas de caméra.
+    return navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'} } });
+  }
 }
 
 // Remplit le sélecteur ; masqué s'il n'y a qu'une seule caméra (cas du téléphone).
@@ -12875,9 +12896,30 @@ async function _getBarcodeReader(){
     });
   }
   if(!window.ZXingBrowser) throw new Error(T('bibliothèque de décodage indisponible','decoder library unavailable'));
+  const Z = window.ZXingBrowser;
+  // Un lecteur non bridé essaie TOUS les formats sur chaque image — QR, Aztec,
+  // Data Matrix, PDF417… — alors qu'on ne cherche qu'un code-barres de produit.
+  // Le restreindre change deux choses, l'une et l'autre mesurées : une capture
+  // que le lecteur générique n'arrivait pas à lire devient lisible, et le temps
+  // de décodage tombe de ~200 ms à ~5 ms, donc on tente bien plus souvent.
+  //   `DecodeHintType` n'est pas exposé par le paquet @zxing/browser ; ses
+  //   valeurs sont celles de l'énumération ZXing : 2 = POSSIBLE_FORMATS,
+  //   3 = TRY_HARDER (vérifié : les indices changent bien le résultat).
+  const indices = new Map();
+  if(Z.BarcodeFormat){
+    indices.set(2, [Z.BarcodeFormat.EAN_13, Z.BarcodeFormat.EAN_8,
+                    Z.BarcodeFormat.UPC_A,  Z.BarcodeFormat.UPC_E]);
+  }
+  indices.set(3, true);
+  const Lecteur = Z.BrowserMultiFormatOneDReader || Z.BrowserMultiFormatReader;
+  // La cadence, enfin : @zxing/browser laisse 500 ms entre deux tentatives, un
+  // réglage prudent calibré sur un décodage lent. Le nôtre prend une dizaine de
+  // millisecondes ; à 60 ms d'intervalle on tente donc seize fois par seconde au
+  // lieu de deux, sans que le téléphone ait à travailler davantage.
   // En mode ZXing, la boucle de lecture est gérée par la bibliothèque elle-même
   // (decodeFromVideoElement) : pas de fonction `detect` ici.
-  return { kind:'zxing', reader: new window.ZXingBrowser.BrowserMultiFormatReader() };
+  return { kind:'zxing',
+           reader: new Lecteur(indices, { delayBetweenScanAttempts: 60 }) };
 }
 async function openBarcodeScanner(){
   if(!scanDisponible()){
@@ -12912,7 +12954,23 @@ async function openBarcodeScanner(){
     return;
   }
   video.srcObject = stream;
+  // `autoplay` suffit d'ordinaire, mais Safari demande parfois un démarrage
+  // explicite quand le flux est branché après l'insertion dans la page. Sans
+  // lecture, le décodeur analyse une image figée — la caméra « s'ouvre » et
+  // rien ne se lit jamais.
+  try { await video.play(); } catch(e){ /* déjà en lecture, ou refus bénin */ }
   _scanState = { ov, stream, stop:false };
+  // Au bout de dix secondes sans lecture, dire quoi faire — et afficher la
+  // définition réellement obtenue, qui est la première chose à regarder quand
+  // un scan reste muet.
+  _scanState.minuterie = setTimeout(()=>{
+    if(!_scanState || _scanState.stop) return;
+    const t = stream.getVideoTracks?.()[0]?.getSettings?.() || {};
+    const def = (t.width && t.height) ? `${t.width}×${t.height}` : '?';
+    ov.querySelector('.scan-hint').innerHTML =
+      T(`Rien ne se lit ? Approchez à 15-20 cm, évitez les reflets, et tenez le code bien horizontal.<br><span style="opacity:.6;font-size:11px">Caméra : ${def} · sinon, « Saisir à la main »</span>`,
+        `Nothing read? Move to 15-20 cm, avoid glare, keep the code horizontal.<br><span style="opacity:.6;font-size:11px">Camera: ${def} · otherwise, “Type it in”</span>`);
+  }, 10000);
   // La liste des caméras n'est nommée qu'une fois l'autorisation accordée :
   // on la peuple donc après l'ouverture du flux.
   _remplirListeCameras(ov, video);
@@ -12959,6 +13017,7 @@ function closeBarcodeScanner(){
   if(!_scanState) return;
   _scanState.stop = true;
   if(_scanState.raf) cancelAnimationFrame(_scanState.raf);
+  if(_scanState.minuterie) clearTimeout(_scanState.minuterie);
   try{ _scanState.controls?.stop?.(); }catch(e){}
   try{ _scanState.stream?.getTracks?.().forEach(t=>t.stop()); }catch(e){}
   _scanState.ov?.remove();
@@ -13190,6 +13249,7 @@ function parseMusicBrainzRelease(rel){
     authors: artistes, publisher: label.label?.name || '',
     year: (rel.date||'').slice(0,4),
     isbn: rel.barcode || '',                       // le champ « code-barres » de la fiche
+    mbid: rel.id || '',                            // identifiant de l'édition chez MusicBrainz
     cover: rel.id ? `https://coverartarchive.org/release/${rel.id}/front-500` : '',
     pages: '', category: '', serie: '', description: '', language: '',
     // Champs propres à la section « Disque »
@@ -13566,6 +13626,13 @@ function _scoreNotice(r, mots){
 // avec les mêmes champs remplis : on garde la meilleure et on la complète avec ce
 // que les autres apportent, plutôt que de jeter la première venue.
 function _cleNotice(r){
+  // Un disque se reconnaît par son édition, pas par son code-barres : le même
+  // EAN couvre souvent plusieurs pressages — France, Allemagne, réédition — et
+  // les confondre revient à choisir le pressage à la place du collectionneur.
+  // Un ISBN, lui, désigne bien une seule édition : on peut s'y fier.
+  if(r.mbid) return 'm:' + r.mbid;
+  if(r.disque) return 'd:' + _motsUtiles(r.title).join(' ')
+             + '|' + (r.year||'') + '|' + (r.disque.pays||'') + '|' + (r.disque.ref||'');
   if(r.isbn) return 'i:' + r.isbn;
   return 't:' + _motsUtiles(r.title).join(' ') + '|' + (r.year || '');
 }
