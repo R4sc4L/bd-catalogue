@@ -2194,6 +2194,10 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                   <div class="checkbox-row">
                     <input type="checkbox" id="itemDiaporama" onchange="this.dataset.userSet='1'">
                     <label for="itemDiaporama" style="margin:0;text-transform:none;font-size:14px;letter-spacing:0;color:var(--ink)" data-en="Enable slideshow for this work">Activer le diaporama pour cette œuvre</label>
+                    <!-- Vérifier l'ordre des planches avant d'enregistrer : sans
+                         ce raccourci il fallait enregistrer, ouvrir la fiche,
+                         revenir corriger, et ré-enregistrer. -->
+                    <button type="button" class="secondary" id="itemDiapoApercu" style="display:none;flex:none;margin-left:auto;padding:3px 10px;font-size:12px;white-space:nowrap" title="Voir les visuels en grand, dans l'ordre — sans enregistrer" data-en-title="View the visuals full size, in order — without saving" onclick="apercuDiaporamaFormulaire()">▶ <span data-en="Preview">Aperçu</span> <span id="itemDiapoNb"></span></button>
                   </div>
                 </div>
                 <div class="intake-row" id="itemAdultBlock" title="Protection contenu adulte" data-en-title="Adult content protection">
@@ -5989,6 +5993,7 @@ function openBulkEditForm(){
   document.getElementById("itemId").value = "";
   document.getElementById("itemAuthorsList").innerHTML = "";
   document.getElementById("itemImagePreview").innerHTML = "";
+  _majApercuDiaporama();          // fiche vierge : rien à prévisualiser
   document.getElementById("itemDeleteBtn").style.display = "none";
   document.getElementById("itemModalTitle").textContent = T(`Modifier ${n} œuvre${n>1?"s":""}`,`Edit ${n} work${n>1?"s":""}`);
   document.getElementById("bulkEditNote").style.display = "";
@@ -6049,6 +6054,7 @@ function openItemForm(id=null, opts={}){
   document.getElementById("itemId").value = "";
   document.getElementById("itemAuthorsList").innerHTML = "";
   document.getElementById("itemImagePreview").innerHTML = "";
+  _majApercuDiaporama();          // fiche vierge : rien à prévisualiser
   document.getElementById("itemDeleteBtn").style.display = "none";
   resetAuthorsScope();
   adaptFormToCollection();
@@ -7338,8 +7344,39 @@ function handleImageUpload(e, type){
   e.target.value = "";
 }
 
+// ── Aperçu du diaporama depuis le formulaire ────────────────────────────
+// Les visuels d'une fiche en cours de saisie vivent dans `currentItemImages`,
+// pas encore dans la collection : la visionneuse ne saurait pas les trouver
+// toute seule. On l'amorce donc à la main. Le bouton ne dépend pas de la case
+// « Activer le diaporama » — celle-ci règle ce que verront les lecteurs, tandis
+// que l'aperçu sert à VOUS, tout de suite, pour vérifier l'ordre des planches.
+function apercuDiaporamaFormulaire(){
+  if(currentItemImages.length < 2) return;
+  _pcImgs  = [...currentItemImages];
+  _pcNames = currentItemImages.map((_,i) =>
+    currentItemImageNames[i] || T(`Visuel ${i+1}`, `Visual ${i+1}`));
+  _pcIdx = 0;
+  _pcSansFiche = true;          // aucune fiche derrière : pas de résumé où revenir
+  pcOpenLightbox(0);
+  const obs = new MutationObserver(()=>{
+    if(document.getElementById('pcLightbox')) return;
+    obs.disconnect();
+    _pcSansFiche = false;
+  });
+  obs.observe(document.body, {childList:true});
+}
+function _majApercuDiaporama(){
+  const b = document.getElementById('itemDiapoApercu');
+  if(!b) return;
+  const n = currentItemImages.length;
+  b.style.display = n > 1 ? '' : 'none';
+  const c = document.getElementById('itemDiapoNb');
+  if(c) c.textContent = n > 1 ? `(${n})` : '';
+}
+
 function renderImagePreview(type){
   const el = document.getElementById(type==="item"?"itemImagePreview":type==="wish"?"wishImagePreview":"authorImagePreview");
+  if(type==="item") _majApercuDiaporama();
   if(type==="item"){
     el.innerHTML = currentItemImages.map((src,i)=>{
       const name = currentItemImageNames[i]||"";
@@ -8217,8 +8254,9 @@ function _pcFinDiaporama(){
   document.getElementById('pcLightbox')?.remove();
   document.removeEventListener("keydown", _pcLbKey);
   document.getElementById('pcLbHint')?.remove();
-  // Lancé depuis la liseuse : on rend la main au classeur, resté ouvert derrière.
-  if(_pcDepuisLiseuse) return;
+  // Lancé depuis la liseuse ou depuis le formulaire : la fiche n'est pas
+  // affichée derrière, il n'y a aucun résumé où revenir.
+  if(_pcSansFiche) return;
   // Le résumé n'existe que si l'œuvre en a un : à défaut, on revient simplement en haut.
   const cible = document.getElementById('detailSummaryPanel');
   const doux = _prefersReducedMotion() ? 'auto' : 'smooth';
@@ -16570,7 +16608,7 @@ function _fbBackToBinder(){
 // visionneuse tant qu'elle est là (sans quoi ← → tourneraient les pages du
 // classeur en dessous), et la fin du diaporama ne va pas chercher un résumé de
 // fiche qui n'est pas affiché.
-let _pcDepuisLiseuse = false;
+let _pcSansFiche = false;
 function _fbDiaporama(e, id){
   if(e){ e.stopPropagation(); e.preventDefault(); }
   const it = (cache.items||[]).find(x=>x.id===id);
@@ -16579,7 +16617,7 @@ function _fbDiaporama(e, id){
   _pcImgs = imgs;
   _pcNames = (it.imageNames || []).slice(0, imgs.length);
   _pcIdx = 0;
-  _pcDepuisLiseuse = true;
+  _pcSansFiche = true;
   document.removeEventListener('keydown', _fbKey);
   pcOpenLightbox(0);
   // La visionneuse se referme par cinq chemins différents ; plutôt que de les
@@ -16587,7 +16625,7 @@ function _fbDiaporama(e, id){
   const obs = new MutationObserver(()=>{
     if(document.getElementById('pcLightbox')) return;
     obs.disconnect();
-    _pcDepuisLiseuse = false;
+    _pcSansFiche = false;
     if(_fbState) document.addEventListener('keydown', _fbKey);
   });
   obs.observe(document.body, {childList:true});
