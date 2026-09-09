@@ -241,6 +241,37 @@
   #env-badge.env-local{background:rgba(217,131,36,.18);color:#e0a458;border:1px solid rgba(217,131,36,.5)}
   #env-badge.env-cloud{background:rgba(127,174,154,.18);color:#8fc7b0;border:1px solid rgba(127,174,154,.5)}
   /* — Scanner de code-barres — */
+  /* ══ Prise de vue d'une couverture, puis redressement ══ */
+  #photoOverlay{position:fixed;inset:0;background:rgba(6,6,9,.92);z-index:10000;
+    display:flex;align-items:center;justify-content:center;padding:16px}
+  #photoOverlay .po-box{background:var(--bg-panel);border:1px solid var(--border-warm);
+    border-radius:var(--radius);width:min(980px,96vw);max-height:94vh;display:flex;
+    flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+  #photoOverlay .po-head{display:flex;align-items:center;gap:12px;padding:12px 16px;
+    border-bottom:1px solid var(--border);font-weight:700}
+  #photoOverlay .po-head select{width:auto;max-width:230px;font-size:13px;padding:5px 8px}
+  #photoOverlay .po-stage{flex:1;min-height:0;display:flex;align-items:center;
+    justify-content:center;padding:14px;background:#0b0b10;overflow:hidden}
+  #photoOverlay video{max-width:100%;max-height:64vh;border-radius:8px;background:#000}
+  #photoOverlay .po-crop{display:flex;gap:16px;align-items:flex-start;max-width:100%}
+  /* La toile porte l'image ET les poignées : un seul repère, aucun décalage
+     possible entre ce qu'on voit et ce qu'on déplace. */
+  #photoOverlay #poCanvas{max-width:100%;max-height:64vh;border-radius:8px;
+    touch-action:none;cursor:crosshair;background:#000}
+  #photoOverlay .po-apercu{flex:none;width:200px;text-align:center}
+  #photoOverlay .po-apercu canvas{max-width:200px;max-height:280px;border-radius:6px;
+    border:1px solid var(--border);background:#000}
+  #photoOverlay .po-apercu div{font-size:11px;color:var(--ink-soft);margin-top:6px;
+    text-transform:uppercase;letter-spacing:.5px}
+  #photoOverlay .po-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    padding:12px 16px;border-top:1px solid var(--border)}
+  #photoOverlay .po-actions .po-esp{margin-left:auto}
+  #photoOverlay .po-err{padding:18px;text-align:center;color:var(--ink)}
+  @media(max-width:760px){
+    #photoOverlay .po-crop{flex-direction:column;align-items:center}
+    #photoOverlay .po-apercu{width:auto}
+    #photoOverlay #poCanvas{max-height:46vh}
+  }
   #scanOverlay{position:fixed;inset:0;background:#000;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center}
   #scanOverlay video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
   #scanOverlay .scan-frame{position:relative;z-index:2;width:min(78vw,420px);height:min(38vw,190px);
@@ -2188,6 +2219,16 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <div class="intake-row">
                   <span class="intake-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-paste"></use></svg></span>
                   <div class="image-paste-hint" data-en="You can also paste an image directly (Cmd+V)">Vous pouvez aussi coller une image directement (Cmd+V)</div>
+                </div>
+                <!-- Prise de vue : sur Mac, l'iPhone branché en Continuity Camera
+                     apparaît dans la liste des caméras, exactement comme pour le
+                     scan de code-barres. -->
+                <div class="intake-row" id="itemPhotoRow" style="display:none">
+                  <span class="intake-ico">📷</span>
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <button type="button" class="secondary" style="padding:4px 12px;font-size:13px" onclick="ouvrirPriseDeVue()" data-en="📷 Photograph a cover">📷 Photographier une couverture</button>
+                    <span class="muted" style="font-size:11px" data-en="Then straighten it: four corners to drag">Puis la redresser : quatre coins à faire glisser</span>
+                  </div>
                 </div>
                 <div class="intake-row" id="itemDiaporamaRow">
                   <span class="intake-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-film"></use></svg></span>
@@ -6039,6 +6080,7 @@ function openBulkEditForm(){
 function openItemForm(id=null, opts={}){
   if(GUEST) return;                 // page invité : aucune écriture possible
   _syncScanDirectBtn();             // bouton de scan accolé à « Remplir automatiquement »
+  _syncPhotoBtn();                  // prise de vue : HTTPS seulement
   _fbReturn = null;
   _lastSavedItemId = null;
   _bulkEditIds = null;
@@ -7261,6 +7303,381 @@ async function deleteAuthor(){
   toast(etaitGroupe ? T("Groupe supprimé","Band deleted") : T("Auteur supprimé","Author deleted"));
   closeModal("authorModal");
   refreshCurrentView();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// PRISE DE VUE D'UNE COUVERTURE, ET REDRESSEMENT
+// ---------------------------------------------------------------------
+// Photographier un album posé à plat donne toujours un trapèze : l'appareil
+// n'est jamais parfaitement au-dessus, et les bords fuient. Redresser demande
+// deux choses — savoir OÙ sont les quatre coins, et savoir les remettre
+// d'équerre. La seconde est de l'algèbre exacte ; la première ne l'est pas,
+// et c'est pourquoi les coins se règlent à la main : quatre poignées qui
+// marchent à tous les coups valent mieux qu'une détection qui abandonne sur
+// un album sombre posé sur du bois sombre.
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── L'homographie ───────────────────────────────────────────────────────
+// La transformation projective qui envoie le rectangle de sortie sur le
+// quadrilatère photographié. On la résout dans ce sens (sortie → source) car
+// c'est ainsi qu'on remplit l'image finale : pour chaque pixel à peindre, on
+// va chercher d'où il vient. L'inverse obligerait à combler des trous.
+//   x = (a·u + b·v + c) / (g·u + h·v + 1)
+//   y = (d·u + e·v + f) / (g·u + h·v + 1)
+// Huit inconnues, quatre points, deux équations chacun : un système 8×8.
+function _resoudreSysteme(M, second){
+  const n = second.length;
+  const A = M.map((ligne,i)=>[...ligne, second[i]]);
+  for(let col=0; col<n; col++){
+    // Pivot partiel : sans lui, un quadrilatère parfaitement rectangulaire
+    // (cas fréquent quand on ne bouge aucune poignée) divise par zéro.
+    let meilleur = col;
+    for(let r=col+1; r<n; r++) if(Math.abs(A[r][col]) > Math.abs(A[meilleur][col])) meilleur = r;
+    if(Math.abs(A[meilleur][col]) < 1e-12) return null;
+    [A[col], A[meilleur]] = [A[meilleur], A[col]];
+    for(let r=0; r<n; r++){
+      if(r === col) continue;
+      const f = A[r][col] / A[col][col];
+      if(!f) continue;
+      for(let c=col; c<=n; c++) A[r][c] -= f * A[col][c];
+    }
+  }
+  return A.map((ligne,i)=> ligne[n] / ligne[i]);
+}
+// dst : les quatre coins du rectangle de sortie ; src : ceux du quadrilatère.
+function homographie(dst, src){
+  const M = [], b = [];
+  for(let i=0; i<4; i++){
+    const [u,v] = dst[i], [x,y] = src[i];
+    M.push([u, v, 1, 0, 0, 0, -u*x, -v*x]); b.push(x);
+    M.push([0, 0, 0, u, v, 1, -u*y, -v*y]); b.push(y);
+  }
+  const k = _resoudreSysteme(M, b);
+  return k ? [k[0],k[1],k[2],k[3],k[4],k[5],k[6],k[7],1] : null;
+}
+
+// ── Le redressement proprement dit ──────────────────────────────────────
+// Échantillonnage bilinéaire : au plus proche voisin, les lettres d'un titre
+// deviennent crénelées dès que l'image est un peu tournée.
+function redresserQuad(sourceCanvas, quad, largeur, hauteur){
+  const sctx = sourceCanvas.getContext('2d', {willReadFrequently:true});
+  const src  = sctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+  const sd = src.data, sw = src.width, sh = src.height;
+  const H = homographie([[0,0],[largeur,0],[largeur,hauteur],[0,hauteur]], quad);
+  if(!H) return null;
+  const sortie = document.createElement('canvas');
+  sortie.width = largeur; sortie.height = hauteur;
+  const octx = sortie.getContext('2d');
+  const out = octx.createImageData(largeur, hauteur);
+  const od = out.data;
+  const [a,b,c,d,e,f,g,h] = H;
+  for(let v=0; v<hauteur; v++){
+    for(let u=0; u<largeur; u++){
+      const w = g*u + h*v + 1;
+      const x = (a*u + b*v + c) / w;
+      const y = (d*u + e*v + f) / w;
+      const i = (v*largeur + u) * 4;
+      if(x < 0 || y < 0 || x > sw-1 || y > sh-1){ od[i+3] = 255; continue; }
+      const x0 = x|0, y0 = y|0;
+      const x1 = Math.min(x0+1, sw-1), y1 = Math.min(y0+1, sh-1);
+      const fx = x - x0, fy = y - y0;
+      const p00 = (y0*sw + x0)*4, p10 = (y0*sw + x1)*4;
+      const p01 = (y1*sw + x0)*4, p11 = (y1*sw + x1)*4;
+      for(let k=0; k<3; k++){
+        const haut = sd[p00+k] + (sd[p10+k] - sd[p00+k]) * fx;
+        const bas  = sd[p01+k] + (sd[p11+k] - sd[p01+k]) * fx;
+        od[i+k] = haut + (bas - haut) * fy;
+      }
+      od[i+3] = 255;
+    }
+  }
+  octx.putImageData(out, 0, 0);
+  return sortie;
+}
+// Les dimensions naturelles du redressement : les côtés opposés du
+// quadrilatère n'ont pas la même longueur (c'est justement la perspective),
+// on retient donc la plus grande de chaque paire pour ne rien comprimer.
+function _tailleRedressee(quad, plafond){
+  const d = (p,q)=>Math.hypot(p[0]-q[0], p[1]-q[1]);
+  let L = Math.max(d(quad[0],quad[1]), d(quad[3],quad[2]));
+  let H = Math.max(d(quad[0],quad[3]), d(quad[1],quad[2]));
+  L = Math.max(16, Math.round(L)); H = Math.max(16, Math.round(H));
+  if(L > plafond || H > plafond){
+    const k = plafond / Math.max(L,H);
+    L = Math.round(L*k); H = Math.round(H*k);
+  }
+  return [L, H];
+}
+
+// ── L'état de la prise de vue ───────────────────────────────────────────
+let _photoState = null;
+const PHOTO_MAX = 2400;      // même plafond qu'à l'import d'un fichier
+
+function _syncPhotoBtn(){
+  const r = document.getElementById('itemPhotoRow');
+  if(r) r.style.display = scanDisponible() ? '' : 'none';
+}
+
+function fermerPriseDeVue(){
+  if(!_photoState) return;
+  try{ _photoState.stream?.getTracks?.().forEach(t=>t.stop()); }catch(e){}
+  _photoState.ov?.remove();
+  _photoState = null;
+}
+
+async function ouvrirPriseDeVue(){
+  if(!scanDisponible()){
+    toast(T("La prise de vue nécessite la version en ligne (HTTPS)",
+            "Taking a photo requires the online version (HTTPS)"), 'error');
+    return;
+  }
+  fermerPriseDeVue();
+  const ov = document.createElement('div');
+  ov.id = 'photoOverlay';
+  ov.innerHTML = `
+    <div class="po-box">
+      <div class="po-head">
+        <span>📷 ${T('Photographier une couverture','Photograph a cover')}</span>
+        <select id="poCam" style="display:none" title="${T('Choisir la caméra','Choose camera')}"></select>
+        <button type="button" class="secondary" style="margin-left:auto;padding:4px 10px" onclick="fermerPriseDeVue()">✕</button>
+      </div>
+      <div class="po-stage" id="poStage">
+        <video id="poVideo" playsinline muted autoplay></video>
+      </div>
+      <div class="po-actions" id="poActions">
+        <span class="muted" style="font-size:12px" id="poAide">${T(
+          'Posez l’album à plat, cadrez large — le redressement viendra ensuite.',
+          'Lay the album flat, frame loosely — straightening comes next.')}</span>
+        <span class="po-esp"></span>
+        <button type="button" class="secondary" onclick="fermerPriseDeVue()">${T('Annuler','Cancel')}</button>
+        <button type="button" id="poPrendre" onclick="_photoPrendre()">${T('Prendre la photo','Take the photo')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  const video = ov.querySelector('#poVideo');
+  _photoState = { ov, video, stream:null, etape:'video' };
+
+  let stream;
+  try {
+    stream = await _startPhotoStream(_prefCameraId());
+  } catch(e){
+    ov.querySelector('#poStage').innerHTML =
+      `<div class="po-err">⚠️<br>${escapeHTML(T('Accès à la caméra refusé. Autorisez-la dans les réglages du navigateur.',
+        'Camera access denied. Allow it in your browser settings.'))}</div>`;
+    ov.querySelector('#poPrendre').disabled = true;
+    return;
+  }
+  _photoState.stream = stream;
+  video.srcObject = stream;
+  try { await video.play(); } catch(e){}
+  // Le même sélecteur que le scanner : sur Mac, l'iPhone en Continuity Camera
+  // y figure au milieu de la webcam intégrée et des autres périphériques.
+  _remplirListeCamerasPhoto(ov, video);
+}
+
+// La photo veut le maximum de définition — contrairement au scan, où une trame
+// trop lourde ralentit la boucle de décodage. Ici on ne capture qu'une image.
+async function _startPhotoStream(deviceId){
+  const fin = { width:{ideal:3840}, height:{ideal:2160},
+                advanced:[{ focusMode:'continuous' }] };
+  if(deviceId){
+    try { return await navigator.mediaDevices.getUserMedia({ video:{ deviceId:{exact:deviceId}, ...fin } }); }
+    catch(e){ _setPrefCameraId(''); }
+  }
+  try { return await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'}, ...fin } }); }
+  catch(e){ return navigator.mediaDevices.getUserMedia({ video:true }); }
+}
+
+async function _remplirListeCamerasPhoto(ov, video){
+  const sel = ov.querySelector('#poCam');
+  if(!sel || !navigator.mediaDevices?.enumerateDevices) return;
+  let cams = [];
+  try { cams = (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput'); }
+  catch(e){ return; }
+  if(cams.length < 2) return;
+  const actuel = _photoState?.stream?.getVideoTracks?.()[0]?.getSettings?.().deviceId || '';
+  sel.innerHTML = cams.map((c,i)=>
+    `<option value="${escapeHTML(c.deviceId)}"${c.deviceId===actuel?' selected':''}>${escapeHTML(c.label || T(`Caméra ${i+1}`,`Camera ${i+1}`))}</option>`).join('');
+  sel.style.display = '';
+  sel.onchange = async ()=>{
+    _setPrefCameraId(sel.value);
+    try{ _photoState.stream?.getTracks?.().forEach(t=>t.stop()); }catch(e){}
+    try {
+      _photoState.stream = await _startPhotoStream(sel.value);
+      video.srcObject = _photoState.stream;
+      await video.play();
+    } catch(e){ toast(T('Caméra indisponible','Camera unavailable'),'error'); }
+  };
+}
+
+// ── Étape 2 : le recadrage ──────────────────────────────────────────────
+function _photoPrendre(){
+  const st = _photoState;
+  if(!st || st.etape !== 'video') return;
+  const v = st.video;
+  const w = v.videoWidth, h = v.videoHeight;
+  if(!w || !h){ toast(T('Image pas encore prête','Image not ready yet'),'error'); return; }
+  const cap = document.createElement('canvas');
+  cap.width = w; cap.height = h;
+  cap.getContext('2d').drawImage(v, 0, 0, w, h);
+  try{ st.stream?.getTracks?.().forEach(t=>t.stop()); }catch(e){}
+  st.stream = null;
+  _ouvrirRecadrage(cap);
+}
+
+function _ouvrirRecadrage(source){
+  const st = _photoState;
+  if(!st) return;
+  st.etape = 'recadrage';
+  st.source = source;
+  // Un quadrilatère de départ légèrement rentré : on voit tout de suite à quoi
+  // servent les poignées, sans avoir à les chercher dans les coins de l'image.
+  const mx = source.width * 0.08, my = source.height * 0.08;
+  st.quad = [[mx,my], [source.width-mx,my],
+             [source.width-mx,source.height-my], [mx,source.height-my]];
+  st.ov.querySelector('#poStage').innerHTML = `
+    <div class="po-crop">
+      <canvas id="poCanvas"></canvas>
+      <div class="po-apercu">
+        <canvas id="poPreview"></canvas>
+        <div>${T('Aperçu redressé','Straightened preview')}</div>
+      </div>
+    </div>`;
+  st.ov.querySelector('#poActions').innerHTML = `
+    <span class="muted" style="font-size:12px" id="poAide">${T(
+      'Faites glisser les quatre coins sur ceux de la couverture.',
+      'Drag the four corners onto the corners of the cover.')}</span>
+    <span class="po-esp"></span>
+    <button type="button" class="secondary" onclick="_photoReprendre()">${T('Reprendre','Retake')}</button>
+    <button type="button" class="secondary" onclick="_photoValider(false)">${T('Sans redresser','Skip straightening')}</button>
+    <button type="button" id="poValider" onclick="_photoValider(true)">${T('Redresser et ajouter','Straighten and add')}</button>`;
+
+  const cv = st.ov.querySelector('#poCanvas');
+  // La toile est dessinée à l'échelle d'affichage : inutile de peiner sur
+  // 4000 px de large pour montrer une image qui en occupe 700.
+  const maxL = Math.min(700, window.innerWidth - 300);
+  const maxH = window.innerHeight * 0.6;
+  st.echelle = Math.min(1, maxL / source.width, maxH / source.height);
+  cv.width  = Math.round(source.width  * st.echelle);
+  cv.height = Math.round(source.height * st.echelle);
+  st.canvas = cv;
+  _photoDessiner();
+  _photoBrancherPoignees(cv);
+}
+
+function _photoDessiner(){
+  const st = _photoState;
+  if(!st || st.etape !== 'recadrage') return;
+  const cv = st.canvas, ctx = cv.getContext('2d');
+  const e = st.echelle;
+  ctx.drawImage(st.source, 0, 0, cv.width, cv.height);
+  const q = st.quad.map(([x,y])=>[x*e, y*e]);
+  // Assombrir le hors-cadre : le regard va droit à ce qui sera conservé.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, cv.width, cv.height);
+  ctx.moveTo(q[0][0], q[0][1]);
+  for(let i=3; i>=1; i--) ctx.lineTo(q[i][0], q[i][1]);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.fill('evenodd');
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(q[0][0], q[0][1]);
+  for(let i=1; i<4; i++) ctx.lineTo(q[i][0], q[i][1]);
+  ctx.closePath();
+  ctx.strokeStyle = '#e2b86a'; ctx.lineWidth = 2; ctx.stroke();
+  q.forEach(([x,y])=>{
+    ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(226,184,106,.9)'; ctx.fill();
+    ctx.strokeStyle = '#1a1927'; ctx.lineWidth = 2; ctx.stroke();
+  });
+  _photoApercu();
+}
+
+function _photoApercu(){
+  const st = _photoState;
+  const cv = st?.ov?.querySelector('#poPreview');
+  if(!cv) return;
+  // Un aperçu de 200 px se recalcule à chaque déplacement sans peser.
+  const [L, H] = _tailleRedressee(st.quad, 200);
+  const r = redresserQuad(st.source, st.quad, L, H);
+  cv.width = L; cv.height = H;
+  if(r) cv.getContext('2d').drawImage(r, 0, 0);
+}
+
+function _photoBrancherPoignees(cv){
+  const st = _photoState;
+  let saisi = -1;
+  const versImage = ev => {
+    const r = cv.getBoundingClientRect();
+    // La toile est mise à l'échelle par le CSS : on ramène d'abord aux pixels
+    // de la toile, puis aux pixels de l'image d'origine.
+    return [ (ev.clientX - r.left) * (cv.width / r.width)  / st.echelle,
+             (ev.clientY - r.top)  * (cv.height / r.height) / st.echelle ];
+  };
+  cv.addEventListener('pointerdown', ev=>{
+    const [x,y] = versImage(ev);
+    const seuil = 26 / st.echelle;
+    let meilleur = -1, dmin = Infinity;
+    st.quad.forEach(([qx,qy], i)=>{
+      const d = Math.hypot(qx-x, qy-y);
+      if(d < dmin){ dmin = d; meilleur = i; }
+    });
+    if(dmin <= seuil){ saisi = meilleur; cv.setPointerCapture(ev.pointerId); ev.preventDefault(); }
+  });
+  cv.addEventListener('pointermove', ev=>{
+    if(saisi < 0) return;
+    const [x,y] = versImage(ev);
+    st.quad[saisi] = [ Math.max(0, Math.min(st.source.width,  x)),
+                       Math.max(0, Math.min(st.source.height, y)) ];
+    _photoDessiner();
+  });
+  const fin = ev=>{ if(saisi<0) return; saisi = -1; try{ cv.releasePointerCapture(ev.pointerId); }catch(e){} };
+  cv.addEventListener('pointerup', fin);
+  cv.addEventListener('pointercancel', fin);
+}
+
+function _photoReprendre(){
+  fermerPriseDeVue();
+  ouvrirPriseDeVue();
+}
+
+async function _photoValider(redresser){
+  const st = _photoState;
+  if(!st || st.etape !== 'recadrage') return;
+  const btn = st.ov.querySelector('#poValider');
+  if(btn){ btn.disabled = true; btn.textContent = T('Traitement…','Processing…'); }
+  // Laisser le navigateur peindre l'état « Traitement… » avant la boucle,
+  // qui monopolise le fil principal pendant une seconde sur une grande image.
+  await new Promise(r=>setTimeout(r, 30));
+  let toile = st.source;
+  if(redresser){
+    const [L, H] = _tailleRedressee(st.quad, PHOTO_MAX);
+    toile = redresserQuad(st.source, st.quad, L, H) || st.source;
+  }
+  const data = _toileVersJpeg(toile, PHOTO_MAX);
+  fermerPriseDeVue();
+  currentItemImages.push(data);
+  currentItemImageNames.push(T(`Photo ${currentItemImages.length}`, `Photo ${currentItemImages.length}`));
+  renderImagePreview('item');
+  toast(T('Photo ajoutée','Photo added'));
+}
+
+// Même plafond et même qualité qu'à l'import d'un fichier : une photo prise
+// ici ne doit pas peser plus lourd qu'une couverture glissée-déposée.
+function _toileVersJpeg(toile, plafond){
+  let w = toile.width, h = toile.height;
+  if(w > plafond || h > plafond){
+    if(w > h){ h = Math.round(h*plafond/w); w = plafond; }
+    else     { w = Math.round(w*plafond/h); h = plafond; }
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(toile, 0, 0, w, h);
+    toile = c;
+  }
+  return toile.toDataURL('image/jpeg', 0.85);
 }
 
 // --------- Image upload ---------
