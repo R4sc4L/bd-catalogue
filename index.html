@@ -20,6 +20,7 @@
     --accent-dark:#a67038;
     --accent-soft:rgba(200,144,74,0.10);
     --gold:#e2b86a;
+    --danger:#d9776a;
     --on-accent:#0e0d13;
     --accent-bg:var(--accent);
     --gold-bg:var(--gold);
@@ -42,6 +43,7 @@
     --accent-dark:#7d4f18;
     --accent-soft:rgba(182,121,46,0.12);
     --gold:#875c12;
+    --danger:#b23b28;
     --on-accent:#2b1c0c;
     --accent-bg:#d29347;
     --gold-bg:#e2b86a;
@@ -781,6 +783,9 @@
   #linkEditionModal .lem-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
   #linkEditionModal .lem-head input{flex:1;background:var(--bg-alt);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--ink);font-size:14px}
   #linkEditionModal .lem-list{overflow-y:auto;flex:1;padding:8px}
+  #linkEditionModal .lem-sep{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;
+    padding:10px 8px 4px;border-top:1px solid var(--border)}
+  #linkEditionModal .lem-sep:first-child{border-top:0;padding-top:2px}
   #linkEditionModal .lem-row{display:flex;gap:10px;align-items:center;padding:8px;border-radius:6px;cursor:pointer;transition:background .12s}
   #linkEditionModal .lem-row:hover{background:var(--accent-soft)}
   #linkEditionModal .lem-cover{width:36px;height:52px;flex-shrink:0;border-radius:3px;overflow:hidden;background:var(--bg-alt);display:flex;align-items:center;justify-content:center;font-size:16px}
@@ -796,6 +801,12 @@
     display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   #linkEditionModal .lem-count{font-size:13px;color:var(--ink-soft);margin-right:auto}
   #linkEditionModal .lem-foot button{padding:6px 14px;font-size:13px}
+  /* Lier / délier depuis la ligne même : le geste est le même des deux côtés */
+  .ed-delier,.ed-lier{flex-shrink:0;align-self:center;padding:4px 10px;font-size:11px;white-space:nowrap;
+    opacity:.55;transition:opacity .12s,color .12s,border-color .12s}
+  .ed-delier:hover{opacity:1;color:var(--danger);border-color:var(--danger)}
+  .ed-lier:hover{opacity:1;color:var(--gold);border-color:var(--gold)}
+  @media(hover:none){ .ed-delier,.ed-lier{opacity:1} }
   .edition-link-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-soft);background:var(--bg-alt);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle}
   /* Le déplacement et l'agrandissement passent par une transformation, jamais par les
      barres de défilement : c'est ce qui permet de zoomer autour du pointeur. */
@@ -11413,6 +11424,8 @@ const STRINGS = {
     'detail.other_ed': '📚 Autres éditions',
     'detail.other_ed_link': '🔗 Lier une édition',
     'detail.unlink': '✕ Délier',
+    'detail.link_this': '🔗 Lier',
+    'detail.other_ed_manage': '🔗 Gérer les liens',
     'detail.no_author': 'Aucun auteur renseigné',
     'detail.no_other_ed': 'Aucune autre édition détectée.',
     'detail.no_other_hint': 'Utilisez le bouton ci-dessus pour en lier une manuellement.',
@@ -11462,6 +11475,7 @@ const STRINGS = {
     'toast.unlinked': 'Lien supprimé',
     // Link edition modal
     'lem.title': '🔗 Lier une édition',
+    'lem.title_manage': '🔗 Éditions liées',
     'lem.search_ph': 'Rechercher par titre, auteur, éditeur…',
     'lem.no_result': 'Aucun résultat',
     // Content extra
@@ -11640,6 +11654,8 @@ const STRINGS = {
     'detail.other_ed': '📚 Other editions',
     'detail.other_ed_link': '🔗 Link an edition',
     'detail.unlink': '✕ Unlink',
+    'detail.link_this': '🔗 Link',
+    'detail.other_ed_manage': '🔗 Manage links',
     'detail.no_author': 'No author listed',
     'detail.no_other_ed': 'No other edition detected.',
     'detail.no_other_hint': 'Use the button above to link one manually.',
@@ -11689,6 +11705,7 @@ const STRINGS = {
     'toast.unlinked': 'Link removed',
     // Link edition modal
     'lem.title': '🔗 Link an edition',
+    'lem.title_manage': '🔗 Linked editions',
     'lem.search_ph': 'Search by title, author, publisher…',
     'lem.no_result': 'No results',
     // Content extra
@@ -11971,7 +11988,7 @@ function hideCoverTooltip(){
 // tous les autres. Lier quatre éditions d'un même titre, c'est donc une seule
 // opération — l'union des groupes existants — et non trois liens successifs,
 // qui rechargeaient le cache à chaque fois et laissaient des états incomplets.
-async function linkEditionsMultiple(baseId, ids){
+async function linkEditionsMultiple(baseId, ids, opts){
   const base = cache.items.find(i=>i.id===baseId);
   if(!base) return 0;
   const cibles = [...new Set(ids||[])].filter(x=>x && x!==baseId && cache.items.some(i=>i.id===x));
@@ -11989,33 +12006,51 @@ async function linkEditionsMultiple(baseId, ids){
     member.updatedAt = new Date().toISOString();
     await dbPut("items", member);
   }
-  await reloadCache();
-  renderItemDetail(baseId, false);
-  const n = cibles.length;
-  toast(T(`${n} édition${n>1?'s':''} liée${n>1?'s':''} ✓`, `${n} edition${n>1?'s':''} linked ✓`));
-  return n;
+  if(!opts || !opts.silencieux){
+    await reloadCache();
+    renderItemDetail(baseId, false);
+    const n = cibles.length;
+    toast(T(`${n} édition${n>1?'s':''} liée${n>1?'s':''} ✓`, `${n} edition${n>1?'s':''} linked ✓`));
+  }
+  return cibles.length;
 }
 async function linkEditions(id1, id2){ return linkEditionsMultiple(id1, [id2]); }
 
-async function unlinkEdition(id1, id2){
-  // Retirer id2 de la liste de id1, et retirer id1 de tous les membres que id2 connaissait
-  const a = cache.items.find(i=>i.id===id1);
-  const b = cache.items.find(i=>i.id===id2);
-  if(a){ a.linkedEditions = (a.linkedEditions||[]).filter(x=>x!==id2); await dbPut("items", a); }
-  if(b){
-    // Retirer id1 de la liste de b et de tous les membres du groupe de b
-    const groupOfB = new Set([id2, ...(b.linkedEditions||[])]);
-    for(const memberId of groupOfB){
-      const member = cache.items.find(i=>i.id===memberId);
-      if(!member) continue;
-      member.linkedEditions = (member.linkedEditions||[]).filter(x=>x!==id1);
-      await dbPut("items", member);
-    }
+async function unlinkEditionsMultiple(baseId, ids, opts){
+  const base = cache.items.find(i=>i.id===baseId);
+  if(!base) return 0;
+  const groupe = new Set([baseId, ...(base.linkedEditions||[])]);
+  // On ne délie jamais la fiche depuis laquelle on agit : elle est le point
+  // d'appui. Pour la sortir d'un groupe, on la délie depuis une autre.
+  const partants = [...new Set(ids||[])].filter(x=>x && x!==baseId && groupe.has(x));
+  if(!partants.length) return 0;
+  partants.forEach(x=>groupe.delete(x));
+  const reste = [...groupe];
+  const horodate = new Date().toISOString();
+  // Ceux qui restent se retrouvent entre eux ; ceux qui partent repartent seuls.
+  for(const id of reste){
+    const m = cache.items.find(i=>i.id===id);
+    if(!m) continue;
+    m.linkedEditions = reste.filter(x=>x!==id);
+    m.updatedAt = horodate;
+    await dbPut("items", m);
   }
-  await reloadCache();
-  renderItemDetail(id1, false);
-  toast(T("Lien supprimé","Link removed"));
+  for(const id of partants){
+    const m = cache.items.find(i=>i.id===id);
+    if(!m) continue;
+    m.linkedEditions = [];
+    m.updatedAt = horodate;
+    await dbPut("items", m);
+  }
+  if(!opts || !opts.silencieux){
+    await reloadCache();
+    renderItemDetail(baseId, false);
+    const n = partants.length;
+    toast(T(`${n} édition${n>1?'s':''} déliée${n>1?'s':''} ✓`, `${n} edition${n>1?'s':''} unlinked ✓`));
+  }
+  return partants.length;
 }
+async function unlinkEdition(id1, id2){ return unlinkEditionsMultiple(id1, [id2]); }
 
 // Quatre éditions d'un même titre se lient en une fois : on coche, puis on
 // valide. La sélection survit à un changement de recherche — c'est ce qui
@@ -12023,6 +12058,7 @@ async function unlinkEdition(id1, id2){
 let _lemSelection = new Set();
 let _lemBaseId = null;
 let _lemVisibles = [];
+let _lemDepart = new Set();   // les éditions déjà liées à l'ouverture
 function _lemBasculer(id, ligne){
   if(_lemSelection.has(id)) _lemSelection.delete(id); else _lemSelection.add(id);
   if(ligne){
@@ -12042,40 +12078,71 @@ function _lemToutCocher(){
   });
   _lemMajPied();
 }
+// Ce qui a changé depuis l'ouverture : les cases nouvellement cochées lient,
+// celles qu'on a décochées délient.
+function _lemDelta(){
+  return { alier:   [..._lemSelection].filter(id=>!_lemDepart.has(id)),
+           adelier: [..._lemDepart].filter(id=>!_lemSelection.has(id)) };
+}
 function _lemMajPied(){
-  const n = _lemSelection.size;
+  const { alier, adelier } = _lemDelta();
   const cpt = document.getElementById('lemCount');
   const btn = document.getElementById('lemValider');
   const tout = document.getElementById('lemTout');
-  if(cpt) cpt.textContent = n
-    ? T(`${n} édition${n>1?'s':''} sélectionnée${n>1?'s':''}`, `${n} edition${n>1?'s':''} selected`)
-    : T('Cochez les éditions à lier','Tick the editions to link');
+  const bouts = [];
+  if(alier.length)   bouts.push(alier.length>1
+    ? T(`${alier.length} éditions à lier`, `${alier.length} editions to link`)
+    : T('1 édition à lier','1 edition to link'));
+  if(adelier.length) bouts.push(adelier.length>1
+    ? T(`${adelier.length} à délier`, `${adelier.length} to unlink`)
+    : T('1 à délier','1 to unlink'));
+  if(cpt) cpt.textContent = bouts.length ? bouts.join(' · ')
+    : (_lemDepart.size
+        ? T('Cochez pour lier, décochez pour délier','Tick to link, untick to unlink')
+        : T('Cochez les éditions à lier','Tick the editions to link'));
   if(btn){
-    btn.disabled = !n;
-    btn.textContent = n>1 ? T(`Lier les ${n} éditions`,`Link the ${n} editions`)
-                          : T('Lier','Link');
+    btn.disabled = !(alier.length || adelier.length);
+    // « Appliquer » ne se dit que si l'on fait les deux d'un coup ; autrement
+    // le bouton nomme son geste.
+    btn.textContent = (alier.length && adelier.length) ? T('Appliquer','Apply')
+      : adelier.length
+        ? (adelier.length>1 ? T(`Délier les ${adelier.length} éditions`,`Unlink the ${adelier.length} editions`) : T('Délier','Unlink'))
+        : (alier.length>1 ? T(`Lier les ${alier.length} éditions`,`Link the ${alier.length} editions`) : T('Lier','Link'));
   }
   if(tout) tout.textContent = (_lemVisibles.length && _lemVisibles.every(id=>_lemSelection.has(id)))
     ? T('Tout décocher','Untick all') : T('Tout cocher','Tick all');
 }
 async function _lemValider(){
-  const ids = [..._lemSelection];
+  const { alier, adelier } = _lemDelta();
   const base = _lemBaseId;
   document.getElementById('linkEditionModal')?.remove();
-  _lemSelection = new Set(); _lemVisibles = [];
-  if(ids.length) await linkEditionsMultiple(base, ids);
+  _lemSelection = new Set(); _lemVisibles = []; _lemDepart = new Set();
+  if(!alier.length && !adelier.length) return;
+  // On délie d'abord : lier ensuite repartirait d'un groupe déjà nettoyé.
+  const d = adelier.length ? await unlinkEditionsMultiple(base, adelier, {silencieux:true}) : 0;
+  const l = alier.length   ? await linkEditionsMultiple(base, alier, {silencieux:true})    : 0;
+  await reloadCache();
+  renderItemDetail(base, false);
+  const bouts = [];
+  if(l) bouts.push(T(`${l} édition${l>1?'s':''} liée${l>1?'s':''}`, `${l} edition${l>1?'s':''} linked`));
+  if(d) bouts.push(T(`${d} déliée${d>1?'s':''}`, `${d} unlinked`));
+  if(bouts.length) toast(bouts.join(' · ') + ' ✓');
 }
 function openLinkEditionModal(currentId){
   const existing = document.getElementById("linkEditionModal");
   if(existing) existing.remove();
-  _lemSelection = new Set(); _lemBaseId = currentId; _lemVisibles = [];
+  const _base = cache.items.find(i=>i.id===currentId);
+  // Les éditions déjà liées ouvrent la liste, cases cochées : les décocher
+  // les délie, exactement comme les cocher les avait liées.
+  _lemDepart = new Set((_base?.linkedEditions||[]).filter(x=>cache.items.some(i=>i.id===x)));
+  _lemSelection = new Set(_lemDepart); _lemBaseId = currentId; _lemVisibles = [];
 
   const modal = document.createElement("div");
   modal.id = "linkEditionModal";
   modal.innerHTML = `
     <div class="lem-box">
       <div class="lem-head">
-        <span style="font-weight:700;font-size:15px">${t('lem.title')}</span>
+        <span style="font-weight:700;font-size:15px">${_lemDepart.size ? t('lem.title_manage') : t('lem.title')}</span>
         <input type="text" id="lemSearch" placeholder="${t('lem.search_ph')}" autofocus>
         <button class="secondary" style="padding:4px 10px;font-size:13px" onclick="document.getElementById('linkEditionModal').remove()">✕</button>
       </div>
@@ -12089,47 +12156,57 @@ function openLinkEditionModal(currentId){
   modal.addEventListener("click", e=>{ if(e.target===modal) modal.remove(); });
   document.body.appendChild(modal);
 
-  const currentItem = cache.items.find(i=>i.id===currentId);
-  const alreadyLinked = new Set([...(currentItem?.linkedEditions||[]), currentId]);
+  const ligneLem = x => {
+    const cover = x.images?.[0];
+    const coche = _lemSelection.has(x.id);
+    const authors = (x.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2).join(", ");
+    return `<div class="lem-row${coche?' selected':''}" data-id="${x.id}" onclick="_lemBasculer('${x.id}', this)">
+      <input type="checkbox" class="lem-check" ${coche?'checked':''} tabindex="-1" aria-hidden="true">
+      <div class="lem-cover">${cover?`<img src="${_safeUrl(cover)}">`:"📖"}</div>
+      <div class="lem-info">
+        <div class="lem-title">${escapeHTML(x.titre||T("Sans titre","Untitled"))}</div>
+        <div class="lem-sub">${[x.editeur, x.anneeEdition, x.editionInfo, authors].filter(Boolean).map(escapeHTML).join(" · ")}</div>
+      </div>
+      <span class="tag cat" style="font-size:10px;flex-shrink:0">${escapeHTML(x.categorie||"")}</span>
+    </div>`;
+  };
 
   function renderLemList(query){
     const q = query.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
-    const results = cache.items.filter(i=>{
-      if(alreadyLinked.has(i.id)) return false;
+    const correspond = i => {
       const fields = [i.titre, i.sousTitre, i.editeur, i.serie,
         ...(i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId)))].join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
       return !q || fields.includes(q);
-    }).slice(0, 40);
+    };
+    // Le groupe reste visible quelle que soit la recherche : c'est de là qu'on
+    // délie, et une recherche ne doit pas escamoter ce qu'on est en train de
+    // décocher.
+    const liees = [..._lemDepart].map(id=>cache.items.find(i=>i.id===id)).filter(Boolean);
+    const results = cache.items.filter(i=>
+      i.id !== currentId && !_lemDepart.has(i.id) && correspond(i)).slice(0, 40);
     _lemVisibles = results.map(x=>x.id);
 
     const list = document.getElementById("lemList");
     if(!list) return;
-    if(!results.length){
-      list.innerHTML = `<p class="muted" style="padding:16px;text-align:center;font-size:13px">${t('lem.no_result')}</p>`;
-      _lemMajPied();
-      return;
-    }
-    list.innerHTML = results.map(x=>{
-      const cover = x.images?.[0];
-      const coche = _lemSelection.has(x.id);
-      const authors = (x.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2).join(", ");
-      return `<div class="lem-row${coche?' selected':''}" data-id="${x.id}" onclick="_lemBasculer('${x.id}', this)">
-        <input type="checkbox" class="lem-check" ${coche?'checked':''} tabindex="-1" aria-hidden="true">
-        <div class="lem-cover">${cover?`<img src="${_safeUrl(cover)}">`:"📖"}</div>
-        <div class="lem-info">
-          <div class="lem-title">${escapeHTML(x.titre||T("Sans titre","Untitled"))}</div>
-          <div class="lem-sub">${[x.editeur, x.anneeEdition, x.editionInfo, authors].filter(Boolean).map(escapeHTML).join(" · ")}</div>
-        </div>
-        <span class="tag cat" style="font-size:10px;flex-shrink:0">${escapeHTML(x.categorie||"")}</span>
-      </div>`;
-    }).join("");
+    const entete = txt => `<div class="lem-sep">${txt}</div>`;
+    let html = '';
+    if(liees.length) html += entete(T(`Déjà liées (${liees.length}) — décochez pour délier`,
+                                      `Already linked (${liees.length}) — untick to unlink`))
+                           + liees.map(ligneLem).join("");
+    if(results.length) html += (liees.length ? entete(T('À lier','To link')) : '')
+                             + results.map(ligneLem).join("");
+    else if(!liees.length) html = `<p class="muted" style="padding:16px;text-align:center;font-size:13px">${t('lem.no_result')}</p>`;
+    else html += entete(T('À lier','To link'))
+               + `<p class="muted" style="padding:12px;text-align:center;font-size:13px">${t('lem.no_result')}</p>`;
+    list.innerHTML = html;
     _lemMajPied();
   }
 
   renderLemList("");
   document.getElementById("lemSearch").addEventListener("input", e=>renderLemList(e.target.value));
   document.getElementById("lemSearch").addEventListener("keydown", e=>{
-    if(e.key === 'Enter'){ e.preventDefault(); if(_lemSelection.size) _lemValider(); }
+    if(e.key === 'Enter'){ e.preventDefault();
+      const d = _lemDelta(); if(d.alier.length || d.adelier.length) _lemValider(); }
   });
   setTimeout(()=>document.getElementById("lemSearch")?.focus(), 50);
 }
@@ -12705,8 +12782,10 @@ function renderItemDetail(id, pushHistory=true){
             ${x.signe?`<span class="badge-signed">${T('Signé','Signed')}</span>`:""}
             ${(x.dedicaceSignature||x.dedicaceCheck)?`<span class="badge-signed">${T('Dédicace sig.','Dedication sig.')}</span>`:""}
             ${x.dedicaceDessin?`<span class="badge-signed">${T('Dédicace dessin','Dedication drawing')}</span>`:""}${x.dedicaceTampon?`<span class="badge-signed">${T('Dédicace tampon','Dedication stamp')}</span>`:""}
-            ${isManual?`<button class="secondary" style="padding:2px 7px;font-size:11px;margin-top:2px" title="${_lang==='en'?'Remove link':'Supprimer le lien'}" onclick="event.stopPropagation();unlinkEdition('${it.id}','${x.id}')">${t('detail.unlink')}</button>`:""}
           </div>
+          ${GUEST ? '' : (isManual
+            ? `<button class="secondary ed-delier" title="${T('Délier cette édition','Unlink this edition')}" onclick="event.stopPropagation();unlinkEdition('${it.id}','${x.id}')">${t('detail.unlink')}</button>`
+            : `<button class="secondary ed-lier" title="${T('Rapprochée automatiquement par son titre. Lier pour que le rapprochement soit tenu pour sûr.','Matched automatically by title. Link it to make the match explicit.')}" onclick="event.stopPropagation();linkEditions('${it.id}','${x.id}')">${t('detail.link_this')}</button>`)}
         </div>`;
       };
 
@@ -12714,7 +12793,7 @@ function renderItemDetail(id, pushHistory=true){
       return `<div class="panel">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${total?'8px':'0'}">
           <h3 style="margin:0">${t('detail.other_ed')}${total?` (${total})`:""}</h3>
-          ${GUEST?'':`<button class="secondary" style="padding:4px 10px;font-size:12px" onclick="openLinkEditionModal('${it.id}')">${t('detail.other_ed_link')}</button>`}
+          ${GUEST?'':`<button class="secondary" style="padding:4px 10px;font-size:12px" onclick="openLinkEditionModal('${it.id}')">${manualIds.size ? t('detail.other_ed_manage') : t('detail.other_ed_link')}</button>`}
         </div>
         ${total ? `<div style="display:flex;flex-direction:column;gap:8px">${allOthers.map(x=>editionRow(x, manualIds.has(x.id))).join("")}</div>`
           : `<p class="muted" style="font-size:13px;margin:8px 0 0">${t('detail.no_other_ed')} <span style="opacity:.7">${t('detail.no_other_hint')}</span></p>`}
