@@ -241,6 +241,54 @@
   #env-badge.env-local{background:rgba(217,131,36,.18);color:#e0a458;border:1px solid rgba(217,131,36,.5)}
   #env-badge.env-cloud{background:rgba(127,174,154,.18);color:#8fc7b0;border:1px solid rgba(127,174,154,.5)}
   /* — Scanner de code-barres — */
+  /* ══ Éditeur d'image plein écran : recadrage et redressement ══ */
+  #editImgOverlay{position:fixed;inset:0;z-index:10000;background:#08080c;color:#ece4d2;
+    display:flex;flex-direction:column;font-family:"Nunito",sans-serif}
+  #editImgOverlay .ei-top{display:flex;align-items:center;gap:14px;padding:10px 18px;
+    border-bottom:1px solid rgba(255,255,255,.08);background:#0f0f15}
+  #editImgOverlay .ei-top .ei-titre{font-weight:700;font-size:16px}
+  #editImgOverlay .ei-top .ei-sous{font-size:12px;color:#a89f8c}
+  #editImgOverlay .ei-top .ei-dims{margin-left:auto;font-size:12px;color:#e2b86a;
+    font-variant-numeric:tabular-nums;white-space:nowrap}
+  #editImgOverlay .ei-top button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+    color:#fff;border-radius:8px;width:36px;height:36px;padding:0;font-size:18px;line-height:1}
+  #editImgOverlay .ei-main{flex:1;min-height:0;display:flex;gap:18px;padding:16px 18px;align-items:center;justify-content:center}
+  #editImgOverlay .ei-scene{flex:1;min-width:0;height:100%;display:flex;align-items:center;justify-content:center}
+  /* Une seule toile porte l'image et les poignées : ce qu'on voit est ce qu'on
+     déplace, sans décalage possible entre deux couches. */
+  #editImgOverlay #eiCanvas{max-width:100%;max-height:100%;touch-action:none;cursor:crosshair;
+    border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.6);background:#000}
+  #editImgOverlay .ei-side{flex:none;width:300px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  #editImgOverlay .ei-side canvas{max-width:300px;max-height:56vh;border-radius:6px;
+    border:1px solid rgba(255,255,255,.14);background:#000;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+  #editImgOverlay .ei-side .ei-lbl{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:#a89f8c}
+  #editImgOverlay .ei-side .ei-conseils{font-size:12px;color:#a89f8c;line-height:1.5;text-align:center;max-width:280px}
+  #editImgOverlay .ei-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 18px;
+    border-top:1px solid rgba(255,255,255,.08);background:#0f0f15}
+  #editImgOverlay .ei-bar .ei-grp{display:flex;gap:6px;align-items:center}
+  #editImgOverlay .ei-bar .ei-grp-lbl{font-size:11px;color:#a89f8c;text-transform:uppercase;letter-spacing:.5px;margin-right:2px}
+  #editImgOverlay .ei-bar .ei-esp{margin-left:auto}
+  #editImgOverlay .ei-bar button{padding:8px 14px}
+  #editImgOverlay .ei-bar button.ei-ico{padding:8px 12px;font-size:16px;line-height:1}
+  @media(max-width:860px){
+    #editImgOverlay .ei-main{flex-direction:column;overflow:auto}
+    #editImgOverlay .ei-scene{height:auto;width:100%}
+    #editImgOverlay #eiCanvas{max-height:52vh}
+    #editImgOverlay .ei-side{width:100%}
+    #editImgOverlay .ei-side canvas{max-height:24vh}
+    #editImgOverlay .ei-side .ei-conseils{display:none}
+  }
+  /* Le bouton ✂️ sur les vignettes du formulaire */
+  .image-preview button.img-crop-btn{top:auto;bottom:-6px;left:-6px;right:auto;background:rgba(30,25,10,.85);color:#fff;font-size:11px}
+  .image-preview button.img-crop-btn:hover{background:var(--accent-bg);color:var(--on-accent)}
+  /* La question posée à l'ajout d'une image */
+  #choixImageModal{position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px}
+  #choixImageModal .cim-box{background:var(--bg-panel);border:1px solid var(--border-warm);border-radius:var(--radius);
+    width:min(520px,94vw);box-shadow:0 24px 60px rgba(0,0,0,.5);padding:18px 20px}
+  #choixImageModal .cim-vignettes{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px}
+  #choixImageModal .cim-vignettes img{width:64px;height:84px;object-fit:cover;border-radius:5px;border:1px solid var(--border)}
+  #choixImageModal .cim-plus{width:64px;height:84px;border-radius:5px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:13px}
+  #choixImageModal .cim-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
   /* ══ Prise de vue d'une couverture, puis redressement ══ */
   #photoOverlay{position:fixed;inset:0;background:rgba(6,6,9,.92);z-index:10000;
     display:flex;align-items:center;justify-content:center;padding:16px}
@@ -5899,8 +5947,16 @@ function closeModal(id){
 }
 // Clic sur le fond ne ferme plus le modal (évite les fermetures accidentelles).
 // Échap ferme le modal au premier plan ; Tab est piégé à l'intérieur (accessibilité clavier).
+// Un calque posé PAR-DESSUS une fenêtre (visionneuse, éditeur d'image, prise de
+// vue, scanner, liseuse) prend le clavier pour lui : Échap le referme, lui, et
+// ne doit pas emporter la fenêtre qu'il recouvre.
+const _CALQUES_CLAVIER = ['editImgOverlay','photoOverlay','choixImageModal','pcLightbox','scanOverlay','linkEditionModal'];
+function _calqueAuPremierPlan(){
+  return _CALQUES_CLAVIER.some(id=>document.getElementById(id)) || !!document.querySelector('.fb-backdrop');
+}
 document.addEventListener("keydown", e=>{
   if(e.key!=="Escape" && e.key!=="Tab") return;
+  if(_calqueAuPremierPlan()) return;
   const active = [...document.querySelectorAll(".modal-backdrop.active")].pop();
   if(!active) return;
   if(e.key==="Escape"){ e.preventDefault(); closeModal(active.id); return; }
@@ -7725,6 +7781,343 @@ function _toileVersJpeg(toile, plafond){
   return toile.toDataURL('image/jpeg', 0.85);
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════
+// ÉDITEUR D'IMAGE PLEIN ÉCRAN — recadrer et redresser n'importe quel visuel
+// ---------------------------------------------------------------------
+// Même mathématique que la prise de vue (homographie, quatre poignées), mais
+// un autre cadre d'usage : l'image vient d'un fichier, d'un collage, d'une
+// URL — ou d'une fiche déjà enregistrée. Elle mérite toute la fenêtre, un
+// aperçu large, et un retour possible tant qu'on n'a pas validé.
+// ═══════════════════════════════════════════════════════════════════════
+let _eiState = null;
+
+// Charger n'importe quelle source dans une toile lisible pixel par pixel.
+// Une image distante doit être servie avec CORS, sans quoi la toile est
+// « souillée » et getImageData refuse : on le détecte et on prévient.
+function _eiCharger(src){
+  return new Promise((res, rej)=>{
+    if(src instanceof HTMLCanvasElement){ res(src); return; }
+    const img = new Image();
+    if(!/^data:/i.test(String(src))) img.crossOrigin = 'anonymous';
+    img.onload = ()=>{
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height;
+      if(!c.width || !c.height){ rej(new Error('image vide')); return; }
+      const x = c.getContext('2d', {willReadFrequently:true});
+      x.drawImage(img, 0, 0);
+      try { x.getImageData(0,0,1,1); res(c); }
+      catch(e){ rej(new Error(T('image protégée (origine différente)','protected image (different origin)'))); }
+    };
+    img.onerror = ()=>rej(new Error(T('image illisible','unreadable image')));
+    img.src = src;
+  });
+}
+
+// opts : { titre, sousTitre, boutons:[{id, libelle, principal}], onFin(id, dataURL) }
+//   onFin reçoit l'identifiant du bouton pressé et, pour « valider », l'image
+//   redressée ; pour tout autre bouton, null. « Échap » vaut le dernier bouton
+//   non principal de la liste (l'annulation, par convention).
+async function ouvrirEditeurImage(src, opts){
+  fermerEditeurImage();
+  let source;
+  try { source = await _eiCharger(src); }
+  catch(e){ toast(T(`Impossible d'ouvrir l'image : ${e.message}`,`Cannot open the image: ${e.message}`),'error'); opts.onFin?.('erreur', null); return; }
+
+  const ov = document.createElement('div');
+  ov.id = 'editImgOverlay';
+  const boutons = opts.boutons || [
+    { id:'annuler', libelle:T('Annuler','Cancel') },
+    { id:'valider', libelle:T('Recadrer et redresser','Crop and straighten'), principal:true },
+  ];
+  ov.innerHTML = `
+    <div class="ei-top">
+      <span class="ei-titre">✂️ ${escapeHTML(opts.titre || T('Recadrer et redresser','Crop and straighten'))}</span>
+      ${opts.sousTitre ? `<span class="ei-sous">${escapeHTML(opts.sousTitre)}</span>` : ''}
+      <span class="ei-dims" id="eiDims"></span>
+      <button type="button" title="${T('Fermer (Échap)','Close (Esc)')}" onclick="_eiFin('__echap')">✕</button>
+    </div>
+    <div class="ei-main">
+      <div class="ei-scene"><canvas id="eiCanvas"></canvas></div>
+      <div class="ei-side">
+        <canvas id="eiPreview"></canvas>
+        <div class="ei-lbl">${T('Résultat','Result')}</div>
+        <div class="ei-conseils">${T(
+          'Posez les quatre coins sur ceux de la couverture. Le cadre peut rester droit pour un simple recadrage ; incliné, il redresse la perspective.',
+          'Put the four corners on those of the cover. Keep the frame straight for a plain crop; tilt it to fix perspective.')}</div>
+      </div>
+    </div>
+    <div class="ei-bar">
+      <div class="ei-grp"><span class="ei-grp-lbl">${T('Pivoter','Rotate')}</span>
+        <button type="button" class="secondary ei-ico" title="${T('Un quart de tour à gauche','Quarter turn left')}" onclick="_eiPivoter(-1)">↺</button>
+        <button type="button" class="secondary ei-ico" title="${T('Un quart de tour à droite','Quarter turn right')}" onclick="_eiPivoter(1)">↻</button>
+      </div>
+      <div class="ei-grp"><span class="ei-grp-lbl">${T('Cadre','Frame')}</span>
+        <button type="button" class="secondary" onclick="_eiCadre('entier')">${T('Image entière','Whole image')}</button>
+        <button type="button" class="secondary" onclick="_eiCadre('portrait')">${T('Portrait 2:3','Portrait 2:3')}</button>
+      </div>
+      <span class="ei-esp"></span>
+      ${boutons.map(b=>`<button type="button" ${b.principal?'':'class="secondary"'} id="eiBtn-${escapeHTML(b.id)}" onclick="_eiFin('${escapeHTML(b.id)}')">${escapeHTML(b.libelle)}</button>`).join('')}
+    </div>`;
+  document.body.appendChild(ov);
+
+  _eiState = { ov, source, quad:null, canvas:ov.querySelector('#eiCanvas'), echelle:1,
+               boutons, onFin: opts.onFin || (()=>{}), occupe:false };
+  // Un fichier importé est en général déjà cadré : on part de l'image entière,
+  // légèrement rentrée pour que les poignées se voient. Le portrait 2:3 reste
+  // à un clic pour une photo de téléphone.
+  _eiCadre('entier', true);
+  _eiAjuster();
+  _eiBrancher();
+  window.addEventListener('resize', _eiAjuster);
+  document.addEventListener('keydown', _eiClavier);
+}
+
+function fermerEditeurImage(){
+  if(!_eiState) return;
+  window.removeEventListener('resize', _eiAjuster);
+  document.removeEventListener('keydown', _eiClavier);
+  _eiState.ov.remove();
+  _eiState = null;
+}
+
+function _eiClavier(e){
+  if(!_eiState) return;
+  if(e.key === 'Escape'){ e.preventDefault(); _eiFin('__echap'); }
+  else if(e.key === 'Enter' && !(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))){
+    const p = _eiState.boutons.find(b=>b.principal);
+    if(p){ e.preventDefault(); _eiFin(p.id); }
+  }
+}
+
+// La toile d'affichage occupe tout l'espace disponible, sans jamais dépasser
+// le double de la taille d'origine : au-delà, on ne gagne plus en précision,
+// on flouterait seulement l'image sous les poignées.
+function _eiAjuster(){
+  const st = _eiState; if(!st) return;
+  const scene = st.ov.querySelector('.ei-scene');
+  const r = scene.getBoundingClientRect();
+  const dispoL = Math.max(200, r.width - 8), dispoH = Math.max(200, r.height - 8);
+  st.echelle = Math.min(2, dispoL / st.source.width, dispoH / st.source.height);
+  st.canvas.width  = Math.round(st.source.width  * st.echelle);
+  st.canvas.height = Math.round(st.source.height * st.echelle);
+  _eiDessiner();
+}
+
+function _eiCadre(mode, silencieux){
+  const st = _eiState; if(!st) return;
+  const L = st.source.width, H = st.source.height;
+  if(mode === 'portrait') st.quad = _quadDepart(L, H);
+  else {
+    const m = Math.round(Math.min(L, H) * 0.03);
+    st.quad = [[m,m],[L-m,m],[L-m,H-m],[m,H-m]];
+  }
+  if(!silencieux) _eiDessiner();
+}
+
+// Le même tour de passe-passe que la prise de vue : pivoter, c'est changer
+// quel coin joue le rôle de haut-gauche. Rien n'est rééchantillonné.
+function _eiPivoter(sens){
+  const st = _eiState; if(!st) return;
+  const q = st.quad;
+  st.quad = sens > 0 ? [q[3], q[0], q[1], q[2]] : [q[1], q[2], q[3], q[0]];
+  _eiDessiner();
+}
+
+function _eiDessiner(){
+  const st = _eiState; if(!st) return;
+  const cv = st.canvas, ctx = cv.getContext('2d'), e = st.echelle;
+  ctx.drawImage(st.source, 0, 0, cv.width, cv.height);
+  const q = st.quad.map(([x,y])=>[x*e, y*e]);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0,0,cv.width,cv.height);
+  ctx.moveTo(q[0][0],q[0][1]); for(let i=3;i>=1;i--) ctx.lineTo(q[i][0],q[i][1]); ctx.closePath();
+  ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fill('evenodd'); ctx.restore();
+  ctx.beginPath(); ctx.moveTo(q[0][0],q[0][1]); for(let i=1;i<4;i++) ctx.lineTo(q[i][0],q[i][1]); ctx.closePath();
+  ctx.strokeStyle='#e2b86a'; ctx.lineWidth=2; ctx.stroke();
+  // Un repère discret sur le coin haut-gauche : c'est lui qui décide de
+  // l'orientation du résultat, et les boutons de pivot le font tourner.
+  q.forEach(([x,y],i)=>{
+    ctx.beginPath(); ctx.arc(x,y,11,0,Math.PI*2);
+    ctx.fillStyle = i===0 ? '#e2b86a' : 'rgba(226,184,106,.85)'; ctx.fill();
+    ctx.strokeStyle='#1a1927'; ctx.lineWidth=2; ctx.stroke();
+    if(i===0){ ctx.fillStyle='#1a1927'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('↖', x, y+1); }
+  });
+  _eiApercu();
+}
+
+let _eiApercuDemande = false;
+function _eiApercu(){
+  // Regroupé sur une image d'animation : pendant un glissement, chaque
+  // mouvement de souris ne relance pas un redressement complet.
+  if(_eiApercuDemande) return;
+  _eiApercuDemande = true;
+  requestAnimationFrame(()=>{
+    _eiApercuDemande = false;
+    const st = _eiState; if(!st) return;
+    const cv = st.ov.querySelector('#eiPreview'); if(!cv) return;
+    const [L,H] = _tailleRedressee(st.quad, 300);
+    const r = redresserQuad(st.source, st.quad, L, H);
+    cv.width = L; cv.height = H;
+    if(r) cv.getContext('2d').drawImage(r, 0, 0);
+    const [vl, vh] = _tailleRedressee(st.quad, PHOTO_MAX);
+    const d = st.ov.querySelector('#eiDims');
+    if(d) d.textContent = `${vl} × ${vh} px`;
+  });
+}
+
+function _eiBrancher(){
+  const st = _eiState, cv = st.canvas;
+  let saisi = -1;
+  const versImage = ev => {
+    const r = cv.getBoundingClientRect();
+    return [ (ev.clientX - r.left) * (cv.width / r.width)  / st.echelle,
+             (ev.clientY - r.top)  * (cv.height / r.height) / st.echelle ];
+  };
+  cv.addEventListener('pointerdown', ev=>{
+    const [x,y] = versImage(ev);
+    const seuil = 30 / st.echelle;
+    let meilleur=-1, dmin=Infinity;
+    st.quad.forEach(([qx,qy],i)=>{ const d=Math.hypot(qx-x,qy-y); if(d<dmin){dmin=d;meilleur=i;} });
+    if(dmin <= seuil){ saisi = meilleur; cv.setPointerCapture(ev.pointerId); ev.preventDefault(); }
+  });
+  cv.addEventListener('pointermove', ev=>{
+    if(saisi<0) return;
+    const [x,y] = versImage(ev);
+    st.quad[saisi] = [ Math.max(0, Math.min(st.source.width, x)), Math.max(0, Math.min(st.source.height, y)) ];
+    _eiDessiner();
+  });
+  const fin = ev=>{ if(saisi<0) return; saisi=-1; try{ cv.releasePointerCapture(ev.pointerId); }catch(e){} };
+  cv.addEventListener('pointerup', fin);
+  cv.addEventListener('pointercancel', fin);
+}
+
+async function _eiFin(id){
+  const st = _eiState; if(!st || st.occupe) return;
+  if(id === '__echap'){
+    const nonPrincipaux = st.boutons.filter(b=>!b.principal);
+    id = nonPrincipaux.length ? nonPrincipaux[nonPrincipaux.length-1].id : 'annuler';
+  }
+  let data = null;
+  if(id === 'valider'){
+    st.occupe = true;
+    const b = st.ov.querySelector('#eiBtn-valider');
+    if(b){ b.disabled = true; b.textContent = T('Traitement…','Processing…'); }
+    await new Promise(r=>setTimeout(r, 30));
+    const [L,H] = _tailleRedressee(st.quad, PHOTO_MAX);
+    const toile = redresserQuad(st.source, st.quad, L, H) || st.source;
+    data = _toileVersJpeg(toile, PHOTO_MAX);
+  }
+  const onFin = st.onFin;
+  fermerEditeurImage();
+  onFin(id, data);
+}
+
+// ── Reprendre un visuel du formulaire ───────────────────────────────────
+// Sur une fiche déjà enregistrée comme sur une saisie en cours : le visuel
+// corrigé remplace l'ancien à la même place, nom et désignation conservés.
+function recadrerImageItem(i){
+  const src = currentItemImages[i];
+  if(!src) return;
+  ouvrirEditeurImage(src, {
+    titre: T('Recadrer et redresser','Crop and straighten'),
+    sousTitre: currentItemImageNames[i] || T(`Visuel ${i+1}`,`Visual ${i+1}`),
+    boutons: [
+      { id:'annuler', libelle:T('Annuler','Cancel') },
+      { id:'valider', libelle:T('Appliquer','Apply'), principal:true },
+    ],
+    onFin: (id, data)=>{
+      if(id !== 'valider' || !data) return;
+      currentItemImages[i] = data;
+      renderImagePreview('item');
+      toast(T('Visuel remplacé — pensez à enregistrer la fiche','Visual replaced — remember to save the record'));
+    },
+  });
+}
+
+// ── Le choix à l'ajout ──────────────────────────────────────────────────
+// Fichiers déposés, sélectionnés, collés ou pointés par URL arrivent ici un
+// par un, de façon asynchrone. On les regroupe un court instant pour ne poser
+// la question qu'une fois par lot — cinq fichiers déposés ensemble ne valent
+// pas cinq fenêtres.
+let _lotImages = [], _lotMinuterie = null;
+function _recevoirImageItem(entree){
+  _lotImages.push(entree);
+  clearTimeout(_lotMinuterie);
+  _lotMinuterie = setTimeout(()=>{
+    const lot = _lotImages; _lotImages = [];
+    _proposerChoixImages(lot);
+  }, 250);
+}
+function _ajouterEntreeItem(e){
+  currentItemImages.push(e.data);
+  currentItemImageNames.push(e.name || '');
+  renderImagePreview('item');
+}
+function _proposerChoixImages(lot){
+  if(!lot.length) return;
+  document.getElementById('choixImageModal')?.remove();
+  const n = lot.length;
+  const m = document.createElement('div');
+  m.id = 'choixImageModal';
+  m.innerHTML = `
+    <div class="cim-box">
+      <div style="font-weight:700;font-size:15px">${n>1 ? T(`${n} images prêtes`,`${n} images ready`) : T('Image prête','Image ready')}</div>
+      <div class="muted" style="font-size:13px;margin-top:4px">${T(
+        'Les ajouter telles quelles, ou passer par l’éditeur pour recadrer et redresser la perspective ?',
+        'Add as they are, or go through the editor to crop and fix perspective?')}</div>
+      <div class="cim-vignettes">
+        ${lot.slice(0,6).map(e=>`<img src="${_safeUrl(e.data)}" alt="">`).join('')}
+        ${n>6 ? `<div class="cim-plus">+${n-6}</div>` : ''}
+      </div>
+      <div class="cim-actions">
+        <button type="button" class="secondary" id="cimIgnorer">${T('Ignorer','Discard')}</button>
+        <button type="button" class="secondary" id="cimRecadrer">✂️ ${n>1?T('Recadrer une par une','Crop one by one'):T('Recadrer et redresser','Crop and straighten')}</button>
+        <button type="button" id="cimTelles">${n>1?T('Ajouter telles quelles','Add as they are'):T('Ajouter telle quelle','Add as is')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  const fermer = ()=>m.remove();
+  m.querySelector('#cimTelles').onclick = ()=>{ fermer(); lot.forEach(_ajouterEntreeItem); toast(n>1?T(`${n} images ajoutées`,`${n} images added`):T('Image ajoutée','Image added')); };
+  m.querySelector('#cimIgnorer').onclick = fermer;
+  m.querySelector('#cimRecadrer').onclick = ()=>{ fermer(); _recadrerLot(lot, 0); };
+  m.addEventListener('click', e=>{ if(e.target===m) fermer(); });
+  // Entrée = le choix par défaut ; on ne veut pas d'un formulaire soumis par
+  // erreur derrière, donc on capte au niveau de la fenêtre.
+  m.tabIndex = -1; m.focus();
+  m.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); m.querySelector('#cimTelles').click(); }
+    if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); fermer(); }
+  });
+}
+// Un lot à l'éditeur : chaque image passe à son tour ; « Garder telle quelle »
+// l'ajoute sans retouche, « Ignorer » l'écarte, et on enchaîne.
+function _recadrerLot(lot, k){
+  if(k >= lot.length){
+    if(lot.length > 1) toast(T('Lot terminé','Batch done'));
+    return;
+  }
+  const e = lot[k];
+  ouvrirEditeurImage(e.data, {
+    titre: T('Recadrer et redresser','Crop and straighten'),
+    sousTitre: (lot.length>1 ? `${k+1} / ${lot.length} · ` : '') + (e.name || ''),
+    boutons: [
+      { id:'ignorer', libelle:T('Ignorer cette image','Discard this image') },
+      { id:'garder',  libelle:T('Garder telle quelle','Keep as is') },
+      { id:'valider', libelle:T('Recadrer et ajouter','Crop and add'), principal:true },
+    ],
+    onFin: (id, data)=>{
+      if(id === 'valider' && data) _ajouterEntreeItem({ data, name:e.name });
+      else if(id === 'garder')     _ajouterEntreeItem(e);
+      // Une image que l'éditeur ne peut pas ouvrir (URL sans CORS) n'est pas
+      // perdue pour autant : elle entre telle quelle.
+      else if(id === 'erreur')     _ajouterEntreeItem(e);
+      // « ignorer » et Échap : rien n'est ajouté, on passe à la suivante
+      _recadrerLot(lot, k+1);
+    },
+  });
+}
+
 // --------- Image upload ---------
 // --------- Image helpers ---------
 function compressAndStore(file, type){
@@ -7744,7 +8137,7 @@ function compressAndStore(file, type){
       canvas.width=w; canvas.height=h;
       canvas.getContext("2d").drawImage(img,0,0,w,h);
       const data = canvas.toDataURL("image/jpeg",0.85);
-      if(type==="item"){currentItemImages.push(data);currentItemImageNames.push(nameNoExt);renderImagePreview("item");}
+      if(type==="item"){ _recevoirImageItem({ data, name:nameNoExt }); }
       else if(type==="wish"){currentWishImage=data;renderImagePreview("wish");}
       else{currentAuthorImage=data;renderImagePreview("author");}
     };
@@ -7760,9 +8153,9 @@ function addImageFromUrl(type){
   if(_safeUrl(url) === ""){ toast(T("URL d'image non autorisée (http(s) ou data:image uniquement)","Image URL not allowed (http(s) or data:image only)"),"error"); return; }
   if(type==="item"){
     const urlName = (url.split("/").pop()||"").split("?")[0].replace(/\.[^/.]+$/, "");
-    currentItemImages.push(url);
-    currentItemImageNames.push(urlName);
-    renderImagePreview("item");
+    _recevoirImageItem({ data:url, name:urlName });
+    document.getElementById(inputId).value = "";
+    return;
   }
   else if(type==="wish"){ currentWishImage=url; renderImagePreview("wish"); }
   else { currentAuthorImage = url; renderImagePreview("author"); }
@@ -7849,6 +8242,7 @@ function renderImagePreview(type){
         <button type="button" onclick="removeImage(${i},'item')">✕</button>
         <button type="button" class="xl-star-btn${isXl?' xl-star-active':''}" title="${isXl?T('Ex-libris désigné (cliquer pour retirer)','Designated ex-libris (click to unset)'):T('Désigner comme ex-libris','Mark as ex-libris')}" onclick="setExlibrisImage(${i})">⭐</button>
         <button type="button" class="img-copy-btn" title="${T("Copier l'image (Cmd+V pour la coller ailleurs)",'Copy image (Cmd+V to paste elsewhere)')}" onclick="copyItemImage(${i})">📋</button>
+        <button type="button" class="img-crop-btn" title="${T('Recadrer et redresser','Crop and straighten')}" onclick="recadrerImageItem(${i})">✂️</button>
       </div>`;
     }).join("");
     let imgDragSrc = null;
