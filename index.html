@@ -810,52 +810,42 @@
   .edition-link-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-soft);background:var(--bg-alt);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle}
   /* Le déplacement et l'agrandissement passent par une transformation, jamais par les
      barres de défilement : c'est ce qui permet de zoomer autour du pointeur. */
-  /* ══ Nuage de couvertures : la page d'entrée d'une collection ══ */
+  /* ══ Sphère de couvertures : la page d'entrée d'une collection ══ */
   #nuageOverlay{position:fixed;inset:0;z-index:9400;display:flex;flex-direction:column;overflow:hidden;
-    background:radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--nuage-accent,#c8904a) 22%, #0e0d13) 0%, #0e0d13 70%);
+    background:radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--nuage-accent,#c8904a) 24%, #0e0d13) 0%, #0e0d13 68%);
     color:#efe7d8;animation:nuage-in .35s ease-out}
   @keyframes nuage-in{from{opacity:0}to{opacity:1}}
-  #nuageOverlay .nu-head{display:flex;align-items:baseline;gap:14px;padding:18px 26px 6px;flex-wrap:wrap;position:relative;z-index:2}
+  #nuageOverlay .nu-head{display:flex;align-items:baseline;gap:14px;padding:18px 26px 6px;flex-wrap:wrap;position:relative;z-index:2;pointer-events:none}
   #nuageOverlay .nu-head h2{margin:0;font-size:clamp(20px,2.6vw,30px);font-weight:700;letter-spacing:.2px;color:#f6efe2}
   #nuageOverlay .nu-head .nu-compte{font-size:14px;color:#c9bfae}
-  #nuageOverlay .nu-scene{flex:1;position:relative;min-height:0;perspective:1200px;perspective-origin:50% 50%}
-  /* Le monde s'incline avec le curseur (--rx/--ry) ; chaque couverture glisse
-     selon sa profondeur (--d : 1 au premier plan, .3 au fond), pour un
-     parallaxe. Le translateZ qui la rapproche est compensé par un scale, afin
-     qu'au repos rien ne change de taille ni ne se chevauche. */
-  #nuageOverlay .nu-monde{position:absolute;inset:0;transform-style:preserve-3d;
-    --px:0px;--py:0px;--rx:0deg;--ry:0deg;
-    transform:rotateX(var(--rx)) rotateY(var(--ry));transition:transform .18s ease-out}
-  #nuageOverlay .nu-pose{position:absolute;transform-style:preserve-3d;
-    transform:translate3d(calc(var(--px) * var(--d)), calc(var(--py) * var(--d)), calc(var(--d) * 60px))
-              scale(calc(1 - var(--d) * 0.05));
-    transition:transform .14s linear}
-  #nuageOverlay .nu-cov{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:5px;object-fit:cover;cursor:pointer;
-    box-shadow:0 10px 26px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);
-    opacity:0;transform:scale(.86);animation:nuage-pop .55s cubic-bezier(.2,.8,.3,1.2) forwards;
-    transition:transform .18s,box-shadow .18s,z-index 0s}
-  @keyframes nuage-pop{to{opacity:1;transform:scale(1)}}
-  #nuageOverlay .nu-cov:hover,#nuageOverlay .nu-cov:focus-visible{transform:scale(1.08);z-index:5;outline:none;
+  #nuageOverlay .nu-scene{flex:1;position:relative;min-height:0;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+  #nuageOverlay .nu-scene.saisi{cursor:grabbing}
+  #nuageOverlay .nu-monde{position:absolute;inset:0;animation:nuage-sphere .7s cubic-bezier(.2,.8,.3,1.1)}
+  @keyframes nuage-sphere{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  /* Chaque couverture est centrée sur la scène ; seule sa transformation
+     change d'une image à l'autre — position projetée et échelle de profondeur. */
+  #nuageOverlay .nu-pose{position:absolute;left:50%;top:50%;margin:0;will-change:transform,opacity;pointer-events:none}
+  #nuageOverlay .nu-pose.devant{pointer-events:auto}
+  #nuageOverlay .nu-cov{display:block;width:100%;height:100%;border-radius:5px;object-fit:cover;cursor:pointer;
+    box-shadow:0 10px 26px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);transition:box-shadow .15s;-webkit-user-drag:none}
+  #nuageOverlay .nu-pose.devant .nu-cov:hover,#nuageOverlay .nu-cov:focus-visible{outline:none;
     box-shadow:0 18px 40px rgba(0,0,0,.7),0 0 0 2px var(--nuage-accent,#c8904a)}
   #nuageOverlay .nu-foot{display:flex;align-items:center;gap:14px;padding:12px 26px 16px;flex-wrap:wrap;position:relative;z-index:2;
     background:linear-gradient(to top, rgba(14,13,19,.9), rgba(14,13,19,0))}
   #nuageOverlay .nu-foot label{display:flex;align-items:center;gap:8px;font-size:13px;color:#c9bfae;cursor:pointer;user-select:none;
     text-transform:none;letter-spacing:0;font-weight:400;margin:0}
   #nuageOverlay .nu-foot label input{margin:0;width:auto;flex:none;accent-color:var(--nuage-accent,#c8904a)}
-  #nuageOverlay .nu-foot .nu-esp{margin-left:auto}
+  #nuageOverlay .nu-foot .nu-aide{font-size:12px;color:#8f8674;margin-left:auto}
   #nuageOverlay .nu-foot button{padding:9px 18px}
   #nuageOverlay .nu-vide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;
     color:#c9bfae;font-size:15px;padding:30px}
   @media(max-width:640px){
     #nuageOverlay .nu-head{padding:14px 16px 4px}
     #nuageOverlay .nu-foot{padding:10px 16px 14px}
-    #nuageOverlay .nu-foot .nu-esp{display:none}
+    #nuageOverlay .nu-foot .nu-aide{display:none}
     #nuageOverlay .nu-foot button{flex:1}
   }
-  @media(prefers-reduced-motion:reduce){
-    #nuageOverlay,#nuageOverlay .nu-cov{animation:none;opacity:1;transform:none}
-    #nuageOverlay .nu-monde,#nuageOverlay .nu-pose{transform:none;transition:none}
-  }
+  @media(prefers-reduced-motion:reduce){ #nuageOverlay,#nuageOverlay .nu-monde{animation:none;opacity:1;transform:none} }
   #pcLightbox{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9500;display:flex;align-items:center;justify-content:center;cursor:zoom-out;overflow:hidden}
   #pcLightbox img{height:92vh;width:auto;max-width:none;flex:none;object-fit:contain;box-shadow:0 0 80px rgba(0,0,0,.8);will-change:transform;transform-origin:center center;user-select:none;-webkit-user-drag:none}
   #pcLightbox.pc-pannable{cursor:grab}
@@ -3585,7 +3575,7 @@ async function toggleModule(id){
   if(m.core || m.status!=='ready') return;          // core et 'soon' non togglables
   if(MODULES_ENABLED.includes(id)){
     MODULES_ENABLED = MODULES_ENABLED.filter(x=>x!==id);
-    if(_activeCollection===id) switchCollection('bd'); // si on désactive le module courant, retour BD
+    if(_activeCollection===id) switchCollection('bd', {sansNuage:true}); // si on désactive le module courant, retour BD
   } else {
     MODULES_ENABLED.push(id);
   }
@@ -3783,7 +3773,8 @@ function _fusionnerColl(complet, visible){
   return [...autres, ...visible];
 }
 
-function switchCollection(id){
+function switchCollection(id, opts){
+  const changement = _activeCollection !== id;
   _activeCollection = id;
   localStorage.setItem('bdapp_collection', id);
   const ct = _collInfo(id);
@@ -3808,6 +3799,9 @@ function switchCollection(id){
     catch(e){ console.warn('[Collection] rechargement de la bibliothèque impossible', e); }
     refreshCurrentView();
   })();
+  // La sphère de couvertures accueille chaque changement de collection —
+  // sauf quand on y entre pour aller droit à une fiche.
+  if(changement && !(opts && opts.sansNuage)) proposerNuage(id);
 }
 
 // Sections hidden per collection
@@ -4468,18 +4462,16 @@ function initCollection(){
 }
 
 // ============================================================
-// NUAGE DE COUVERTURES — la page d'entrée d'une collection
+// SPHÈRE DE COUVERTURES — la page d'entrée d'une collection
 // ============================================================
-// À la première ouverture d'une collection dans la session, ses couvertures
-// se posent en nuage : les plus marquantes (EO, signées, dédicacées, d'un
-// auteur suivi) au centre et en grand, les autres en spirale autour. Un clic
-// sur une couverture ouvre sa fiche ; « Entrer » referme. Une case coupe la
+// À chaque lancement et à chaque changement de collection, ses couvertures se
+// répartissent sur une sphère qui tourne lentement ; le curseur la fait
+// tourner dans sa direction, le doigt la fait glisser. Les couvertures de
+// l'arrière s'effacent et reparaissent en passant devant. Un clic sur l'une
+// ouvre sa fiche ; un clic à côté mène au tableau de bord. Une case coupe la
 // page pour de bon, collection par collection ; le menu « Plus » la rouvre.
-const _NUAGE_CLE_SESSION = id => 'nuage.vu.' + id;
-const _NUAGE_CLE_OFF     = id => 'nuage.off.' + id;
+const _NUAGE_CLE_OFF = id => 'nuage.off.' + id;
 function _nuageCoupe(id){ try { return localStorage.getItem(_NUAGE_CLE_OFF(id)) === '1'; } catch(e){ return false; } }
-function _nuageDejaVu(id){ try { return sessionStorage.getItem(_NUAGE_CLE_SESSION(id)) === '1'; } catch(e){ return false; } }
-function _nuageMarquerVu(id){ try { sessionStorage.setItem(_NUAGE_CLE_SESSION(id), '1'); } catch(e){} }
 function _nuageRegler(id, coupe){ try { coupe ? localStorage.setItem(_NUAGE_CLE_OFF(id),'1') : localStorage.removeItem(_NUAGE_CLE_OFF(id)); } catch(e){} }
 
 // Ce qu'on montre : les œuvres de la collection qui ont un visuel, hors
@@ -4490,7 +4482,7 @@ function _nuageOeuvres(id){
     && (i.images||[]).length
     && !((i.imagesAdultes||i.contenuAdulte) && !_adultUnlocked));
 }
-// Le poids d'une œuvre décide de sa place et de sa taille.
+// Le poids d'une œuvre décide de sa taille sur la sphère.
 function _nuagePoids(i){
   let p = 1;
   if(i.editionOriginale) p += 2;
@@ -4507,83 +4499,90 @@ function _nuageRatio(id){
   if(String(id).startsWith('cartes')) return 0.66;
   return 0.7;
 }
-// Place des rectangles en spirale autour du centre, sans chevauchement.
-// Renvoie les positions trouvées ; ce qui n'entre pas est laissé de côté.
-function _nuagePlacer(rects, L, H, marge, bord){
-  bord = bord ?? marge;
-  const poses = [];
-  const cx = L/2, cy = H/2;
-  const ex = Math.sqrt(Math.max(1, L/H));   // spirale elliptique : elle remplit un écran large
-  const chevauche = (x,y,w,h) => poses.some(p => x < p.x+p.w+marge && x+w+marge > p.x && y < p.y+p.h+marge && y+h+marge > p.y);
-  for(const r of rects){
-    let placee = null;
-    for(let t=0, k=0; k<3000; k++, t+=0.11){
-      const rad = 2.4*t;
-      const x = Math.round(cx + rad*Math.cos(t)*ex - r.w/2);
-      const y = Math.round(cy + rad*Math.sin(t)/ex - r.h/2);
-      if(x < bord || y < bord || x+r.w > L-bord || y+r.h > H-bord){
-        if(rad > Math.max(L,H)) break;       // hors champ pour de bon
-        continue;
-      }
-      if(!chevauche(x,y,r.w,r.h)){ placee = {x,y,w:r.w,h:r.h,item:r.item}; break; }
-    }
-    if(placee) poses.push(placee);
+// n points répartis uniformément sur la sphère unité (spirale de Fibonacci).
+function _nuagePointsSphere(n){
+  const pts = [];
+  const or = Math.PI * (3 - Math.sqrt(5));
+  for(let k=0;k<n;k++){
+    const y = n===1 ? 0 : 1 - (k/(n-1))*2;
+    const r = Math.sqrt(Math.max(0, 1 - y*y));
+    const t = or * k;
+    pts.push({ x: Math.cos(t)*r, y, z: Math.sin(t)*r });
   }
-  return poses;
+  return pts;
 }
 let _nuageEtat = null;
-function _nuageDessiner(){
+// Une image : on fait tourner les points de la vitesse courante, puis on
+// projette. Ni recalcul de mise en page ni écriture de style superflue —
+// une transformation, une opacité et un ordre de profondeur par couverture.
+function _nuageImage(){
+  const st = _nuageEtat; if(!st) return;
+  st.rafId = 0;
+  const now = performance.now();
+  const dt = Math.min(48, now - (st.derniere || now)) / 16.67;   // en « images à 60 Hz »
+  st.derniere = now;
+  // La vitesse suit la cible avec un peu d'inertie
+  st.vy += (st.cibleVy - st.vy) * 0.08 * dt;
+  st.vx += (st.cibleVx - st.vx) * 0.08 * dt;
+  const dy = st.vy * dt, dx = st.vx * dt;
+  if(dy || dx){
+    const sy = Math.sin(dy), cy = Math.cos(dy), sx = Math.sin(dx), cx = Math.cos(dx);
+    for(const p of st.pts){
+      // autour de l'axe vertical, puis de l'axe horizontal
+      let x = p.x*cy + p.z*sy, z = -p.x*sy + p.z*cy;
+      const y = p.y*cx - z*sx; z = p.y*sx + z*cx;
+      p.x = x; p.y = y; p.z = z;
+    }
+  }
+  const R = st.rayon;
+  for(let k=0;k<st.pts.length;k++){
+    const p = st.pts[k], el = st.poses[k];
+    const prof = (p.z + 1) / 2;                       // 0 au fond, 1 devant
+    const ech = 0.45 + 0.65 * prof;
+    const op = Math.max(0, Math.min(1, (prof - 0.18) / 0.4));
+    el.style.transform = `translate(-50%,-50%) translate(${(p.x*R).toFixed(1)}px,${(p.y*R*st.aplat).toFixed(1)}px) scale(${ech.toFixed(3)})`;
+    el.style.opacity = op.toFixed(3);
+    el.style.zIndex = String(Math.round(prof * 1000));
+    const devant = prof > 0.5;
+    if(devant !== el._devant){ el._devant = devant; el.classList.toggle('devant', devant); }
+  }
+  if(!st.pause) st.rafId = requestAnimationFrame(_nuageImage);
+}
+function _nuageRelancer(){ const st=_nuageEtat; if(st && !st.rafId && !st.pause) st.rafId = requestAnimationFrame(_nuageImage); }
+function _nuageDimensionner(){
   const st = _nuageEtat; if(!st) return;
   const scene = st.ov.querySelector('.nu-scene');
   const L = scene.clientWidth, H = scene.clientHeight;
   if(!L || !H) return;
+  // La sphère occupe le plus petit côté ; sur un écran large elle est un
+  // peu aplatie pour que le haut et le bas ne touchent pas les bords.
+  // Le rayon laisse la place aux couvertures qui dépassent de la sphère :
+  // la plus grande fait la moitié du rayon, et se tient aux pôles comme à
+  // l'équateur.
+  st.rayon = Math.min(L * 0.38, H * 0.37);
+  st.aplat = 1;
   const ratio = _nuageRatio(st.id);
-  // Trois tailles, par rang : le premier huitième en grand, le tiers suivant
-  // en moyen, le reste en petit — quel que soit le poids réel, pour que même
-  // une collection sans EO ni dédicace ait du relief.
   const n = st.oeuvres.length;
-  const facteurs = st.oeuvres.map((_, k) => {
+  // Trois tailles, par rang de poids — et proportionnées au rayon, pour
+  // qu'une petite fenêtre garde une sphère lisible.
+  const grand = Math.max(52, Math.min(180, st.rayon * (L < 640 ? 0.56 : 0.44)));
+  st.poses.forEach((el, k) => {
     const part = k / Math.max(1, n);
-    return (part < 0.12 ? 1 : part < 0.45 ? 0.66 : 0.44) * st.alea[k];
+    const w = Math.round(grand * (part < 0.12 ? 1 : part < 0.45 ? 0.68 : 0.46) * st.alea[k]);
+    el.style.width = w + 'px'; el.style.height = Math.round(w / ratio) + 'px';
   });
-  // La grande taille se déduit de la surface : une spirale remplit environ
-  // 60 % de l'écran, on dimensionne pour que tout y tienne, dans des bornes
-  // qui gardent les petites lisibles et les grandes raisonnables.
-  const budget = 0.58 * (L-52) * (H-52);
-  const somme = facteurs.reduce((a,f)=> a + f*f/ratio, 0);
-  const grand = Math.max(60, Math.min(240, Math.sqrt(budget / Math.max(1e-6, somme)), L*0.22, H*0.4));
-  const rects = st.oeuvres.map((item, k) => {
-    const w = Math.round(grand * facteurs[k]);
-    return { w, h: Math.round(w/ratio), item };
-  });
-  const poses = _nuagePlacer(rects, L, H, 7, 26);
-  // Profondeur selon la taille : les grandes au premier plan, les petites au
-  // fond — c'est ce qui donne du relief quand le curseur bouge.
-  const profondeur = w => w >= grand*0.8 ? 1 : w >= grand*0.55 ? 0.6 : 0.3;
-  scene.innerHTML = `<div class="nu-monde">` + poses.map((p, k) => {
-    const it = p.item;
-    return `<div class="nu-pose" style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;--d:${profondeur(p.w)}">
-      <img class="nu-cov" src="${_safeUrl(it.images[0])}" alt="" loading="lazy" tabindex="0"
-        title="${escapeHTML(it.titre||'')}" data-id="${escapeHTML(it.id)}"
-        style="animation-delay:${Math.min(1200, k*14)}ms"></div>`;
-  }).join('') + `</div>` + (poses.length ? '' : `<div class="nu-vide">${T('Aucune couverture à montrer ici.','No cover to show here.')}</div>`);
-  const cpt = st.ov.querySelector('.nu-compte');
-  const total = _nuageOeuvres(st.id).length;
-  cpt.textContent = poses.length < total
-    ? T(`${total} œuvres — en voici ${poses.length}`, `${total} works — here are ${poses.length}`)
-    : T(`${total} œuvre${total>1?'s':''}`, `${total} work${total>1?'s':''}`);
 }
 function ouvrirNuage(force){
   const id = _activeCollection;
-  if(!force && (_nuageCoupe(id) || _nuageDejaVu(id))) return false;
-  fermerNuage();
+  if(!force && _nuageCoupe(id)) return false;
+  fermerNuage(true);
   const m = moduleById(id);
   const tout = _nuageOeuvres(id);
-  if(!force && tout.length < 4) return false;   // trop peu pour faire un nuage
+  if(!force && tout.length < 4) return false;   // trop peu pour faire une sphère
   // Les plus marquantes d'abord ; à poids égal, le hasard décide, pour que
-  // la page change d'une visite à l'autre. On plafonne : au-delà, le nuage
-  // ne serait plus qu'une mosaïque.
-  const plafond = Math.min(140, Math.round(window.innerWidth*window.innerHeight/9000));
+  // la page change d'une visite à l'autre. On plafonne : une sphère trop
+  // peuplée n'est plus qu'une boule de vignettes.
+  const plafond = Math.min(90, Math.max(30, Math.round(window.innerWidth*window.innerHeight/21000)));
   const oeuvres = tout.map(i=>({i, p:_nuagePoids(i), r:Math.random()}))
     .sort((a,b)=> b.p-a.p || a.r-b.r).slice(0, plafond).map(x=>x.i);
   const ov = document.createElement('div');
@@ -4592,72 +4591,119 @@ function ouvrirNuage(force){
   ov.innerHTML = `
     <div class="nu-head">
       <h2>${m.icon||''} ${escapeHTML(_modLabel(m))}</h2>
-      <span class="nu-compte"></span>
+      <span class="nu-compte">${oeuvres.length < tout.length
+        ? T(`${tout.length} œuvres — en voici ${oeuvres.length}`, `${tout.length} works — here are ${oeuvres.length}`)
+        : T(`${tout.length} œuvre${tout.length>1?'s':''}`, `${tout.length} work${tout.length>1?'s':''}`)}</span>
     </div>
-    <div class="nu-scene"></div>
+    <div class="nu-scene"><div class="nu-monde">${oeuvres.map(it =>
+      `<div class="nu-pose"><img class="nu-cov" src="${_safeUrl(it.images[0])}" alt="" draggable="false" tabindex="-1"
+         title="${escapeHTML(it.titre||'')}" data-id="${escapeHTML(it.id)}"></div>`).join('')}
+      ${oeuvres.length ? '' : `<div class="nu-vide">${T('Aucune couverture à montrer ici.','No cover to show here.')}</div>`}
+    </div></div>
     <div class="nu-foot">
       <label><input type="checkbox" id="nuageNePlus" ${_nuageCoupe(id)?'checked':''}> ${T('Ne plus montrer cette page pour cette collection','Don’t show this page again for this collection')}</label>
-      <span class="nu-esp"></span>
+      <span class="nu-aide">${T('Une couverture ouvre sa fiche · un clic à côté mène au tableau de bord','A cover opens its record · a click beside it goes to the dashboard')}</span>
       <button type="button" id="nuageEntrer">${T('Entrer','Enter')} →</button>
     </div>`;
   document.body.appendChild(ov);
-  // Un léger aléa de taille casse la régularité ; la première — la plus
-  // marquante — reçoit le maximum, pour rester la plus grande à coup sûr.
+  // Les points de la sphère, légèrement tournés au départ pour que la
+  // première vue ne soit pas toujours la même.
+  const pts = _nuagePointsSphere(oeuvres.length);
+  const a0 = Math.random()*Math.PI*2;
+  pts.forEach(p=>{ const x = p.x*Math.cos(a0) + p.z*Math.sin(a0); p.z = -p.x*Math.sin(a0) + p.z*Math.cos(a0); p.x = x; });
+  // Les plus marquantes reçoivent les points les plus proches : elles sont
+  // devant à l'ouverture, pas perchées à un pôle.
+  pts.sort((a,b)=> b.z - a.z);
   const alea = oeuvres.map(()=> 0.88 + Math.random()*0.24);
   if(alea.length) alea[0] = 1.12;
-  _nuageEtat = { ov, id, oeuvres, alea };
-  _nuageDessiner();
-  _nuageMarquerVu(id);
-  ov.querySelector('#nuageEntrer').onclick = fermerNuage;
-  ov.querySelector('#nuageNePlus').onchange = e => _nuageRegler(id, e.target.checked);
+  const scene = ov.querySelector('.nu-scene');
+  _nuageEtat = { ov, id, oeuvres, pts, alea, poses:[...ov.querySelectorAll('.nu-pose')],
+                 vy:0, vx:0, cibleVy:0.004, cibleVx:0.0012, rayon:200, aplat:1, rafId:0, pause:false, derniere:0 };
+  _nuageDimensionner();
+  _nuageRelancer();
+
+  const st = _nuageEtat;
+  // ── Le curseur oriente la rotation : loin du centre, elle accélère dans sa
+  // direction ; au repos ou hors de la scène, la sphère tourne doucement.
+  const viser = (x, y) => {
+    const r = scene.getBoundingClientRect();
+    const cx = (x - r.left) / r.width - 0.5, cy = (y - r.top) / r.height - 0.5;
+    st.cibleVy = cx * 0.05; st.cibleVx = cy * 0.05;
+  };
+  const repos = () => { st.cibleVy = 0.004; st.cibleVx = 0.0012; };
+  let presse = null, glisse = false, couv = null;
+  scene.addEventListener('pointermove', e => {
+    if(presse){
+      // Le doigt (ou la souris tenue) fait glisser la sphère
+      const ddx = e.clientX - presse.x, ddy = e.clientY - presse.y;
+      if(Math.abs(e.clientX - presse.x0) + Math.abs(e.clientY - presse.y0) > 6) glisse = true;
+      st.vy = ddx * 0.006; st.vx = ddy * 0.006; st.cibleVy = st.vy; st.cibleVx = st.vx;
+      presse.x = e.clientX; presse.y = e.clientY;
+      _nuageRelancer();
+      return;
+    }
+    if(e.pointerType === 'touch') return;
+    // Sur une couverture de premier plan, on s'arrête : elle se laisse cliquer
+    if(e.target.closest?.('.nu-pose.devant')){ st.cibleVy = 0; st.cibleVx = 0; }
+    else viser(e.clientX, e.clientY);
+  });
+  scene.addEventListener('pointerleave', repos);
+  scene.addEventListener('pointerdown', e => {
+    if(e.button !== undefined && e.button !== 0) return;
+    presse = { x:e.clientX, y:e.clientY, x0:e.clientX, y0:e.clientY }; glisse = false;
+    couv = e.target.closest?.('.nu-pose.devant .nu-cov')?.dataset.id || null;
+    scene.classList.add('saisi');
+    try { scene.setPointerCapture(e.pointerId); } catch(_){}
+  });
+  const lacher = e => {
+    if(!presse) return;
+    presse = null; scene.classList.remove('saisi');
+    // On garde l'élan du geste, puis on revient doucement au repos
+    repos();
+    if(e && e.pointerType !== 'touch' && e.clientX !== undefined) viser(e.clientX, e.clientY);
+    // Un clic — pas un glissement — décide ici : la scène capture le pointeur
+    // pendant la pression, donc l'événement « click » ne sait plus sur quoi
+    // il a commencé. Une couverture ouvre sa fiche ; le fond mène au tableau
+    // de bord.
+    if(!glisse){
+      if(couv){ fermerNuage(true); renderItemDetail(couv); }
+      else fermerNuage();
+    }
+  };
+  scene.addEventListener('pointerup', lacher);
+  scene.addEventListener('pointercancel', lacher);
+  // ── Hors de la scène (les marges), un clic mène aussi au tableau de bord
   ov.addEventListener('click', e => {
-    const c = e.target.closest('.nu-cov'); if(!c) return;
-    const cible = c.dataset.id;
+    if(e.target.closest('.nu-scene') || e.target.closest('.nu-foot')) return;
     fermerNuage();
-    renderItemDetail(cible);
   });
-  ov.addEventListener('keydown', e => {
-    if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); fermerNuage(); }
-    if(e.key === 'Enter' && e.target.classList?.contains('nu-cov')){ e.preventDefault(); e.target.click(); }
-  });
+  ov.querySelector('#nuageEntrer').onclick = () => fermerNuage();
+  ov.querySelector('#nuageNePlus').onchange = e => _nuageRegler(id, e.target.checked);
+  ov.addEventListener('keydown', e => { if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); fermerNuage(); } });
   ov.tabIndex = -1; ov.focus();
   let minuterie = null;
-  _nuageEtat.surRedim = () => { clearTimeout(minuterie); minuterie = setTimeout(_nuageDessiner, 150); };
-  window.addEventListener('resize', _nuageEtat.surRedim);
-  // Le relief : le curseur incline le monde de quelques degrés et fait glisser
-  // les plans à des vitesses différentes. Une seule écriture par image, sur
-  // quatre variables CSS — le navigateur fait le reste sur le GPU.
-  let attente = false, cx = 0, cy = 0;
-  const poser = () => {
-    attente = false;
-    const monde = st_monde(); if(!monde) return;
-    monde.style.setProperty('--ry', (cx * 7).toFixed(2) + 'deg');
-    monde.style.setProperty('--rx', (-cy * 7).toFixed(2) + 'deg');
-    monde.style.setProperty('--px', (-cx * 30).toFixed(1) + 'px');
-    monde.style.setProperty('--py', (-cy * 30).toFixed(1) + 'px');
-  };
-  const st_monde = () => _nuageEtat?.ov.querySelector('.nu-monde');
-  ov.addEventListener('pointermove', e => {
-    if(e.pointerType === 'touch') return;
-    const r = ov.getBoundingClientRect();
-    cx = (e.clientX - r.left) / r.width - 0.5;
-    cy = (e.clientY - r.top) / r.height - 0.5;
-    if(!attente){ attente = true; requestAnimationFrame(poser); }
-  });
-  ov.addEventListener('pointerleave', () => { cx = 0; cy = 0; if(!attente){ attente = true; requestAnimationFrame(poser); } });
+  st.surRedim = () => { clearTimeout(minuterie); minuterie = setTimeout(_nuageDimensionner, 120); };
+  window.addEventListener('resize', st.surRedim);
+  // Onglet caché : on arrête de calculer pour rien
+  st.surVisibilite = () => { st.pause = document.hidden; if(!st.pause) _nuageRelancer(); };
+  document.addEventListener('visibilitychange', st.surVisibilite);
   return true;
 }
-function fermerNuage(){
+// Referme la sphère ; sauf demande contraire, on atterrit sur le tableau de
+// bord de la collection — c'est la page derrière la sphère.
+function fermerNuage(sansAtterrir){
   const st = _nuageEtat; if(!st) return;
+  if(st.rafId) cancelAnimationFrame(st.rafId);
   window.removeEventListener('resize', st.surRedim);
+  document.removeEventListener('visibilitychange', st.surVisibilite);
   st.ov.remove();
   _nuageEtat = null;
+  if(!sansAtterrir && st.id !== ALL_COLL){ showView('dashboard'); renderDashboard(); }
 }
-// Le point d'entrée des deux moments : depuis le hub, et à l'arrivée.
+// Le point d'entrée : à l'arrivée, et à chaque changement de collection.
 function proposerNuage(id){
   if(!id || id===ALL_COLL) return;
-  // On laisse la vue se poser avant de la couvrir : l'ouverture s'anime mieux
-  // sur un tableau de bord déjà rendu.
+  // On laisse la vue se poser avant de la couvrir.
   setTimeout(()=>{ if(_activeCollection===id) ouvrirNuage(false); }, 120);
 }
 
@@ -4671,10 +4717,11 @@ function _moduleItemCount(id){
 // Entrer dans un module depuis le Hub
 function enterModule(id){
   if(!isModuleEnabled(id)) return;
+  const meme = _activeCollection === id;   // revenir du hub dans la même collection, c'est y entrer aussi
   switchCollection(id);          // active la collection, adapte libellés/formulaire
   if(id===ALL_COLL){ showView('collection'); renderCollection(); }   // « Ma Collection » → vue Collection (tous les items)
   else { showView('dashboard'); renderDashboard(); }
-  proposerNuage(id);
+  if(meme) proposerNuage(id);
 }
 
 function renderHub(){
@@ -9820,7 +9867,7 @@ function renderObjetsAssociesChips(){
 }
 // Ouvre l'objet associé dans sa collection
 function openAssocItem(type, itemId){
-  switchCollection(type);
+  switchCollection(type, {sansNuage:true});
   renderCollection();          // recharge _lastItemList pour la nouvelle collection
   renderItemDetail(itemId);
 }
