@@ -4535,12 +4535,16 @@ function _nuageImage(){
     }
   }
   const R = st.rayon;
+  // Une vraie perspective : l'œil est à 2,2 rayons du centre. Ce qui vient
+  // devant grossit — presque trois fois plus grand qu'au fond — et s'écarte
+  // du centre ; ce qui passe derrière rapetisse et se resserre.
+  const F = 2.2;
   for(let k=0;k<st.pts.length;k++){
     const p = st.pts[k], el = st.poses[k];
     const prof = (p.z + 1) / 2;                       // 0 au fond, 1 devant
-    const ech = 0.45 + 0.65 * prof;
+    const ech = F / (F - p.z);
     const op = Math.max(0, Math.min(1, (prof - 0.18) / 0.4));
-    el.style.transform = `translate(-50%,-50%) translate(${(p.x*R).toFixed(1)}px,${(p.y*R*st.aplat).toFixed(1)}px) scale(${ech.toFixed(3)})`;
+    el.style.transform = `translate(-50%,-50%) translate(${(p.x*R*ech).toFixed(1)}px,${(p.y*R*ech*st.aplat).toFixed(1)}px) scale(${ech.toFixed(3)})`;
     el.style.opacity = op.toFixed(3);
     el.style.zIndex = String(Math.round(prof * 1000));
     const devant = prof > 0.5;
@@ -4559,16 +4563,17 @@ function _nuageDimensionner(){
   // Le rayon laisse la place aux couvertures qui dépassent de la sphère :
   // la plus grande fait la moitié du rayon, et se tient aux pôles comme à
   // l'équateur.
-  st.rayon = Math.min(L * 0.38, H * 0.37);
+  st.rayon = Math.min(L * 0.34, H * 0.33);
   st.aplat = 1;
   const ratio = _nuageRatio(st.id);
   const n = st.oeuvres.length;
   // Trois tailles, par rang de poids — et proportionnées au rayon, pour
   // qu'une petite fenêtre garde une sphère lisible.
-  const grand = Math.max(52, Math.min(180, st.rayon * (L < 640 ? 0.56 : 0.44)));
+  // Le poids ne fait plus qu'une nuance de taille : la profondeur commande.
+  const grand = Math.max(40, Math.min(130, st.rayon * (L < 640 ? 0.42 : 0.32)));
   st.poses.forEach((el, k) => {
     const part = k / Math.max(1, n);
-    const w = Math.round(grand * (part < 0.12 ? 1 : part < 0.45 ? 0.68 : 0.46) * st.alea[k]);
+    const w = Math.round(grand * (part < 0.12 ? 1 : part < 0.45 ? 0.82 : 0.68) * st.alea[k]);
     el.style.width = w + 'px'; el.style.height = Math.round(w / ratio) + 'px';
   });
 }
