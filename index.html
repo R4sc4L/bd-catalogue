@@ -818,8 +818,19 @@
   #nuageOverlay .nu-head{display:flex;align-items:baseline;gap:14px;padding:18px 26px 6px;flex-wrap:wrap;position:relative;z-index:2}
   #nuageOverlay .nu-head h2{margin:0;font-size:clamp(20px,2.6vw,30px);font-weight:700;letter-spacing:.2px;color:#f6efe2}
   #nuageOverlay .nu-head .nu-compte{font-size:14px;color:#c9bfae}
-  #nuageOverlay .nu-scene{flex:1;position:relative;min-height:0}
-  #nuageOverlay .nu-cov{position:absolute;display:block;border-radius:5px;object-fit:cover;cursor:pointer;
+  #nuageOverlay .nu-scene{flex:1;position:relative;min-height:0;perspective:1200px;perspective-origin:50% 50%}
+  /* Le monde s'incline avec le curseur (--rx/--ry) ; chaque couverture glisse
+     selon sa profondeur (--d : 1 au premier plan, .3 au fond), pour un
+     parallaxe. Le translateZ qui la rapproche est compensé par un scale, afin
+     qu'au repos rien ne change de taille ni ne se chevauche. */
+  #nuageOverlay .nu-monde{position:absolute;inset:0;transform-style:preserve-3d;
+    --px:0px;--py:0px;--rx:0deg;--ry:0deg;
+    transform:rotateX(var(--rx)) rotateY(var(--ry));transition:transform .18s ease-out}
+  #nuageOverlay .nu-pose{position:absolute;transform-style:preserve-3d;
+    transform:translate3d(calc(var(--px) * var(--d)), calc(var(--py) * var(--d)), calc(var(--d) * 60px))
+              scale(calc(1 - var(--d) * 0.05));
+    transition:transform .14s linear}
+  #nuageOverlay .nu-cov{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:5px;object-fit:cover;cursor:pointer;
     box-shadow:0 10px 26px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);
     opacity:0;transform:scale(.86);animation:nuage-pop .55s cubic-bezier(.2,.8,.3,1.2) forwards;
     transition:transform .18s,box-shadow .18s,z-index 0s}
@@ -841,7 +852,10 @@
     #nuageOverlay .nu-foot .nu-esp{display:none}
     #nuageOverlay .nu-foot button{flex:1}
   }
-  @media(prefers-reduced-motion:reduce){ #nuageOverlay,#nuageOverlay .nu-cov{animation:none;opacity:1;transform:none} }
+  @media(prefers-reduced-motion:reduce){
+    #nuageOverlay,#nuageOverlay .nu-cov{animation:none;opacity:1;transform:none}
+    #nuageOverlay .nu-monde,#nuageOverlay .nu-pose{transform:none;transition:none}
+  }
   #pcLightbox{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9500;display:flex;align-items:center;justify-content:center;cursor:zoom-out;overflow:hidden}
   #pcLightbox img{height:92vh;width:auto;max-width:none;flex:none;object-fit:contain;box-shadow:0 0 80px rgba(0,0,0,.8);will-change:transform;transform-origin:center center;user-select:none;-webkit-user-drag:none}
   #pcLightbox.pc-pannable{cursor:grab}
@@ -4495,7 +4509,8 @@ function _nuageRatio(id){
 }
 // Place des rectangles en spirale autour du centre, sans chevauchement.
 // Renvoie les positions trouvées ; ce qui n'entre pas est laissé de côté.
-function _nuagePlacer(rects, L, H, marge){
+function _nuagePlacer(rects, L, H, marge, bord){
+  bord = bord ?? marge;
   const poses = [];
   const cx = L/2, cy = H/2;
   const ex = Math.sqrt(Math.max(1, L/H));   // spirale elliptique : elle remplit un écran large
@@ -4506,7 +4521,7 @@ function _nuagePlacer(rects, L, H, marge){
       const rad = 2.4*t;
       const x = Math.round(cx + rad*Math.cos(t)*ex - r.w/2);
       const y = Math.round(cy + rad*Math.sin(t)/ex - r.h/2);
-      if(x < marge || y < marge || x+r.w > L-marge || y+r.h > H-marge){
+      if(x < bord || y < bord || x+r.w > L-bord || y+r.h > H-bord){
         if(rad > Math.max(L,H)) break;       // hors champ pour de bon
         continue;
       }
@@ -4534,20 +4549,24 @@ function _nuageDessiner(){
   // La grande taille se déduit de la surface : une spirale remplit environ
   // 60 % de l'écran, on dimensionne pour que tout y tienne, dans des bornes
   // qui gardent les petites lisibles et les grandes raisonnables.
-  const budget = 0.6 * L * H;
+  const budget = 0.58 * (L-52) * (H-52);
   const somme = facteurs.reduce((a,f)=> a + f*f/ratio, 0);
   const grand = Math.max(60, Math.min(240, Math.sqrt(budget / Math.max(1e-6, somme)), L*0.22, H*0.4));
   const rects = st.oeuvres.map((item, k) => {
     const w = Math.round(grand * facteurs[k]);
     return { w, h: Math.round(w/ratio), item };
   });
-  const poses = _nuagePlacer(rects, L, H, 7);
-  scene.innerHTML = poses.map((p, k) => {
+  const poses = _nuagePlacer(rects, L, H, 7, 26);
+  // Profondeur selon la taille : les grandes au premier plan, les petites au
+  // fond — c'est ce qui donne du relief quand le curseur bouge.
+  const profondeur = w => w >= grand*0.8 ? 1 : w >= grand*0.55 ? 0.6 : 0.3;
+  scene.innerHTML = `<div class="nu-monde">` + poses.map((p, k) => {
     const it = p.item;
-    return `<img class="nu-cov" src="${_safeUrl(it.images[0])}" alt="" loading="lazy" tabindex="0"
-      title="${escapeHTML(it.titre||'')}" data-id="${escapeHTML(it.id)}"
-      style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;animation-delay:${Math.min(1200, k*14)}ms">`;
-  }).join('') + (poses.length ? '' : `<div class="nu-vide">${T('Aucune couverture à montrer ici.','No cover to show here.')}</div>`);
+    return `<div class="nu-pose" style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;--d:${profondeur(p.w)}">
+      <img class="nu-cov" src="${_safeUrl(it.images[0])}" alt="" loading="lazy" tabindex="0"
+        title="${escapeHTML(it.titre||'')}" data-id="${escapeHTML(it.id)}"
+        style="animation-delay:${Math.min(1200, k*14)}ms"></div>`;
+  }).join('') + `</div>` + (poses.length ? '' : `<div class="nu-vide">${T('Aucune couverture à montrer ici.','No cover to show here.')}</div>`);
   const cpt = st.ov.querySelector('.nu-compte');
   const total = _nuageOeuvres(st.id).length;
   cpt.textContent = poses.length < total
@@ -4605,6 +4624,27 @@ function ouvrirNuage(force){
   let minuterie = null;
   _nuageEtat.surRedim = () => { clearTimeout(minuterie); minuterie = setTimeout(_nuageDessiner, 150); };
   window.addEventListener('resize', _nuageEtat.surRedim);
+  // Le relief : le curseur incline le monde de quelques degrés et fait glisser
+  // les plans à des vitesses différentes. Une seule écriture par image, sur
+  // quatre variables CSS — le navigateur fait le reste sur le GPU.
+  let attente = false, cx = 0, cy = 0;
+  const poser = () => {
+    attente = false;
+    const monde = st_monde(); if(!monde) return;
+    monde.style.setProperty('--ry', (cx * 7).toFixed(2) + 'deg');
+    monde.style.setProperty('--rx', (-cy * 7).toFixed(2) + 'deg');
+    monde.style.setProperty('--px', (-cx * 30).toFixed(1) + 'px');
+    monde.style.setProperty('--py', (-cy * 30).toFixed(1) + 'px');
+  };
+  const st_monde = () => _nuageEtat?.ov.querySelector('.nu-monde');
+  ov.addEventListener('pointermove', e => {
+    if(e.pointerType === 'touch') return;
+    const r = ov.getBoundingClientRect();
+    cx = (e.clientX - r.left) / r.width - 0.5;
+    cy = (e.clientY - r.top) / r.height - 0.5;
+    if(!attente){ attente = true; requestAnimationFrame(poser); }
+  });
+  ov.addEventListener('pointerleave', () => { cx = 0; cy = 0; if(!attente){ attente = true; requestAnimationFrame(poser); } });
   return true;
 }
 function fermerNuage(){
