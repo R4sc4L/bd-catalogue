@@ -810,6 +810,38 @@
   .edition-link-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-soft);background:var(--bg-alt);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle}
   /* Le déplacement et l'agrandissement passent par une transformation, jamais par les
      barres de défilement : c'est ce qui permet de zoomer autour du pointeur. */
+  /* ══ Nuage de couvertures : la page d'entrée d'une collection ══ */
+  #nuageOverlay{position:fixed;inset:0;z-index:9400;display:flex;flex-direction:column;overflow:hidden;
+    background:radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--nuage-accent,#c8904a) 22%, #0e0d13) 0%, #0e0d13 70%);
+    color:#efe7d8;animation:nuage-in .35s ease-out}
+  @keyframes nuage-in{from{opacity:0}to{opacity:1}}
+  #nuageOverlay .nu-head{display:flex;align-items:baseline;gap:14px;padding:18px 26px 6px;flex-wrap:wrap;position:relative;z-index:2}
+  #nuageOverlay .nu-head h2{margin:0;font-size:clamp(20px,2.6vw,30px);font-weight:700;letter-spacing:.2px;color:#f6efe2}
+  #nuageOverlay .nu-head .nu-compte{font-size:14px;color:#c9bfae}
+  #nuageOverlay .nu-scene{flex:1;position:relative;min-height:0}
+  #nuageOverlay .nu-cov{position:absolute;display:block;border-radius:5px;object-fit:cover;cursor:pointer;
+    box-shadow:0 10px 26px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);
+    opacity:0;transform:scale(.86);animation:nuage-pop .55s cubic-bezier(.2,.8,.3,1.2) forwards;
+    transition:transform .18s,box-shadow .18s,z-index 0s}
+  @keyframes nuage-pop{to{opacity:1;transform:scale(1)}}
+  #nuageOverlay .nu-cov:hover,#nuageOverlay .nu-cov:focus-visible{transform:scale(1.08);z-index:5;outline:none;
+    box-shadow:0 18px 40px rgba(0,0,0,.7),0 0 0 2px var(--nuage-accent,#c8904a)}
+  #nuageOverlay .nu-foot{display:flex;align-items:center;gap:14px;padding:12px 26px 16px;flex-wrap:wrap;position:relative;z-index:2;
+    background:linear-gradient(to top, rgba(14,13,19,.9), rgba(14,13,19,0))}
+  #nuageOverlay .nu-foot label{display:flex;align-items:center;gap:8px;font-size:13px;color:#c9bfae;cursor:pointer;user-select:none;
+    text-transform:none;letter-spacing:0;font-weight:400;margin:0}
+  #nuageOverlay .nu-foot label input{margin:0;width:auto;flex:none;accent-color:var(--nuage-accent,#c8904a)}
+  #nuageOverlay .nu-foot .nu-esp{margin-left:auto}
+  #nuageOverlay .nu-foot button{padding:9px 18px}
+  #nuageOverlay .nu-vide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;
+    color:#c9bfae;font-size:15px;padding:30px}
+  @media(max-width:640px){
+    #nuageOverlay .nu-head{padding:14px 16px 4px}
+    #nuageOverlay .nu-foot{padding:10px 16px 14px}
+    #nuageOverlay .nu-foot .nu-esp{display:none}
+    #nuageOverlay .nu-foot button{flex:1}
+  }
+  @media(prefers-reduced-motion:reduce){ #nuageOverlay,#nuageOverlay .nu-cov{animation:none;opacity:1;transform:none} }
   #pcLightbox{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9500;display:flex;align-items:center;justify-content:center;cursor:zoom-out;overflow:hidden}
   #pcLightbox img{height:92vh;width:auto;max-width:none;flex:none;object-fit:contain;box-shadow:0 0 80px rgba(0,0,0,.8);will-change:transform;transform-origin:center center;user-select:none;-webkit-user-drag:none}
   #pcLightbox.pc-pannable{cursor:grab}
@@ -1640,6 +1672,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <button data-view="stats" role="menuitem">Statistiques</button>
         <button data-view="categories" role="menuitem">Catégories</button>
         <button data-view="import-export" role="menuitem">Import / Export</button>
+        <button type="button" role="menuitem" id="navNuageBtn" data-en="☁️ Cover cloud" onclick="closeNavMore();ouvrirNuage(true)">☁️ Nuage de couvertures</button>
       </div>
     </div>
   </nav>
@@ -4421,6 +4454,174 @@ function initCollection(){
 }
 
 // ============================================================
+// NUAGE DE COUVERTURES — la page d'entrée d'une collection
+// ============================================================
+// À la première ouverture d'une collection dans la session, ses couvertures
+// se posent en nuage : les plus marquantes (EO, signées, dédicacées, d'un
+// auteur suivi) au centre et en grand, les autres en spirale autour. Un clic
+// sur une couverture ouvre sa fiche ; « Entrer » referme. Une case coupe la
+// page pour de bon, collection par collection ; le menu « Plus » la rouvre.
+const _NUAGE_CLE_SESSION = id => 'nuage.vu.' + id;
+const _NUAGE_CLE_OFF     = id => 'nuage.off.' + id;
+function _nuageCoupe(id){ try { return localStorage.getItem(_NUAGE_CLE_OFF(id)) === '1'; } catch(e){ return false; } }
+function _nuageDejaVu(id){ try { return sessionStorage.getItem(_NUAGE_CLE_SESSION(id)) === '1'; } catch(e){ return false; } }
+function _nuageMarquerVu(id){ try { sessionStorage.setItem(_NUAGE_CLE_SESSION(id), '1'); } catch(e){} }
+function _nuageRegler(id, coupe){ try { coupe ? localStorage.setItem(_NUAGE_CLE_OFF(id),'1') : localStorage.removeItem(_NUAGE_CLE_OFF(id)); } catch(e){} }
+
+// Ce qu'on montre : les œuvres de la collection qui ont un visuel, hors
+// contenu sous clé tant qu'il n'est pas déverrouillé.
+function _nuageOeuvres(id){
+  return (cache.items||[]).filter(i =>
+    (id===ALL_COLL || (i.collectionType||'bd')===id)
+    && (i.images||[]).length
+    && !((i.imagesAdultes||i.contenuAdulte) && !_adultUnlocked));
+}
+// Le poids d'une œuvre décide de sa place et de sa taille.
+function _nuagePoids(i){
+  let p = 1;
+  if(i.editionOriginale) p += 2;
+  if(i.signe) p += 1;
+  if(i.dedicaceSignature||i.dedicaceCheck||i.dedicaceDessin||i.dedicaceTampon) p += 1;
+  if(i.numeroExemplaire) p += 1;
+  try { if(_hasCollectedAuthor(i)) p += 1; } catch(e){}
+  return p;
+}
+// Rapport largeur/hauteur des visuels selon la collection : un disque est
+// carré, un album de BD est debout.
+function _nuageRatio(id){
+  if(id==='vinyle-cd-dvd' || id==='pins') return 1;
+  if(String(id).startsWith('cartes')) return 0.66;
+  return 0.7;
+}
+// Place des rectangles en spirale autour du centre, sans chevauchement.
+// Renvoie les positions trouvées ; ce qui n'entre pas est laissé de côté.
+function _nuagePlacer(rects, L, H, marge){
+  const poses = [];
+  const cx = L/2, cy = H/2;
+  const ex = Math.sqrt(Math.max(1, L/H));   // spirale elliptique : elle remplit un écran large
+  const chevauche = (x,y,w,h) => poses.some(p => x < p.x+p.w+marge && x+w+marge > p.x && y < p.y+p.h+marge && y+h+marge > p.y);
+  for(const r of rects){
+    let placee = null;
+    for(let t=0, k=0; k<3000; k++, t+=0.11){
+      const rad = 2.4*t;
+      const x = Math.round(cx + rad*Math.cos(t)*ex - r.w/2);
+      const y = Math.round(cy + rad*Math.sin(t)/ex - r.h/2);
+      if(x < marge || y < marge || x+r.w > L-marge || y+r.h > H-marge){
+        if(rad > Math.max(L,H)) break;       // hors champ pour de bon
+        continue;
+      }
+      if(!chevauche(x,y,r.w,r.h)){ placee = {x,y,w:r.w,h:r.h,item:r.item}; break; }
+    }
+    if(placee) poses.push(placee);
+  }
+  return poses;
+}
+let _nuageEtat = null;
+function _nuageDessiner(){
+  const st = _nuageEtat; if(!st) return;
+  const scene = st.ov.querySelector('.nu-scene');
+  const L = scene.clientWidth, H = scene.clientHeight;
+  if(!L || !H) return;
+  const ratio = _nuageRatio(st.id);
+  // Trois tailles, par rang : le premier huitième en grand, le tiers suivant
+  // en moyen, le reste en petit — quel que soit le poids réel, pour que même
+  // une collection sans EO ni dédicace ait du relief.
+  const n = st.oeuvres.length;
+  const facteurs = st.oeuvres.map((_, k) => {
+    const part = k / Math.max(1, n);
+    return (part < 0.12 ? 1 : part < 0.45 ? 0.66 : 0.44) * st.alea[k];
+  });
+  // La grande taille se déduit de la surface : une spirale remplit environ
+  // 60 % de l'écran, on dimensionne pour que tout y tienne, dans des bornes
+  // qui gardent les petites lisibles et les grandes raisonnables.
+  const budget = 0.6 * L * H;
+  const somme = facteurs.reduce((a,f)=> a + f*f/ratio, 0);
+  const grand = Math.max(60, Math.min(240, Math.sqrt(budget / Math.max(1e-6, somme)), L*0.22, H*0.4));
+  const rects = st.oeuvres.map((item, k) => {
+    const w = Math.round(grand * facteurs[k]);
+    return { w, h: Math.round(w/ratio), item };
+  });
+  const poses = _nuagePlacer(rects, L, H, 7);
+  scene.innerHTML = poses.map((p, k) => {
+    const it = p.item;
+    return `<img class="nu-cov" src="${_safeUrl(it.images[0])}" alt="" loading="lazy" tabindex="0"
+      title="${escapeHTML(it.titre||'')}" data-id="${escapeHTML(it.id)}"
+      style="left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;animation-delay:${Math.min(1200, k*14)}ms">`;
+  }).join('') + (poses.length ? '' : `<div class="nu-vide">${T('Aucune couverture à montrer ici.','No cover to show here.')}</div>`);
+  const cpt = st.ov.querySelector('.nu-compte');
+  const total = _nuageOeuvres(st.id).length;
+  cpt.textContent = poses.length < total
+    ? T(`${total} œuvres — en voici ${poses.length}`, `${total} works — here are ${poses.length}`)
+    : T(`${total} œuvre${total>1?'s':''}`, `${total} work${total>1?'s':''}`);
+}
+function ouvrirNuage(force){
+  const id = _activeCollection;
+  if(!force && (_nuageCoupe(id) || _nuageDejaVu(id))) return false;
+  fermerNuage();
+  const m = moduleById(id);
+  const tout = _nuageOeuvres(id);
+  if(!force && tout.length < 4) return false;   // trop peu pour faire un nuage
+  // Les plus marquantes d'abord ; à poids égal, le hasard décide, pour que
+  // la page change d'une visite à l'autre. On plafonne : au-delà, le nuage
+  // ne serait plus qu'une mosaïque.
+  const plafond = Math.min(140, Math.round(window.innerWidth*window.innerHeight/9000));
+  const oeuvres = tout.map(i=>({i, p:_nuagePoids(i), r:Math.random()}))
+    .sort((a,b)=> b.p-a.p || a.r-b.r).slice(0, plafond).map(x=>x.i);
+  const ov = document.createElement('div');
+  ov.id = 'nuageOverlay';
+  ov.style.setProperty('--nuage-accent', m.accent || '#c8904a');
+  ov.innerHTML = `
+    <div class="nu-head">
+      <h2>${m.icon||''} ${escapeHTML(_modLabel(m))}</h2>
+      <span class="nu-compte"></span>
+    </div>
+    <div class="nu-scene"></div>
+    <div class="nu-foot">
+      <label><input type="checkbox" id="nuageNePlus" ${_nuageCoupe(id)?'checked':''}> ${T('Ne plus montrer cette page pour cette collection','Don’t show this page again for this collection')}</label>
+      <span class="nu-esp"></span>
+      <button type="button" id="nuageEntrer">${T('Entrer','Enter')} →</button>
+    </div>`;
+  document.body.appendChild(ov);
+  // Un léger aléa de taille casse la régularité ; la première — la plus
+  // marquante — reçoit le maximum, pour rester la plus grande à coup sûr.
+  const alea = oeuvres.map(()=> 0.88 + Math.random()*0.24);
+  if(alea.length) alea[0] = 1.12;
+  _nuageEtat = { ov, id, oeuvres, alea };
+  _nuageDessiner();
+  _nuageMarquerVu(id);
+  ov.querySelector('#nuageEntrer').onclick = fermerNuage;
+  ov.querySelector('#nuageNePlus').onchange = e => _nuageRegler(id, e.target.checked);
+  ov.addEventListener('click', e => {
+    const c = e.target.closest('.nu-cov'); if(!c) return;
+    const cible = c.dataset.id;
+    fermerNuage();
+    renderItemDetail(cible);
+  });
+  ov.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); fermerNuage(); }
+    if(e.key === 'Enter' && e.target.classList?.contains('nu-cov')){ e.preventDefault(); e.target.click(); }
+  });
+  ov.tabIndex = -1; ov.focus();
+  let minuterie = null;
+  _nuageEtat.surRedim = () => { clearTimeout(minuterie); minuterie = setTimeout(_nuageDessiner, 150); };
+  window.addEventListener('resize', _nuageEtat.surRedim);
+  return true;
+}
+function fermerNuage(){
+  const st = _nuageEtat; if(!st) return;
+  window.removeEventListener('resize', st.surRedim);
+  st.ov.remove();
+  _nuageEtat = null;
+}
+// Le point d'entrée des deux moments : depuis le hub, et à l'arrivée.
+function proposerNuage(id){
+  if(!id || id===ALL_COLL) return;
+  // On laisse la vue se poser avant de la couvrir : l'ouverture s'anime mieux
+  // sur un tableau de bord déjà rendu.
+  setTimeout(()=>{ if(_activeCollection===id) ouvrirNuage(false); }, 120);
+}
+
+// ============================================================
 // HUB — écran d'accueil multi-collections
 // ============================================================
 function _moduleItemCount(id){
@@ -4433,6 +4634,7 @@ function enterModule(id){
   switchCollection(id);          // active la collection, adapte libellés/formulaire
   if(id===ALL_COLL){ showView('collection'); renderCollection(); }   // « Ma Collection » → vue Collection (tous les items)
   else { showView('dashboard'); renderDashboard(); }
+  proposerNuage(id);
 }
 
 function renderHub(){
@@ -5979,7 +6181,7 @@ function closeModal(id){
 // Un calque posé PAR-DESSUS une fenêtre (visionneuse, éditeur d'image, prise de
 // vue, scanner, liseuse) prend le clavier pour lui : Échap le referme, lui, et
 // ne doit pas emporter la fenêtre qu'il recouvre.
-const _CALQUES_CLAVIER = ['editImgOverlay','photoOverlay','choixImageModal','pcLightbox','scanOverlay','linkEditionModal'];
+const _CALQUES_CLAVIER = ['editImgOverlay','photoOverlay','choixImageModal','pcLightbox','scanOverlay','linkEditionModal','nuageOverlay'];
 function _calqueAuPremierPlan(){
   return _CALQUES_CLAVIER.some(id=>document.getElementById(id)) || !!document.querySelector('.fb-backdrop');
 }
@@ -12016,10 +12218,26 @@ async function linkEditionsMultiple(baseId, ids, opts){
 }
 async function linkEditions(id1, id2){ return linkEditionsMultiple(id1, [id2]); }
 
+const _CHIFFRES_ROMAINS = {i:1,ii:2,iii:3,iv:4,v:5,vi:6,vii:7,viii:8,ix:9,x:10,
+  xi:11,xii:12,xiii:13,xiv:14,xv:15,xvi:16,xvii:17,xviii:18,xix:19,xx:20};
+// Attend un titre déjà normalisé (minuscules, sans accents ni ponctuation).
+// Renvoie le numéro de volume s'il s'en lit un, sinon null.
+function numeroDeTome(titreNormalise){
+  const n = String(titreNormalise||'');
+  const m = n.match(/\b(?:tomes?|tomos?|volumes?|vol|livres?|parties?|integrales?|t|n)\s*(\d{1,3}|[ivx]{1,6})\b/);
+  if(m) return /^\d+$/.test(m[1]) ? parseInt(m[1],10) : (_CHIFFRES_ROMAINS[m[1]] ?? null);
+  // À défaut de mot-clé, un nombre isolé en fin de titre (« Akira 3 »)
+  const q = n.match(/\s(\d{1,3})$/);
+  return q ? parseInt(q[1],10) : null;
+}
+
 async function unlinkEditionsMultiple(baseId, ids, opts){
   const base = cache.items.find(i=>i.id===baseId);
   if(!base) return 0;
   const groupe = new Set([baseId, ...(base.linkedEditions||[])]);
+  // Les liens unilatéraux hérités : une fiche peut désigner celle-ci sans être
+  // désignée en retour. Délier doit pouvoir les défaire aussi.
+  cache.items.forEach(i=>{ if((i.linkedEditions||[]).includes(baseId)) groupe.add(i.id); });
   // On ne délie jamais la fiche depuis laquelle on agit : elle est le point
   // d'appui. Pour la sortir d'un groupe, on la délie depuis une autre.
   const partants = [...new Set(ids||[])].filter(x=>x && x!==baseId && groupe.has(x));
@@ -12135,6 +12353,7 @@ function openLinkEditionModal(currentId){
   // Les éditions déjà liées ouvrent la liste, cases cochées : les décocher
   // les délie, exactement comme les cocher les avait liées.
   _lemDepart = new Set((_base?.linkedEditions||[]).filter(x=>cache.items.some(i=>i.id===x)));
+  cache.items.forEach(i=>{ if(i.id!==currentId && (i.linkedEditions||[]).includes(currentId)) _lemDepart.add(i.id); });
   _lemSelection = new Set(_lemDepart); _lemBaseId = currentId; _lemVisibles = [];
 
   const modal = document.createElement("div");
@@ -12749,6 +12968,9 @@ function renderItemDetail(id, pushHistory=true){
       };
       const titleNorm = normTitle(it.titre);
       const manualIds = new Set(it.linkedEditions||[]);
+      // Un lien laissé unilatéral par une version antérieure compte quand même :
+      // sinon la fiche affiche « Lier » sur une édition qui la tient déjà.
+      cache.items.forEach(x=>{ if(x.id!==it.id && (x.linkedEditions||[]).includes(it.id)) manualIds.add(x.id); });
       const autoOthers = cache.items.filter(x => {
         if(x.id === it.id || manualIds.has(x.id)) return false;
         const nt = normTitle(x.titre);
@@ -12757,6 +12979,9 @@ function renderItemDetail(id, pushHistory=true){
         if(!sameTitle) return false;
         const serieMatch = normTitle(it.serie||"") === normTitle(x.serie||"");
         if(!serieMatch) return false;
+        // Deux tomes d'une même série : une suite, pas une autre édition.
+        const tA = numeroDeTome(titleNorm), tB = numeroDeTome(nt);
+        if(tA !== null && tB !== null && tA !== tB) return false;
         const numeroDifferent = it.numeroSerie && x.numeroSerie &&
           String(it.numeroSerie).trim() !== String(x.numeroSerie).trim();
         return !numeroDifferent;
@@ -18308,7 +18533,8 @@ async function _initApp(){
     const chemin = location.hash.slice(1);
     if(chemin.startsWith("item/")){ renderDashboard(); renderItemDetail(chemin.split("/")[1], false); }
     else if(chemin.startsWith("author/")){ renderDashboard(); renderAuthorDetail(chemin.split("/")[1], false); }
-    else { showView("dashboard", false); renderDashboard(); history.replaceState({view:"dashboard"}, "", "#dashboard"); }
+    else { showView("dashboard", false); renderDashboard(); history.replaceState({view:"dashboard"}, "", "#dashboard");
+           proposerNuage(_activeCollection); }
     // Sauvegarde automatique périodique de la collection
     setTimeout(checkAutoBackup, 2500);
   } catch(err){
