@@ -282,6 +282,8 @@
   #editImgOverlay .ei-bar .ei-centre .ei-grp{position:relative}
   #editImgOverlay .ei-bar .ei-centre .ei-grp-lbl{position:absolute;right:100%;margin-right:10px;white-space:nowrap}
   #editImgOverlay .ei-bar button{padding:8px 14px}
+  #editImgOverlay .ei-bar button#eiPipette{display:inline-flex;align-items:center;gap:7px}
+  #editImgOverlay .ei-bar button#eiPipette .ico{width:17px;height:17px;flex:none}
   #editImgOverlay .ei-bar button.ei-actif{box-shadow:0 0 0 2px var(--gold) inset;color:var(--gold)}
   /* La pipette : lecture RVB sous le curseur, et sur le panneau */
   #editImgOverlay .ei-scene{position:relative}
@@ -1603,6 +1605,10 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
   <g id="ic-person" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="8.2" r="3.7"/>
     <path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0"/>
+  </g>
+  <g id="ic-pipette" fill="currentColor" stroke="none">
+    <path d="M9.02 10.18 L14.68 4.52 A3.4 3.4 0 0 1 19.48 9.32 L13.82 14.98 Z"/>
+    <path d="M4 20 L4.74 18.62 L10.93 11.37 L12.63 13.07 L5.38 19.26 Z"/>
   </g>
   <g id="ic-rot-gauche" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="9.2" y="10.4" width="11.4" height="11.4" rx="2.2"/>
@@ -8215,7 +8221,7 @@ async function ouvrirEditeurImage(src, opts){
           <button type="button" class="secondary" onclick="_eiCadre('portrait')">${T('Portrait 2:3','Portrait 2:3')}</button>
         </div>
         <div class="ei-grp"><span class="ei-grp-lbl">${T('Couleur','Colour')}</span>
-          <button type="button" class="secondary" id="eiPipette" title="${T('Pipette : lire les valeurs RVB ; un clic sur une zone neutre (blanc, gris) règle la balance des blancs. Échap pour ranger la pipette.','Eyedropper: read RGB values; click a neutral area (white, grey) to set the white balance. Esc puts the eyedropper away.')}" onclick="_eiPipetteBasculer()">💧 ${T('Pipette','Eyedropper')}</button>
+          <button type="button" class="secondary" id="eiPipette" title="${T('Pipette : lire les valeurs RVB ; un clic sur une zone neutre (blanc, gris) règle la balance des blancs. Échap pour ranger la pipette.','Eyedropper: read RGB values; click a neutral area (white, grey) to set the white balance. Esc puts the eyedropper away.')}" onclick="_eiPipetteBasculer()"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pipette"></use></svg> ${T('Pipette','Eyedropper')}</button>
         </div>
       </div>
       <div class="ei-zone ei-centre">
