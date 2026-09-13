@@ -108,6 +108,10 @@
   .search-global input{background:transparent;border:none;color:var(--ink);padding:4px 6px;min-width:180px;font-size:14px}
   .search-global input::placeholder{color:var(--ink-soft)}
   .search-global input:focus{outline:none}
+  /* La croix qui annule la saisie d'un coup, sans effacer lettre à lettre */
+  .search-global .search-clear{flex:none;background:none;border:none;color:var(--ink-soft);font-size:14px;line-height:1;
+    padding:4px 6px;margin:0 -4px 0 -2px;cursor:pointer;border-radius:50%;opacity:.75;transition:opacity .12s,background .12s}
+  .search-global .search-clear:hover{opacity:1;background:var(--accent-soft);color:var(--ink)}
   main{max-width:1400px;margin:0 auto;padding:28px 24px}
   .view{display:none}
   .view.active{display:block}
@@ -813,8 +817,9 @@
   /* ══ Sphère de couvertures : la page d'entrée d'une collection ══ */
   #nuageOverlay{position:fixed;inset:0;z-index:9400;display:flex;flex-direction:column;overflow:hidden;
     background:radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--nuage-accent,#c8904a) 24%, #0e0d13) 0%, #0e0d13 68%);
-    color:#efe7d8;animation:nuage-in .35s ease-out}
-  @keyframes nuage-in{from{opacity:0}to{opacity:1}}
+    color:#efe7d8}
+  #nuageVoile{position:fixed;inset:0;z-index:9399;
+    background:radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--nuage-accent,#c8904a) 24%, #0e0d13) 0%, #0e0d13 68%)}
   #nuageOverlay .nu-head{display:flex;align-items:baseline;gap:14px;padding:18px 26px 6px;flex-wrap:wrap;position:relative;z-index:2;pointer-events:none}
   #nuageOverlay .nu-head h2{margin:0;font-size:clamp(20px,2.6vw,30px);font-weight:700;letter-spacing:.2px;color:#f6efe2}
   #nuageOverlay .nu-head .nu-compte{font-size:14px;color:#c9bfae}
@@ -845,7 +850,7 @@
     #nuageOverlay .nu-foot .nu-aide{display:none}
     #nuageOverlay .nu-foot button{flex:1}
   }
-  @media(prefers-reduced-motion:reduce){ #nuageOverlay,#nuageOverlay .nu-monde{animation:none;opacity:1;transform:none} }
+  @media(prefers-reduced-motion:reduce){ #nuageOverlay .nu-monde{animation:none;opacity:1;transform:none} }
   #pcLightbox{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9500;display:flex;align-items:center;justify-content:center;cursor:zoom-out;overflow:hidden}
   #pcLightbox img{height:92vh;width:auto;max-width:none;flex:none;object-fit:contain;box-shadow:0 0 80px rgba(0,0,0,.8);will-change:transform;transform-origin:center center;user-select:none;-webkit-user-drag:none}
   #pcLightbox.pc-pannable{cursor:grab}
@@ -1683,6 +1688,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
   <div class="search-global">
     <span aria-hidden="true">🔎</span>
     <input id="globalSearch" type="text" placeholder="Rechercher..." aria-label="Rechercher dans la collection">
+    <button type="button" id="globalSearchClear" class="search-clear" hidden onclick="effacerRechercheGlobale()" title="Effacer la recherche" data-en-title="Clear search" aria-label="Effacer la recherche">✕</button>
   </div>
   <button id="themeToggleBtn" class="hdr-btn" onclick="toggleTheme()" aria-label="Basculer le mode clair ou sombre" title="Mode clair / sombre" data-en-title="Light / dark mode" style="padding:4px 9px;font-size:14px">🌙</button>
   <button id="langToggleBtn" class="hdr-btn gold" onclick="setLang(_lang==='fr'?'en':'fr')" aria-label="Switch language / Changer de langue" title="Switch language / Changer de langue" style="padding:4px 11px;font-size:12px;font-weight:700;letter-spacing:.1em;min-width:38px">EN</button>
@@ -4707,9 +4713,11 @@ function fermerNuage(sansAtterrir){
 }
 // Le point d'entrée : à l'arrivée, et à chaque changement de collection.
 function proposerNuage(id){
-  if(!id || id===ALL_COLL) return;
-  // On laisse la vue se poser avant de la couvrir.
-  setTimeout(()=>{ if(_activeCollection===id) ouvrirNuage(false); }, 120);
+  if(!id || id===ALL_COLL){ _nuageLeverVoile(); return; }
+  // Tout de suite, dans le même souffle que la vue qu'elle recouvre : un
+  // délai laissait le tableau de bord paraître un instant avant la sphère.
+  ouvrirNuage(false);
+  _nuageLeverVoile();
 }
 
 // ============================================================
@@ -7936,8 +7944,8 @@ function _ouvrirRecadrage(source){
     </div>`;
   st.ov.querySelector('#poActions').innerHTML = `
     <span class="muted" style="font-size:12px" id="poAide">${T(
-      'Faites glisser les quatre coins sur ceux de la couverture.',
-      'Drag the four corners onto the corners of the cover.')}</span>
+      'Faites glisser les quatre coins sur ceux de la couverture ; double-cliquez pour valider.',
+      'Drag the four corners onto the corners of the cover; double-click to confirm.')}</span>
     <span class="po-esp"></span>
     <button type="button" class="secondary po-ico" aria-label="${T('Un quart de tour à gauche','Quarter turn left')}" title="${T('Un quart de tour à gauche','Quarter turn left')}" onclick="_photoPivoter(-1)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-rot-gauche"></use></svg></button>
     <button type="button" class="secondary po-ico" aria-label="${T('Un quart de tour à droite','Quarter turn right')}" title="${T('Un quart de tour à droite','Quarter turn right')}" onclick="_photoPivoter(1)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-rot-droite"></use></svg></button>
@@ -8061,6 +8069,8 @@ function _photoBrancherPoignees(cv){
   const fin = ev=>{ if(saisi<0) return; saisi = -1; try{ cv.releasePointerCapture(ev.pointerId); }catch(e){} };
   cv.addEventListener('pointerup', fin);
   cv.addEventListener('pointercancel', fin);
+  // Comme dans Photoshop : un double-clic dans l'image valide le redressement.
+  cv.addEventListener('dblclick', ev=>{ ev.preventDefault(); _photoValider(true); });
 }
 
 function _photoReprendre(){
@@ -8166,8 +8176,8 @@ async function ouvrirEditeurImage(src, opts){
         <canvas id="eiPreview"></canvas>
         <div class="ei-lbl">${T('Résultat','Result')}</div>
         <div class="ei-conseils">${T(
-          'Posez les quatre coins sur ceux de la couverture. Le cadre peut rester droit pour un simple recadrage ; incliné, il redresse la perspective.',
-          'Put the four corners on those of the cover. Keep the frame straight for a plain crop; tilt it to fix perspective.')}</div>
+          'Posez les quatre coins sur ceux de la couverture. Le cadre peut rester droit pour un simple recadrage ; incliné, il redresse la perspective. Un double-clic dans l’image valide.',
+          'Put the four corners on those of the cover. Keep the frame straight for a plain crop; tilt it to fix perspective. Double-click the image to confirm.')}</div>
       </div>
     </div>
     <div class="ei-bar">
@@ -8313,6 +8323,12 @@ function _eiBrancher(){
   const fin = ev=>{ if(saisi<0) return; saisi=-1; try{ cv.releasePointerCapture(ev.pointerId); }catch(e){} };
   cv.addEventListener('pointerup', fin);
   cv.addEventListener('pointercancel', fin);
+  // Comme dans Photoshop : un double-clic dans l'image valide le recadrage.
+  cv.addEventListener('dblclick', ev=>{
+    ev.preventDefault();
+    const p = st.boutons.find(b=>b.principal);
+    if(p) _eiFin(p.id);
+  });
 }
 
 async function _eiFin(id){
@@ -13809,6 +13825,23 @@ async function loadDemoData(){
 }
 
 // --------- Global search ---------
+// Annuler la saisie d'un coup : la croix, ou Échap dans le champ. On passe
+// par l'événement « input » pour que le filtre de la collection se relâche
+// comme si l'on avait tout effacé à la main.
+function effacerRechercheGlobale(){
+  const champ = document.getElementById("globalSearch");
+  if(!champ) return;
+  champ.value = "";
+  champ.dispatchEvent(new Event("input", {bubbles:true}));
+  champ.focus();
+}
+document.getElementById("globalSearch").addEventListener("input", e=>{
+  const croix = document.getElementById("globalSearchClear");
+  if(croix) croix.hidden = !e.target.value;
+});
+document.getElementById("globalSearch").addEventListener("keydown", e=>{
+  if(e.key === "Escape" && e.target.value){ e.preventDefault(); e.stopPropagation(); effacerRechercheGlobale(); }
+});
 document.getElementById("globalSearch").addEventListener("input", debounce(e=>{
   const q = e.target.value.trim();
   if(!q){
@@ -18492,7 +18525,17 @@ function _initEnvBadge(){
   }
 }
 
+function _nuageVoile(){
+  if(GUEST || _activeCollection === ALL_COLL || _nuageCoupe(_activeCollection)) return;
+  if(document.getElementById('nuageVoile')) return;
+  const v = document.createElement('div');
+  v.id = 'nuageVoile';
+  v.style.setProperty('--nuage-accent', moduleById(_activeCollection).accent || '#c8904a');
+  document.body.appendChild(v);
+}
+function _nuageLeverVoile(){ document.getElementById('nuageVoile')?.remove(); }
 async function _initApp(){
+  _nuageVoile();
   try {
     _initStickyHeader();
     _initEnvBadge();
@@ -18623,13 +18666,14 @@ async function _initApp(){
     // favori (#item/…, #author/…) reste honoré, mais on ne rouvre plus la vue où l'on se
     // trouvait la fois précédente : on ne sait plus, en arrivant, dans quelle collection on est.
     const chemin = location.hash.slice(1);
-    if(chemin.startsWith("item/")){ renderDashboard(); renderItemDetail(chemin.split("/")[1], false); }
-    else if(chemin.startsWith("author/")){ renderDashboard(); renderAuthorDetail(chemin.split("/")[1], false); }
+    if(chemin.startsWith("item/")){ _nuageLeverVoile(); renderDashboard(); renderItemDetail(chemin.split("/")[1], false); }
+    else if(chemin.startsWith("author/")){ _nuageLeverVoile(); renderDashboard(); renderAuthorDetail(chemin.split("/")[1], false); }
     else { showView("dashboard", false); renderDashboard(); history.replaceState({view:"dashboard"}, "", "#dashboard");
            proposerNuage(_activeCollection); }
     // Sauvegarde automatique périodique de la collection
     setTimeout(checkAutoBackup, 2500);
   } catch(err){
+    _nuageLeverVoile();
     console.error(err);
     toast(T("Erreur d'initialisation : ","Initialisation error: ")+err.message, "error");
     // Un toast disparaît : l'utilisateur se retrouvait devant une application vide sans
