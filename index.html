@@ -13901,7 +13901,7 @@ const MARQUE_GENERATION = 'MC-INV-2026-09-14-ancre-head-body';
 
 // Retire tout instantané déjà présent dans une source : c'est la marque
 // d'une page invité, dont on ne doit pas repartir.
-const _RX_INSTANTANE = /<script>window\.__GUEST__ = [\s\S]*?;<\/script>\n?/g;
+const _RX_INSTANTANE = /(<\/head>\s*<body[^>]*>)((?:\s*<script>window\.__GUEST__ = \{"[\s\S]*?\};<\/script>)+)/i;
 
 async function genererVersionInvite(){
   if(GUEST){
@@ -13977,9 +13977,10 @@ async function genererVersionInvite(){
     }
     // La source ne doit porter aucun instantané : si elle en porte, c'est une
     // page invité, et la recopier les empilerait. On les retire, et on le dit.
-    const dejaLa = (source.match(_RX_INSTANTANE) || []).length;
-    if(dejaLa){
-      source = source.replace(_RX_INSTANTANE, '');
+    const trouve = source.match(_RX_INSTANTANE);
+    if(trouve){
+      const dejaLa = (trouve[2].match(/window\.__GUEST__ = \{/g) || []).length;
+      source = source.replace(_RX_INSTANTANE, '$1');
       toast(T(`${dejaLa} instantané${dejaLa>1?'s':''} d’une version invité retiré${dejaLa>1?'s':''} de la copie.`,
               `${dejaLa} guest snapshot${dejaLa>1?'s':''} removed from the copy.`));
     }
@@ -13998,6 +13999,16 @@ async function genererVersionInvite(){
     const combien = (sortie.match(/window\.__GUEST__ = \{/g) || []).length;
     if(combien !== 1) throw new Error(T(`${combien} instantanés dans la copie au lieu d’un — publication annulée`,
                                         `${combien} snapshots in the copy instead of one — aborting`));
+    // La copie doit rester une application complète : c'est le contrôle qui
+    // aurait attrapé la troncature. On exige ses pièces d'amorçage, et une
+    // taille cohérente avec la source.
+    for(const piece of ['function _initGuest', 'const GUEST =', '</html>']){
+      if(!sortie.includes(piece))
+        throw new Error(T(`copie incomplète (${piece} manquant) — publication annulée`,
+                          `incomplete copy (${piece} missing) — aborting`));
+    }
+    if(sortie.length < source.length)
+      throw new Error(T('copie plus courte que la source — publication annulée','copy shorter than the source — aborting'));
 
     downloadFile(sortie, 'invite.html', 'text/html;charset=utf-8');
     const mo = (sortie.length/1048576).toFixed(1);
