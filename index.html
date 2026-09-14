@@ -1766,8 +1766,6 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     <input id="globalSearch" type="text" placeholder="Rechercher..." aria-label="Rechercher dans la collection">
     <button type="button" id="globalSearchClear" class="search-clear" hidden onclick="effacerRechercheGlobale()" title="Effacer la recherche" data-en-title="Clear search" aria-label="Effacer la recherche">✕</button>
   </div>
-  <button id="themeToggleBtn" class="hdr-btn" onclick="toggleTheme()" aria-label="Basculer le mode clair ou sombre" title="Mode clair / sombre" data-en-title="Light / dark mode" style="padding:4px 9px;font-size:14px">🌙</button>
-  <button id="langToggleBtn" class="hdr-btn gold" onclick="setLang(_lang==='fr'?'en':'fr')" aria-label="Switch language / Changer de langue" title="Switch language / Changer de langue" style="padding:4px 11px;font-size:12px;font-weight:700;letter-spacing:.1em;min-width:38px">EN</button>
   <div class="compte-zone" id="compteZone">
     <button type="button" class="avatar" id="avatarBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="compteMenu"
             title="Mon compte" data-en-title="My account" onclick="basculerMenuCompte(event)"></button>
@@ -4679,7 +4677,7 @@ function peindreAvatar(el){
 }
 function majAvatarEntete(){
   const b = document.getElementById('avatarBtn');
-  if(!b) return;
+  if(!b || !b.classList.contains('avatar')) return;
   peindreAvatar(b);
   b.title = T(`Mon compte — ${nomCompte()}`, `My account — ${nomCompte()}`);
 }
@@ -4710,6 +4708,24 @@ document.addEventListener('click', e=>{
   const z = document.getElementById('compteZone');
   if(z && z.classList.contains('ouvert') && !z.contains(e.target)) fermerMenuCompte();
 });
+
+// Une page invitée n'a pas de compte : son avatar devient un simple bouton
+// de réglages, avec l'apparence et la langue — le reste n'a pas de sens pour
+// qui ne fait que regarder.
+function _compteZoneInvite(){
+  const z = document.getElementById('compteZone'); if(!z) return;
+  z.innerHTML = `
+    <button type="button" class="hdr-btn" id="avatarBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="compteMenu"
+            title="Réglages" data-en-title="Settings" style="padding:5px 10px;font-size:15px" onclick="basculerMenuCompte(event)">⚙️</button>
+    <div class="compte-menu" id="compteMenu" role="menu" aria-label="Réglages">
+      <button type="button" role="menuitem" onclick="toggleTheme();majMenuCompte()">
+        <span aria-hidden="true" style="width:17px;text-align:center" id="cmThemeIco">🌙</span>
+        <span data-en="Appearance">Apparence</span><span class="cm-bascule" id="cmTheme"></span></button>
+      <button type="button" role="menuitem" onclick="setLang(_lang==='en'?'fr':'en');majMenuCompte()">
+        <span aria-hidden="true" style="width:17px;text-align:center">🌐</span>
+        <span data-en="Language">Langue</span><span class="cm-bascule" id="cmLangue"></span></button>
+    </div>`;
+}
 
 // ── La fiche ──────────────────────────────────────────────────────────
 let _cpAvatar = '';        // l'avatar en cours d'édition, pas encore enregistré
@@ -12536,9 +12552,8 @@ function setLang(lang) {
   applyLang();
   // Refresh current view to re-render dynamic content
   refreshCurrentView();
-  const btn = document.getElementById('langToggleBtn');
-  if(btn) btn.textContent = t('nav.lang');
   majAvatarEntete();
+  majMenuCompte();
 }
 
 function applyLang() {
@@ -18951,8 +18966,9 @@ function _refreshLocationDatalist(){
 function applyTheme(theme){
   const light = theme === 'light';
   document.body.classList.toggle('theme-light', light);
-  const btn = document.getElementById('themeToggleBtn');
-  if(btn){ btn.textContent = light ? '☀️' : '🌙'; btn.title = light ? 'Passer en mode sombre' : 'Passer en mode clair'; }
+  // Le menu du compte porte l'état du thème : il doit suivre, même quand le
+  // changement vient d'ailleurs (préférences du compte, démarrage).
+  majMenuCompte();
 }
 function setTheme(theme){ localStorage.setItem('bdapp_theme', theme); applyTheme(theme); _noterPreferenceCompte('theme', theme); }
 function toggleTheme(){ setTheme(document.body.classList.contains('theme-light') ? 'dark' : 'light'); }
@@ -19202,7 +19218,7 @@ function _initGuest(){
 
     _initStickyHeader();
     _initEnvBadge();
-    document.getElementById('compteZone')?.remove();
+    _compteZoneInvite();
     _guestTrimUI(G);
     _syncAdvFilters();
     showView('collection', false);
