@@ -73,6 +73,40 @@
   button.danger:hover{background:#c0392b}
   /* Boutons icônes d'en-tête (thème, langue, déconnexion) */
   .hdr-btn{background:transparent;border:1px solid var(--border);color:var(--ink-soft);border-radius:999px;line-height:1;transition:background .15s}
+  /* ══ Compte : l'avatar de l'en-tête et son menu ══ */
+  .compte-zone{position:relative;flex:none}
+  .avatar{width:34px;height:34px;border-radius:50%;border:1px solid var(--border-warm);background:var(--bg-alt);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;
+    font-weight:700;font-size:13px;letter-spacing:.02em;color:var(--on-accent);user-select:none}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  button.avatar{cursor:pointer;padding:0;transition:box-shadow .15s,transform .12s}
+  button.avatar:hover,button.avatar:focus-visible{outline:none;box-shadow:0 0 0 2px var(--gold)}
+  .compte-menu{position:absolute;top:calc(100% + 8px);right:0;z-index:7000;min-width:250px;
+    background:var(--bg-panel);border:1px solid var(--border-warm);border-radius:var(--radius);
+    box-shadow:0 18px 46px rgba(0,0,0,.5);padding:6px;display:none}
+  .compte-zone.ouvert .compte-menu{display:block}
+  .compte-menu .cm-tete{display:flex;gap:10px;align-items:center;padding:10px 10px 12px;border-bottom:1px solid var(--border);margin-bottom:6px}
+  .compte-menu .cm-tete .avatar{width:40px;height:40px;font-size:15px}
+  .compte-menu .cm-ident{min-width:0}
+  .compte-menu .cm-nom{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .compte-menu .cm-mail{font-size:12px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .compte-menu button{display:flex;align-items:center;gap:9px;width:100%;background:none;border:none;color:var(--ink);
+    text-align:left;padding:9px 10px;border-radius:7px;font-size:13px;cursor:pointer;transition:background .12s}
+  .compte-menu button:hover{background:var(--accent-soft)}
+  .compte-menu button .ico{width:17px;height:17px;flex:none;color:var(--ink-soft)}
+  .compte-menu .cm-sep{height:1px;background:var(--border);margin:6px 4px}
+  .compte-menu .cm-bascule{margin-left:auto;font-size:11px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  /* La fiche de compte */
+  #compteModal .cp-avatar-zone{display:flex;gap:16px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+  #compteModal .cp-avatar-zone .avatar{width:76px;height:76px;font-size:26px}
+  #compteModal .cp-avatar-actions{display:flex;flex-direction:column;gap:6px}
+  #compteModal .cp-avatar-actions button{padding:5px 12px;font-size:12px}
+  #compteModal .cp-mail{font-size:13px;color:var(--ink-soft)}
+  #compteModal .cp-mail strong{color:var(--ink);font-weight:600}
+  #compteModal textarea{min-height:70px;resize:vertical}
+  @media(max-width:640px){
+    .compte-menu{position:fixed;top:auto;bottom:0;left:0;right:0;border-radius:var(--radius) var(--radius) 0 0;min-width:0}
+  }
   .hdr-btn:hover{background:var(--bg-panel)}
   .hdr-btn.gold{border-color:var(--border-warm);color:var(--gold)}
   .hdr-btn.gold:hover{background:var(--accent-soft)}
@@ -1606,6 +1640,16 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     <circle cx="12" cy="8.2" r="3.7"/>
     <path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0"/>
   </g>
+  <g id="ic-carte" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2.8" y="5" width="18.4" height="14" rx="2.3"/>
+    <circle cx="8.6" cy="10.6" r="2.1"/>
+    <path d="M5.2 16.1a3.6 3.6 0 0 1 6.8 0"/>
+    <path d="M15 10h4M15 13.6h4"/>
+  </g>
+  <g id="ic-sortie" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14.6 4.4H18a2 2 0 0 1 2 2v11.2a2 2 0 0 1-2 2h-3.4"/>
+    <path d="M10.4 16.2 14.6 12l-4.2-4.2"/><path d="M14.2 12H4"/>
+  </g>
   <g id="ic-pipette" fill="currentColor" stroke="none">
     <path d="M9.02 10.18 L14.68 4.52 A3.4 3.4 0 0 1 19.48 9.32 L13.82 14.98 Z"/>
     <path d="M4 20 L4.74 18.62 L10.93 11.37 L12.63 13.07 L5.38 19.26 Z"/>
@@ -1724,7 +1768,29 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
   </div>
   <button id="themeToggleBtn" class="hdr-btn" onclick="toggleTheme()" aria-label="Basculer le mode clair ou sombre" title="Mode clair / sombre" data-en-title="Light / dark mode" style="padding:4px 9px;font-size:14px">🌙</button>
   <button id="langToggleBtn" class="hdr-btn gold" onclick="setLang(_lang==='fr'?'en':'fr')" aria-label="Switch language / Changer de langue" title="Switch language / Changer de langue" style="padding:4px 11px;font-size:12px;font-weight:700;letter-spacing:.1em;min-width:38px">EN</button>
-  <button id="logoutBtn" class="hdr-btn" onclick="logout()" title="Se déconnecter" data-en-title="Sign out" data-en="⎋ Sign out" style="padding:4px 10px;font-size:12px">⎋ Quitter</button>
+  <div class="compte-zone" id="compteZone">
+    <button type="button" class="avatar" id="avatarBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="compteMenu"
+            title="Mon compte" data-en-title="My account" onclick="basculerMenuCompte(event)"></button>
+    <div class="compte-menu" id="compteMenu" role="menu" aria-label="Mon compte">
+      <div class="cm-tete">
+        <span class="avatar" id="cmAvatar" aria-hidden="true"></span>
+        <div class="cm-ident"><div class="cm-nom" id="cmNom"></div><div class="cm-mail" id="cmMail"></div></div>
+      </div>
+      <button type="button" role="menuitem" onclick="fermerMenuCompte();ouvrirFicheCompte()">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-carte"></use></svg>
+        <span data-en="My account">Mon compte</span></button>
+      <button type="button" role="menuitem" onclick="toggleTheme();majMenuCompte()">
+        <span aria-hidden="true" style="width:17px;text-align:center" id="cmThemeIco">🌙</span>
+        <span data-en="Appearance">Apparence</span><span class="cm-bascule" id="cmTheme"></span></button>
+      <button type="button" role="menuitem" onclick="setLang(_lang==='en'?'fr':'en');majMenuCompte()">
+        <span aria-hidden="true" style="width:17px;text-align:center">🌐</span>
+        <span data-en="Language">Langue</span><span class="cm-bascule" id="cmLangue"></span></button>
+      <div class="cm-sep"></div>
+      <button type="button" role="menuitem" onclick="fermerMenuCompte();logout()">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-sortie"></use></svg>
+        <span data-en="Sign out">Se déconnecter</span></button>
+    </div>
+  </div>
 </header>
 
 <main>
@@ -2608,6 +2674,59 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
 </div>
 
 <!-- AUTHOR FORM MODAL -->
+<div class="modal-backdrop" id="compteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 data-en="My account">Mon compte</h2>
+      <button class="ghost" onclick="closeModal('compteModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="compteForm" onsubmit="enregistrerCompte(event)">
+        <div class="form-section">
+          <h3 data-en="Identity">Identité</h3>
+          <div class="cp-avatar-zone">
+            <span class="avatar" id="cpAvatar" aria-hidden="true"></span>
+            <div class="cp-avatar-actions">
+              <button type="button" class="secondary" onclick="document.getElementById('cpAvatarFichier').click()" data-en="Choose a photo…">Choisir une photo…</button>
+              <button type="button" class="secondary" id="cpAvatarRetirer" onclick="retirerAvatar()" data-en="Remove">Retirer</button>
+              <input type="file" id="cpAvatarFichier" accept="image/*" style="display:none" onchange="_avatarDepuisFichier(event)">
+            </div>
+            <div class="cp-mail" id="cpMail"></div>
+          </div>
+          <div class="form-grid">
+            <div><label data-en="Display name">Nom affiché</label>
+              <input type="text" id="cpNom" maxlength="60" placeholder="Pascal B." oninput="_cpApercuAvatar()"></div>
+            <div><label data-en="Collection name">Nom de la collection</label>
+              <input type="text" id="cpCollectionNom" maxlength="80" placeholder="La collection de Pascal" data-en-ph="Pascal’s collection"></div>
+          </div>
+          <div style="margin-top:14px"><label data-en="A few words">Quelques mots</label>
+            <textarea id="cpPresentation" maxlength="400" placeholder="Ce que vous collectionnez, depuis quand, ce qui vous tient à cœur…" data-en-ph="What you collect, since when, what matters to you…"></textarea></div>
+          <div class="form-grid" style="margin-top:14px">
+            <div><label data-en="Collecting since">Collectionne depuis</label>
+              <input type="number" id="cpDebut" min="1900" max="2100" step="1" placeholder="1985" style="max-width:140px"></div>
+          </div>
+        </div>
+        <div class="form-section">
+          <h3 data-en="Preferences">Préférences</h3>
+          <p class="muted" style="font-size:12px;margin:-4px 0 14px" data-en="Kept with the account: they follow you from one device to the next.">Conservées avec le compte : elles vous suivent d’un appareil à l’autre.</p>
+          <div class="form-grid three">
+            <div><label data-en="Language">Langue</label>
+              <select id="cpLangue"><option value="fr">Français</option><option value="en">English</option></select></div>
+            <div><label data-en="Appearance">Apparence</label>
+              <select id="cpTheme"><option value="dark" data-en="Dark">Sombre</option><option value="light" data-en="Light">Clair</option></select></div>
+            <div><label data-en="Opening collection">Collection d’ouverture</label>
+              <select id="cpCollectionOuverture"></select></div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary" onclick="closeModal('compteModal')" data-en="Cancel">Annuler</button>
+          <button type="submit" data-en="Save">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="authorModal">
   <div class="modal">
     <div class="modal-header">
@@ -4500,6 +4619,202 @@ function initCollection(){
 }
 
 // ============================================================
+// COMPTE — identité, avatar, préférences
+// ============================================================
+// Tout tient dans une clé « compte » du sac meta : en ligne elle atterrit
+// dans profiles.preferences, un JSONB déjà en place — aucune migration SQL.
+// L'avatar y est rangé en JPEG carré de 256 px, soit une vingtaine de kilo-
+// octets : de quoi le charger avec le reste, sans aller-retour au stockage.
+const AVATAR_MAX = 256;
+const COMPTE_DEFAUT = { nom:'', avatar:'', presentation:'', collectionNom:'', debut:'',
+                        langue:'', theme:'', collectionOuverture:'' };
+let _compte = { ...COMPTE_DEFAUT };
+
+async function chargerCompte(){
+  try {
+    const r = await dbGet('meta', 'compte');
+    _compte = { ...COMPTE_DEFAUT, ...((r && r.value) || {}) };
+  } catch(e){ _compte = { ...COMPTE_DEFAUT }; }
+  return _compte;
+}
+async function sauverCompte(){
+  await dbPut('meta', { key:'compte', value:_compte });
+}
+// L'adresse du compte connecté : elle vient de la session, jamais de la
+// fiche — on ne la modifie pas ici.
+function courrielCompte(){
+  try { return (CLOUD && SB.userEmail && SB.userEmail()) || ''; } catch(e){ return ''; }
+}
+// À défaut de nom, on se rabat sur la partie gauche de l'adresse.
+function nomCompte(){
+  const n = (_compte.nom||'').trim();
+  if(n) return n;
+  const m = courrielCompte();
+  return m ? m.split('@')[0] : T('Ma collection','My collection');
+}
+// Les initiales : une lettre par mot, deux au plus.
+function initialesCompte(){
+  const mots = nomCompte().split(/[\s._-]+/).filter(Boolean);
+  const i = mots.slice(0,2).map(m=>[...m][0]).join('');
+  return (i || '?').toUpperCase();
+}
+// Une teinte stable, tirée du nom : deux comptes se distinguent d'un coup
+// d'œil même sans photo.
+function _teinteCompte(){
+  const n = nomCompte();
+  let h = 0;
+  for(let i=0;i<n.length;i++) h = (h*31 + n.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360} 42% 46%)`;
+}
+// Peint un emplacement d'avatar : la photo si elle existe, sinon les initiales.
+function peindreAvatar(el){
+  if(!el) return;
+  if(_compte.avatar){
+    el.innerHTML = `<img src="${_safeUrl(_compte.avatar)}" alt="">`;
+    el.style.background = '';
+  } else {
+    el.textContent = initialesCompte();
+    el.style.background = _teinteCompte();
+  }
+}
+function majAvatarEntete(){
+  const b = document.getElementById('avatarBtn');
+  if(!b) return;
+  peindreAvatar(b);
+  b.title = T(`Mon compte — ${nomCompte()}`, `My account — ${nomCompte()}`);
+}
+function majMenuCompte(){
+  peindreAvatar(document.getElementById('cmAvatar'));
+  const n = document.getElementById('cmNom'); if(n) n.textContent = nomCompte();
+  const m = document.getElementById('cmMail');
+  if(m){ const mail = courrielCompte(); m.textContent = mail; m.style.display = mail ? '' : 'none'; }
+  const clair = document.body.classList.contains('theme-light');
+  const th = document.getElementById('cmTheme'); if(th) th.textContent = clair ? T('Clair','Light') : T('Sombre','Dark');
+  const ti = document.getElementById('cmThemeIco'); if(ti) ti.textContent = clair ? '☀️' : '🌙';
+  const lg = document.getElementById('cmLangue'); if(lg) lg.textContent = _lang === 'en' ? 'English' : 'Français';
+}
+function basculerMenuCompte(e){
+  if(e) e.stopPropagation();
+  const z = document.getElementById('compteZone'); if(!z) return;
+  const ouvert = z.classList.toggle('ouvert');
+  document.getElementById('avatarBtn')?.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+  if(ouvert) majMenuCompte();
+}
+function fermerMenuCompte(){
+  const z = document.getElementById('compteZone');
+  if(!z || !z.classList.contains('ouvert')) return;
+  z.classList.remove('ouvert');
+  document.getElementById('avatarBtn')?.setAttribute('aria-expanded','false');
+}
+document.addEventListener('click', e=>{
+  const z = document.getElementById('compteZone');
+  if(z && z.classList.contains('ouvert') && !z.contains(e.target)) fermerMenuCompte();
+});
+
+// ── La fiche ──────────────────────────────────────────────────────────
+let _cpAvatar = '';        // l'avatar en cours d'édition, pas encore enregistré
+function ouvrirFicheCompte(){
+  _cpAvatar = _compte.avatar || '';
+  const v = (id, val) => { const e = document.getElementById(id); if(e) e.value = val; };
+  v('cpNom', _compte.nom||''); v('cpCollectionNom', _compte.collectionNom||'');
+  v('cpPresentation', _compte.presentation||''); v('cpDebut', _compte.debut||'');
+  v('cpLangue', _compte.langue || _lang);
+  v('cpTheme', _compte.theme || (document.body.classList.contains('theme-light') ? 'light' : 'dark'));
+  const sel = document.getElementById('cpCollectionOuverture');
+  if(sel){
+    sel.innerHTML = `<option value="">${T('La dernière ouverte','The last one opened')}</option>` +
+      enabledModules().map(m=>`<option value="${m.id}">${m.icon} ${escapeHTML(_modLabel(m))}</option>`).join('');
+    sel.value = _compte.collectionOuverture || '';
+  }
+  const mail = courrielCompte();
+  const em = document.getElementById('cpMail');
+  if(em) em.innerHTML = mail
+    ? T(`Connecté en tant que <strong>${escapeHTML(mail)}</strong>`, `Signed in as <strong>${escapeHTML(mail)}</strong>`)
+    : T('Collection locale, sans compte en ligne.','Local collection, no online account.');
+  _cpApercuAvatar();
+  openModal('compteModal');
+}
+// L'aperçu suit la saisie : changer de nom change les initiales.
+function _cpApercuAvatar(){
+  const el = document.getElementById('cpAvatar'); if(!el) return;
+  if(_cpAvatar){ el.innerHTML = `<img src="${_safeUrl(_cpAvatar)}" alt="">`; el.style.background=''; }
+  else {
+    const nom = (document.getElementById('cpNom')?.value||'').trim();
+    const ancien = _compte.nom; _compte.nom = nom;      // pour les initiales et la teinte
+    el.textContent = initialesCompte(); el.style.background = _teinteCompte();
+    _compte.nom = ancien;
+  }
+  const btn = document.getElementById('cpAvatarRetirer');
+  if(btn) btn.style.display = _cpAvatar ? '' : 'none';
+}
+function retirerAvatar(){ _cpAvatar = ''; _cpApercuAvatar(); }
+// Une photo choisie passe par l'éditeur : on la recadre au carré soi-même,
+// plutôt que d'écraser un portrait en rond.
+function _avatarDepuisFichier(ev){
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if(!f) return;
+  const lecteur = new FileReader();
+  lecteur.onload = () => {
+    ouvrirEditeurImage(lecteur.result, {
+      titre: T('Cadrer l’avatar','Frame the avatar'),
+      boutons: [{ id:'annuler', libelle:T('Annuler','Cancel') },
+                { id:'valider', libelle:T('Utiliser','Use'), principal:true }],
+      onFin: (id, data) => { if(id==='valider' && data){ _cpAvatar = _avatarCarre(data); _cpApercuAvatar(); } },
+    });
+  };
+  lecteur.onerror = () => toast(T('Image illisible.','Unreadable image.'), 'error');
+  lecteur.readAsDataURL(f);
+}
+// Un avatar est rond : on le ramène à un carré de 256 px, en rognant le
+// plus long côté par le milieu.
+function _avatarCarre(src){
+  try {
+    const im = new Image(); im.src = src;
+    // L'image vient de l'éditeur : elle est déjà décodée, donc mesurable.
+    const c = document.createElement('canvas');
+    c.width = c.height = AVATAR_MAX;
+    const x = c.getContext('2d');
+    const cote = Math.min(im.naturalWidth||im.width, im.naturalHeight||im.height);
+    if(!cote) return src;
+    const sx = (((im.naturalWidth||im.width) - cote)/2)|0, sy = (((im.naturalHeight||im.height) - cote)/2)|0;
+    x.drawImage(im, sx, sy, cote, cote, 0, 0, AVATAR_MAX, AVATAR_MAX);
+    return c.toDataURL('image/jpeg', 0.85);
+  } catch(e){ return src; }
+}
+async function enregistrerCompte(ev){
+  if(ev) ev.preventDefault();
+  const val = id => (document.getElementById(id)?.value || '').trim();
+  _compte = { ...COMPTE_DEFAUT,
+    nom: val('cpNom'), avatar: _cpAvatar,
+    presentation: val('cpPresentation'), collectionNom: val('cpCollectionNom'),
+    debut: val('cpDebut'),
+    langue: val('cpLangue'), theme: val('cpTheme'),
+    collectionOuverture: val('cpCollectionOuverture') };
+  try { await sauverCompte(); }
+  catch(e){ toast(T('Enregistrement du compte impossible : ','Could not save the account: ')+e.message, 'error'); return; }
+  appliquerPreferencesCompte();
+  majAvatarEntete();
+  closeModal('compteModal');
+  toast(T('Compte enregistré ✓','Account saved ✓'));
+}
+// Les préférences du compte l'emportent sur celles du navigateur : c'est ce
+// qui les fait suivre d'un appareil à l'autre.
+function appliquerPreferencesCompte(){
+  if(_compte.theme && (_compte.theme==='light') !== document.body.classList.contains('theme-light'))
+    applyTheme(_compte.theme);
+  if(_compte.theme) try { localStorage.setItem('bdapp_theme', _compte.theme); } catch(e){}
+  if(_compte.langue && _compte.langue !== _lang) setLang(_compte.langue);
+}
+// Le thème et la langue changés depuis l'en-tête rejoignent le compte, pour
+// qu'ils ne divergent pas de ce que dit la fiche.
+function _noterPreferenceCompte(cle, valeur){
+  if(_compte[cle] === valeur) return;
+  _compte[cle] = valeur;
+  sauverCompte().catch(()=>{});
+}
+
+// ============================================================
 // SPHÈRE DE COUVERTURES — la page d'entrée d'une collection
 // ============================================================
 // À chaque lancement et à chaque changement de collection, ses couvertures se
@@ -6019,7 +6334,7 @@ document.addEventListener("click", e=>{
   const m = document.getElementById("navMore");
   if(m && m.classList.contains("open") && !m.contains(e.target)) closeNavMore();
 });
-document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeNavMore(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape"){ closeNavMore(); fermerMenuCompte(); } });
 const _MORE_VIEWS = ["stats","categories","import-export"];
 function showView(v, pushHistory=true){
   document.querySelectorAll(".view").forEach(el=>el.classList.remove("active"));
@@ -12216,12 +12531,14 @@ function T(fr, en) { return _lang === 'en' ? en : fr; }
 function setLang(lang) {
   _lang = lang;
   localStorage.setItem('bd_lang', lang);
+  _noterPreferenceCompte('langue', lang);
   document.documentElement.lang = lang;
   applyLang();
   // Refresh current view to re-render dynamic content
   refreshCurrentView();
   const btn = document.getElementById('langToggleBtn');
   if(btn) btn.textContent = t('nav.lang');
+  majAvatarEntete();
 }
 
 function applyLang() {
@@ -18637,7 +18954,7 @@ function applyTheme(theme){
   const btn = document.getElementById('themeToggleBtn');
   if(btn){ btn.textContent = light ? '☀️' : '🌙'; btn.title = light ? 'Passer en mode sombre' : 'Passer en mode clair'; }
 }
-function setTheme(theme){ localStorage.setItem('bdapp_theme', theme); applyTheme(theme); }
+function setTheme(theme){ localStorage.setItem('bdapp_theme', theme); applyTheme(theme); _noterPreferenceCompte('theme', theme); }
 function toggleTheme(){ setTheme(document.body.classList.contains('theme-light') ? 'dark' : 'light'); }
 
 // En-tête collant : propage la hauteur réelle de <header> à --header-h
@@ -18798,6 +19115,13 @@ async function _initApp(){
     await loadPinsCategories();
     await loadModuleCategories();
     await loadModulesEnabled();
+    await chargerCompte();
+    appliquerPreferencesCompte();
+    majAvatarEntete();
+    // La collection d'ouverture choisie dans la fiche prime sur la dernière
+    // visitée — c'est le sens du réglage.
+    if(_compte.collectionOuverture && isModuleEnabled(_compte.collectionOuverture))
+      _activeCollection = _compte.collectionOuverture;
     // Charger meubles/étagères/piles dès le départ (pour l'affichage lisible des localisations)
     await loadLibraryShelves();
     await loadLibraryPiles();
@@ -18878,6 +19202,7 @@ function _initGuest(){
 
     _initStickyHeader();
     _initEnvBadge();
+    document.getElementById('compteZone')?.remove();
     _guestTrimUI(G);
     _syncAdvFilters();
     showView('collection', false);
