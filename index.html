@@ -13890,6 +13890,11 @@ function _guestNettoieItem(it, imagesLongues, nomsClasseurs){
   return o;
 }
 
+// Empreinte du mécanisme de génération. La page qui engendre une version
+// invité la porte forcément ; une copie plus ancienne du serveur, non. À
+// changer dès que ce mécanisme évolue.
+const MARQUE_GENERATION = 'MC-INV-2026-09-14-ancre-head-body';
+
 async function genererVersionInvite(){
   if(GUEST) return;
   const btn = document.getElementById('genGuestBtn');
@@ -13940,10 +13945,23 @@ async function genererVersionInvite(){
     };
 
     // 3. Copie de l'application + injection de l'instantané
-    const source = await fetch(location.href, {cache:'no-store'}).then(r=>{
+    // `cache:'no-store'` ne contourne que le cache du navigateur : le réseau de
+    // diffusion de GitHub Pages peut encore servir la version précédente
+    // pendant quelques minutes. Une adresse unique le force à revenir à la
+    // source.
+    const adresse = location.href.split('#')[0] + (location.search ? '&' : '?') + '_v=' + Date.now();
+    const source = await fetch(adresse, {cache:'reload'}).then(r=>{
       if(!r.ok) throw new Error(T(`source illisible (HTTP ${r.status})`,`source unreadable (HTTP ${r.status})`));
       return r.text();
     });
+    // La copie récupérée doit être au moins aussi récente que la page qui
+    // l'engendre. Sans ce contrôle, une version périmée du serveur produisait
+    // une page invité silencieusement cassée — et rien ne le disait.
+    if(!source.includes(MARQUE_GENERATION)){
+      throw new Error(T(
+        'La copie en ligne est plus ancienne que cette page. Publiez d’abord l’application, rechargez (Cmd-Maj-R), puis régénérez.',
+        'The online copy is older than this page. Publish the application first, reload (Cmd-Shift-R), then regenerate.'));
+    }
     const bloc = `<script>window.__GUEST__ = ${JSON.stringify(donnees).replace(/<\/script>/gi,'<\\/script>')};<\/script>`;
     // `$` a un sens dans le texte de remplacement de String.replace ($&, $1…) :
     // une donnée en contenant corromprait l'instantané. On passe donc par une
