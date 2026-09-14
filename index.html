@@ -4592,6 +4592,7 @@ function _adaptCollectionLabels(){
   // Library tab: hide in non-BD collections
   const libBtn = document.querySelector('button[data-view="library"]');
   if(libBtn){ libBtn.style.display = isPins ? 'none' : ''; libBtn.textContent = libraryLabel(); _majInfobulleNav(libBtn); }
+  _guestMajNav();
   const libH2 = document.querySelector('#view-library h2');
   if(libH2) libH2.textContent = '🗄️ ' + libraryLabel();
   // L'invite des étagères vides vient d'un ::before : elle passe par une variable CSS.
@@ -4724,8 +4725,23 @@ function _compteZoneInvite(){
       <button type="button" role="menuitem" onclick="setLang(_lang==='en'?'fr':'en');majMenuCompte()">
         <span aria-hidden="true" style="width:17px;text-align:center">🌐</span>
         <span data-en="Language">Langue</span><span class="cm-bascule" id="cmLangue"></span></button>
+      <div class="cm-sep"></div>
+      <button type="button" role="menuitem" id="cmQuitterInvite" onclick="quitterModeInvite()"
+              title="Revenir à l’application, pour que le propriétaire de la collection se connecte"
+              data-en-title="Back to the application, so the collection’s owner can sign in">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-sortie"></use></svg>
+        <span data-en="Leave visitor mode">Quitter le mode visiteur</span></button>
     </div>`;
 }
+// Rendre la main au propriétaire : on retourne à l'application, où l'écran de
+// connexion attend. La page invité n'a pas de session à fermer — c'est un
+// instantané figé — mais elle sait d'où elle vient.
+// L'adresse de retour, à part : elle se vérifie sans quitter la page.
+function urlApplication(){
+  const G = window.__GUEST__ || {};
+  return G.appFichier || './';
+}
+function quitterModeInvite(){ location.href = urlApplication(); }
 
 // ── La fiche ──────────────────────────────────────────────────────────
 let _cpAvatar = '';        // l'avatar en cours d'édition, pas encore enregistré
@@ -12736,6 +12752,10 @@ function applyLang() {
   // ── Add author btn in form ──
   const addAuthorFormBtn = document.querySelector('[onclick="addAuthorRow()"]');
   if(addAuthorFormBtn) addAuthorFormBtn.textContent = S('btn.add_author');
+
+  // En dernier : la page invitée renomme « Bibliothèque » en « Classeurs »,
+  // et la boucle de navigation ci-dessus vient de le défaire.
+  _guestMajNav();
 }
 
 // --------- Cover tooltip (table view) ---------
@@ -13890,6 +13910,10 @@ async function genererVersionInvite(){
       genereLe: new Date().toISOString(),
       expireLe: CLOUD ? new Date(Date.now()+GUEST_TTL*1000).toISOString() : null,
       titre: '',
+      // De quoi revenir à l'application depuis la page invité : son nom de
+      // fichier, résolu à côté de la page publiée. Un chemin absolu figé au
+      // moment de la génération serait mort pour qui la consulte ailleurs.
+      appFichier: (location.pathname.split('/').pop() || ''),
       items, authors, piles, groupes,
     };
 
@@ -19219,6 +19243,7 @@ function _initGuest(){
     _initStickyHeader();
     _initEnvBadge();
     _compteZoneInvite();
+    applyLang();
     _guestTrimUI(G);
     _syncAdvFilters();
     showView('collection', false);
@@ -19227,6 +19252,15 @@ function _initGuest(){
     console.error('[Invité] amorçage impossible', e);
     _showInitError(e);
   }
+}
+
+// La vue « Bibliothèque » de l'invité ne montre que les classeurs : elle en
+// porte donc le nom. À rappeler après chaque traduction, qui repasse sur tous
+// les boutons de navigation.
+function _guestMajNav(){
+  if(!GUEST) return;
+  const b = document.querySelector('nav button[data-view="library"]');
+  if(b) b.textContent = T('Classeurs','Binders');
 }
 
 // Retrait des vues et des commandes qui n'ont pas de sens sans compte. C'est de la
@@ -19238,10 +19272,8 @@ function _guestTrimUI(G){
   // La vue « Bibliothèque » devient la liste des classeurs : les meubles révéleraient
   // où les pièces sont physiquement rangées.
   const libBtn = document.querySelector('nav button[data-view="library"]');
-  if(libBtn){
-    if(libraryPiles.length) libBtn.textContent = T('Classeurs','Binders');
-    else libBtn.remove();
-  }
+  if(libBtn && !libraryPiles.length) libBtn.remove();
+  _guestMajNav();
   document.getElementById('navMore')?.remove();
   document.getElementById('addItemBtn')?.remove();
   document.getElementById('bulkModeBtn')?.remove();   // sélection multiple = édition groupée
