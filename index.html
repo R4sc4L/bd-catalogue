@@ -2527,7 +2527,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <h3>Contenu additionnel</h3>
           <div class="form-grid three">
             <div class="span-3" style="display:flex;align-items:center;gap:16px;flex-wrap:nowrap">
-              <div class="checkbox-row" style="margin:0;flex-shrink:0"><input type="checkbox" id="itemExlibris"><label for="itemExlibris" style="margin:0">Ex-libris</label></div>
+              <div class="checkbox-row" style="margin:0;flex-shrink:0"><input type="checkbox" id="itemExlibris" onchange="renderImagePreview('item')"><label for="itemExlibris" style="margin:0">Ex-libris</label></div>
               <div class="checkbox-row" style="margin:0;flex-shrink:0"><input type="checkbox" id="itemExlibrisColle"><label for="itemExlibrisColle" style="margin:0;color:var(--ink-soft);font-style:italic" data-en="glued">collé</label></div>
               <div class="checkbox-row" style="margin:0;flex-shrink:0"><input type="checkbox" id="itemExlibrisSigne"><label for="itemExlibrisSigne" style="margin:0;color:var(--ink-soft);font-style:italic" data-en="signed">signé</label></div>
               <div class="checkbox-row" style="margin:0;flex-shrink:0"><input type="checkbox" id="itemExlibrisNumerote"><label for="itemExlibrisNumerote" style="margin:0;color:var(--ink-soft);font-style:italic" data-en="numbered">numéroté</label></div>
@@ -8723,10 +8723,14 @@ function _majApercuDiaporama(){
   if(c) c.textContent = n > 1 ? `(${n})` : '';
 }
 
+function _exlibrisPertinent(){
+  return !!document.getElementById('itemExlibris')?.checked || _exlibrisImgIdx >= 0;
+}
 function renderImagePreview(type){
   const el = document.getElementById(type==="item"?"itemImagePreview":type==="wish"?"wishImagePreview":"authorImagePreview");
   if(type==="item") _majApercuDiaporama();
   if(type==="item"){
+    const etoiles = _exlibrisPertinent();
     el.innerHTML = currentItemImages.map((src,i)=>{
       const name = currentItemImageNames[i]||"";
       const titleAttr = name ? escapeHTML(name) : T("Clic droit pour nommer","Right-click to name");
@@ -8734,7 +8738,7 @@ function renderImagePreview(type){
       return `<div draggable="true" data-idx="${i}" title="${titleAttr}" class="${isXl?'xl-designated':''}" oncontextmenu="showImgRenameMenu(event,${i})">
         <img src="${_safeUrl(src)}">
         <button type="button" onclick="removeImage(${i},'item')">✕</button>
-        <button type="button" class="xl-star-btn${isXl?' xl-star-active':''}" title="${isXl?T('Ex-libris désigné (cliquer pour retirer)','Designated ex-libris (click to unset)'):T('Désigner comme ex-libris','Mark as ex-libris')}" onclick="setExlibrisImage(${i})">⭐</button>
+        ${etoiles?`<button type="button" class="xl-star-btn${isXl?' xl-star-active':''}" title="${isXl?T('Ex-libris désigné (cliquer pour retirer)','Designated ex-libris (click to unset)'):T('Désigner comme ex-libris','Mark as ex-libris')}" onclick="setExlibrisImage(${i})">⭐</button>`:''}
         <button type="button" class="img-copy-btn" title="${T("Copier l'image (Cmd+V pour la coller ailleurs)",'Copy image (Cmd+V to paste elsewhere)')}" onclick="copyItemImage(${i})">📋</button>
         <button type="button" class="img-crop-btn" title="${T('Recadrer et redresser','Crop and straighten')}" onclick="recadrerImageItem(${i})">✂️</button>
       </div>`;
