@@ -13899,7 +13899,16 @@ function _guestNettoieItem(it, imagesLongues, nomsClasseurs){
 // changer dès que ce mécanisme évolue.
 const MARQUE_GENERATION = 'MC-INV-2026-09-14-ancre-head-body';
 
+// Retire tout instantané déjà présent dans une source : c'est la marque
+// d'une page invité, dont on ne doit pas repartir.
+const _RX_INSTANTANE = /<script>window\.__GUEST__ = [\s\S]*?;<\/script>\n?/g;
+
 async function genererVersionInvite(){
+  if(GUEST){
+    toast(T('Vous êtes sur la page invité : ouvrez l’application pour en engendrer une nouvelle.',
+            'You are on the guest page: open the application to generate a new one.'), 'error');
+    return;
+  }
   if(GUEST) return;
   const btn = document.getElementById('genGuestBtn');
   if(btn){ btn.disabled = true; btn.textContent = T('Génération…','Generating…'); }
@@ -13954,7 +13963,7 @@ async function genererVersionInvite(){
     // pendant quelques minutes. Une adresse unique le force à revenir à la
     // source.
     const adresse = location.href.split('#')[0] + (location.search ? '&' : '?') + '_v=' + Date.now();
-    const source = await fetch(adresse, {cache:'reload'}).then(r=>{
+    let source = await fetch(adresse, {cache:'reload'}).then(r=>{
       if(!r.ok) throw new Error(T(`source illisible (HTTP ${r.status})`,`source unreadable (HTTP ${r.status})`));
       return r.text();
     });
@@ -13965,6 +13974,14 @@ async function genererVersionInvite(){
       throw new Error(T(
         'La copie en ligne est plus ancienne que cette page. Publiez d’abord l’application, rechargez (Cmd-Maj-R), puis régénérez.',
         'The online copy is older than this page. Publish the application first, reload (Cmd-Shift-R), then regenerate.'));
+    }
+    // La source ne doit porter aucun instantané : si elle en porte, c'est une
+    // page invité, et la recopier les empilerait. On les retire, et on le dit.
+    const dejaLa = (source.match(_RX_INSTANTANE) || []).length;
+    if(dejaLa){
+      source = source.replace(_RX_INSTANTANE, '');
+      toast(T(`${dejaLa} instantané${dejaLa>1?'s':''} d’une version invité retiré${dejaLa>1?'s':''} de la copie.`,
+              `${dejaLa} guest snapshot${dejaLa>1?'s':''} removed from the copy.`));
     }
     const bloc = `<script>window.__GUEST__ = ${JSON.stringify(donnees).replace(/<\/script>/gi,'<\\/script>')};<\/script>`;
     // `$` a un sens dans le texte de remplacement de String.replace ($&, $1…) :
@@ -13978,6 +13995,9 @@ async function genererVersionInvite(){
     const posBloc = sortie.indexOf('window.__GUEST__');
     const posBody = sortie.search(/<\/head>\s*<body[^>]*>/i);
     if(posBloc < 0 || posBloc < posBody) throw new Error(T('instantané mal placé dans la copie — publication annulée','snapshot misplaced in the copy — aborting'));
+    const combien = (sortie.match(/window\.__GUEST__ = \{/g) || []).length;
+    if(combien !== 1) throw new Error(T(`${combien} instantanés dans la copie au lieu d’un — publication annulée`,
+                                        `${combien} snapshots in the copy instead of one — aborting`));
 
     downloadFile(sortie, 'invite.html', 'text/html;charset=utf-8');
     const mo = (sortie.length/1048576).toFixed(1);
