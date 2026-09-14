@@ -3760,6 +3760,7 @@ function toggleCollectionPicker(e){
   e && e.stopPropagation();
   const picker = document.getElementById('collectionPicker');
   const word   = document.getElementById('collectionWord');
+  if(!picker || !word) return;          // page invité : le sélecteur n'existe pas
   buildCollectionPicker();
   const open = picker.classList.toggle('open');
   word.classList.toggle('open', open);
@@ -3772,11 +3773,11 @@ function toggleCollectionPicker(e){
 document.addEventListener('click', e=>{
   const picker = document.getElementById('collectionPicker');
   const word   = document.getElementById('collectionWord');
-  if(picker && !picker.contains(e.target) && !word.contains(e.target)){
+  if(picker && !picker.contains(e.target) && !word?.contains(e.target)){
     picker.classList.remove('open');
     picker.style.display = 'none';
-    word.classList.remove('open');
-    word.setAttribute('aria-expanded','false');
+    word?.classList.remove('open');
+    word?.setAttribute('aria-expanded','false');
   }
 });
 
@@ -4713,6 +4714,16 @@ document.addEventListener('click', e=>{
 // Une page invitée n'a pas de compte : son avatar devient un simple bouton
 // de réglages, avec l'apparence et la langue — le reste n'a pas de sens pour
 // qui ne fait que regarder.
+// La collection que porte un instantané : celle qu'il nomme, sinon la plus
+// représentée parmi ses œuvres.
+function _collectionDeLInstantane(G){
+  if(G && G.collection && moduleById(G.collection)?.id === G.collection) return G.collection;
+  const comptes = {};
+  (G && G.items || []).forEach(i=>{ const c = i.collectionType||'bd'; comptes[c] = (comptes[c]||0)+1; });
+  const gagnant = Object.entries(comptes).sort((a,b)=>b[1]-a[1])[0];
+  return gagnant ? gagnant[0] : 'bd';
+}
+
 function _compteZoneInvite(){
   const z = document.getElementById('compteZone'); if(!z) return;
   z.innerHTML = `
@@ -13914,6 +13925,7 @@ async function genererVersionInvite(){
       // fichier, résolu à côté de la page publiée. Un chemin absolu figé au
       // moment de la génération serait mort pour qui la consulte ailleurs.
       appFichier: (location.pathname.split('/').pop() || ''),
+      collection: (_activeCollection === ALL_COLL ? 'bd' : _activeCollection),
       items, authors, piles, groupes,
     };
 
@@ -13923,8 +13935,17 @@ async function genererVersionInvite(){
       return r.text();
     });
     const bloc = `<script>window.__GUEST__ = ${JSON.stringify(donnees).replace(/<\/script>/gi,'<\\/script>')};<\/script>`;
-    if(!/<body>/i.test(source)) throw new Error(T('balise <body> introuvable dans la source','<body> tag not found in source'));
-    const sortie = source.replace(/<body>/i, '<body>\n' + bloc);
+    // `$` a un sens dans le texte de remplacement de String.replace ($&, $1…) :
+    // une donnée en contenant corromprait l'instantané. On passe donc par une
+    // fonction, qui rend le texte tel quel.
+    const ancre = /<\/head>\s*<body[^>]*>/i;
+    if(!ancre.test(source)) throw new Error(T('balises </head><body> introuvables dans la source','</head><body> tags not found in source'));
+    const sortie = source.replace(ancre, m => m + '\n' + bloc);
+    // Vérification plutôt qu'affirmation : l'instantané doit se trouver après
+    // la vraie balise <body>, faute de quoi il ne s'exécutera pas.
+    const posBloc = sortie.indexOf('window.__GUEST__');
+    const posBody = sortie.search(/<\/head>\s*<body[^>]*>/i);
+    if(posBloc < 0 || posBloc < posBody) throw new Error(T('instantané mal placé dans la copie — publication annulée','snapshot misplaced in the copy — aborting'));
 
     downloadFile(sortie, 'invite.html', 'text/html;charset=utf-8');
     const mo = (sortie.length/1048576).toFixed(1);
@@ -19227,6 +19248,12 @@ function _initGuest(){
     document.getElementById('app-wrapper').style.display = 'block';
     document.body.classList.add('guest-mode');
     window._appInitialized = true;
+
+    // La collection de l'instantané : celle qu'il a enregistrée, ou à défaut
+    // celle que ses œuvres désignent. Jamais la vue agrégée, qui filtrerait
+    // sur les auteurs suivis et n'afficherait presque rien.
+    _activeCollection = _collectionDeLInstantane(G);
+    document.body.classList.add('coll-'+_activeCollection);
 
     cache.items    = G.items   || [];
     cache.authors  = G.authors || [];
