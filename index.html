@@ -1502,7 +1502,11 @@
        l'application est alors redessinée en plus petit, quelques secondes après
        le chargement. On coupe le débordement horizontal à la racine plutôt que
        de laisser un futur oubli rétrécir la page entière. La règle est portée
-       par <html> (elle se propage à la fenêtre) et non par <body>, afin que
+       par l'élément racine (elle se propage à la fenêtre) et non par l'élément
+       de corps de page. Ces deux balises ne sont pas écrites ici telles
+       quelles : la génération de la page invité cherche la première
+       occurrence du texte de la balise de corps pour y poser son
+       instantané, et la trouvait dans ce commentaire. afin que
        l'en-tête et la barre d'outils collants continuent de coller. */
     html{overflow-x:hidden}
     header{padding:10px 12px;gap:8px 10px}
