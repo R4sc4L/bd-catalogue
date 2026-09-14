@@ -347,6 +347,14 @@
     #editImgOverlay .ei-side canvas{max-height:24vh}
     #editImgOverlay .ei-side .ei-conseils{display:none}
   }
+  /* Le rappel de la balance de série, sous les vignettes */
+  #bandeauBalance{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 12px;
+    background:var(--accent-soft);border:1px solid var(--border-warm);border-radius:var(--radius);
+    font-size:12px;color:var(--ink-soft)}
+  #bandeauBalance .bb-pastille{width:16px;height:16px;border-radius:4px;flex:none;
+    border:1px solid rgba(255,255,255,.3)}
+  #bandeauBalance .bb-texte{flex:1;min-width:0}
+  #bandeauBalance button{padding:3px 10px;font-size:11px;flex:none}
   /* Le bouton ✂️ sur les vignettes du formulaire */
   .image-preview button.img-crop-btn{top:auto;bottom:-6px;left:-6px;right:auto;background:rgba(30,25,10,.85);color:#fff;font-size:11px}
   .image-preview button.img-crop-btn:hover{background:var(--accent-bg);color:var(--on-accent)}
@@ -4758,6 +4766,12 @@ function urlApplication(){
 }
 function quitterModeInvite(){ location.href = urlApplication(); }
 
+// L'image d'origine, telle qu'elle était avant la correction héritée : c'est
+// d'elle qu'on repart si l'on relève une autre balance, ou qu'on l'ôte.
+function _eiOriginalSansBalance(corrigee, balance){
+  return balance ? _eiAppliquerGains(corrigee, balance.gains.map(g=>1/g)) : corrigee;
+}
+
 // ── La fiche ──────────────────────────────────────────────────────────
 let _cpAvatar = '';        // l'avatar en cours d'édition, pas encore enregistré
 function ouvrirFicheCompte(){
@@ -4911,6 +4925,23 @@ function _nuagePointsSphere(n){
   }
   return pts;
 }
+// Tirage pondéré sans remise. Trier par poids puis départager au hasard
+// revenait à retenir toujours les mêmes : une édition originale passait
+// devant, donc entrait à coup sûr, et l'on revoyait les mêmes couvertures à
+// chaque visite. Ici chaque œuvre reçoit une clé aléatoire d'autant plus
+// forte que son poids est élevé — U^(1/poids), la méthode d'Efraimidis et
+// Spirakis — et l'on garde les meilleures. Une œuvre marquante sort souvent,
+// jamais toujours ; un album ordinaire a sa chance à chaque fois. La clé sert
+// aussi de rang d'affichage, si bien que le devant de la sphère change lui
+// aussi d'une visite à l'autre.
+function _nuageTirage(liste, plafond){
+  return liste
+    .map(i => ({ i, cle: Math.pow(Math.random(), 1 / Math.max(0.5, _nuagePoids(i))) }))
+    .sort((a, b) => b.cle - a.cle)
+    .slice(0, plafond)
+    .map(x => x.i);
+}
+
 let _nuageEtat = null;
 // Une image : on fait tourner les points de la vitesse courante, puis on
 // projette. Ni recalcul de mise en page ni écriture de style superflue —
@@ -4984,12 +5015,9 @@ function ouvrirNuage(force){
   const m = moduleById(id);
   const tout = _nuageOeuvres(id);
   if(!force && tout.length < 4) return false;   // trop peu pour faire une sphère
-  // Les plus marquantes d'abord ; à poids égal, le hasard décide, pour que
-  // la page change d'une visite à l'autre. On plafonne : une sphère trop
-  // peuplée n'est plus qu'une boule de vignettes.
+  // On plafonne : une sphère trop peuplée n'est plus qu'une boule de vignettes.
   const plafond = Math.min(90, Math.max(30, Math.round(window.innerWidth*window.innerHeight/21000)));
-  const oeuvres = tout.map(i=>({i, p:_nuagePoids(i), r:Math.random()}))
-    .sort((a,b)=> b.p-a.p || a.r-b.r).slice(0, plafond).map(x=>x.i);
+  const oeuvres = _nuageTirage(tout, plafond);
   const ov = document.createElement('div');
   ov.id = 'nuageOverlay';
   ov.style.setProperty('--nuage-accent', m.accent || '#c8904a');
@@ -7266,6 +7294,9 @@ function _openAuthorOfRow(btn){
 }
 
 async function saveItem(e){
+  // La référence de balance ne vaut que pour la séance en cours : une fois
+  // l'œuvre enregistrée avec tous ses visuels, elle n'a plus lieu d'être.
+  const _cloreLaSeance = () => { if(_balanceSerie) poserBalanceSerie(null); };
   e.preventDefault();
 
   // ── Mode édition groupée ──────────────────────────────────────────────────
@@ -7391,6 +7422,7 @@ async function saveItem(e){
     }else{
       toast(T(`${n} œuvre${n>1?"s":" "} mise${n>1?"s":""} à jour`,`${n} work${n>1?"s":""} updated`));
     }
+    _cloreLaSeance();
     closeModal("itemModal");
     exitBulkMode();          // sortie explicite et idempotente du mode sélection
     refreshCurrentView();
@@ -7598,6 +7630,7 @@ async function saveItem(e){
   const fromWish = document.getElementById("itemForm").dataset.fromWish;
   if(fromWish){ const wl=(await getWishlist()).filter(x=>x.id!==fromWish); await saveWishlist(wl); cache.wishlist=wl; delete document.getElementById("itemForm").dataset.fromWish; }
   toast(existing ? T("Œuvre mise à jour","Work updated") : T("Œuvre ajoutée","Work added"));
+  _cloreLaSeance();
   closeModal("itemModal");
   refreshCurrentView();
 }
@@ -8490,6 +8523,8 @@ async function _photoValider(redresser){
   // Laisser le navigateur peindre l'état « Traitement… » avant la boucle,
   // qui monopolise le fil principal pendant une seconde sur une grande image.
   await new Promise(r=>setTimeout(r, 30));
+  // Une séance déjà réglée : le cliché part corrigé, comme les précédents.
+  if(_balanceSerie) st.source = _eiAppliquerGains(st.source, _balanceSerie.gains);
   let toile = st.source;
   if(redresser){
     const [L, H] = _tailleRedressee(st.quad, PHOTO_MAX);
@@ -8608,13 +8643,18 @@ async function ouvrirEditeurImage(src, opts){
     </div>`;
   document.body.appendChild(ov);
 
-  _eiState = { ov, source, original:source, balance:null, pipette:false,
+  // Une séance déjà réglée : la correction s'applique d'emblée au visuel
+  // suivant, sans qu'il faille reprendre la pipette à chaque fois.
+  const heritee = _balanceSerie ? { gains:[..._balanceSerie.gains], point:[..._balanceSerie.point] } : null;
+  if(heritee) source = _eiAppliquerGains(source, heritee.gains);
+  _eiState = { ov, source, original:_eiOriginalSansBalance(source, heritee), balance:heritee, pipette:false,
                quad:null, canvas:ov.querySelector('#eiCanvas'), echelle:1,
                boutons, onFin: opts.onFin || (()=>{}), occupe:false };
   // Un fichier importé est en général déjà cadré : on part de l'image entière,
   // légèrement rentrée pour que les poignées se voient. Le portrait 2:3 reste
   // à un clic pour une photo de téléphone.
   _eiCadre('entier', true);
+  _eiBalanceAfficher();      // une correction héritée doit se voir, pas seulement s'appliquer
   _eiAjuster();
   _eiBrancher();
   window.addEventListener('resize', _eiAjuster);
@@ -8750,6 +8790,49 @@ function _eiBrancher(){
   });
 }
 
+// ── La balance de série ───────────────────────────────────────────────────
+// Une séance de prise de vue se règle une fois : on pose une charte grise sur
+// le premier cliché, on relève la balance, et la même correction s'applique à
+// tous les visuels qui suivent. La référence ne vaut que pour cette séance :
+// elle s'efface dès que l'œuvre est enregistrée avec ses visuels.
+let _balanceSerie = null;          // { gains:[r,v,b], point:[R,V,B] }
+
+function poserBalanceSerie(b){
+  _balanceSerie = b ? { gains:[...b.gains], point:[...b.point] } : null;
+  majBandeauBalance();
+}
+function oublierBalanceSerie(){
+  if(!_balanceSerie) return;
+  poserBalanceSerie(null);
+  // L'éditeur ouvert au même moment doit s'en défaire aussi.
+  if(_eiState && _eiState.balance) _eiBalanceRetirer();
+  toast(T('Balance de série oubliée.','Series balance forgotten.'));
+}
+function _texteBalanceSerie(){
+  if(!_balanceSerie) return '';
+  const [R,G,B] = _balanceSerie.point;
+  return T(`Balance de série active — relevée sur (${R}, ${G}, ${B})`,
+           `Series balance active — taken from (${R}, ${G}, ${B})`);
+}
+// Un rappel sous les vignettes du formulaire : c'est là qu'on voit les
+// visuels de la séance, donc là qu'on doit pouvoir la rompre.
+function majBandeauBalance(){
+  const zone = document.getElementById('itemImagePreview');
+  if(!zone) return;
+  let el = document.getElementById('bandeauBalance');
+  if(!_balanceSerie){ el?.remove(); return; }
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'bandeauBalance';
+    el.innerHTML = `<span class="bb-pastille" aria-hidden="true"></span><span class="bb-texte"></span>
+      <button type="button" class="secondary" onclick="oublierBalanceSerie()">${T('Réinitialiser','Reset')}</button>`;
+    zone.parentNode.insertBefore(el, zone.nextSibling);
+  }
+  el.querySelector('.bb-texte').textContent = _texteBalanceSerie();
+  const [R,G,B] = _balanceSerie.point;
+  el.querySelector('.bb-pastille').style.background = `rgb(${R},${G},${B})`;
+}
+
 // ── La pipette et la balance des blancs ──────────────────────────────────
 function _eiPipetteBasculer(etat){
   const st = _eiState; if(!st) return;
@@ -8809,6 +8892,7 @@ function _eiBalanceDepuis(x, y){
   const gains = [ borne(Y/Math.max(1,R)), borne(Y/Math.max(1,G)), borne(Y/Math.max(1,B)) ];
   st.balance = { gains, point:[R,G,B] };
   st.source = _eiAppliquerGains(st.original, gains);
+  poserBalanceSerie(st.balance);      // elle vaudra pour les visuels suivants
   _eiBalanceAfficher();
   _eiDessiner();
   _eiLire(x, y, null);
@@ -8833,14 +8917,17 @@ function _eiBalanceAfficher(){
   if(!st.balance){ b.style.display = 'none'; return; }
   const [R,G,B] = st.balance.point, g = st.balance.gains;
   b.style.display = 'flex';
+  // Il n'y a qu'une référence, valable pour toute la séance : le libellé le dit.
   const sp = b.querySelector('span');
-  sp.textContent = T(`Balance sur (${R}, ${G}, ${B})`, `Balance on (${R}, ${G}, ${B})`);
+  sp.textContent = T(`Balance de série — (${R}, ${G}, ${B})`, `Series balance — (${R}, ${G}, ${B})`);
   sp.title = T(`Gains appliqués : rouge ×${g[0].toFixed(2)}, vert ×${g[1].toFixed(2)}, bleu ×${g[2].toFixed(2)}`,
                `Applied gains: red ×${g[0].toFixed(2)}, green ×${g[1].toFixed(2)}, blue ×${g[2].toFixed(2)}`);
 }
 function _eiBalanceRetirer(){
   const st = _eiState; if(!st) return;
   st.balance = null; st.source = st.original;
+  // Il n'y a qu'une référence : la retirer ici, c'est y renoncer pour la série.
+  if(_balanceSerie) poserBalanceSerie(null);
   _eiBalanceAfficher(); _eiDessiner();
 }
 
@@ -9100,7 +9187,7 @@ function _exlibrisPertinent(){
 }
 function renderImagePreview(type){
   const el = document.getElementById(type==="item"?"itemImagePreview":type==="wish"?"wishImagePreview":"authorImagePreview");
-  if(type==="item") _majApercuDiaporama();
+  if(type==="item"){ _majApercuDiaporama(); majBandeauBalance(); }
   if(type==="item"){
     const etoiles = _exlibrisPertinent();
     el.innerHTML = currentItemImages.map((src,i)=>{
