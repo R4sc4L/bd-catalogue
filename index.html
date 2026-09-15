@@ -2514,6 +2514,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <label data-en="Binding">Reliure</label>
             <div class="char-row">
               <div class="checkbox-row"><input type="checkbox" id="itemRelie"><label for="itemRelie" style="margin:0" data-en="Hardbound">Relié</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemRelieTranchefile"><label for="itemRelieTranchefile" style="margin:0" data-en="Hardbound with headband">Relié avec tranchefile</label></div>
               <div class="checkbox-row"><input type="checkbox" id="itemBroche"><label for="itemBroche" style="margin:0" data-en="Paperback">Broché</label></div>
               <div class="checkbox-row"><input type="checkbox" id="itemDosAgrafe"><label for="itemDosAgrafe" style="margin:0" data-en="Stapled">Agrafé</label></div>
               <div class="checkbox-row"><input type="checkbox" id="itemDosSpiral"><label for="itemDosSpiral" style="margin:0" data-en="Spiral">Spirale</label></div>
@@ -5300,7 +5301,7 @@ const SB_CFG_KEY = "sb_cloud_config";
 const SB = (() => {
 
   // ── Constantes de mapping (identiques à l'outil de migration) ────
-  const CARACT_KEYS = ['broche','relie','dosAgrafe','dosSpiral','couvertureSouple','couvertureCartonnee',
+  const CARACT_KEYS = ['broche','relie','relieTranchefile','dosAgrafe','dosSpiral','couvertureSouple','couvertureCartonnee',
     'rabats','aLaSuisse','formatCarre','formatFrancaise','formatItalienne','formatManga','formatComics',
     'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','embossageFroid','bandeau','rubanMarquePage',
     'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
@@ -7078,6 +7079,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemDosAgrafe").checked = !!it.dosAgrafe;
     document.getElementById("itemDosSpiral").checked = !!it.dosSpiral;
     document.getElementById("itemRelie").checked = !!it.relie;
+    document.getElementById("itemRelieTranchefile").checked = !!it.relieTranchefile;
     document.getElementById("itemCouvertureSouple").checked = !!it.couvertureSouple;
     document.getElementById("itemCouvertureCartonnee").checked = !!it.couvertureCartonnee;
     document.getElementById("itemRabats").checked = !!it.rabats;
@@ -7347,7 +7349,7 @@ async function saveItem(e){
       "itemExlibris","itemExlibrisColle","itemExlibrisSigne","itemExlibrisNumerote","itemTirageInclus","itemSerigraphie",
       "itemMarquePage","itemTimbre","itemCarnetCroquis","itemAutocollant","itemDecalcomanie","itemCartePostale",
       "itemObjet","itemEmboitageFourreau","itemEmboitageCoffret","itemEmboitageChemise",
-      "itemBroche","itemRelie","itemDosAgrafe","itemDosSpiral","itemCouvertureSouple","itemCouvertureCartonnee",
+      "itemBroche","itemRelie","itemRelieTranchefile","itemDosAgrafe","itemDosSpiral","itemCouvertureSouple","itemCouvertureCartonnee",
       "itemRabats","itemALaSuisse",
       "itemFormatCarre","itemFormatFrancaise","itemFormatItalienne","itemFormatManga","itemFormatComics",
       "itemDosToile","itemPleineToile","itemVernisSelectif","itemCuirImitation","itemMarquageChaud","itemFinitionCarton","itemFinitionBristol","itemFinitionDecoupeLaser","itemFinitionPlexiglas","itemEmboitagePleineToile",
@@ -7363,7 +7365,7 @@ async function saveItem(e){
       itemCarnetCroquis:"carnetCroquis", itemAutocollant:"autocollant", itemDecalcomanie:"decalcomanie", itemCartePostale:"cartePostale",
       itemObjet:"objet",
       itemEmboitageFourreau:"emboitageFourreau", itemEmboitageCoffret:"emboitageCoffret", itemEmboitageChemise:"emboitageChemise",
-      itemBroche:"broche", itemRelie:"relie", itemDosAgrafe:"dosAgrafe", itemDosSpiral:"dosSpiral", itemCouvertureSouple:"couvertureSouple", itemCouvertureCartonnee:"couvertureCartonnee",
+      itemBroche:"broche", itemRelie:"relie", itemRelieTranchefile:"relieTranchefile", itemDosAgrafe:"dosAgrafe", itemDosSpiral:"dosSpiral", itemCouvertureSouple:"couvertureSouple", itemCouvertureCartonnee:"couvertureCartonnee",
       itemRabats:"rabats", itemALaSuisse:"aLaSuisse",
       itemFormatCarre:"formatCarre", itemFormatFrancaise:"formatFrancaise", itemFormatItalienne:"formatItalienne", itemFormatManga:"formatManga", itemFormatComics:"formatComics",
       itemDosToile:"dosToile", itemPleineToile:"pleineToile",
@@ -7507,6 +7509,7 @@ async function saveItem(e){
     dosAgrafe: document.getElementById("itemDosAgrafe").checked,
     dosSpiral: document.getElementById("itemDosSpiral").checked,
     relie: document.getElementById("itemRelie").checked,
+    relieTranchefile: document.getElementById("itemRelieTranchefile").checked,
     couvertureSouple: document.getElementById("itemCouvertureSouple").checked,
     couvertureCartonnee: document.getElementById("itemCouvertureCartonnee").checked,
     rabats: document.getElementById("itemRabats").checked,
@@ -13639,7 +13642,7 @@ function renderItemDetail(id, pushHistory=true){
       const carRows = [];
       if(it.emboitageFourreau||it.emboitageCoffret||it.emboitageChemise||it.finitionCarton||it.finitionBristol||it.finitionDecoupeLaser||it.emboitagePleineToile||it.finitionPlexiglas||it.emboitageEmbossageFroid) carRows.push({k:t('caract.emboitage'),v:[it.emboitageFourreau?(_lang==='en'?'Slipcase':'Étui'):"",it.emboitageCoffret?(_lang==='en'?'Box set':'Coffret'):"",it.emboitageChemise?(_lang==='en'?'Folder':'Chemise'):"",it.finitionCarton?'Carton':"",it.emboitagePleineToile?(_lang==='en'?'Full cloth':'Pleine toile'):"",it.finitionBristol?'Bristol':"",it.finitionDecoupeLaser?(_lang==='en'?'Laser cut':'Découpe laser'):"",it.finitionPlexiglas?'Plexiglas':"",it.emboitageEmbossageFroid?(_lang==='en'?'Blind embossing':'Embossage à froid'):""].filter(Boolean).join(" + ")});
       if(it.emboitageQualite) carRows.push({k:(_lang==='en'?'Slipcase quality':"Qualité de l'emboîtage"),v:escapeHTML(it.emboitageQualite)});
-      if(it.relie||it.broche||it.dosAgrafe||it.dosSpiral||it.aLaSuisse) carRows.push({k:t('caract.reliure'),v:[it.relie?(_lang==='en'?'Hardcover':'Relié'):"",it.broche?(_lang==='en'?'Paperback':'Broché'):"",it.dosAgrafe?(_lang==='en'?'Staple-bound':'Agrafé'):"",it.dosSpiral?(_lang==='en'?'Spiral-bound':'Spirale'):"",it.aLaSuisse?(_lang==='en'?'Swiss-bound':'À la Suisse'):""].filter(Boolean).join(" + ")});
+      if(it.relie||it.relieTranchefile||it.broche||it.dosAgrafe||it.dosSpiral||it.aLaSuisse) carRows.push({k:t('caract.reliure'),v:[it.relie?(_lang==='en'?'Hardcover':'Relié'):"",it.relieTranchefile?(_lang==='en'?'Hardcover with headband':'Relié avec tranchefile'):"",it.broche?(_lang==='en'?'Paperback':'Broché'):"",it.dosAgrafe?(_lang==='en'?'Staple-bound':'Agrafé'):"",it.dosSpiral?(_lang==='en'?'Spiral-bound':'Spirale'):"",it.aLaSuisse?(_lang==='en'?'Swiss-bound':'À la Suisse'):""].filter(Boolean).join(" + ")});
       if(it.couvertureCartonnee||it.couvertureSouple||it.rabats) carRows.push({k:t('caract.couverture'),v:[it.couvertureCartonnee?(_lang==='en'?'Hardcover':'Cartonnée'):"",it.couvertureSouple?(_lang==='en'?'Softcover':'Souple'):"",it.rabats?(_lang==='en'?'Softcover with flaps':'Souple avec rabats'):""].filter(Boolean).join(" + ")});
       if(it.formatCarre||it.formatFrancaise||it.formatItalienne||it.formatManga||it.formatComics) carRows.push({k:t('caract.format'),v:[it.formatCarre?(_lang==='en'?'Square':'Carré'):"",it.formatFrancaise?(_lang==='en'?'Portrait':'À la française'):"",it.formatItalienne?(_lang==='en'?'Landscape':'À l\'italienne'):"",it.formatManga?'Manga':"",it.formatComics?'Comics':""].filter(Boolean).join(" + ")});
       const finitions=[];
@@ -14377,6 +14380,7 @@ async function importCSV(e, type){
           dosToile: /^(oui|true|1)$/i.test(obj.dosToile||""),
           broche: /^(oui|true|1)$/i.test(obj.broche||""),
           relie: /^(oui|true|1)$/i.test(obj.relie||""),
+          relieTranchefile: /^(oui|true|1)$/i.test(obj.relieTranchefile||""),
           prixAchat: parseFloat(obj.prixAchat)||0,
           cote: parseFloat(obj.cote)||0,
           dateAcquisition: obj.dateAcquisition||"",
