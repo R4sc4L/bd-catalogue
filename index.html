@@ -405,6 +405,13 @@
   #photoOverlay .po-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
     padding:12px 16px;border-top:1px solid var(--border)}
   #photoOverlay .po-actions .po-esp{margin-left:auto}
+  /* L'aide cède la place aux boutons plutôt que de les renvoyer à la ligne :
+     elle se met sur deux lignes, eux restent groupés et alignés à droite. */
+  #photoOverlay .po-actions #poAide{flex:1 1 180px;min-width:0;line-height:1.35}
+  #photoOverlay .po-actions .po-groupe{margin-left:auto;display:flex;gap:8px;
+    align-items:center;flex-wrap:wrap;justify-content:flex-end}
+  #photoOverlay .po-actions button.po-editeur{display:inline-flex;align-items:center;gap:7px}
+  #photoOverlay .po-actions button.po-editeur .ico{width:16px;height:16px;flex:none}
   #photoOverlay .po-actions button.po-ico{padding:6px 10px;line-height:0}
   #photoOverlay .po-actions button.po-ico .ico{width:20px;height:20px;display:block}
   #photoOverlay .po-err{padding:18px;text-align:center;color:var(--ink)}
@@ -8386,12 +8393,16 @@ function _ouvrirRecadrage(source){
     <span class="muted" style="font-size:12px" id="poAide">${T(
       'Faites glisser les quatre coins sur ceux de la couverture ; double-cliquez pour valider.',
       'Drag the four corners onto the corners of the cover; double-click to confirm.')}</span>
-    <span class="po-esp"></span>
+    <span class="po-groupe">
     <button type="button" class="secondary po-ico" aria-label="${T('Un quart de tour à gauche','Quarter turn left')}" title="${T('Un quart de tour à gauche','Quarter turn left')}" onclick="_photoPivoter(-1)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-rot-gauche"></use></svg></button>
     <button type="button" class="secondary po-ico" aria-label="${T('Un quart de tour à droite','Quarter turn right')}" title="${T('Un quart de tour à droite','Quarter turn right')}" onclick="_photoPivoter(1)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-rot-droite"></use></svg></button>
+    <button type="button" class="secondary po-editeur" onclick="_photoVersEditeur()"
+            title="${T('Ouvrir dans l’éditeur complet : recadrage, perspective, rotation, pipette et balance des blancs','Open in the full editor: crop, perspective, rotation, eyedropper and white balance')}">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pipette"></use></svg> ${T('Éditeur','Editor')}</button>
     <button type="button" class="secondary" onclick="_photoReprendre()">${T('Reprendre','Retake')}</button>
     <button type="button" class="secondary" onclick="_photoValider(false)">${T('Sans redresser','Skip straightening')}</button>
-    <button type="button" id="poValider" onclick="_photoValider(true)">${T('Redresser et ajouter','Straighten and add')}</button>`;
+    <button type="button" id="poValider" onclick="_photoValider(true)">${T('Redresser et ajouter','Straighten and add')}</button>
+    </span>`;
 
   const cv = st.ov.querySelector('#poCanvas');
   // La toile est dessinée à l'échelle d'affichage : inutile de peiner sur
@@ -8539,6 +8550,31 @@ async function _photoValider(redresser){
   currentItemImageNames.push(T(`Photo ${currentItemImages.length}`, `Photo ${currentItemImages.length}`));
   renderImagePreview('item');
   toast(T('Photo ajoutée','Photo added'));
+}
+
+// Passer le cliché à l'éditeur complet. Les deux outils partagent déjà leur
+// moteur de redressement ; ce qui manque ici, c'est la pipette et la balance
+// des blancs. On transmet la prise de vue telle qu'elle est sortie du capteur
+// — sans lui appliquer la balance de série, que l'éditeur pose lui-même à
+// l'ouverture : l'appliquer deux fois la doublerait.
+function _photoVersEditeur(){
+  const st = _photoState;
+  if(!st || st.etape !== 'recadrage') return;
+  const data = _toileVersJpeg(st.source, PHOTO_MAX);
+  fermerPriseDeVue();
+  ouvrirEditeurImage(data, {
+    titre: T('Retoucher la photo','Retouch the photo'),
+    sousTitre: T('Prise de vue','Camera shot'),
+    boutons: [{ id:'annuler', libelle:T('Annuler','Cancel') },
+              { id:'valider', libelle:T('Ajouter la photo','Add the photo'), principal:true }],
+    onFin: (id, image) => {
+      if(id !== 'valider' || !image) return;
+      currentItemImages.push(image);
+      currentItemImageNames.push(T(`Photo ${currentItemImages.length}`, `Photo ${currentItemImages.length}`));
+      renderImagePreview('item');
+      toast(T('Photo ajoutée','Photo added'));
+    },
+  });
 }
 
 // Même plafond et même qualité qu'à l'import d'un fichier : une photo prise
