@@ -5012,14 +5012,18 @@ function _nuageDimensionner(){
   st.rayon = Math.min(L * 0.34, H * 0.33);
   st.aplat = 1;
   const ratio = _nuageRatio(st.id);
-  const n = st.oeuvres.length;
-  // Trois tailles, par rang de poids — et proportionnées au rayon, pour
-  // qu'une petite fenêtre garde une sphère lisible.
-  // Le poids ne fait plus qu'une nuance de taille : la profondeur commande.
-  const grand = Math.max(40, Math.min(130, st.rayon * (L < 640 ? 0.42 : 0.32)));
+  // TOUTES les couvertures ont la même taille de base. C'est la condition
+  // pour que la taille à l'écran ne dise qu'une chose : la distance. Trois
+  // tailles réparties par rang de notoriété, comme auparavant, se lisaient
+  // bien à l'ouverture — les grandes étaient devant — mais mentaient dès que
+  // la sphère tournait : une couverture arrivée du fond gardait sa petite
+  // taille d'origine, et paraissait au premier plan plus petite qu'une
+  // grande partie au fond. La perspective seule commande désormais, et il ne
+  // reste qu'une variation de quelques pour cent, trop faible pour se lire
+  // comme une hiérarchie mais assez pour que la sphère ne soit pas une grille.
+  const base = Math.max(34, Math.min(112, st.rayon * (L < 640 ? 0.34 : 0.26)));
   st.poses.forEach((el, k) => {
-    const part = k / Math.max(1, n);
-    const w = Math.round(grand * (part < 0.12 ? 1 : part < 0.45 ? 0.82 : 0.68) * st.alea[k]);
+    const w = Math.round(base * st.alea[k]);
     el.style.width = w + 'px'; el.style.height = Math.round(w / ratio) + 'px';
   });
 }
@@ -5062,8 +5066,9 @@ function ouvrirNuage(force){
   // Les plus marquantes reçoivent les points les plus proches : elles sont
   // devant à l'ouverture, pas perchées à un pôle.
   pts.sort((a,b)=> b.z - a.z);
-  const alea = oeuvres.map(()=> 0.88 + Math.random()*0.24);
-  if(alea.length) alea[0] = 1.12;
+  // Un souffle de variation — quatre pour cent — pour que la sphère respire.
+  // Au-delà, l'écart intrinsèque se confondrait avec un écart de distance.
+  const alea = oeuvres.map(()=> 0.96 + Math.random()*0.08);
   const scene = ov.querySelector('.nu-scene');
   _nuageEtat = { ov, id, oeuvres, pts, alea, poses:[...ov.querySelectorAll('.nu-pose')],
                  vy:0, vx:0, cibleVy:0.004, cibleVx:0.0012, rayon:200, aplat:1, rafId:0, pause:false, derniere:0 };
