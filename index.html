@@ -1669,6 +1669,13 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     <path d="M14.6 4.4H18a2 2 0 0 1 2 2v11.2a2 2 0 0 1-2 2h-3.4"/>
     <path d="M10.4 16.2 14.6 12l-4.2-4.2"/><path d="M14.2 12H4"/>
   </g>
+  <g id="ic-auto" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.4 8.2V4.9a1.5 1.5 0 0 1 1.5-1.5h3.3"/>
+    <path d="M15.8 3.4h3.3a1.5 1.5 0 0 1 1.5 1.5v3.3"/>
+    <path d="M20.6 15.8v3.3a1.5 1.5 0 0 1-1.5 1.5h-3.3"/>
+    <path d="M8.2 20.6H4.9a1.5 1.5 0 0 1-1.5-1.5v-3.3"/>
+    <path d="M12 8.6l1.15 2.25L15.4 12l-2.25 1.15L12 15.4l-1.15-2.25L8.6 12l2.25-1.15Z" fill="currentColor" stroke="none"/>
+  </g>
   <g id="ic-pipette" fill="currentColor" stroke="none">
     <path d="M9.02 10.18 L14.68 4.52 A3.4 3.4 0 0 1 19.48 9.32 L13.82 14.98 Z"/>
     <path d="M4 20 L4.74 18.62 L10.93 11.37 L12.63 13.07 L5.38 19.26 Z"/>
@@ -8396,6 +8403,7 @@ function _ouvrirRecadrage(source){
     <span class="po-groupe">
     <button type="button" class="secondary po-ico" aria-label="${T('Un quart de tour à gauche','Quarter turn left')}" title="${T('Un quart de tour à gauche','Quarter turn left')}" onclick="_photoPivoter(-1)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-rot-gauche"></use></svg></button>
     <button type="button" class="secondary po-ico" aria-label="${T('Un quart de tour à droite','Quarter turn right')}" title="${T('Un quart de tour à droite','Quarter turn right')}" onclick="_photoPivoter(1)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-rot-droite"></use></svg></button>
+    <button type="button" class="secondary po-ico" id="poAuto" aria-label="${T('Détecter le contour','Detect the outline')}" title="${T('Détecter automatiquement le contour de la couverture et y poser les quatre poignées','Automatically detect the cover outline and put the four handles on it')}" onclick="_photoDetecter()"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-auto"></use></svg></button>
     <button type="button" class="secondary po-editeur" onclick="_photoVersEditeur()"
             title="${T('Ouvrir dans l’éditeur complet : recadrage, perspective, rotation, pipette et balance des blancs','Open in the full editor: crop, perspective, rotation, eyedropper and white balance')}">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pipette"></use></svg> ${T('Éditeur','Editor')}</button>
@@ -8414,6 +8422,9 @@ function _ouvrirRecadrage(source){
   cv.height = Math.round(source.height * st.echelle);
   st.canvas = cv;
   _photoDessiner();
+  // La détection dure quelques dizaines de millisecondes : on laisse d'abord
+  // la fenêtre s'afficher, sinon elle paraîtrait lente à s'ouvrir.
+  setTimeout(()=>{ if(_photoState === st) _photoDetecter(true); }, 0);
   _photoBrancherPoignees(cv);
 }
 
@@ -8425,6 +8436,351 @@ function _quadDepart(L, H){
   if(l > L * 0.92){ l = L * 0.92; h = l * 1.5; }
   const x = (L - l) / 2, y = (H - h) / 2;
   return [[x,y], [x+l,y], [x+l,y+h], [x,y+h]];
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  DÉTECTION AUTOMATIQUE DU CONTOUR
+//  ────────────────────────────────
+//  Un album posé sur une table est un quadrilatère à fort contraste : ses
+//  quatre bords sont, et de loin, les plus longues droites de l'image. On les
+//  cherche par transformée de Hough — chaque pixel de fort gradient vote pour
+//  la droite qui le traverse perpendiculairement à ce gradient, et les bords
+//  réels ressortent comme des pics dans l'accumulateur. Restent à retenir deux
+//  droites d'une orientation et deux de l'orientation perpendiculaire qui
+//  enferment le centre de l'image, à les croiser, et — c'est le garde-fou
+//  essentiel — à vérifier que les quatre côtés obtenus reposent vraiment sur
+//  des bords. Faute de quoi on ne propose rien : le cadre manuel reste, ce qui
+//  vaut toujours mieux qu'une proposition fantaisiste à défaire.
+//
+//  Tout se joue sur une réduction à 360 px de large. Les bords d'un album y
+//  sont parfaitement nets, et le calcul tient en quelques dizaines de
+//  millisecondes au lieu de plusieurs secondes sur une photo de 12 Mpx.
+const DET_LARGEUR = 360;
+const DET_THETAS  = 180;        // un pas d'un degré
+
+function _detReduire(toile){
+  const ech = Math.min(1, DET_LARGEUR / toile.width);
+  const L = Math.max(32, Math.round(toile.width * ech));
+  const H = Math.max(32, Math.round(toile.height * ech));
+  const c = document.createElement('canvas'); c.width = L; c.height = H;
+  const x = c.getContext('2d', {willReadFrequently:true});
+  x.drawImage(toile, 0, 0, L, H);
+  const d = x.getImageData(0, 0, L, H).data;
+  const brut = new Float32Array(L*H);
+  for(let i=0, p=0; p<brut.length; i+=4, p++)
+    brut[p] = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+  // Un flou 3×3 : les bords survivent, le grain du capteur non.
+  const g = new Float32Array(L*H);
+  for(let y=0; y<H; y++) for(let x2=0; x2<L; x2++){
+    let s = 0, n = 0;
+    for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++){
+      const yy = y+dy, xx = x2+dx;
+      if(yy<0 || xx<0 || yy>=H || xx>=L) continue;
+      s += brut[yy*L+xx]; n++;
+    }
+    g[y*L+x2] = s/n;
+  }
+  return { g, L, H, echelle: L / toile.width };
+}
+
+// Sobel, puis un seuil qui garde le dixième le plus contrasté de l'image —
+// une proportion, pas une valeur absolue : une photo terne doit livrer ses
+// bords comme une autre.
+function _detGradient(r){
+  const {g, L, H} = r;
+  const mag = new Float32Array(L*H), ang = new Float32Array(L*H);
+  let max = 0;
+  for(let y=1; y<H-1; y++) for(let x=1; x<L-1; x++){
+    const i = y*L + x;
+    const gx = -g[i-L-1] - 2*g[i-1] - g[i+L-1] + g[i-L+1] + 2*g[i+1] + g[i+L+1];
+    const gy = -g[i-L-1] - 2*g[i-L] - g[i-L+1] + g[i+L-1] + 2*g[i+L] + g[i+L+1];
+    const m = Math.hypot(gx, gy);
+    mag[i] = m; ang[i] = Math.atan2(gy, gx);
+    if(m > max) max = m;
+  }
+  if(!(max > 0)) return null;
+  const hist = new Int32Array(257);
+  for(let i=0; i<mag.length; i++) hist[Math.min(256, (mag[i]/max*256)|0)]++;
+  const vise = Math.round(mag.length * 0.10);
+  let cumul = 0, bac = 256;
+  for(; bac > 0; bac--){ cumul += hist[bac]; if(cumul >= vise) break; }
+  const seuil = Math.max(max * 0.10, bac / 256 * max);
+  return { mag, ang, seuil, max };
+}
+
+// Deux droites sont-elles la même ? Presque parallèles, et passant à la même
+// distance du point de référence. Le signe de la normale peut être inversé
+// d'un pic à l'autre : on l'aligne avant de comparer.
+function _detMeme(a, b, degres, marge){
+  const dot = a.nx*b.nx + a.ny*b.ny;
+  if(Math.abs(dot) < Math.cos(degres*Math.PI/180)) return false;
+  return Math.abs(a.rho - Math.sign(dot)*b.rho) < marge;
+}
+
+function _detDroites(b, r, combien){
+  const {L, H} = r, {mag, ang, seuil} = b;
+  const diag = Math.ceil(Math.hypot(L, H));
+  const nRho = 2*diag + 1;
+  const acc = new Float32Array(DET_THETAS * nRho);
+  const cos = new Float32Array(DET_THETAS), sin = new Float32Array(DET_THETAS);
+  for(let t=0; t<DET_THETAS; t++){ const a = t*Math.PI/180; cos[t]=Math.cos(a); sin[t]=Math.sin(a); }
+  // Les deux pixels du pourtour sont écartés : le bord de l'image n'est pas
+  // un bord d'album, et Sobel y invente des gradients.
+  for(let y=2; y<H-2; y++) for(let x=2; x<L-2; x++){
+    const i = y*L + x, m = mag[i];
+    if(m < seuil) continue;
+    let t = ang[i] * 180/Math.PI;
+    t = ((t % 180) + 180) % 180;               // la normale, ramenée à [0°, 180°)
+    const t0 = Math.round(t) % DET_THETAS;
+    for(let d=-1; d<=1; d++){
+      const tb = ((t0+d) % DET_THETAS + DET_THETAS) % DET_THETAS;
+      const rho = Math.round(x*cos[tb] + y*sin[tb]) + diag;
+      if(rho < 0 || rho >= nRho) continue;
+      acc[tb*nRho + rho] += d === 0 ? m : m*0.5;
+    }
+  }
+  // Un bord réel n'est jamais droit au pixel près : on lisse le long de ρ.
+  const lisse = new Float32Array(acc.length);
+  let max = 0;
+  for(let t=0; t<DET_THETAS; t++) for(let rr=1; rr<nRho-1; rr++){
+    const i = t*nRho + rr;
+    const v = acc[i-1]*0.25 + acc[i]*0.5 + acc[i+1]*0.25;
+    lisse[i] = v; if(v > max) max = v;
+  }
+  if(!(max > 0)) return [];
+  const plancher = max * 0.15;
+  const pics = [];
+  for(let t=0; t<DET_THETAS; t++) for(let rr=3; rr<nRho-3; rr++){
+    const v = lisse[t*nRho + rr];
+    if(v < plancher) continue;
+    let sommet = true;
+    for(let dt=-2; dt<=2 && sommet; dt++) for(let dr=-4; dr<=4; dr++){
+      if(!dt && !dr) continue;
+      let tt = t+dt, rrr = rr+dr;
+      // Le tour du cercle : θ + 180° désigne la même direction, ρ changé de signe.
+      if(tt < 0 || tt >= DET_THETAS){ tt = (tt % DET_THETAS + DET_THETAS) % DET_THETAS; rrr = nRho-1-rrr; }
+      if(rrr < 0 || rrr >= nRho) continue;
+      if(lisse[tt*nRho + rrr] > v){ sommet = false; break; }
+    }
+    if(sommet) pics.push({ nx:cos[t], ny:sin[t], rho:rr - diag, poids:v });
+  }
+  pics.sort((a, b2)=>b2.poids - a.poids);
+  const gardees = [];
+  for(const p of pics){
+    if(gardees.some(g=>_detMeme(g, p, 6, 9))) continue;
+    gardees.push(p);
+    if(gardees.length >= combien) break;
+  }
+  return gardees;
+}
+
+function _detCroiser(a, b){
+  const det = a.nx*b.ny - b.nx*a.ny;
+  if(Math.abs(det) < 1e-9) return null;
+  return [ (a.rho*b.ny - b.rho*a.ny) / det,
+           (a.nx*b.rho - b.nx*a.rho) / det ];
+}
+
+// Quelle part du côté A→B repose sur un vrai bord ? On échantillonne le
+// segment et, à chaque pas, on cherche dans une bande de deux pixels un
+// gradient assez fort ET orienté comme la normale du côté. Un côté posé sur
+// du vide tombe à zéro — c'est ce qui disqualifie les quadrilatères inventés.
+function _detSoutien(b, r, A, B){
+  const {L, H} = r, {mag, ang, seuil} = b;
+  const dx = B[0]-A[0], dy = B[1]-A[1];
+  const len = Math.hypot(dx, dy);
+  if(len < 8) return 0;
+  const ux = dx/len, uy = dy/len;          // direction du côté
+  const nx = -uy, ny = ux;                 // sa normale
+  const pas = Math.min(90, Math.max(14, Math.round(len/2)));
+  const tol = Math.cos(28*Math.PI/180);
+  let touches = 0, vus = 0;
+  for(let k=0; k<pas; k++){
+    const f = (k + 0.5) / pas;
+    const px = A[0] + dx*f, py = A[1] + dy*f;
+    let trouve = false, dedans = false;
+    for(let e=-2; e<=2 && !trouve; e++){
+      const x = Math.round(px + nx*e), y = Math.round(py + ny*e);
+      if(x < 1 || y < 1 || x >= L-1 || y >= H-1) continue;
+      dedans = true;
+      const i = y*L + x;
+      if(mag[i] < seuil) continue;
+      const a = ang[i];
+      if(Math.abs(Math.cos(a)*nx + Math.sin(a)*ny) >= tol) trouve = true;
+    }
+    if(dedans){ vus++; if(trouve) touches++; }
+  }
+  return vus < pas*0.5 ? 0 : touches / vus;
+}
+
+// Les quatre points d'intersection, remis dans l'ordre de l'application :
+// haut-gauche, haut-droit, bas-droit, bas-gauche.
+function _detOrdonner(pts){
+  const cx = pts.reduce((s,p)=>s+p[0], 0) / 4;
+  const cy = pts.reduce((s,p)=>s+p[1], 0) / 4;
+  const tri = pts.slice().sort((a,b)=>Math.atan2(a[1]-cy, a[0]-cx) - Math.atan2(b[1]-cy, b[0]-cx));
+  let dep = 0, min = Infinity;
+  tri.forEach((p,i)=>{ const s = p[0]+p[1]; if(s < min){ min = s; dep = i; } });
+  return [tri[dep], tri[(dep+1)%4], tri[(dep+2)%4], tri[(dep+3)%4]];
+}
+
+function _detAire(q){
+  let a = 0;
+  for(let i=0; i<4; i++){ const j = (i+1)%4; a += q[i][0]*q[j][1] - q[j][0]*q[i][1]; }
+  return Math.abs(a) / 2;
+}
+
+// Un quadrilatère plausible : convexe, franchement à l'intérieur de l'image,
+// assez grand, et pas d'une perspective invraisemblable. Un album vu de biais
+// reste un album ; un côté trois fois plus long que son opposé, non.
+function _detPlausible(q, L, H){
+  const marge = Math.max(L, H) * 0.06;
+  if(q.some(p=>p[0] < -marge || p[1] < -marge || p[0] > L+marge || p[1] > H+marge)) return false;
+  let signe = 0;
+  for(let i=0; i<4; i++){
+    const a = q[i], b = q[(i+1)%4], c = q[(i+2)%4];
+    const z = (b[0]-a[0])*(c[1]-b[1]) - (b[1]-a[1])*(c[0]-b[0]);
+    if(!signe) signe = Math.sign(z);
+    else if(Math.sign(z) && Math.sign(z) !== signe) return false;    // concave ou croisé
+  }
+  const aire = _detAire(q);
+  if(aire < L*H*0.10 || aire > L*H*0.97) return false;
+  const cote = i => Math.hypot(q[(i+1)%4][0]-q[i][0], q[(i+1)%4][1]-q[i][1]);
+  const c = [cote(0), cote(1), cote(2), cote(3)];
+  if(Math.min(...c) < Math.max(L, H)*0.12) return false;
+  if(Math.max(c[0],c[2])/Math.min(c[0],c[2]) > 2.2) return false;    // fuite trop forte
+  if(Math.max(c[1],c[3])/Math.min(c[1],c[3]) > 2.2) return false;
+  const rapport = (c[0]+c[2]) / (c[1]+c[3]);
+  return rapport > 0.2 && rapport < 5;
+}
+
+// Les paires d'une même famille qui encadrent le centre de l'image, les plus
+// écartées et les mieux notées d'abord.
+function _detPaires(famille, L, H, combien){
+  const cx = L/2, cy = H/2, paires = [];
+  for(let i=0; i<famille.length; i++) for(let j=i+1; j<famille.length; j++){
+    const a = famille[i];
+    let b = famille[j];
+    if(a.nx*b.nx + a.ny*b.ny < 0) b = { nx:-b.nx, ny:-b.ny, rho:-b.rho, poids:b.poids };
+    const da = a.nx*cx + a.ny*cy - a.rho;
+    const db = b.nx*cx + b.ny*cy - b.rho;
+    if(da*db >= 0) continue;                                  // le centre n'est pas entre les deux
+    const ecart = Math.abs(da) + Math.abs(db);
+    if(ecart < Math.min(L, H)*0.20) continue;
+    paires.push({ a, b, note: (a.poids + b.poids) * Math.min(1, ecart / Math.min(L, H)) });
+  }
+  paires.sort((p, q)=>q.note - p.note);
+  return paires.slice(0, combien);
+}
+
+// Le pas d'un degré de la transformée suffit à trouver les bords, pas à les
+// poser au pixel près : sur un côté de 400 px, un demi-degré d'erreur déplace
+// déjà le coin de trois pixels. On reprend donc chaque côté retenu, on ramasse
+// les pixels de bord qui le soutiennent, et on ajuste une droite au plus près
+// d'eux — moindres carrés totaux, c'est-à-dire la direction principale du
+// nuage de points. Les quatre droites affinées se recroisent sur des coins
+// bien plus justes, sans rien coûter : quelques centaines de points par côté.
+function _detAffiner(b, r, A, B){
+  const {L, H} = r, {mag, ang, seuil} = b;
+  const dx = B[0]-A[0], dy = B[1]-A[1];
+  const len = Math.hypot(dx, dy);
+  if(len < 8) return null;
+  const ux = dx/len, uy = dy/len, nx = -uy, ny = ux;
+  const tol = Math.cos(28*Math.PI/180);
+  const px = [], py = [];
+  const pas = Math.max(1, Math.round(len/240));
+  for(let k=0; k<len; k+=pas){
+    const cx = A[0] + ux*k, cy = A[1] + uy*k;
+    let meilleur = -1, mx = 0, my = 0;
+    for(let e=-2; e<=2; e++){
+      const x = Math.round(cx + nx*e), y = Math.round(cy + ny*e);
+      if(x < 1 || y < 1 || x >= L-1 || y >= H-1) continue;
+      const i = y*L + x, m = mag[i];
+      if(m < seuil || m <= meilleur) continue;
+      const a = ang[i];
+      if(Math.abs(Math.cos(a)*nx + Math.sin(a)*ny) < tol) continue;
+      meilleur = m; mx = x; my = y;
+    }
+    if(meilleur > 0){ px.push(mx); py.push(my); }
+  }
+  if(px.length < 10) return null;
+  const n = px.length;
+  const mx = px.reduce((s,v)=>s+v, 0)/n, my = py.reduce((s,v)=>s+v, 0)/n;
+  let sxx = 0, syy = 0, sxy = 0;
+  for(let i=0; i<n; i++){ const a = px[i]-mx, c = py[i]-my; sxx += a*a; syy += c*c; sxy += a*c; }
+  // Direction principale du nuage : le vecteur propre dominant de la matrice
+  // de covariance. La normale lui est perpendiculaire.
+  const theta = 0.5 * Math.atan2(2*sxy, sxx - syy);
+  let vx = Math.cos(theta), vy = Math.sin(theta);
+  let ax = -vy, ay = vx;
+  // Garder l'orientation du côté d'origine, pour que ρ reste comparable.
+  if(ax*nx + ay*ny < 0){ ax = -ax; ay = -ay; }
+  return { nx:ax, ny:ay, rho: ax*mx + ay*my, poids:n };
+}
+
+// Le point d'entrée : une toile, un quadrilatère dans SES coordonnées, ou null.
+function detecterContour(toile){
+  if(!toile || !toile.width || !toile.height) return null;
+  let r, b;
+  try { r = _detReduire(toile); b = _detGradient(r); }
+  catch(e){ return null; }
+  if(!b) return null;
+  const droites = _detDroites(b, r, 14);
+  if(droites.length < 4) return null;
+
+  // Deux familles : l'orientation dominante, et sa perpendiculaire.
+  const ref = droites[0];
+  const paral = [], perp = [];
+  for(const d of droites){
+    const dot = Math.abs(d.nx*ref.nx + d.ny*ref.ny);
+    if(dot >= Math.cos(32*Math.PI/180)) paral.push(d);
+    else if(dot <= Math.cos(58*Math.PI/180)) perp.push(d);
+  }
+  if(paral.length < 2 || perp.length < 2) return null;
+
+  const pA = _detPaires(paral, r.L, r.H, 10);
+  const pB = _detPaires(perp,  r.L, r.H, 10);
+  let meilleur = null;
+  for(const u of pA) for(const v of pB){
+    const pts = [_detCroiser(u.a, v.a), _detCroiser(u.a, v.b),
+                 _detCroiser(u.b, v.b), _detCroiser(u.b, v.a)];
+    if(pts.some(p=>!p || !isFinite(p[0]) || !isFinite(p[1]))) continue;
+    const q = _detOrdonner(pts);
+    if(!_detPlausible(q, r.L, r.H)) continue;
+    const s = [0,1,2,3].map(i=>_detSoutien(b, r, q[i], q[(i+1)%4]));
+    const mini = Math.min(...s), moyen = (s[0]+s[1]+s[2]+s[3]) / 4;
+    // Un côté à moitié dans le vide, et c'est un cadre inventé : on passe.
+    if(mini < 0.45 || moyen < 0.62) continue;
+    // À soutien comparable, le grand cadre l'emporte franchement sur le petit :
+    // les traits d'une illustration forment souvent un rectangle net à
+    // l'intérieur de la couverture, et ce n'est pas lui qu'on cherche.
+    const note = moyen * Math.pow(_detAire(q) / (r.L*r.H), 0.75);
+    if(!meilleur || note > meilleur.note) meilleur = { q, note, mini, moyen };
+  }
+  if(!meilleur) return null;
+
+  // Affiner les quatre côtés, puis les recroiser. Si un seul côté résiste, on
+  // garde le quadrilatère brut : mieux vaut approximatif que déformé.
+  const q = meilleur.q;
+  const fines = [0,1,2,3].map(i=>_detAffiner(b, r, q[i], q[(i+1)%4]));
+  if(fines.every(Boolean)){
+    const pts = [_detCroiser(fines[3], fines[0]), _detCroiser(fines[0], fines[1]),
+                 _detCroiser(fines[1], fines[2]), _detCroiser(fines[2], fines[3])];
+    if(pts.every(pt=>pt && isFinite(pt[0]) && isFinite(pt[1]))){
+      const affine = _detOrdonner(pts);
+      // L'affinage corrige de quelques pixels ; s'il déplace un coin de très
+      // loin, c'est qu'il a déraillé — on s'en tient alors au quadrilatère brut.
+      const bond = Math.max(...affine.map((pt,i)=>Math.hypot(pt[0]-q[i][0], pt[1]-q[i][1])));
+      if(_detPlausible(affine, r.L, r.H) && bond < Math.max(r.L, r.H)*0.08) meilleur.q = affine;
+    }
+  }
+
+  // Retour aux coordonnées de l'image d'origine, en restant dans ses bornes.
+  const k = 1 / r.echelle;
+  return meilleur.q.map(([x, y])=>[
+    Math.min(toile.width,  Math.max(0, x*k)),
+    Math.min(toile.height, Math.max(0, y*k)),
+  ]);
 }
 
 // ── Faire pivoter le résultat ───────────────────────────────────────────
@@ -8440,6 +8796,25 @@ function _photoPivoter(sens){
   st.quad = sens > 0 ? [q[3], q[0], q[1], q[2]]     // un quart de tour à droite
                      : [q[1], q[2], q[3], q[0]];    // … et à gauche
   _photoDessiner();
+}
+
+// Poser les poignées sur le contour trouvé. En mode automatique (à
+// l'ouverture du recadrage) l'échec est muet : le cadre 2:3 reste, et rien ne
+// vient reprocher à l'utilisateur une photo que l'algorithme n'a pas su lire.
+function _photoDetecter(automatique){
+  const st = _photoState;
+  if(!st || st.etape !== 'recadrage') return false;
+  const q = detecterContour(st.source);
+  if(!q){
+    if(!automatique) toast(T('Aucun contour net trouvé — placez les poignées à la main.',
+                            'No clear outline found — place the handles by hand.'), 'error');
+    return false;
+  }
+  st.quad = q;
+  _photoDessiner();
+  toast(T('Contour détecté — vérifiez les poignées, puis validez.',
+          'Outline detected — check the handles, then confirm.'));
+  return true;
 }
 
 function _photoDessiner(){
@@ -8565,6 +8940,7 @@ function _photoVersEditeur(){
   ouvrirEditeurImage(data, {
     titre: T('Retoucher la photo','Retouch the photo'),
     sousTitre: T('Prise de vue','Camera shot'),
+    detecter: true,
     boutons: [{ id:'annuler', libelle:T('Annuler','Cancel') },
               { id:'valider', libelle:T('Ajouter la photo','Add the photo'), principal:true }],
     onFin: (id, image) => {
@@ -8625,7 +9001,8 @@ function _eiCharger(src){
   });
 }
 
-// opts : { titre, sousTitre, boutons:[{id, libelle, principal}], onFin(id, dataURL) }
+// opts : { titre, sousTitre, detecter, boutons:[{id, libelle, principal}], onFin(id, dataURL) }
+//   detecter : tenter la détection du contour à l'ouverture.
 //   onFin reçoit l'identifiant du bouton pressé et, pour « valider », l'image
 //   redressée ; pour tout autre bouton, null. « Échap » vaut le dernier bouton
 //   non principal de la liste (l'annulation, par convention).
@@ -8665,6 +9042,7 @@ async function ouvrirEditeurImage(src, opts){
         <div class="ei-grp"><span class="ei-grp-lbl">${T('Cadre','Frame')}</span>
           <button type="button" class="secondary" onclick="_eiCadre('entier')">${T('Image entière','Whole image')}</button>
           <button type="button" class="secondary" onclick="_eiCadre('portrait')">${T('Portrait 2:3','Portrait 2:3')}</button>
+          <button type="button" class="secondary ei-ico" id="eiAuto" aria-label="${T('Détecter le contour','Detect the outline')}" title="${T('Détecter automatiquement le contour de la couverture et y poser les quatre poignées','Automatically detect the cover outline and put the four handles on it')}" onclick="_eiDetecter()"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-auto"></use></svg></button>
         </div>
         <div class="ei-grp"><span class="ei-grp-lbl">${T('Couleur','Colour')}</span>
           <button type="button" class="secondary" id="eiPipette" title="${T('Pipette : lire les valeurs RVB ; un clic sur une zone neutre (blanc, gris) règle la balance des blancs. Échap pour ranger la pipette.','Eyedropper: read RGB values; click a neutral area (white, grey) to set the white balance. Esc puts the eyedropper away.')}" onclick="_eiPipetteBasculer()"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-pipette"></use></svg> ${T('Pipette','Eyedropper')}</button>
@@ -8695,6 +9073,10 @@ async function ouvrirEditeurImage(src, opts){
   _eiCadre('entier', true);
   _eiBalanceAfficher();      // une correction héritée doit se voir, pas seulement s'appliquer
   _eiAjuster();
+  // La détection ne part d'elle-même que sur une image qui vient de l'appareil
+  // ou d'un import : rouvrir un visuel déjà recadré, ou cadrer un avatar, n'a
+  // rien d'un album posé sur une table. Le bouton, lui, reste partout.
+  if(opts.detecter) setTimeout(()=>{ if(_eiState && _eiState.ov === ov) _eiDetecter(true); }, 0);
   _eiBrancher();
   window.addEventListener('resize', _eiAjuster);
   document.addEventListener('keydown', _eiClavier);
@@ -8740,6 +9122,23 @@ function _eiCadre(mode, silencieux){
     st.quad = [[m,m],[L-m,m],[L-m,H-m],[m,H-m]];
   }
   if(!silencieux) _eiDessiner();
+}
+
+// Le pendant, dans l'éditeur complet : même moteur, même prudence.
+function _eiDetecter(automatique){
+  const st = _eiState;
+  if(!st) return false;
+  const q = detecterContour(st.source);
+  if(!q){
+    if(!automatique) toast(T('Aucun contour net trouvé — placez les poignées à la main.',
+                            'No clear outline found — place the handles by hand.'), 'error');
+    return false;
+  }
+  st.quad = q;
+  _eiDessiner();
+  toast(T('Contour détecté — vérifiez les poignées, puis validez.',
+          'Outline detected — check the handles, then confirm.'));
+  return true;
 }
 
 // Le même tour de passe-passe que la prise de vue : pivoter, c'est changer
@@ -9081,6 +9480,7 @@ function _recadrerLot(lot, k){
   ouvrirEditeurImage(e.data, {
     titre: T('Recadrer et redresser','Crop and straighten'),
     sousTitre: (lot.length>1 ? `${k+1} / ${lot.length} · ` : '') + (e.name || ''),
+    detecter: true,
     boutons: [
       { id:'ignorer', libelle:T('Ignorer cette image','Discard this image') },
       { id:'garder',  libelle:T('Garder telle quelle','Keep as is') },
