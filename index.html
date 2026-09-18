@@ -4923,6 +4923,16 @@ function _nuagePoids(i){
 }
 // Rapport largeur/hauteur des visuels selon la collection : un disque est
 // carré, un album de BD est debout.
+// Combien de monde sur la sphère, collection par collection. Tous les nuages
+// sortent de la même fonction : sans ce réglage, resserrer les disques
+// resserrerait aussi les albums. C'est une affaire de goût et de format —
+// une pochette carrée supporte plus de voisines qu'une couverture d'album,
+// qui est haute et mange la place en hauteur — donc un coefficient par
+// collection, à ajuster sans toucher aux autres. 1 = le réglage de référence.
+function _nuageDensite(id){
+  if(id === 'vinyle-cd-dvd') return 1.35;
+  return 1;
+}
 function _nuageRatio(id){
   if(id==='vinyle-cd-dvd' || id==='pins') return 1;
   if(String(id).startsWith('cartes')) return 0.66;
@@ -5054,7 +5064,9 @@ function ouvrirNuage(force){
   const tout = _nuageOeuvres(id);
   if(!force && tout.length < 4) return false;   // trop peu pour faire une sphère
   // On plafonne : une sphère trop peuplée n'est plus qu'une boule de vignettes.
-  const plafond = Math.min(108, Math.max(34, Math.round(window.innerWidth*window.innerHeight/19000)));
+  const dense = _nuageDensite(id);
+  const plafond = Math.round(dense *
+    Math.min(108, Math.max(34, Math.round(window.innerWidth*window.innerHeight/19000))));
   const oeuvres = _nuageTirage(tout, plafond);
   const ov = document.createElement('div');
   ov.id = 'nuageOverlay';
