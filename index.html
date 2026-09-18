@@ -4989,7 +4989,11 @@ function _nuageImage(){
     const p = st.pts[k], el = st.poses[k];
     const prof = (p.z + 1) / 2;                       // 0 au fond, 1 devant
     const ech = F / (F - p.z);
-    const op = Math.max(0, Math.min(1, (prof - 0.18) / 0.4));
+    // L'arrière-plan gardait zéro : un bon tiers des couvertures était
+    // simplement invisible, et la sphère semblait à moitié vide. Elles
+    // restent maintenant présentes en filigrane — assez pour peupler le
+    // volume, trop peu pour disputer la vedette à celles de devant.
+    const op = 0.13 + 0.87 * Math.max(0, Math.min(1, (prof - 0.05) / 0.45));
     el.style.transform = `translate(-50%,-50%) translate(${(p.x*R*ech).toFixed(1)}px,${(p.y*R*ech*st.aplat).toFixed(1)}px) scale(${ech.toFixed(3)})`;
     el.style.opacity = op.toFixed(3);
     el.style.zIndex = String(Math.round(prof * 1000));
@@ -5009,8 +5013,17 @@ function _nuageDimensionner(){
   // Le rayon laisse la place aux couvertures qui dépassent de la sphère :
   // la plus grande fait la moitié du rayon, et se tient aux pôles comme à
   // l'équateur.
-  st.rayon = Math.min(L * 0.34, H * 0.33);
-  st.aplat = 1;
+  // La marge restante n'est pas décorative : une couverture du premier plan
+  // déborde de la sphère d'environ un quart de rayon. 0,37 est le plus grand
+  // rayon qui laisse encore passer ce débord sans rogner les bords.
+  //
+  // Sur un écran large, un cercle parfait laisse deux grandes bandes vides à
+  // droite et à gauche pendant que la hauteur, elle, est saturée. La sphère
+  // s'étale donc légèrement en ellipse — jamais au-delà de quatre cinquièmes,
+  // au-delà elle cesserait de se lire comme un volume.
+  const elance = L / Math.max(1, H);
+  st.aplat = Math.min(1, Math.max(0.78, 1.35 / elance));
+  st.rayon = Math.min(L * 0.365, H * 0.342 / st.aplat);
   const ratio = _nuageRatio(st.id);
   // TOUTES les couvertures ont la même taille de base. C'est la condition
   // pour que la taille à l'écran ne dise qu'une chose : la distance. Trois
@@ -5021,7 +5034,13 @@ function _nuageDimensionner(){
   // grande partie au fond. La perspective seule commande désormais, et il ne
   // reste qu'une variation de quelques pour cent, trop faible pour se lire
   // comme une hiérarchie mais assez pour que la sphère ne soit pas une grille.
-  const base = Math.max(34, Math.min(112, st.rayon * (L < 640 ? 0.34 : 0.26)));
+  // À largeur égale, une pochette carrée couvre un tiers de surface en moins
+  // qu'une couverture d'album : la sphère de disques paraissait clairsemée
+  // alors qu'elle portait autant d'objets. On raisonne donc en SURFACE — la
+  // largeur suit la racine du format — pour que toutes les collections aient
+  // la même présence à l'écran.
+  const correction = Math.sqrt(ratio / 0.7);
+  const base = Math.max(36, Math.min(134, st.rayon * (L < 640 ? 0.335 : 0.26))) * correction;
   st.poses.forEach((el, k) => {
     const w = Math.round(base * st.alea[k]);
     el.style.width = w + 'px'; el.style.height = Math.round(w / ratio) + 'px';
@@ -5035,7 +5054,7 @@ function ouvrirNuage(force){
   const tout = _nuageOeuvres(id);
   if(!force && tout.length < 4) return false;   // trop peu pour faire une sphère
   // On plafonne : une sphère trop peuplée n'est plus qu'une boule de vignettes.
-  const plafond = Math.min(90, Math.max(30, Math.round(window.innerWidth*window.innerHeight/21000)));
+  const plafond = Math.min(108, Math.max(34, Math.round(window.innerWidth*window.innerHeight/19000)));
   const oeuvres = _nuageTirage(tout, plafond);
   const ov = document.createElement('div');
   ov.id = 'nuageOverlay';
