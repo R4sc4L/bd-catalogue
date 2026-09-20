@@ -404,6 +404,10 @@
     text-transform:uppercase;letter-spacing:.5px}
   #photoOverlay .po-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
     padding:12px 16px;border-top:1px solid var(--border)}
+  /* Un drapeau dessiné se cale sur le texte comme le ferait un émoji :
+     hauteur d'un cadratin, largeur au format 4:3, et la même assise. */
+  .dr-lang{display:inline-block;height:1em;width:1.333em;vertical-align:-0.16em;
+    border-radius:1.5px;flex:none}
   #photoOverlay .po-actions .po-esp{margin-left:auto}
   /* L'aide cède la place aux boutons plutôt que de les renvoyer à la ligne :
      elle se met sur deux lignes, eux restent groupés et alignés à droite. */
@@ -1408,6 +1412,49 @@
   .drawer-face{cursor:pointer;transition:filter .15s}
   .drawer-face:hover{filter:brightness(1.25)}
   .drawer-face.drag-over{filter:brightness(1.6);outline:2px dashed #f0d9a8;outline-offset:-2px}
+  /* ---- Un tiroir qui s'ouvre ----
+     Un liseré bleu sur une façade close ne localise rien : on voit QUEL tiroir,
+     jamais ce qu'il contient. La façade sort donc du bloc — elle avance vers
+     le spectateur et découvre au-dessus d'elle la fente sombre du caisson —
+     puis reste entrouverte tant que le repère tient, pour dire où cliquer. */
+  .drawer-face{transform-origin:center bottom}
+  @keyframes tiroir-va-et-vient{
+    0%,100%{transform:none;box-shadow:0 0 0 3px #4a9eff,inset 0 1px 0 rgba(255,255,255,.18)}
+    50%{transform:translateY(10px) scale(1.09);
+        box-shadow:0 0 0 3px #4a9eff,0 11px 20px rgba(0,0,0,.65),0 0 18px rgba(74,158,255,.5)}
+  }
+  .drawer-face.locating{animation:tiroir-va-et-vient .62s ease-in-out 4;z-index:60;position:relative}
+  .drawer-face.located{transform:translateY(6px) scale(1.06);
+    box-shadow:0 0 0 3px #4a9eff,0 0 16px rgba(74,158,255,.75),0 8px 15px rgba(0,0,0,.6);
+    z-index:55}
+  /* Le clic : un dernier coup de tiroir avant que la page s'ouvre. */
+  @keyframes tiroir-sort{from{transform:translateY(0) scale(1)}
+    to{transform:translateY(14px) scale(1.13)}}
+  .drawer-face.ouvrant{animation:tiroir-sort .22s ease-out forwards;z-index:60;position:relative}
+  /* ---- Le contenu d'un tiroir, en couvertures ---- */
+  #drawerModalList.dm-grille{display:grid;gap:12px;
+    grid-template-columns:repeat(auto-fill,minmax(104px,1fr));max-height:58vh;overflow-y:auto;padding:2px}
+  .dm-case{position:relative;border-radius:7px;overflow:hidden;background:var(--panel-2,#22202c);
+    box-shadow:0 2px 6px rgba(0,0,0,.35);cursor:pointer;transition:transform .14s,box-shadow .14s}
+  .dm-case:hover{transform:translateY(-3px);box-shadow:0 7px 16px rgba(0,0,0,.5)}
+  .dm-case img{display:block;width:100%;aspect-ratio:var(--dm-ratio,.7);object-fit:cover;background:#15141c}
+  .dm-sans-image{display:flex;align-items:center;justify-content:center;width:100%;
+    aspect-ratio:var(--dm-ratio,.7);font-size:26px;opacity:.45}
+  .dm-titre{padding:6px 7px 7px;font-size:11.5px;line-height:1.25;color:var(--ink);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  /* Le même repère bleu que sur le tiroir : l'œil fait le lien tout seul. */
+  .dm-case.dm-vise{box-shadow:0 0 0 3px #4a9eff,0 0 18px rgba(74,158,255,.65)}
+  .dm-case.dm-vise .dm-titre{color:#bcd9ff;font-weight:600}
+  /* Le repère se pose sous la couverture, jamais dessus : une pastille sur
+     l'illustration masquerait le bandeau-titre, qui est ce qu'on reconnaît. */
+  .dm-repere{display:inline-block;margin-right:5px;padding:1px 6px;border-radius:8px;
+    background:#4a9eff;color:#06203d;font-size:9.5px;font-weight:700;letter-spacing:.02em;
+    vertical-align:1px}
+  .dm-sortir{position:absolute;right:5px;top:5px;width:22px;height:22px;border:none;border-radius:50%;
+    background:rgba(0,0,0,.6);color:#f0d9a8;font-size:13px;line-height:1;cursor:pointer;
+    opacity:0;transition:opacity .14s}
+  .dm-case:hover .dm-sortir{opacity:1}
+  .dm-sortir:hover{background:var(--danger,#b23b28);color:#fff}
   .drawer-label{position:absolute;left:8px;top:50%;transform:translateY(-50%);max-width:calc(50% - 34px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:600;color:rgba(255,240,210,.8);text-shadow:0 1px 2px rgba(0,0,0,.6);pointer-events:none}
   .drawer-count{position:absolute;right:8px;top:50%;transform:translateY(-50%);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:rgba(0,0,0,.55);color:#f0d9a8;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
   .reconcile-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border)}
@@ -1679,6 +1726,40 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
   <g id="ic-pipette" fill="currentColor" stroke="none">
     <path d="M9.02 10.18 L14.68 4.52 A3.4 3.4 0 0 1 19.48 9.32 L13.82 14.98 Z"/>
     <path d="M4 20 L4.74 18.62 L10.93 11.37 L12.63 13.07 L5.38 19.26 Z"/>
+  </g>
+  <!-- Anglais : ni britannique ni américain, les deux. Un drapeau ne dit pas
+       la nationalité de l'auteur, il dit la langue de l'édition — et l'anglais
+       ne tient pas dans un seul pays. Les deux drapeaux sont dessinés en
+       entier, chacun détouré par une moitié du rectangle : la diagonale place
+       le canton étoilé en haut à gauche, où il est visible, et laisse à
+       l'Union Jack le bas-droit, où sa croix et sa diagonale se lisent. -->
+  <clipPath id="cl-lang-en-1"><path d="M0,0 36,0 0,27Z"/></clipPath>
+  <clipPath id="cl-lang-en-2"><path d="M36,0 36,27 0,27Z"/></clipPath>
+  <g id="ic-lang-en">
+    <g clip-path="url(#cl-lang-en-1)"><g transform="scale(0.632,0.9)">
+      <rect y="0"      width="57" height="2.36" fill="#B22234"/><rect y="2.31"  width="57" height="2.36" fill="#fff"/>
+      <rect y="4.62"   width="57" height="2.36" fill="#B22234"/><rect y="6.92"  width="57" height="2.36" fill="#fff"/>
+      <rect y="9.23"   width="57" height="2.36" fill="#B22234"/><rect y="11.54" width="57" height="2.36" fill="#fff"/>
+      <rect y="13.85"  width="57" height="2.36" fill="#B22234"/><rect y="16.15" width="57" height="2.36" fill="#fff"/>
+      <rect y="18.46"  width="57" height="2.36" fill="#B22234"/><rect y="20.77" width="57" height="2.36" fill="#fff"/>
+      <rect y="23.08"  width="57" height="2.36" fill="#B22234"/><rect y="25.38" width="57" height="2.36" fill="#fff"/>
+      <rect y="27.69"  width="57" height="2.36" fill="#B22234"/>
+      <rect width="22.8" height="16.15" fill="#3C3B6E"/>
+      <g fill="#fff">
+        <circle cx="2.6" cy="2.2" r="0.95"/><circle cx="7" cy="2.2" r="0.95"/><circle cx="11.4" cy="2.2" r="0.95"/><circle cx="15.8" cy="2.2" r="0.95"/><circle cx="20.2" cy="2.2" r="0.95"/>
+        <circle cx="2.6" cy="6.3" r="0.95"/><circle cx="7" cy="6.3" r="0.95"/><circle cx="11.4" cy="6.3" r="0.95"/><circle cx="15.8" cy="6.3" r="0.95"/><circle cx="20.2" cy="6.3" r="0.95"/>
+        <circle cx="2.6" cy="10.4" r="0.95"/><circle cx="7" cy="10.4" r="0.95"/><circle cx="11.4" cy="10.4" r="0.95"/><circle cx="15.8" cy="10.4" r="0.95"/><circle cx="20.2" cy="10.4" r="0.95"/>
+        <circle cx="2.6" cy="14.5" r="0.95"/><circle cx="7" cy="14.5" r="0.95"/><circle cx="11.4" cy="14.5" r="0.95"/><circle cx="15.8" cy="14.5" r="0.95"/><circle cx="20.2" cy="14.5" r="0.95"/>
+      </g></g></g>
+    <g clip-path="url(#cl-lang-en-2)"><g transform="scale(0.6,0.9)">
+      <rect width="60" height="30" fill="#012169"/>
+      <path d="M0,0 60,30 M60,0 0,30" stroke="#fff" stroke-width="10"/>
+      <path d="M0,0 60,30 M60,0 0,30" stroke="#C8102E" stroke-width="4"/>
+      <path d="M30,0 V30 M0,15 H60" stroke="#fff" stroke-width="12"/>
+      <path d="M30,0 V30 M0,15 H60" stroke="#C8102E" stroke-width="6"/>
+    </g></g>
+    <path d="M36,0 0,27" stroke="#f2ece1" stroke-width="1.6" fill="none"/>
+    <rect x="0.5" y="0.5" width="35" height="26" fill="none" stroke="rgba(0,0,0,.35)"/>
   </g>
   <g id="ic-rot-gauche" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="9.2" y="10.4" width="11.4" height="11.4" rx="2.2"/>
@@ -3212,7 +3293,8 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
 <!-- PILE MODAL -->
 <!-- DRAWER MODAL (contenu d'un tiroir) -->
 <div class="modal-backdrop" id="drawerModal">
-  <div class="modal" style="max-width:480px">
+  <!-- Une vraie page : la grille de couvertures a besoin de largeur. -->
+  <div class="modal" style="max-width:820px">
     <div class="modal-header">
       <h2 id="drawerModalTitle" data-en="🗄️ Drawer">🗄️ Tiroir</h2>
       <button class="ghost" onclick="closeModal('drawerModal')">✕</button>
@@ -3222,7 +3304,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <input type="text" id="drawerModalName" style="flex:1" placeholder="Nom du tiroir" data-en-ph="Drawer name">
         <button class="secondary" onclick="renameDrawerFromModal()" data-en="Rename">Renommer</button>
       </div>
-      <div id="drawerModalList" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto"></div>
+      <div id="drawerModalList"></div>
     </div>
     <div class="modal-footer">
       <button class="secondary" style="margin-left:auto" onclick="closeModal('drawerModal')" data-en="Close">Fermer</button>
@@ -6753,6 +6835,9 @@ function openModal(id){
 function closeModal(id){
   const bd = document.getElementById(id);
   if(!bd) return;
+  // Quitter la recherche automatique sans rien retenir n'annule pas le code
+  // qu'on vient de lire : il part sur la fiche, prêt pour une saisie à la main.
+  if(id === 'autofillModal') _reporterCodeSurLaFiche(false);
   bd.classList.remove("active");
   if(!document.querySelector(".modal-backdrop.active")) document.body.style.overflow="";
   if(_modalPrevFocus && document.contains(_modalPrevFocus)){ try{ _modalPrevFocus.focus(); }catch(e){} }
@@ -9905,6 +9990,7 @@ function duplicateItem(id){
 
 async function locateOnShelf(id){
   // Aller dans la bibliothèque, ouvrir le meuble contenant l'œuvre (vue de face), puis mettre en surbrillance la spine
+  _oeuvreLocalisee = id;
   showView("library");
   await loadLibraryShelves();
   await loadLibraryPiles();
@@ -9976,6 +10062,7 @@ function _showLocateAgainBtn(id, it, pile){
     btn.remove();
     document.querySelectorAll(".located").forEach(el=>el.classList.remove("located"));
     if(window._locatedTimer) clearTimeout(window._locatedTimer);
+    _oeuvreLocalisee = null;      // le repère s'éteint partout à la fois
   };
 }
 
@@ -10707,8 +10794,18 @@ function renderCatChips() {
 
 // ===== Langues (puces multi) + drapeaux =====
 const LANGUES_COURANTES = ["Français","Anglais","Néerlandais","Allemand","Espagnol","Italien","Portugais","Japonais","Chinois","Coréen","Russe","Suédois","Danois","Norvégien","Finnois","Polonais","Grec","Latin","Arabe"];
+// Un drapeau dessiné plutôt qu'un émoji, quand aucun pays ne suffit. Le
+// rendu est une petite image vectorielle calée sur la taille du texte : elle
+// prend la place d'un émoji et se lit comme lui, à toutes les tailles.
+// (Une seule langue est concernée aujourd'hui ; en ajouter une autre — un
+// espagnol Espagne/Mexique, par exemple — ne demandera qu'un dessin de plus
+// dans la planche et une ligne ici.)
+const _LANG_DESSIN = { "anglais": "ic-lang-en" };
+function _drapeauDessine(cle){
+  return `<svg class="dr-lang" viewBox="0 0 36 27" aria-hidden="true"><use href="#${cle}"></use></svg>`;
+}
 const _LANG_FLAG = {
-  "francais":"🇫🇷","anglais":"🇬🇧","neerlandais":"🇳🇱","flamand":"🇧🇪","allemand":"🇩🇪",
+  "francais":"🇫🇷","neerlandais":"🇳🇱","flamand":"🇧🇪","allemand":"🇩🇪",
   "espagnol":"🇪🇸","catalan":"🇪🇸","basque":"🇪🇸","italien":"🇮🇹","portugais":"🇵🇹",
   "japonais":"🇯🇵","chinois":"🇨🇳","coreen":"🇰🇷","russe":"🇷🇺","suedois":"🇸🇪",
   "danois":"🇩🇰","norvegien":"🇳🇴","finnois":"🇫🇮","polonais":"🇵🇱","grec":"🇬🇷",
@@ -10716,7 +10813,10 @@ const _LANG_FLAG = {
   "turc":"🇹🇷","ukrainien":"🇺🇦","hebreu":"🇮🇱"
 };
 function _normLang(s){ return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim(); }
-function languageFlag(lang){ return _LANG_FLAG[_normLang(lang)] || ""; }
+function languageFlag(lang){
+  const k = _normLang(lang);
+  return _LANG_DESSIN[k] ? _drapeauDessine(_LANG_DESSIN[k]) : (_LANG_FLAG[k] || "");
+}
 // Liste de langues d'un item (compatible ancien champ `langue`)
 function itemLangues(it){ return (it.langues && it.langues.length) ? it.langues : (it.langue ? [it.langue] : []); }
 // Drapeaux d'un item (séparés d'une fine espace), pour les vues collection
@@ -15505,6 +15605,30 @@ async function openBarcodeScanner(){
 // l'ouvrage sans ambiguïté, donc un résultat unique est appliqué directement —
 // inutile de réclamer un clic de confirmation après avoir visé le code.
 let _autofillFromScan = false;
+// Le code-barres — scanné ou tapé — sur lequel a porté la dernière recherche.
+// Une recherche infructueuse laissait l'utilisateur devant une fiche vide alors
+// qu'il venait de lire un code parfaitement valide : il ne restait qu'à le
+// recopier à la main depuis le dos de l'album. On le garde donc de côté, et on
+// le pose sur la fiche en quittant la fenêtre.
+let _codeRecherche = '';
+
+// Reporter ce code dans « ISBN / Code-barres », si la place est libre.
+// `silencieux` quand une notice vient d'être appliquée : la fiche se remplit
+// déjà sous les yeux de l'utilisateur, un message de plus n'apprendrait rien.
+function _reporterCodeSurLaFiche(silencieux){
+  const code = _codeRecherche;
+  _codeRecherche = '';
+  if(!code) return false;
+  const champ = document.getElementById('itemIsbn');
+  // Champ absent, masqué pour cette collection (un pin's n'a pas d'ISBN), ou
+  // déjà renseigné : on ne force rien.
+  if(!champ || champ.offsetParent === null || champ.value.trim()) return false;
+  champ.value = code;
+  _majLienFiche();
+  if(!silencieux) toast(T(`Code-barres reporté sur la fiche : ${code}`,
+                          `Barcode carried over to the record: ${code}`));
+  return true;
+}
 function _onBarcodeFound(code){
   const isbn = String(code||'').replace(/[^0-9Xx]/g,'');
   if(!isbn) return;
@@ -15512,6 +15636,7 @@ function _onBarcodeFound(code){
   closeBarcodeScanner();
   const q = document.getElementById('autofillQuery');
   if(q){ q.value = isbn; }
+  _codeRecherche = isbn;
   toast(T(`Code lu : ${isbn}`,`Code read: ${isbn}`));
   _autofillFromScan = true;
   autofillSearch();
@@ -15550,6 +15675,7 @@ function openAutofillModal(opts){
   const resEl = document.getElementById("autofillResults");
   qEl.value = currentTitle;
   resEl.innerHTML = "";
+  _codeRecherche = '';
   // Annoncer la source réellement interrogée : un disque ne va pas chez les libraires.
   const hint = document.getElementById('autofillHint');
   if(hint) hint.textContent = _rechercheDisque()
@@ -15581,6 +15707,9 @@ async function autofillSearch(){
 
   const isISBN = /^[\d\-Xx ]{9,17}$/.test(query);
   const cleanISBN = query.replace(/[\s\-]/g,"").toUpperCase();
+  // Tapé au clavier ou lu par la caméra, c'est le même service rendu : le code
+  // sera reporté sur la fiche si la recherche ne donne rien.
+  if(isISBN || estCodeBarresDisque(cleanISBN)) _codeRecherche = cleanISBN;
   // Un disque ne se cherche pas dans un catalogue de livres : on aiguille
   // vers MusicBrainz dès que la collection (ou la catégorie) est un disque.
   const disque = _rechercheDisque();
@@ -16238,6 +16367,9 @@ async function applyAutofill(idx){
     }
   }
 
+  // La notice a pu venir d'une recherche par titre et n'avoir aucun ISBN :
+  // le code lu comble alors le vide, sans rien écraser.
+  _reporterCodeSurLaFiche(true);
   closeModal("autofillModal");
   toast(T("Fiche pré-remplie ! Vérifiez et complétez les informations.","Form pre-filled! Check and complete the information."));
   if(_crees.length){
@@ -17537,7 +17669,13 @@ function attachLibraryListeners(container){
     el.addEventListener("click", e=>{
       if(_libDragging) return;
       e.stopPropagation();
-      openDrawerModal(dname);
+      // Un dernier coup de tiroir, puis la page. Le geste dure deux dixièmes
+      // de seconde : assez pour qu'on voie d'où vient la page, pas assez pour
+      // qu'on attende. Si les animations sont désactivées, on ouvre tout de suite.
+      const anime = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      if(!anime){ openDrawerModal(dname); return; }
+      el.classList.add("ouvrant");
+      setTimeout(()=>{ el.classList.remove("ouvrant"); openDrawerModal(dname); }, 220);
     });
     el.addEventListener("dragover", e=>{
       // Seuls les albums individuels peuvent aller dans un tiroir (pas les piles ni les étagères entières)
@@ -18905,8 +19043,16 @@ async function confirmNewPile(){
   toast(T(`${kind==="classeur"?"Classeur":"Pile"} « ${trimmed} » créé${kind==="classeur"?"":"e"} — ${_shelfLabel(shelf)}.`,`${kind==="classeur"?"Binder":"Pile"} « ${trimmed} » created — ${_shelfLabel(shelf)}.`), "success");
 }
 
-// ═══ Modal « contenu d'un tiroir » ═══
+// ═══ La page d'un tiroir ═══
+// Un tiroir fermé ne se localise pas : la façade dit dans quel tiroir chercher,
+// pas ce qu'il y a dedans. L'ouvrir montre donc les couvertures — pour des
+// magazines, c'est la couverture qu'on reconnaît, jamais le titre exact — et
+// celle qu'on cherchait y porte le même liseré bleu que le tiroir lui-même.
 let _currentDrawerName = null;
+// L'œuvre que la dernière localisation visait : c'est elle qu'on cerne dans la
+// page du tiroir. Elle survit à la fermeture de la fenêtre, pas au repère.
+let _oeuvreLocalisee = null;
+
 function openDrawerModal(name){
   _currentDrawerName = name;
   document.getElementById("drawerModalTitle").textContent = "🗄️ " + name;
@@ -18917,19 +19063,35 @@ function openDrawerModal(name){
 function renderDrawerModalList(){
   const el = document.getElementById("drawerModalList");
   const books = cache.items.filter(i=>(i.localisation||"").trim()===_currentDrawerName);
+  const cible = books.find(i=>String(i.id) === String(_oeuvreLocalisee));
   if(!books.length){
+    el.className = "";
     el.innerHTML = `<p class="muted" style="margin:0;font-size:13px">${T("Tiroir vide — glisse un album sur sa façade dans la vue du meuble, ou choisis ce tiroir comme localisation dans la fiche d'un album.","Empty drawer — drag an album onto its front in the bookcase view, or choose this drawer as the location in an album's record.")}</p>`;
     return;
   }
-  el.innerHTML = books.map(it=>{
-    const color = itemSpineColor(it);
-    const t = escapeHTML(it.titre||"?")+(it.tome?` T${it.tome}`:"");
-    return `<div class="pile-modal-item">
-      <span class="item-color" style="background:${color}"></span>
-      <span class="item-name" title="${t} — cliquer pour ouvrir la fiche" style="cursor:pointer" onclick="closeModal('drawerModal');renderItemDetail('${it.id}')">${t}</span>
-      <button class="item-remove" title="${T(`Sortir du tiroir (repasse en « Non classés »)`,`Remove from drawer (goes back to « Unfiled »)`)}" onclick="_removeFromDrawer('${it.id}')">✕</button>
+  // L'œuvre cherchée d'abord : inutile de faire défiler pour la trouver.
+  const ordre = cible ? [cible, ...books.filter(i=>i!==cible)] : books;
+  el.className = "dm-grille";
+  el.style.setProperty('--dm-ratio', String(_nuageRatio(_activeCollection)));
+  el.innerHTML = ordre.map(it=>{
+    const vise = it === cible;
+    const t = escapeHTML(it.titre||"?") + (it.tome?` T${it.tome}`:"");
+    const img = it.images && it.images[0];
+    const visuel = img
+      ? `<img src="${_safeUrl(img)}" alt="" loading="lazy" draggable="false">`
+      : `<div class="dm-sans-image" style="background:${itemSpineColor(it)}33">🗞️</div>`;
+    return `<div class="dm-case${vise?' dm-vise':''}" data-item-id="${escapeHTML(String(it.id))}"
+        title="${t} — ${T('cliquer pour ouvrir la fiche','click to open the record')}"
+        onclick="closeModal('drawerModal');renderItemDetail('${_jsStr(String(it.id))}')">
+      ${visuel}
+      <button type="button" class="dm-sortir" title="${T('Sortir du tiroir (repasse en « Non classés »)','Remove from drawer (goes back to « Unfiled »)')}"
+        onclick="event.stopPropagation();_removeFromDrawer('${_jsStr(String(it.id))}')">✕</button>
+      <div class="dm-titre">${vise?`<span class="dm-repere">${T('Cherché','Wanted')}</span>`:''}${t}</div>
     </div>`;
   }).join("");
+  // Amener la couverture cherchée sous les yeux, même si la grille défile.
+  if(cible) requestAnimationFrame(()=>
+    el.querySelector('.dm-vise')?.scrollIntoView({block:'nearest'}));
 }
 async function _removeFromDrawer(id){
   const it = cache.items.find(i=>String(i.id)===String(id));
