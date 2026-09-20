@@ -1304,7 +1304,7 @@
   .m3d-side,.m3d-top{border-radius:2px}
   .m3d-badge{position:absolute;top:6px;right:6px;font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:2px 6px;z-index:3}
   /* Plus de bordure peinte : la séparation entre colonnes est un panneau réel (.m3d-divider) */
-  .m3d-col{flex:1;display:flex;flex-direction:column;transform-style:preserve-3d}
+  .m3d-col{flex:1;min-width:0;display:flex;flex-direction:column;transform-style:preserve-3d}
   /* Case vide : plus aucun fond ni ombre peinte — ce que l'on voit est le VRAI volume derrière */
   /* Aucun interstice entre les tranches : sur une étagère bien remplie elles ne font qu'un ou
      deux pixels, et un jour d'un pixel entre chacune laissait voir le fond à parts égales —
@@ -1343,10 +1343,32 @@
     height:calc(var(--d,60px) * 0.62);transform-origin:center top;transform:rotateX(-90deg);
     background-color:inherit;
     background-image:linear-gradient(0deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,.14) 62%,rgba(255,255,255,.24) 100%)}
-  /* ---- Tiroirs : mini façade dans la vue 3D ---- */
-  .m3d-drawers{display:flex;flex-direction:column;gap:1px;height:92%;flex-shrink:0;padding:1px;border-radius:1px;background:rgba(0,0,0,.4);box-shadow:0 0 2px rgba(0,0,0,.5)}
-  .m3d-drawers b{flex:1;min-height:3px;border-radius:1px;position:relative;background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 70%,white),color-mix(in srgb,var(--wood,#5a3f28) 70%,black));box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
-  .m3d-drawers b::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38%;height:2px;border-radius:1px;background:rgba(255,235,190,.7)}
+  /* ---- Tiroirs : un caisson, pas une vignette collée au fond ----
+     Les tranches d'album portent chacune leur dessus et leur flanc en
+     perspective ; le bloc de tiroirs n'avait qu'une façade plate, et flottait
+     dans la case comme un autocollant. Il reçoit donc les mêmes faces — un
+     dessus qui fuit vers le fond, un flanc du côté que la caméra découvre —
+     et une ombre portée sur la tablette, qui le pose. */
+  .m3d-drawers{display:flex;flex-direction:column;gap:1px;height:92%;flex-shrink:0;padding:1px;
+    position:relative;transform-style:preserve-3d;border-radius:1px;
+    background:color-mix(in srgb,var(--wood,#5a3f28) 30%,black);
+    box-shadow:0 3px 5px -1px rgba(0,0,0,.65),0 0 2px rgba(0,0,0,.5)}
+  .m3d-drawers::after{content:"";position:absolute;left:0;right:0;top:0;pointer-events:none;
+    height:calc(var(--d,60px) * 0.62);transform-origin:center top;transform:rotateX(-90deg);
+    background-color:color-mix(in srgb,var(--wood,#5a3f28) 64%,black);
+    background-image:linear-gradient(0deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,.14) 62%,rgba(255,255,255,.24) 100%)}
+  .meuble3d.vu-g .m3d-drawers::before,
+  .meuble3d.vu-d .m3d-drawers::before{content:"";position:absolute;top:0;bottom:0;pointer-events:none;
+    width:calc(var(--d,60px) * 0.62);
+    background-color:color-mix(in srgb,var(--wood,#5a3f28) 64%,black)}
+  .meuble3d.vu-g .m3d-drawers::before{left:0;transform-origin:left center;transform:rotateY(90deg);
+    background-image:linear-gradient(270deg,rgba(255,255,255,.10),rgba(0,0,0,.34) 55%,rgba(0,0,0,.52))}
+  .meuble3d.vu-d .m3d-drawers::before{right:0;transform-origin:right center;transform:rotateY(-90deg);
+    background-image:linear-gradient(90deg,rgba(255,255,255,.10),rgba(0,0,0,.34) 55%,rgba(0,0,0,.52))}
+  .m3d-drawers b{flex:1;min-height:3px;border-radius:1px;position:relative;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 88%,white) 0%,color-mix(in srgb,var(--wood,#5a3f28) 74%,white) 40%,color-mix(in srgb,var(--wood,#5a3f28) 62%,black) 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 2px rgba(0,0,0,.45)}
+  .m3d-drawers b::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38%;height:2px;border-radius:1px;background:rgba(255,235,190,.7);box-shadow:0 1px 1px rgba(0,0,0,.5)}
   /* Surbrillance au survol : appliquée UNIQUEMENT à des éléments sans descendant en 3D.
      Un `filter` sur .m3d-front écrasait tout son contenu en 2D — le volume des albums
      disparaissait dès qu'on approchait le curseur du meuble. */
@@ -17252,6 +17274,12 @@ function renderFurniturePlan(container, _secondePasse){
     const yaw = yawMeuble(m);
     labels.push({cx, left, bottom, name:m.name, yaw});
     const compartCm = (m.hCm||237)/rows; // hauteur réelle d'une case (cm)
+    // Épaisseur du cadre de carcasse, en pixels d'écran : c'est le padding de
+    // .m3d-front, et c'est lui qui fixe où la menuiserie découpe les colonnes.
+    const CADRE = 5;
+    // Largeur vraiment disponible dans une case : la colonne telle que les
+    // montants la délimitent, moins le retrait gauche/droit de la tablette.
+    const caseW = Math.max(8, (w - CADRE*2)/cols - 6);
     const {n,piles} = counts(m);
     const shelves = libraryShelves.filter(s=>s.meubleId===m.id);
     // Façade : colonnes (gauche→droite) × étagères (haut→bas)
@@ -17265,8 +17293,15 @@ function renderFurniturePlan(container, _secondePasse){
         // Blocs de tiroirs de cette case (décoratifs) : façade miniature à gauche
         const dBlocks = (m.drawers||[]).filter(d=>(d.col||0)===c && (d.row||0)===r);
         let drawersW = 0;
-        const drawersHTML = dBlocks.map(d=>{
-          const wpx = Math.max(4, Math.min(colW-8, Math.round((d.wCm||40)*SC)));
+        // Les blocs d'une même case se partagent la largeur. Si l'on en a
+        // déclaré plus large que la case, tout le monde est réduit dans la
+        // même proportion : mieux vaut deux blocs un peu étroits qu'un bloc
+        // entier et son voisin ramené à un fil.
+        const voulu = dBlocks.map(d=>Math.max(4, Math.round((d.wCm||40)*SC)));
+        const totalVoulu = voulu.reduce((a,b)=>a+b, 0) + Math.max(0, dBlocks.length-1);
+        const facteur = totalVoulu > caseW ? caseW/totalVoulu : 1;
+        const drawersHTML = dBlocks.map((d,i)=>{
+          const wpx = Math.max(3, Math.round(voulu[i]*facteur));
           drawersW += wpx + 1;
           const faces = Array.from({length:Math.max(1, Math.min(8, d.count||1))}, ()=>"<b></b>").join("");
           return `<span class="m3d-drawers" style="width:${wpx}px">${faces}</span>`;
@@ -17295,7 +17330,6 @@ function renderFurniturePlan(container, _secondePasse){
     // ── Menuiserie du volume : une tablette par case (la dernière fait le plancher) et une
     //    séparation par joint de colonnes. Positions calculées dans le repère de .m3d-front,
     //    dont le padding de 5 px correspond à l'épaisseur du cadre de carcasse.
-    const CADRE = 5;
     const utileH = Math.max(0, h - CADRE*2), utileW = Math.max(0, w - CADRE*2);
     let menuiserie = "";
     for(let r=1; r<=rows; r++){
