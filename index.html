@@ -2735,10 +2735,12 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div class="checkbox-row"><input type="checkbox" id="itemAutocollant"><label for="itemAutocollant" style="margin:0" data-en="Sticker">Autocollant</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemDecalcomanie"><label for="itemDecalcomanie" style="margin:0" data-en="Decal">Décalcomanie</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemCartePostale"><label for="itemCartePostale" style="margin:0" data-en="Postcard">Carte postale</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="itemPoster"><label for="itemPoster" style="margin:0" data-en="Poster">Poster</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="itemSupplementRedactionnel"><label for="itemSupplementRedactionnel" style="margin:0" data-en="Editorial supplement">Supplément rédactionnel</label></div>
             <div class="span-3" style="display:flex;align-items:center;gap:10px">
               <input type="checkbox" id="itemObjet" style="flex-shrink:0;width:auto">
               <label for="itemObjet" style="margin:0;white-space:nowrap;flex-shrink:0" data-en="Other">Autre</label>
-              <input type="text" id="itemObjetDesc" placeholder="ex: figurine, poster, carte postale…" data-en-ph="e.g. figurine, poster, postcard…" style="flex:1">
+              <input type="text" id="itemObjetDesc" placeholder="ex: figurine, badge, jeu de cartes…" data-en-ph="e.g. figurine, badge, card game…" style="flex:1">
             </div>
           </div>
         </div>
@@ -5463,7 +5465,7 @@ const SB = (() => {
     'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche'];
   const CONTENU_KEYS = ['exlibris','exlibrisColle','exlibrisSigne','exlibrisNumerote','exlibrisTirage',
     'tirageInclus','serigraphie','marquePage','timbre','carnetCroquis','autocollant','decalcomanie',
-    'cartePostale','objet','objetDesc','objetsAssocies',
+    'cartePostale','poster','supplementRedactionnel','objet','objetDesc','objetsAssocies',
     // Éphémères — synchronisés dans le JSONB « contenus » (aucune colonne SQL à créer)
     'typeDocument','technique','evenement','dateEvenement','lieuEvenement','hote',
     'publication','dateParution','rubrique','pagination','sourceUrl','albumSource','albumSourceId','exlibrisImageIdx',
@@ -7219,6 +7221,8 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemAutocollant").checked = !!it.autocollant;
     document.getElementById("itemDecalcomanie").checked = !!it.decalcomanie;
     document.getElementById("itemCartePostale").checked = !!it.cartePostale;
+    document.getElementById("itemPoster").checked = !!it.poster;
+    document.getElementById("itemSupplementRedactionnel").checked = !!it.supplementRedactionnel;
     document.getElementById("itemObjet").checked = !!it.objet;
     document.getElementById("itemObjetDesc").value = it.objetDesc||"";
     document.getElementById("itemDedication").value = it.dedicace||"";
@@ -7505,6 +7509,7 @@ async function saveItem(e){
       "itemLu","itemFirstEdition","itemSigned","itemDedicaceSignature","itemDedicaceDessin","itemDedicaceTampon",
       "itemExlibris","itemExlibrisColle","itemExlibrisSigne","itemExlibrisNumerote","itemTirageInclus","itemSerigraphie",
       "itemMarquePage","itemTimbre","itemCarnetCroquis","itemAutocollant","itemDecalcomanie","itemCartePostale",
+      "itemPoster","itemSupplementRedactionnel",
       "itemObjet","itemEmboitageFourreau","itemEmboitageCoffret","itemEmboitageChemise",
       "itemBroche","itemRelie","itemRelieTranchefile","itemDosAgrafe","itemDosSpiral","itemCouvertureSouple","itemCouvertureCartonnee",
       "itemRabats","itemALaSuisse",
@@ -7520,6 +7525,7 @@ async function saveItem(e){
       itemTirageInclus:"tirageInclus", itemSerigraphie:"serigraphie",
       itemMarquePage:"marquePage", itemTimbre:"timbre",
       itemCarnetCroquis:"carnetCroquis", itemAutocollant:"autocollant", itemDecalcomanie:"decalcomanie", itemCartePostale:"cartePostale",
+      itemPoster:"poster", itemSupplementRedactionnel:"supplementRedactionnel",
       itemObjet:"objet",
       itemEmboitageFourreau:"emboitageFourreau", itemEmboitageCoffret:"emboitageCoffret", itemEmboitageChemise:"emboitageChemise",
       itemBroche:"broche", itemRelie:"relie", itemRelieTranchefile:"relieTranchefile", itemDosAgrafe:"dosAgrafe", itemDosSpiral:"dosSpiral", itemCouvertureSouple:"couvertureSouple", itemCouvertureCartonnee:"couvertureCartonnee",
@@ -7650,6 +7656,8 @@ async function saveItem(e){
     autocollant: document.getElementById("itemAutocollant").checked,
     decalcomanie: document.getElementById("itemDecalcomanie").checked,
     cartePostale: document.getElementById("itemCartePostale").checked,
+    poster: document.getElementById("itemPoster").checked,
+    supplementRedactionnel: document.getElementById("itemSupplementRedactionnel").checked,
     objet: document.getElementById("itemObjet").checked,
     objetDesc: document.getElementById("itemObjetDesc").value.trim(),
     dedicace: document.getElementById("itemDedication").value.trim(),
@@ -13000,6 +13008,8 @@ const STRINGS = {
     'content.sticker': 'Autocollant',
     'content.decal': 'Décalcomanie',
     'content.postcard': 'Carte postale',
+    'content.poster': 'Poster',
+    'content.editorial': 'Supplément rédactionnel',
     'content.other': 'Autre',
     // Caract detail
     'caract.emboitage': 'Emboîtage',
@@ -13230,6 +13240,8 @@ const STRINGS = {
     'content.sticker': 'Sticker',
     'content.decal': 'Decal',
     'content.postcard': 'Postcard',
+    'content.poster': 'Poster',
+    'content.editorial': 'Editorial supplement',
     'content.other': 'Other',
     // Caract detail
     'caract.emboitage': 'Slipcase',
@@ -14229,6 +14241,8 @@ function renderItemDetail(id, pushHistory=true){
       if(it.autocollant) inclRows.push({k:t('content.sticker'),p:true});
       if(it.decalcomanie) inclRows.push({k:t('content.decal'),p:true});
       if(it.cartePostale) inclRows.push({k:t('content.postcard'),p:true});
+      if(it.poster) inclRows.push({k:t('content.poster'),p:true});
+      if(it.supplementRedactionnel) inclRows.push({k:t('content.editorial'),p:true});
       if(it.objet) inclRows.push(it.objetDesc?{k:t('content.other'),v:escapeHTML(it.objetDesc)}:{k:t('content.other'),p:true});
       const inclPanel = inclRows.length
         ? `<div class="panel"><h3>${t('detail.includes')}</h3><dl>${inclRows.map(_dtdd).join("")}</dl></div>`
