@@ -490,6 +490,15 @@
   .cat-tag-dropdown{position:absolute;z-index:1000;background:var(--bg-panel);border:1px solid var(--border-warm);border-radius:var(--radius);box-shadow:var(--shadow-lg);max-height:220px;overflow-y:auto;min-width:220px}
   .cat-tag-dropdown-item{padding:8px 14px;cursor:pointer;font-size:13px;transition:background .1s}
   .cat-tag-dropdown-item:hover,.cat-tag-dropdown-item.active{background:var(--accent-soft);color:var(--gold)}
+  /* Le menu maison des champs à liste : posé en `fixed`, il sort des fenêtres
+     modales et de leurs barres de défilement, là où un menu en `absolute`
+     serait rogné par le premier conteneur venu. */
+  .liste-deroulante{position:fixed;max-height:240px}
+  /* Le chevron du menu natif disparaît avec l'attribut `list` : on le redessine
+     pour que le champ continue d'annoncer qu'il propose des valeurs. */
+  input.a-liste{background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23a9a096' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;background-size:11px 7px;
+    padding-right:28px}
   .badge-signed{background:var(--gold-bg);color:var(--on-accent);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700}
   /* Groupe d'actions « Ajouter » : un seul libellé pour plusieurs contenants,
      les boutons formant un ensemble visuellement solidaire. */
@@ -2652,10 +2661,14 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div class="char-row">
               <div class="checkbox-row"><input type="checkbox" id="itemRelie"><label for="itemRelie" style="margin:0" data-en="Hardbound">Relié</label></div>
               <div class="checkbox-row"><input type="checkbox" id="itemRelieTranchefile"><label for="itemRelieTranchefile" style="margin:0" data-en="Hardbound with headband">Relié avec tranchefile</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemBradel"><label for="itemBradel" style="margin:0" title="Cartonnage dont le dos est séparé des plats par un mors creusé" data-en-title="Case binding with a grooved hinge between spine and boards" data-en="Bradel binding">Bradel</label></div>
               <div class="checkbox-row"><input type="checkbox" id="itemBroche"><label for="itemBroche" style="margin:0" data-en="Paperback">Broché</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemCousu"><label for="itemCousu" style="margin:0" title="Cahiers cousus au fil" data-en-title="Signatures sewn with thread" data-en="Sewn">Cousu</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemDosCarreColle"><label for="itemDosCarreColle" style="margin:0" title="Feuillets collés au dos, sans couture" data-en-title="Leaves glued at the spine, no sewing" data-en="Perfect bound">Dos carré collé</label></div>
               <div class="checkbox-row"><input type="checkbox" id="itemDosAgrafe"><label for="itemDosAgrafe" style="margin:0" data-en="Stapled">Agrafé</label></div>
               <div class="checkbox-row"><input type="checkbox" id="itemDosSpiral"><label for="itemDosSpiral" style="margin:0" data-en="Spiral">Spirale</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="itemALaSuisse"><label for="itemALaSuisse" style="margin:0" data-en="Swiss binding">À la Suisse</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemAnneaux"><label for="itemAnneaux" style="margin:0" title="Classeur ou reliure à anneaux" data-en-title="Binder or ring binding" data-en="Ring binder">À anneaux</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemALaSuisse"><label for="itemALaSuisse" style="margin:0" title="Couverture fixée au seul dernier plat, dos nu : le livre s'ouvre à plat" data-en-title="Cover attached to the back board only, exposed spine: lies flat when open" data-en="Swiss binding">À la Suisse</label></div>
             </div>
           </div>
           <!-- Couverture : type + finition -->
@@ -2675,6 +2688,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <div class="checkbox-row"><input type="checkbox" id="itemCuirImitation"><label for="itemCuirImitation" style="margin:0" data-en="Leather or imitation">Cuir ou imitation</label></div>
                 <div class="checkbox-row"><input type="checkbox" id="itemMarquageChaud"><label for="itemMarquageChaud" style="margin:0" data-en="Hot foil stamping (Gold/Silver)">Marquage à chaud (Or/Argent)</label></div>
                 <div class="checkbox-row"><input type="checkbox" id="itemEmbossageFroid"><label for="itemEmbossageFroid" style="margin:0" title="Relief obtenu par pression, sans encre ni feuille métallique" data-en-title="Relief pressed into the board, without ink or foil" data-en="Blind embossing">Embossage à froid</label></div>
+                <div class="checkbox-row"><input type="checkbox" id="itemRhodoid"><label for="itemRhodoid" style="margin:0" title="Film plastique transparent protégeant la couverture" data-en-title="Clear plastic film protecting the cover" data-en="Rhodoid (clear cover)">Rhodoïd</label></div>
               </div>
             </div>
           </div>
@@ -5478,8 +5492,8 @@ const SB = (() => {
 
   // ── Constantes de mapping (identiques à l'outil de migration) ────
   const CARACT_KEYS = ['broche','relie','relieTranchefile','dosAgrafe','dosSpiral','couvertureSouple','couvertureCartonnee',
-    'rabats','aLaSuisse','formatCarre','formatFrancaise','formatItalienne','formatManga','formatComics',
-    'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','embossageFroid','bandeau','rubanMarquePage',
+    'rabats','aLaSuisse','bradel','cousu','dosCarreColle','anneaux','formatCarre','formatFrancaise','formatItalienne','formatManga','formatComics',
+    'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','embossageFroid','rhodoid','bandeau','rubanMarquePage',
     'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
     'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite','emboitageEmbossageFroid',
     'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche'];
@@ -7265,6 +7279,10 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemCouvertureCartonnee").checked = !!it.couvertureCartonnee;
     document.getElementById("itemRabats").checked = !!it.rabats;
     document.getElementById("itemALaSuisse").checked = !!it.aLaSuisse;
+    document.getElementById("itemBradel").checked = !!it.bradel;
+    document.getElementById("itemCousu").checked = !!it.cousu;
+    document.getElementById("itemDosCarreColle").checked = !!it.dosCarreColle;
+    document.getElementById("itemAnneaux").checked = !!it.anneaux;
     document.getElementById("itemFormatCarre").checked = !!it.formatCarre;
     document.getElementById("itemFormatFrancaise").checked = !!it.formatFrancaise;
     document.getElementById("itemFormatItalienne").checked = !!it.formatItalienne;
@@ -7276,6 +7294,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemCuirImitation").checked = !!it.cuirImitation;
     document.getElementById("itemMarquageChaud").checked = !!it.marquageChaud;
     document.getElementById("itemEmbossageFroid").checked = !!it.embossageFroid;
+    document.getElementById("itemRhodoid").checked = !!it.rhodoid;
     document.getElementById("itemBandeau").checked = !!it.bandeau;
     document.getElementById("itemRubanMarquePage").checked = !!it.rubanMarquePage;
     document.getElementById("itemJaquette").checked = !!it.jaquette;
@@ -7532,9 +7551,9 @@ async function saveItem(e){
       "itemPoster","itemSupplementRedactionnel",
       "itemObjet","itemEmboitageFourreau","itemEmboitageCoffret","itemEmboitageChemise",
       "itemBroche","itemRelie","itemRelieTranchefile","itemDosAgrafe","itemDosSpiral","itemCouvertureSouple","itemCouvertureCartonnee",
-      "itemRabats","itemALaSuisse",
+      "itemRabats","itemALaSuisse","itemBradel","itemCousu","itemDosCarreColle","itemAnneaux",
       "itemFormatCarre","itemFormatFrancaise","itemFormatItalienne","itemFormatManga","itemFormatComics",
-      "itemDosToile","itemPleineToile","itemVernisSelectif","itemCuirImitation","itemMarquageChaud","itemFinitionCarton","itemFinitionBristol","itemFinitionDecoupeLaser","itemFinitionPlexiglas","itemEmboitagePleineToile",
+      "itemDosToile","itemPleineToile","itemVernisSelectif","itemCuirImitation","itemMarquageChaud","itemEmbossageFroid","itemRhodoid","itemEmboitageEmbossageFroid","itemFinitionCarton","itemFinitionBristol","itemFinitionDecoupeLaser","itemFinitionPlexiglas","itemEmboitagePleineToile",
       "itemBandeau","itemRubanMarquePage","itemJaquette"
     ];
     const cbMap = { // id → clé objet
@@ -7550,10 +7569,11 @@ async function saveItem(e){
       itemEmboitageFourreau:"emboitageFourreau", itemEmboitageCoffret:"emboitageCoffret", itemEmboitageChemise:"emboitageChemise",
       itemBroche:"broche", itemRelie:"relie", itemRelieTranchefile:"relieTranchefile", itemDosAgrafe:"dosAgrafe", itemDosSpiral:"dosSpiral", itemCouvertureSouple:"couvertureSouple", itemCouvertureCartonnee:"couvertureCartonnee",
       itemRabats:"rabats", itemALaSuisse:"aLaSuisse",
+      itemBradel:"bradel", itemCousu:"cousu", itemDosCarreColle:"dosCarreColle", itemAnneaux:"anneaux",
       itemFormatCarre:"formatCarre", itemFormatFrancaise:"formatFrancaise", itemFormatItalienne:"formatItalienne", itemFormatManga:"formatManga", itemFormatComics:"formatComics",
       itemDosToile:"dosToile", itemPleineToile:"pleineToile",
       itemVernisSelectif:"vernisSelectif", itemCuirImitation:"cuirImitation", itemMarquageChaud:"marquageChaud",
-      itemEmbossageFroid:"embossageFroid", itemEmboitageEmbossageFroid:"emboitageEmbossageFroid",
+      itemEmbossageFroid:"embossageFroid", itemRhodoid:"rhodoid", itemEmboitageEmbossageFroid:"emboitageEmbossageFroid",
       itemFinitionCarton:"finitionCarton", itemFinitionBristol:"finitionBristol", itemFinitionDecoupeLaser:"finitionDecoupeLaser", itemFinitionPlexiglas:"finitionPlexiglas",
       itemEmboitagePleineToile:"emboitagePleineToile",
       itemBandeau:"bandeau", itemRubanMarquePage:"rubanMarquePage", itemJaquette:"jaquette"
@@ -7699,6 +7719,10 @@ async function saveItem(e){
     couvertureCartonnee: document.getElementById("itemCouvertureCartonnee").checked,
     rabats: document.getElementById("itemRabats").checked,
     aLaSuisse: document.getElementById("itemALaSuisse").checked,
+    bradel: document.getElementById("itemBradel").checked,
+    cousu: document.getElementById("itemCousu").checked,
+    dosCarreColle: document.getElementById("itemDosCarreColle").checked,
+    anneaux: document.getElementById("itemAnneaux").checked,
     formatCarre: document.getElementById("itemFormatCarre").checked,
     formatFrancaise: document.getElementById("itemFormatFrancaise").checked,
     formatItalienne: document.getElementById("itemFormatItalienne").checked,
@@ -7710,6 +7734,7 @@ async function saveItem(e){
     cuirImitation: document.getElementById("itemCuirImitation").checked,
     marquageChaud: document.getElementById("itemMarquageChaud").checked,
     embossageFroid: document.getElementById("itemEmbossageFroid").checked,
+    rhodoid: document.getElementById("itemRhodoid").checked,
     emboitageEmbossageFroid: document.getElementById("itemEmboitageEmbossageFroid").checked,
     bandeau: document.getElementById("itemBandeau").checked,
     rubanMarquePage: document.getElementById("itemRubanMarquePage").checked,
@@ -14270,7 +14295,7 @@ function renderItemDetail(id, pushHistory=true){
       const carRows = [];
       if(it.emboitageFourreau||it.emboitageCoffret||it.emboitageChemise||it.finitionCarton||it.finitionBristol||it.finitionDecoupeLaser||it.emboitagePleineToile||it.finitionPlexiglas||it.emboitageEmbossageFroid) carRows.push({k:t('caract.emboitage'),v:[it.emboitageFourreau?(_lang==='en'?'Slipcase':'Étui'):"",it.emboitageCoffret?(_lang==='en'?'Box set':'Coffret'):"",it.emboitageChemise?(_lang==='en'?'Folder':'Chemise'):"",it.finitionCarton?'Carton':"",it.emboitagePleineToile?(_lang==='en'?'Full cloth':'Pleine toile'):"",it.finitionBristol?'Bristol':"",it.finitionDecoupeLaser?(_lang==='en'?'Laser cut':'Découpe laser'):"",it.finitionPlexiglas?'Plexiglas':"",it.emboitageEmbossageFroid?(_lang==='en'?'Blind embossing':'Embossage à froid'):""].filter(Boolean).join(" + ")});
       if(it.emboitageQualite) carRows.push({k:(_lang==='en'?'Slipcase quality':"Qualité de l'emboîtage"),v:escapeHTML(it.emboitageQualite)});
-      if(it.relie||it.relieTranchefile||it.broche||it.dosAgrafe||it.dosSpiral||it.aLaSuisse) carRows.push({k:t('caract.reliure'),v:[it.relie?(_lang==='en'?'Hardcover':'Relié'):"",it.relieTranchefile?(_lang==='en'?'Hardcover with headband':'Relié avec tranchefile'):"",it.broche?(_lang==='en'?'Paperback':'Broché'):"",it.dosAgrafe?(_lang==='en'?'Staple-bound':'Agrafé'):"",it.dosSpiral?(_lang==='en'?'Spiral-bound':'Spirale'):"",it.aLaSuisse?(_lang==='en'?'Swiss-bound':'À la Suisse'):""].filter(Boolean).join(" + ")});
+      if(it.relie||it.relieTranchefile||it.bradel||it.broche||it.cousu||it.dosCarreColle||it.dosAgrafe||it.dosSpiral||it.anneaux||it.aLaSuisse) carRows.push({k:t('caract.reliure'),v:[it.relie?(_lang==='en'?'Hardcover':'Relié'):"",it.relieTranchefile?(_lang==='en'?'Hardcover with headband':'Relié avec tranchefile'):"",it.bradel?(_lang==='en'?'Bradel binding':'Bradel'):"",it.broche?(_lang==='en'?'Paperback':'Broché'):"",it.cousu?(_lang==='en'?'Sewn':'Cousu'):"",it.dosCarreColle?(_lang==='en'?'Perfect bound':'Dos carré collé'):"",it.dosAgrafe?(_lang==='en'?'Staple-bound':'Agrafé'):"",it.dosSpiral?(_lang==='en'?'Spiral-bound':'Spirale'):"",it.anneaux?(_lang==='en'?'Ring binder':'À anneaux'):"",it.aLaSuisse?(_lang==='en'?'Swiss-bound':'À la Suisse'):""].filter(Boolean).join(" + ")});
       if(it.couvertureCartonnee||it.couvertureSouple||it.rabats) carRows.push({k:t('caract.couverture'),v:[it.couvertureCartonnee?(_lang==='en'?'Hardcover':'Cartonnée'):"",it.couvertureSouple?(_lang==='en'?'Softcover':'Souple'):"",it.rabats?(_lang==='en'?'Softcover with flaps':'Souple avec rabats'):""].filter(Boolean).join(" + ")});
       if(it.formatCarre||it.formatFrancaise||it.formatItalienne||it.formatManga||it.formatComics) carRows.push({k:t('caract.format'),v:[it.formatCarre?(_lang==='en'?'Square':'Carré'):"",it.formatFrancaise?(_lang==='en'?'Portrait':'À la française'):"",it.formatItalienne?(_lang==='en'?'Landscape':'À l\'italienne'):"",it.formatManga?'Manga':"",it.formatComics?'Comics':""].filter(Boolean).join(" + ")});
       const finitions=[];
@@ -14280,6 +14305,7 @@ function renderItemDetail(id, pushHistory=true){
       if(it.cuirImitation) finitions.push(_lang==='en'?'Leatherette':'Cuir ou imitation');
       if(it.marquageChaud) finitions.push(_lang==='en'?'Hot stamping':'Marquage à chaud');
       if(it.embossageFroid) finitions.push(_lang==='en'?'Blind embossing':'Embossage à froid');
+      if(it.rhodoid) finitions.push(_lang==='en'?'Rhodoid (clear cover)':'Rhodoïd');
       if(finitions.length) carRows.push({k:t('caract.finition'),v:finitions.join(" + ")});
       if(it.bandeau) carRows.push({k:t('caract.bandeau'),p:true});
       if(it.rubanMarquePage) carRows.push({k:t('caract.ruban'),p:true});
@@ -19110,6 +19136,162 @@ async function confirmNewPile(){
   renderLibrary();
   toast(T(`${kind==="classeur"?"Classeur":"Pile"} « ${trimmed} » créé${kind==="classeur"?"":"e"} — ${_shelfLabel(shelf)}.`,`${kind==="classeur"?"Binder":"Pile"} « ${trimmed} » created — ${_shelfLabel(shelf)}.`), "success");
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+//  LISTES DÉROULANTES COMPLÈTES
+//  ───────────────────────────
+//  Un champ muni d'un `list=` s'appuie sur le menu du navigateur, qui ne
+//  propose que les valeurs CONTENANT déjà ce qui est saisi. Dès qu'une valeur
+//  est complète, le menu ne montre plus qu'elle : pour revoir les autres, il
+//  fallait tout effacer, puis retaper si l'on changeait d'avis. On remplace
+//  donc ce menu par le nôtre, sur le même principe partout : ouvrir montre
+//  TOUT, taper filtre.
+//
+//  Le branchement se fait par délégation, une seule fois pour la page entière :
+//  les formulaires se reconstruisent à chaque ouverture, et un câblage posé
+//  après coup sur chaque champ aurait été à refaire sans cesse.
+// ═══════════════════════════════════════════════════════════════════════
+let _ldEtat = null;          // { champ, panneau, options, actif }
+
+// Les valeurs de la liste rattachée. On accepte `value` comme le texte, les
+// deux formes se rencontrant dans la page.
+function _ldValeurs(champ){
+  const id = champ.dataset.liste || champ.getAttribute('list');
+  const dl = id && document.getElementById(id);
+  if(!dl) return [];
+  return [...dl.querySelectorAll('option')]
+    .map(o => (o.value || o.textContent || '').trim())
+    .filter(Boolean);
+}
+
+// Le menu natif reste tant que l'attribut `list` est là : on le met de côté
+// (sans le perdre) la première fois qu'on touche au champ.
+function _ldPrendreLaMain(champ){
+  if(champ.dataset.liste) return;
+  champ.dataset.liste = champ.getAttribute('list') || '';
+  champ.removeAttribute('list');
+  champ.setAttribute('autocomplete', 'off');
+  champ.classList.add('a-liste');
+}
+
+function _ldFermer(){
+  if(!_ldEtat) return;
+  _ldEtat.panneau.remove();
+  _ldEtat = null;
+  document.removeEventListener('scroll', _ldFermer, true);
+  window.removeEventListener('resize', _ldFermer);
+}
+
+function _ldPlacer(){
+  const st = _ldEtat; if(!st) return;
+  const r = st.champ.getBoundingClientRect();
+  const p = st.panneau;
+  p.style.left  = r.left + 'px';
+  p.style.width = Math.max(r.width, 180) + 'px';
+  // Sous le champ si la place suffit, au-dessus sinon : dans une fenêtre
+  // modale, un champ en bas de formulaire n'a rien sous lui.
+  const h = Math.min(240, p.scrollHeight || 240);
+  const dessous = window.innerHeight - r.bottom;
+  if(dessous >= h + 8 || dessous >= r.top){ p.style.top = (r.bottom + 4) + 'px'; }
+  else { p.style.top = Math.max(4, r.top - h - 4) + 'px'; }
+}
+
+// `filtrer` : vrai quand l'utilisateur tape (on restreint à ce qu'il écrit),
+// faux quand il ouvre la liste (on montre tout, c'est tout l'objet du change-
+// ment).
+function _ldOuvrir(champ, filtrer){
+  if(champ.dataset.ldChoixFait) return;   // on vient de choisir : pas de réouverture
+  _ldPrendreLaMain(champ);
+  const toutes = _ldValeurs(champ);
+  if(!toutes.length){ _ldFermer(); return; }
+  const saisi = (champ.value || '').trim().toLowerCase();
+  const options = (filtrer && saisi)
+    ? toutes.filter(v => v.toLowerCase().includes(saisi))
+    : toutes;
+  if(!options.length){ _ldFermer(); return; }
+
+  if(!_ldEtat || _ldEtat.champ !== champ){
+    _ldFermer();
+    const panneau = document.createElement('div');
+    panneau.className = 'cat-tag-dropdown liste-deroulante';
+    panneau.setAttribute('role', 'listbox');
+    document.body.appendChild(panneau);
+    _ldEtat = { champ, panneau, options:[], actif:-1 };
+    document.addEventListener('scroll', _ldFermer, true);
+    window.addEventListener('resize', _ldFermer);
+  }
+  const st = _ldEtat;
+  st.options = options;
+  // La valeur en place est marquée : on sait d'où l'on part avant de changer.
+  st.actif = options.findIndex(v => v.toLowerCase() === saisi);
+  st.panneau.innerHTML = options.map((v, i) =>
+    `<div class="cat-tag-dropdown-item${i === st.actif ? ' active' : ''}" role="option"
+       data-i="${i}">${escapeHTML(v)}</div>`).join('');
+  st.panneau.onmousedown = e => {      // avant le `blur`, sinon le champ se ferme d'abord
+    const el = e.target.closest('.cat-tag-dropdown-item');
+    if(!el) return;
+    e.preventDefault();
+    _ldChoisir(parseInt(el.dataset.i, 10));
+  };
+  _ldPlacer();
+  if(st.actif >= 0) st.panneau.children[st.actif]?.scrollIntoView({block:'nearest'});
+}
+
+function _ldChoisir(i){
+  const st = _ldEtat; if(!st || !st.options[i]) return;
+  const champ = st.champ;
+  champ.value = st.options[i];
+  _ldFermer();
+  // On rend la main au champ, mais rendre la main y ramène le curseur — et le
+  // curseur rouvrirait la liste qu'on vient tout juste de refermer. D'où ce
+  // court verrou : le temps de l'aller-retour, l'ouverture est ignorée.
+  champ.dataset.ldChoixFait = '1';
+  setTimeout(()=>{ delete champ.dataset.ldChoixFait; }, 250);
+  // Les champs portent leurs propres réactions (`oninput`, `onchange`) : on
+  // les déclenche comme l'aurait fait une saisie au clavier.
+  champ.dispatchEvent(new Event('input',  { bubbles:true }));
+  champ.dispatchEvent(new Event('change', { bubbles:true }));
+  champ.focus();
+}
+
+function _ldSurvol(delta){
+  const st = _ldEtat; if(!st) return;
+  st.actif = (st.actif + delta + st.options.length) % st.options.length;
+  [...st.panneau.children].forEach((el, i) => el.classList.toggle('active', i === st.actif));
+  st.panneau.children[st.actif]?.scrollIntoView({ block:'nearest' });
+}
+
+// ── Branchement unique, par délégation ──
+document.addEventListener('focusin', e => {
+  const champ = e.target.closest?.('input[list], input[data-liste]');
+  if(!champ) return;
+  _ldOuvrir(champ, false);            // à l'ouverture : toute la liste
+});
+document.addEventListener('mousedown', e => {
+  const champ = e.target.closest?.('input[list], input[data-liste]');
+  if(champ){
+    // Un clic dans un champ déjà actif rouvre la liste entière : c'est le
+    // geste naturel quand on veut revoir les autres choix.
+    if(document.activeElement === champ) setTimeout(()=>_ldOuvrir(champ, false), 0);
+    return;
+  }
+  if(_ldEtat && !e.target.closest('.liste-deroulante')) _ldFermer();
+}, true);
+document.addEventListener('input', e => {
+  const champ = e.target.closest?.('input[list], input[data-liste]');
+  if(champ && !champ.dataset.ldChoixFait) _ldOuvrir(champ, true);   // pendant la frappe : on filtre
+});
+document.addEventListener('focusout', e => {
+  const champ = e.target.closest?.('input[list], input[data-liste]');
+  if(champ && _ldEtat && _ldEtat.champ === champ) setTimeout(_ldFermer, 120);
+});
+document.addEventListener('keydown', e => {
+  if(!_ldEtat || e.target !== _ldEtat.champ) return;
+  if(e.key === 'ArrowDown'){ e.preventDefault(); _ldSurvol(1); }
+  else if(e.key === 'ArrowUp'){ e.preventDefault(); _ldSurvol(-1); }
+  else if(e.key === 'Enter' && _ldEtat.actif >= 0){ e.preventDefault(); _ldChoisir(_ldEtat.actif); }
+  else if(e.key === 'Escape'){ e.stopPropagation(); _ldFermer(); }   // Échap ferme la LISTE, pas la fenêtre
+}, true);
 
 // ═══ La page d'un tiroir ═══
 // Un tiroir fermé ne se localise pas : la façade dit dans quel tiroir chercher,
