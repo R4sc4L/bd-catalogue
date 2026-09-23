@@ -19728,14 +19728,32 @@ function _ldValeurs(champ){
 }
 
 // Le menu natif reste tant que l'attribut `list` est là : on le met de côté
-// (sans le perdre) la première fois qu'on touche au champ.
+// (sans le perdre). Attendre le premier contact avec le champ ne suffisait
+// pas : Safari ouvre sa liste — filtrée sur la valeur en place — dès le clic,
+// avant même que le champ reçoive le focus. On le fait donc dès que le champ
+// paraît dans la page, et chaque fois qu'un `list` lui est rendu (le pays et
+// la nationalité changent de liste selon le type de fiche) : la nouvelle
+// liste remplace alors l'ancienne au lieu de rouvrir le menu du navigateur.
 function _ldPrendreLaMain(champ){
-  if(champ.dataset.liste) return;
-  champ.dataset.liste = champ.getAttribute('list') || '';
-  champ.removeAttribute('list');
+  const l = champ.getAttribute('list');
+  if(l !== null){ champ.dataset.liste = l; champ.removeAttribute('list'); }
+  if(champ.dataset.liste === undefined) return;
   champ.setAttribute('autocomplete', 'off');
   champ.classList.add('a-liste');
 }
+function _ldToutPrendre(racine){
+  (racine || document).querySelectorAll?.('input[list]').forEach(_ldPrendreLaMain);
+}
+_ldToutPrendre();
+new MutationObserver(mutations => {
+  for(const m of mutations){
+    if(m.type === 'attributes'){ if(m.target.matches?.('input[list]')) _ldPrendreLaMain(m.target); }
+    else m.addedNodes.forEach(n => {
+      if(n.nodeType !== 1) return;
+      if(n.matches('input[list]')) _ldPrendreLaMain(n); else _ldToutPrendre(n);
+    });
+  }
+}).observe(document.documentElement, { subtree:true, childList:true, attributes:true, attributeFilter:['list'] });
 
 function _ldFermer(){
   if(!_ldEtat) return;
@@ -19833,6 +19851,7 @@ document.addEventListener('focusin', e => {
 document.addEventListener('mousedown', e => {
   const champ = e.target.closest?.('input[list], input[data-liste]');
   if(champ){
+    _ldPrendreLaMain(champ);            // filet : avant que le navigateur n'ouvre la sienne
     // Un clic dans un champ déjà actif rouvre la liste entière : c'est le
     // geste naturel quand on veut revoir les autres choix.
     if(document.activeElement === champ) setTimeout(()=>_ldOuvrir(champ, false), 0);
