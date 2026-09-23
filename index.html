@@ -657,6 +657,40 @@
   .char-group{display:flex;flex-direction:column;gap:var(--space-title);margin-bottom:var(--space-group)}
   .char-group:last-child{margin-bottom:0}
   .char-group > label,.char-sub > label{margin-bottom:0}
+
+  /* ── Lexique des reliures (bouton « ? » + fenêtre illustrée) ── */
+  .aide-titre{display:flex;align-items:center;gap:8px}
+  .aide-titre > label{margin:0}
+  .aide-btn{width:20px;height:20px;min-width:20px;padding:0;border-radius:50%;background:transparent;color:var(--accent);border:1px solid var(--border-warm);font-size:12px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+  .aide-btn:hover,.aide-btn:focus-visible{background:var(--accent-soft);border-color:var(--accent)}
+  .lx-intro{color:var(--ink-soft);font-size:14px;margin:0 0 18px}
+  .lx-anatomie{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:center;padding:14px 16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-tint);margin-bottom:22px}
+  .lx-anatomie h3{font-size:14px;margin:0 0 8px;color:var(--ink)}
+  .lx-anatomie dl{margin:0;font-size:13.5px;display:grid;grid-template-columns:auto 1fr;gap:3px 12px;line-height:1.45}
+  .lx-anatomie dt{font-weight:700;color:var(--ink)}
+  .lx-anatomie dd{margin:0;color:var(--ink-soft)}
+  .lx-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .lx-carte{border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-alt);padding:10px 14px 14px;display:flex;flex-direction:column;gap:6px}
+  .lx-carte svg,.lx-anatomie svg{width:100%;height:auto;display:block}
+  .lx-carte h3{font-size:15px;margin:2px 0 0;color:var(--ink)}
+  .lx-carte p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink)}
+  .lx-carte p.lx-repere{color:var(--ink-soft);font-size:12.5px}
+  .lx-carte p.lx-repere b{color:var(--accent);font-weight:600}
+  svg .lx-page{fill:none;stroke:var(--ink);stroke-width:.8;opacity:.5}
+  svg .lx-plat{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2}
+  svg .lx-couv{fill:none;stroke:var(--accent);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+  svg .lx-souple{fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linejoin:round}
+  svg .lx-fil{fill:none;stroke:var(--gold);stroke-width:1.3;stroke-dasharray:2.5 1.5}
+  svg .lx-pt-fil{fill:var(--gold)}
+  svg .lx-colle{fill:var(--gold);opacity:.6}
+  svg .lx-metal{fill:none;stroke:var(--gold);stroke-width:2.2;stroke-linecap:round}
+  svg .lx-meca{fill:var(--gold)}
+  svg .lx-tf1{fill:none;stroke:var(--accent-dark);stroke-width:4}
+  svg .lx-tf2{fill:none;stroke:var(--gold-bg);stroke-width:4;stroke-dasharray:2.5 2.5}
+  svg .lx-rep{stroke:var(--ink-soft);stroke-width:.6;fill:none}
+  svg .lx-pt{fill:var(--ink-soft)}
+  svg .lx-txt{fill:var(--ink-soft);font-size:8.5px;font-family:"Nunito",sans-serif}
+  @media (max-width:700px){.lx-grille,.lx-anatomie{grid-template-columns:1fr}}
   .char-sub{display:flex;flex-direction:column;gap:var(--space-title)}
   .char-row{display:flex;flex-wrap:wrap;column-gap:var(--space-col);row-gap:var(--space-row)}
   .form-section{margin-bottom:24px}
@@ -2657,7 +2691,10 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <h3>Caractéristiques</h3>
           <!-- Reliure (en tête) -->
           <div id="formReliure" class="char-group">
-            <label data-en="Binding">Reliure</label>
+            <div class="aide-titre">
+              <label data-en="Binding">Reliure</label>
+              <button type="button" class="aide-btn" onclick="ouvrirLexiqueReliures()" title="Lexique des reliures illustré" data-en-title="Illustrated binding glossary" aria-label="Lexique des reliures">?</button>
+            </div>
             <div class="char-row">
               <div class="checkbox-row"><input type="checkbox" id="itemRelie"><label for="itemRelie" style="margin:0" data-en="Hardbound">Relié</label></div>
               <div class="checkbox-row"><input type="checkbox" id="itemRelieTranchefile"><label for="itemRelieTranchefile" style="margin:0" data-en="Hardbound with headband">Relié avec tranchefile</label></div>
@@ -4929,6 +4966,150 @@ function _eiOriginalSansBalance(corrigee, balance){
 
 // ── La fiche ──────────────────────────────────────────────────────────
 let _cpAvatar = '';        // l'avatar en cours d'édition, pas encore enregistré
+// ── Lexique des reliures ────────────────────────────────────────────────
+// Une fenêtre illustrée, ouverte par le « ? » de la rubrique Reliure.
+// Tous les croquis sont vus depuis la tête du livre (par le haut) : le dos
+// est à gauche, la gouttière à droite. Les couleurs viennent du thème.
+const _LX = { SP:62, FE:228, T:46, B:106 };
+function _lxCahiers(n=4, feuilles=3, x0=_LX.SP, T=_LX.T, B=_LX.B){
+  const FE=_LX.FE, h=(B-T)/n; let d='';
+  for(let s=0;s<n;s++){
+    const top=T+s*h+1, bot=T+(s+1)*h-1;
+    for(let f=0;f<feuilles;f++){
+      const yt=top+f*2.2, yb=bot-f*2.2, fx=x0+f*1.6, k=Math.min(7,(yb-yt)/1.4);
+      d+=`M${FE} ${yt}L${fx+k} ${yt}C${fx} ${yt} ${fx} ${yb} ${fx+k} ${yb}L${FE} ${yb}`;
+    }
+  }
+  return `<path class="lx-page" d="${d}"/>`;
+}
+function _lxFeuillets(n=14, x0=_LX.SP+2, x1=_LX.FE, T=_LX.T, B=_LX.B){
+  let d=''; for(let i=0;i<n;i++){ const y=T+1+i*(B-T-2)/(n-1); d+=`M${x0} ${y}H${x1}`; }
+  return `<path class="lx-page" d="${d}"/>`;
+}
+function _lxPlats(x0, haut=true, bas=true, x1=_LX.FE+7){
+  return (haut?`<rect class="lx-plat" x="${x0}" y="37" width="${x1-x0}" height="6" rx="1"/>`:'')
+       + (bas ?`<rect class="lx-plat" x="${x0}" y="109" width="${x1-x0}" height="6" rx="1"/>`:'');
+}
+function _lxFil(x0=_LX.SP, n=4){
+  const {T,B}=_LX, h=(B-T)/n; let d='', pts='';
+  for(let s=0;s<n;s++){
+    const y=T+(s+.5)*h;
+    d += s===0 ? `M${x0+4.5} ${y}` : '';
+    if(s<n-1){ const y2=y+h; d+=`L${x0-1} ${y}C${x0-7} ${y} ${x0-7} ${y2} ${x0-1} ${y2}L${x0+4.5} ${y2}`; }
+    pts += `<circle class="lx-pt-fil" cx="${x0+4.5}" cy="${y}" r="1.7"/>`;
+  }
+  return `<path class="lx-fil" d="${d}"/>${pts}`;
+}
+function _lxRep(x1,y1,x2,y2,txt,ancre='start'){
+  const dx = ancre==='end' ? -3 : (ancre==='middle' ? 0 : 3);
+  return `<path class="lx-rep" d="M${x1} ${y1}L${x2} ${y2}"/><circle class="lx-pt" cx="${x1}" cy="${y1}" r="1.5"/>`
+       + `<text class="lx-txt" x="${x2+dx}" y="${y2+(y2<y1?-2:8)}" text-anchor="${ancre}">${txt}</text>`;
+}
+function _lxEntrees(){
+  const {SP,FE}=_LX, HT=_LX.T, BS=_LX.B;
+  const couvSouple = (xDos=SP-8, a=SP+3) =>
+    `<path class="lx-souple" d="M${FE} 43.5L${a} 43.5C${xDos} 43.5 ${xDos} 108.5 ${a} 108.5L${FE} 108.5"/>`;
+  return [
+    { nom:T(`Relié`,`Hardbound`),
+      def:T(`Couverture rigide : deux plats en carton recouverts de papier, de toile ou de cuir, réunis par un dos. Le bloc de pages tient à la couverture par les gardes. En BD franco-belge, on dit aussi « cartonné ».`,
+            `Rigid cover: two boards covered in paper, cloth or leather, joined by a spine. The text block is held to the case by the endpapers. In Franco-Belgian comics this is the "cartonné" album.`),
+      repere:T(`l'album classique de 48 pages.`,`the classic 48-page album.`),
+      dessin: _lxPlats(SP+4) + `<path class="lx-couv" d="M${SP+4} 40C${SP-22} 40 ${SP-22} 112 ${SP+4} 112"/>` + _lxCahiers()
+        + _lxRep(150,37,160,20,T(`plat cartonné`,`board`)) + _lxRep(SP-15,96,24,136,T(`dos`,`spine`)) + _lxRep(200,99,205,136,T(`cahiers`,`signatures`)) },
+    { nom:T(`Relié avec tranchefile`,`Hardbound with headband`),
+      def:T(`Reliure rigide dont le dos du bloc porte, en tête et en pied, une tranchefile : un petit bourrelet de tissu, souvent bicolore. Autrefois cousue pour renforcer le dos, elle est aujourd'hui surtout décorative.`,
+            `Hardbound book whose spine carries a headband at head and tail: a small, often two-coloured bead of fabric. Once sewn to strengthen the spine, it is now mostly decorative.`),
+      repere:T(`intégrales, éditions de luxe.`,`omnibus and deluxe editions.`),
+      dessin: _lxPlats(SP+4) + `<path class="lx-couv" d="M${SP+4} 40C${SP-30} 40 ${SP-30} 112 ${SP+4} 112"/>` + _lxCahiers()
+        + `<path class="lx-tf1" d="M${SP} ${HT}C${SP-9} ${HT} ${SP-9} ${BS} ${SP} ${BS}"/><path class="lx-tf2" d="M${SP} ${HT}C${SP-9} ${HT} ${SP-9} ${BS} ${SP} ${BS}"/>`
+        + _lxRep(SP-6,62,70,20,T(`tranchefile`,`headband`)) + _lxRep(SP-21,96,24,136,T(`dos`,`spine`)) },
+    { nom:T(`Bradel`,`Bradel binding`),
+      def:T(`Cartonnage dont le dos, indépendant des plats, en est séparé par un mors creusé : une gorge le long de chaque charnière. Le livre s'ouvre facilement, sans tirer sur le bloc.`,
+            `Case binding whose spine is separate from the boards, with a grooved hinge along each joint. The book opens easily without straining the block.`),
+      repere:T(`reliure d'amateur et de bibliophilie, certains tirages de tête.`,`bibliophile bindings, some limited editions.`),
+      dessin: _lxPlats(SP+16) + `<path class="lx-couv" d="M${SP+8} 40C${SP-20} 40 ${SP-20} 112 ${SP+8} 112"/>`
+        + `<path class="lx-couv" d="M${SP+16} 40L${SP+12} 45L${SP+8} 40M${SP+16} 112L${SP+12} 107L${SP+8} 112"/>` + _lxCahiers()
+        + _lxRep(SP+12,45,100,20,T(`mors creusé`,`grooved hinge`)) + _lxRep(SP-14,96,24,136,T(`dos indépendant`,`separate spine`)) },
+    { nom:T(`Broché`,`Paperback`),
+      def:T(`Couverture souple, en papier fort ou en carte, collée au dos du bloc et coupée à fleur des pages (sans débord). Le bloc peut être cousu ou simplement collé.`,
+            `Soft cover of heavy paper or card, glued to the spine of the block and trimmed flush with the pages. The block may be sewn or simply glued.`),
+      repere:T(`éditions courantes, manga, romans graphiques souples.`,`trade editions, manga, softcover graphic novels.`),
+      dessin: couvSouple() + _lxCahiers()
+        + _lxRep(150,43.5,160,20,T(`couverture souple`,`soft cover`)) + _lxRep(FE-1,108.5,180,136,T(`à fleur des pages`,`flush with pages`)) },
+    { nom:T(`Cousu`,`Sewn`),
+      def:T(`Mode d'assemblage : de grandes feuilles pliées forment des cahiers (8, 16 ou 32 pages), cousus entre eux au fil par le pli. Plus solide et plus agréable à l'ouverture que le collé. Se combine avec relié, broché ou à la Suisse.`,
+            `Assembly method: large folded sheets form signatures (8, 16 or 32 pages), sewn together with thread through the fold. Stronger and nicer to open than glued. Combines with hardbound, paperback or Swiss binding.`),
+      repere:T(`on distingue les cahiers en regardant la tête du livre.`,`you can see the signatures when looking at the head of the book.`),
+      dessin: _lxCahiers() + _lxFil()
+        + _lxRep(SP-6,76,24,136,T(`fil de couture`,`sewing thread`)) + _lxRep(140,HT+1,110,20,T(`cahier (feuilles pliées)`,`signature (folded sheets)`)) },
+    { nom:T(`Dos carré collé`,`Perfect bound`),
+      def:T(`Les feuilles sont empilées, coupées au dos, puis tenues par une couche de colle sur ce dos plat, sans couture. Économique ; les pages peuvent se détacher si l'on force l'ouverture.`,
+            `Leaves are stacked, trimmed at the spine and held by a layer of glue on that flat spine, with no sewing. Economical; pages can come loose if the book is forced open.`),
+      repere:T(`magazines épais, recueils souples, beaucoup de brochés.`,`thick magazines, softcover collections, many paperbacks.`),
+      dessin: couvSouple(SP-13, SP-3) + `<rect class="lx-colle" x="${SP-3}" y="${HT}" width="5" height="${BS-HT}" rx="1"/>` + _lxFeuillets(16, SP+3)
+        + _lxRep(SP-1,90,24,136,T(`colle`,`glue`)) + _lxRep(140,HT+1,95,20,T(`feuillets coupés, sans couture`,`cut leaves, no sewing`)) },
+    { nom:T(`Agrafé`,`Stapled`),
+      def:T(`Un seul cahier : les feuilles, emboîtées l'une dans l'autre, sont agrafées dans le pli (piqûre à cheval). La couverture est la feuille extérieure. Réservé aux faibles paginations.`,
+            `A single signature: nested sheets are stapled through the fold (saddle stitching). The cover is the outermost sheet. Only for low page counts.`),
+      repere:T(`fascicules, comics, petits formats, périodiques.`,`floppies, comic books, digests, periodicals.`),
+      dessin: `<path class="lx-souple" d="M${FE} ${HT-1}L${SP+7} ${HT-1}C${SP-1} ${HT-1} ${SP-1} ${BS+1} ${SP+7} ${BS+1}L${FE} ${BS+1}"/>` + _lxCahiers(1, 9, SP+2)
+        + `<path class="lx-metal" d="M${SP-4} 76H${SP+15}M${SP+15} 71V81"/>`
+        + _lxRep(SP-2,76,24,136,T(`agrafe dans le pli`,`staple through the fold`)) + _lxRep(140,HT-1,95,20,T(`couverture = feuille extérieure`,`cover = outer sheet`)) },
+    { nom:T(`Spirale`,`Spiral`),
+      def:T(`Feuilles perforées le long du bord, traversées par un fil en spirale, métallique ou plastique. Le livre s'ouvre complètement à plat et peut se replier sur lui-même. Variante à double boucle : Wire-O.`,
+            `Leaves punched along the edge and threaded on a metal or plastic coil. The book opens fully flat and can fold back on itself. Double-loop variant: Wire-O.`),
+      repere:T(`carnets de croquis, sketchbooks, artbooks de travail.`,`sketchbooks and working artbooks.`),
+      dessin: `<path class="lx-souple" d="M${SP+2} ${HT-1}H${FE}M${SP+2} ${BS+1}H${FE}"/>` + _lxFeuillets(13, SP+2, FE, HT+2, BS-2)
+        + `<ellipse class="lx-metal" cx="${SP+10}" cy="76" rx="13" ry="36"/>`
+        + _lxRep(SP-3,76,24,136,T(`spirale dans les perforations`,`coil through punched holes`)) + _lxRep(170,HT-1,175,20,T(`feuillets séparés`,`single leaves`)) },
+    { nom:T(`À anneaux`,`Ring binder`),
+      def:T(`Feuillets perforés, maintenus par un mécanisme à anneaux fixé dans une couverture rigide, comme un classeur. On peut ajouter, retirer ou réordonner les pages.`,
+            `Punched leaves held by a ring mechanism fixed inside a rigid cover, like a binder. Pages can be added, removed or reordered.`),
+      repere:T(`classeurs de fascicules, portfolios à compléter.`,`binders for issues, portfolios to be completed.`),
+      dessin: _lxPlats(SP-34) + `<rect class="lx-plat" x="${SP-34}" y="37" width="6" height="78" rx="1"/>`
+        + `<rect class="lx-meca" x="${SP-28}" y="62" width="5" height="28" rx="1"/>` + _lxFeuillets(11, SP+4, FE-6, 58, 94)
+        + `<circle class="lx-metal" cx="${SP-2}" cy="76" r="21"/>`
+        + _lxRep(SP-2,55,90,20,T(`mécanisme à anneaux`,`ring mechanism`)) + _lxRep(SP-31,100,24,136,T(`dos du classeur`,`binder spine`)) + _lxRep(190,94,190,136,T(`feuillets mobiles`,`loose leaves`)) },
+    { nom:T(`À la Suisse`,`Swiss binding`),
+      def:T(`La couverture n'est collée qu'au dernier feuillet, sur le plat arrière. Le dos du bloc reste nu : cahiers et couture sont visibles. Le livre s'ouvre parfaitement à plat, sans casser le dos.`,
+            `The cover is glued only to the last leaf, on the back board. The spine of the block stays bare, with signatures and sewing visible. The book lies perfectly flat without cracking the spine.`),
+      repere:T(`éditions graphiques et artbooks contemporains.`,`contemporary graphic editions and artbooks.`),
+      dessin: _lxPlats(SP+2) + `<path class="lx-couv" d="M${SP+2} 40C${SP-36} 40 ${SP-36} 112 ${SP+2} 112"/>`
+        + `<rect class="lx-colle" x="${SP+12}" y="106" width="${FE-SP-12}" height="3"/>` + _lxCahiers() + _lxFil()
+        + _lxRep(SP-5,62,80,20,T(`dos nu, couture visible`,`bare spine, visible sewing`)) + _lxRep(150,107.5,100,136,T(`collé au plat arrière seulement`,`glued to back board only`)) },
+  ];
+}
+function ouvrirLexiqueReliures(){
+  const {SP,FE}=_LX;
+  let bd = document.getElementById('lexiqueReliuresModal');
+  if(!bd){ bd = document.createElement('div'); bd.className='modal-backdrop'; bd.id='lexiqueReliuresModal'; document.body.appendChild(bd); }
+  const svg = (inner, l=260) => `<svg viewBox="0 0 ${l} 150" aria-hidden="true" focusable="false">${inner}</svg>`;
+  const anatomie = _lxPlats(SP+4) + `<path class="lx-couv" d="M${SP+4} 40C${SP-22} 40 ${SP-22} 112 ${SP+4} 112"/>` + _lxCahiers()
+    + _lxRep(150,37,160,20,T(`plat`,`board`)) + _lxRep(SP-15,96,24,136,T(`dos`,`spine`))
+    + _lxRep(SP+5,40,70,20,T(`mors`,`joint`),'end') + _lxRep(FE+5,115,240,136,T(`chasse`,`square`))
+    + _lxRep(FE,76,246,76,T(`gouttière`,`fore-edge`)) + _lxRep(180,99,180,136,T(`cahier`,`signature`));
+  const termes = [
+    [T(`Plat`,`Board`),      T(`chaque face de la couverture, avant et arrière.`,`each side of the cover, front and back.`)],
+    [T(`Dos`,`Spine`),       T(`le côté où les pages sont assemblées.`,`the side where the pages are bound.`)],
+    [T(`Mors`,`Joint`),      T(`la charnière entre le dos et un plat.`,`the hinge between spine and board.`)],
+    [T(`Chasse`,`Square`),   T(`le débord des plats au-delà des pages.`,`how far the boards overhang the pages.`)],
+    [T(`Cahier`,`Signature`),T(`une grande feuille pliée qui forme un groupe de pages.`,`a large folded sheet forming a group of pages.`)],
+    [T(`Gouttière`,`Fore-edge`),T(`le bord des pages opposé au dos, côté ouverture.`,`the page edge opposite the spine.`)],
+    [T(`Gardes`,`Endpapers`),T(`les feuillets qui relient le bloc à la couverture.`,`the leaves joining the block to the cover.`)],
+  ].map(([t,d])=>`<dt>${t}</dt><dd>${d}</dd>`).join('');
+  const cartes = _lxEntrees().map(e=>`<article class="lx-carte">${svg(e.dessin)}<h3>${e.nom}</h3><p>${e.def}</p><p class="lx-repere"><b>${T(`Repère :`,`Typically:`)}</b> ${e.repere}</p></article>`).join('');
+  bd.innerHTML = `<div class="modal">
+    <div class="modal-header"><h2>${T(`Lexique des reliures`,`Binding glossary`)}</h2>
+      <button type="button" class="ghost" onclick="closeModal('lexiqueReliuresModal')" aria-label="${T(`Fermer`,`Close`)}">✕</button></div>
+    <div class="modal-body">
+      <p class="lx-intro">${T(`Les croquis montrent le livre vu depuis sa tête (par le haut) : le dos est à gauche, la gouttière à droite. Plusieurs cases peuvent se cumuler, par exemple « Relié + Cousu ».`,
+                             `Sketches show the book seen from its head (from above): spine on the left, fore-edge on the right. Several boxes can be combined, e.g. "Hardbound + Sewn".`)}</p>
+      <section class="lx-anatomie">${svg(anatomie, 300)}<div><h3>${T(`Les parties d'un livre`,`Parts of a book`)}</h3><dl>${termes}</dl></div></section>
+      <div class="lx-grille">${cartes}</div>
+    </div></div>`;
+  openModal('lexiqueReliuresModal');
+  bd.scrollTop = 0;
+}
 function ouvrirFicheCompte(){
   _cpAvatar = _compte.avatar || '';
   const v = (id, val) => { const e = document.getElementById(id); if(e) e.value = val; };
