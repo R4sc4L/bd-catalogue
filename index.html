@@ -716,6 +716,25 @@
   svg .lx-fil-long{stroke-dasharray:6 3.5}
   svg .lx-tf1{stroke-width:2.6}
   svg .lx-tf2{stroke-width:2.6;stroke-dasharray:1.6 1.6}
+  /* Lexique des finitions : matières et effets de surface */
+  svg .lx-toile-t{fill:#3d5a7a} svg .lx-toile-h{fill:#30495f} svg .lx-toile-s{fill:#273c50}
+  svg .lx-cuir-t{fill:#7d3f21} svg .lx-cuir-h{fill:#663219} svg .lx-cuir-s{fill:#522811}
+  svg .lx-tex-toile{fill:url(#lxToile);stroke:none} svg .lx-tex-grain{fill:url(#lxGrain);stroke:none}
+  svg .lx-illu{fill:#3f7a8c;stroke:none}
+  svg .lx-vernis{fill:url(#lxReflet);stroke:#fff;stroke-opacity:.75;stroke-width:.45}
+  svg .lx-titre-mat{fill:#2c2016;fill-opacity:.8;font-family:Georgia,serif;font-weight:700;letter-spacing:.5px}
+  svg .lx-nerf{fill:none;stroke:#3b1c0c;stroke-width:2.8;stroke-linecap:round}
+  svg .lx-nerf-clair{fill:none;stroke:#b27650;stroke-width:.7;transform:translate(-.5px,-.6px)}
+  svg .lx-filet-or{fill:none;stroke:url(#lxOr);stroke-width:1}
+  svg .lx-or-texte{fill:url(#lxOr);font-family:Georgia,serif;font-weight:700;letter-spacing:.6px}
+  svg .lx-argent-texte{fill:url(#lxArgent);font-family:Georgia,serif;font-style:italic}
+  svg .lx-filet-dos{fill:none;stroke:#d9b04a;stroke-width:.9}
+  svg .lx-emb-ombre,svg .lx-emb-lumiere,svg .lx-emb-face{font-family:Georgia,serif;font-weight:700;letter-spacing:.6px}
+  svg .lx-emb-ombre{fill:#000;fill-opacity:.38} svg .lx-emb-lumiere{fill:#fff;fill-opacity:.45} svg .lx-emb-face{fill:var(--lx-couv)}
+  svg .lx-emb-cadre{fill:none!important;stroke-width:1.6}
+  svg .lx-emb-ombre.lx-emb-cadre{stroke:rgba(0,0,0,.38)} svg .lx-emb-lumiere.lx-emb-cadre{stroke:rgba(255,255,255,.45)} svg .lx-emb-face.lx-emb-cadre{stroke:var(--lx-couv)}
+  svg .lx-film{fill:#fff;fill-opacity:.12;stroke:color-mix(in srgb,var(--ink) 35%,#fff);stroke-opacity:.8;stroke-width:.5}
+  svg .lx-film-reflet{fill:url(#lxReflet);opacity:.85}
   .char-sub{display:flex;flex-direction:column;gap:var(--space-title)}
   .char-row{display:flex;flex-wrap:wrap;column-gap:var(--space-col);row-gap:var(--space-row)}
   .form-section{margin-bottom:24px}
@@ -1419,22 +1438,22 @@
      et une ombre portée sur la tablette, qui le pose. */
   .m3d-drawers{display:flex;flex-direction:column;gap:1px;height:92%;flex-shrink:0;padding:1px;
     position:relative;transform-style:preserve-3d;border-radius:1px;
-    background:color-mix(in srgb,var(--wood,#5a3f28) 30%,black);
+    background:color-mix(in srgb,var(--tiroir,var(--wood,#5a3f28)) 30%,black);
     box-shadow:0 3px 5px -1px rgba(0,0,0,.65),0 0 2px rgba(0,0,0,.5)}
   .m3d-drawers::after{content:"";position:absolute;left:0;right:0;top:0;pointer-events:none;
     height:calc(var(--d,60px) * 0.62);transform-origin:center top;transform:rotateX(-90deg);
-    background-color:color-mix(in srgb,var(--wood,#5a3f28) 64%,black);
+    background-color:color-mix(in srgb,var(--tiroir,var(--wood,#5a3f28)) 64%,black);
     background-image:linear-gradient(0deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,.14) 62%,rgba(255,255,255,.24) 100%)}
   .meuble3d.vu-g .m3d-drawers::before,
   .meuble3d.vu-d .m3d-drawers::before{content:"";position:absolute;top:0;bottom:0;pointer-events:none;
     width:calc(var(--d,60px) * 0.62);
-    background-color:color-mix(in srgb,var(--wood,#5a3f28) 64%,black)}
+    background-color:color-mix(in srgb,var(--tiroir,var(--wood,#5a3f28)) 64%,black)}
   .meuble3d.vu-g .m3d-drawers::before{left:0;transform-origin:left center;transform:rotateY(90deg);
     background-image:linear-gradient(270deg,rgba(255,255,255,.10),rgba(0,0,0,.34) 55%,rgba(0,0,0,.52))}
   .meuble3d.vu-d .m3d-drawers::before{right:0;transform-origin:right center;transform:rotateY(-90deg);
     background-image:linear-gradient(90deg,rgba(255,255,255,.10),rgba(0,0,0,.34) 55%,rgba(0,0,0,.52))}
   .m3d-drawers b{flex:1;min-height:3px;border-radius:1px;position:relative;
-    background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 88%,white) 0%,color-mix(in srgb,var(--wood,#5a3f28) 74%,white) 40%,color-mix(in srgb,var(--wood,#5a3f28) 62%,black) 100%);
+    background:linear-gradient(180deg,color-mix(in srgb,var(--tiroir,var(--wood,#5a3f28)) 88%,white) 0%,color-mix(in srgb,var(--tiroir,var(--wood,#5a3f28)) 74%,white) 40%,color-mix(in srgb,var(--tiroir,var(--wood,#5a3f28)) 62%,black) 100%);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 2px rgba(0,0,0,.45)}
   .m3d-drawers b::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38%;height:2px;border-radius:1px;background:rgba(255,235,190,.7);box-shadow:0 1px 1px rgba(0,0,0,.5)}
   /* Surbrillance au survol : appliquée UNIQUEMENT à des éléments sans descendant en 3D.
@@ -1496,10 +1515,27 @@
   .meuble-grid .book-spine:hover{transform:translateY(-9px) scale(1.04);box-shadow:3px 10px 18px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,255,255,.2)}
   .meuble-grid .pile-block{box-shadow:2px 3px 6px rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.12),inset -2px 0 3px rgba(0,0,0,.25)}
   /* ---- Tiroirs : bloc posé dans une case (vue de face) ---- */
-  .drawer-block{display:flex;flex-direction:column;gap:3px;flex-shrink:0;align-self:flex-end;padding:4px;border-radius:3px;background:color-mix(in srgb,var(--wood,#5a3f28) 42%,black);box-shadow:2px 3px 6px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08),inset 0 -2px 3px rgba(0,0,0,.4)}
-  .drawer-face{flex:1;min-height:20px;border-radius:2px;position:relative;background:linear-gradient(180deg,color-mix(in srgb,var(--wood,#5a3f28) 80%,white) 0%,var(--wood,#5a3f28) 35%,color-mix(in srgb,var(--wood,#5a3f28) 65%,black) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 3px rgba(0,0,0,.35),inset 2px 0 3px -2px rgba(0,0,0,.4),inset -2px 0 3px -2px rgba(0,0,0,.4)}
+  .drawer-block{display:flex;flex-direction:column;gap:3px;flex-shrink:0;align-self:flex-end;padding:4px;border-radius:3px;background:color-mix(in srgb,var(--tiroir,var(--wood,#5a3f28)) 42%,black);box-shadow:2px 3px 6px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08),inset 0 -2px 3px rgba(0,0,0,.4)}
+  .drawer-face{flex:1;min-height:20px;border-radius:2px;position:relative;background:linear-gradient(180deg,color-mix(in srgb,var(--tiroir,var(--wood,#5a3f28)) 80%,white) 0%,var(--tiroir,var(--wood,#5a3f28)) 35%,color-mix(in srgb,var(--tiroir,var(--wood,#5a3f28)) 65%,black) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 3px rgba(0,0,0,.35),inset 2px 0 3px -2px rgba(0,0,0,.4),inset -2px 0 3px -2px rgba(0,0,0,.4)}
   .drawer-face::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:28%;min-width:14px;max-width:52px;height:6px;border-radius:3px;background:linear-gradient(180deg,#e2cb93,#8a6f42);box-shadow:0 1px 2px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.4)}
   .drawer-face{cursor:pointer;transition:filter .15s}
+  /* Poignées au choix, par bloc de tiroirs. L'encoche est une découpe en
+     trapèze dans le haut de la façade (tiroirs de rangement en carton) : on
+     voit le noir du caisson, et la tranche des pages quand le tiroir est plein. */
+  .drawer-face.poignee-encoche::after{top:-1px;transform:translateX(-50%);width:30%;min-width:18px;max-width:70px;
+    height:32%;min-height:6px;max-height:22px;border-radius:0;box-shadow:none;
+    clip-path:polygon(0 0,100% 0,80% 100%,20% 100%);background:linear-gradient(180deg,#0b0907,#1d1814 70%,#2c2520)}
+  .drawer-face.poignee-encoche.plein::after{background:linear-gradient(180deg,#0b0907 0%,#1a1612 42%,#ddd6c8 43%,#b9b09f 55%,#e8e1d4 62%,#a39a8a 74%,#dcd5c8 82%,#bab1a1 100%)}
+  .drawer-face.poignee-bouton::after{width:9px;min-width:9px;max-width:9px;height:9px;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#f3e2b5,#9a7b45 70%,#6c5330)}
+  .drawer-face.poignee-aucune::after{display:none}
+  .m3d-drawers.poignee-encoche b::after{top:0;transform:translateX(-50%);width:34%;height:42%;border-radius:0;
+    clip-path:polygon(0 0,100% 0,78% 100%,22% 100%);background:rgba(10,8,6,.88);box-shadow:none}
+  .m3d-drawers.poignee-bouton b::after{width:3px;height:3px;border-radius:50%}
+  .m3d-drawers.poignee-aucune b::after{display:none}
+  .drawer-block.tiroir-clair .drawer-label{color:rgba(45,32,24,.82);text-shadow:0 1px 0 rgba(255,255,255,.35)}
+  .dcfg-apercu{pointer-events:none;align-self:flex-end}
+  .dcfg-apercu .drawer-face{cursor:default}
   .drawer-face:hover{filter:brightness(1.25)}
   .drawer-face.drag-over{filter:brightness(1.6);outline:2px dashed #f0d9a8;outline-offset:-2px}
   /* ---- Un tiroir qui s'ouvre ----
@@ -2742,7 +2778,10 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               <div class="checkbox-row"><input type="checkbox" id="itemRabats"><label for="itemRabats" style="margin:0" data-en="Softcover with flaps">Souple avec rabats</label></div>
             </div>
             <div id="formFinitionCouverture" class="char-sub">
-              <label style="font-size:12px;color:var(--ink-soft)" data-en="Finish">Finition</label>
+              <div class="aide-titre">
+                <label style="font-size:12px;color:var(--ink-soft)" data-en="Finish">Finition</label>
+                <button type="button" class="aide-btn" onclick="ouvrirLexiqueFinitions()" title="Lexique des finitions illustré" data-en-title="Illustrated finish glossary" aria-label="Lexique des finitions">?</button>
+              </div>
               <div class="char-row">
                 <div class="checkbox-row"><input type="checkbox" id="itemDosToile"><label for="itemDosToile" style="margin:0" data-en="Cloth spine">Dos toilé</label></div>
                 <div class="checkbox-row"><input type="checkbox" id="itemPleineToile"><label for="itemPleineToile" style="margin:0" data-en="Full cloth">Pleine toile</label></div>
@@ -3427,6 +3466,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       <div id="drawerModalList"></div>
     </div>
     <div class="modal-footer">
+      <button type="button" id="drawerModalAjouter" onclick="_tiroirAjouterOeuvre()" data-en="＋ Add a work">＋ Ajouter une œuvre</button>
       <button class="secondary" style="margin-left:auto" onclick="closeModal('drawerModal')" data-en="Close">Fermer</button>
     </div>
   </div>
@@ -5235,6 +5275,148 @@ function ouvrirLexiqueReliures(){
       <div class="lx-grille">${cartes}</div>
     </div></div>`;
   openModal('lexiqueReliuresModal');
+  bd.scrollTop = 0;
+}
+// ── Lexique des finitions ───────────────────────────────────────────────
+// Même maquette que les reliures (livre cartonné posé à plat, de trois
+// quarts) : seul l'habillage change. Les textes du plat sont projetés par une
+// matrice, si bien qu'un titre doré ou embossé se lit en perspective.
+const _LXF_DEFS = `<defs>
+  <pattern id="lxToile" width="2" height="2" patternUnits="userSpaceOnUse" patternTransform="rotate(28)"><path d="M0 1H2M1 0V2" stroke="#fff" stroke-opacity=".17" stroke-width=".5"/></pattern>
+  <pattern id="lxGrain" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="1" cy="1.3" r=".5" fill="#000" fill-opacity=".3"/><circle cx="3.6" cy="3.4" r=".6" fill="#000" fill-opacity=".24"/><circle cx="2.4" cy="4.4" r=".35" fill="#fff" fill-opacity=".14"/><circle cx="4.3" cy="1" r=".3" fill="#fff" fill-opacity=".12"/></pattern>
+  <linearGradient id="lxOr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7e39a"/><stop offset=".45" stop-color="#c9962e"/><stop offset=".6" stop-color="#fff2b8"/><stop offset="1" stop-color="#9c6d17"/></linearGradient>
+  <linearGradient id="lxArgent" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#9aa3ad"/><stop offset=".62" stop-color="#fff"/><stop offset="1" stop-color="#6d7680"/></linearGradient>
+  <linearGradient id="lxReflet" x1="0" y1="0" x2="1" y2="1"><stop offset=".28" stop-color="#fff" stop-opacity="0"/><stop offset=".4" stop-color="#fff" stop-opacity=".6"/><stop offset=".48" stop-color="#fff" stop-opacity=".06"/><stop offset=".56" stop-color="#fff" stop-opacity=".38"/><stop offset=".66" stop-color="#fff" stop-opacity="0"/></linearGradient>
+</defs>`;
+// Matrice qui pose le repère (x, −y) du plat supérieur, à la hauteur H, à l'écran.
+function _matPlat(H){
+  const {ca,sa,se,s} = _L3, [e,f] = _P(0,0,H), r = v => +v.toFixed(4);
+  return `matrix(${r(s*ca)} ${r(-s*sa*se)} ${r(s*sa)} ${r(s*ca*se)} ${e} ${f})`;
+}
+function _texteCouv(txt, x, y, H, taille, cls, decal=''){
+  return `<text class="${cls}" transform="${decal}${_matPlat(H)}" x="${x}" y="${-y}" font-size="${taille}" text-anchor="middle">${txt}</text>`;
+}
+function _cadreCouv(x0,y0,x1,y1,H,cls){ return _poly([[x0,y0,H],[x1,y0,H],[x1,y1,H],[x0,y1,H]], cls); }
+function _disqueCouv(cx,cy,r,H,cls){ const p=[]; for(let i=0;i<36;i++){ const t=i/36*2*Math.PI; p.push([cx+r*Math.cos(t), cy+r*Math.sin(t), H]); } return _poly(p, cls); }
+const _LXF = { b:2.6, TB:22, c:3 };
+// Le livre habillé : `plat` et `dos` choisissent la matière (cov = papier
+// imprimé, toile, cuir) ; `bande` pose une bande de la matière du dos sur le
+// plat, le long de la charnière (demi-reliure) ; `tex` ajoute le grain.
+function _l3Habille({plat='cov', dos='cov', bande=0, tex=null}={}){
+  _l3Cam(141, 146, 1.25);
+  const {W,L} = _L3B, {b,TB,c} = _LXF, H = 2*b + TB;
+  let s = _pave(0,W,0,L,0,b,plat)
+        + (bande ? _poly([[0,0,0],[bande,0,0],[bande,0,b],[0,0,b]], `lx-f lx-${dos}-h`) : '')
+        + _pave(1.2,W-c,c,L-c,b,b+TB,'pg',false) + _cahiersTete(1.2,W-c,c,b+.3,b+TB-.3)
+        + _pave(0,W,0,L,b+TB,H,plat);
+  if(bande) s += _pave(0,bande,0,L,b+TB,H+.08,dos);
+  s += _dosRond(0,0,H,7,0,L,`lx-f lx-${dos}-s`) + _poly([..._courbe(0,b,b+TB,5,.2),[0,.2,b+TB]], 'lx-f lx-creux');
+  if(tex){
+    const surPlat = plat === dos || !bande ? [0,W] : [0,bande];
+    s += _cadreCouv(surPlat[0],0,surPlat[1],L,H+.1,`lx-tex-${tex}`) + _dosRond(0,0,H,7,0,L,`lx-tex-${tex}`);
+  }
+  return s;
+}
+function _l3DosToile(){ return _l3Habille({plat:'cov', dos:'toile', bande:14, tex:'toile'}); }
+function _l3PleineToile(){ return _l3Habille({plat:'toile', dos:'toile', tex:'toile'}); }
+function _l3Vernis(){
+  const H = 2*_LXF.b + _LXF.TB;
+  let s = _l3Habille();
+  s += _disqueCouv(50,44,18,H+.1,'lx-illu') + _disqueCouv(50,44,18,H+.12,'lx-vernis');
+  s += _texteCouv(T('TITRE','TITLE'), 50, 84, H+.1, 13, 'lx-titre-mat');
+  return s;
+}
+function _l3Cuir(){
+  const {L} = _L3B, {b,TB} = _LXF, H = 2*b + TB;
+  let s = _l3Habille({plat:'cuir', dos:'cuir', tex:'grain'});
+  for(const y of [24, 48, 72, 96]){            // les nerfs : bourrelets en travers du dos
+    const d = `M${_courbe(0,.4,H-.4,8.3,y).map(_pt).join('L')}`;
+    s += `<path class="lx-nerf" d="${d}"/><path class="lx-nerf-clair" d="${d}"/>`;
+  }
+  return s;
+}
+function _l3Dorure(){
+  const {W,L} = _L3B, {b,TB} = _LXF, H = 2*b + TB;
+  let s = _l3Habille({plat:'toile', dos:'toile', tex:'toile'});
+  s += `<g class="lx-or">${_cadreCouv(9,8,W-6,L-8,H+.15,'lx-filet-or')}</g>`
+     + _texteCouv(T('TITRE','TITLE'), 50, 66, H+.15, 15, 'lx-or-texte')
+     + _texteCouv(T('Auteur','Author'), 50, 90, H+.15, 10, 'lx-argent-texte');
+  for(const y of [7, 10, L-10, L-7, 56, 64]){  // filets dorés en travers du dos
+    s += `<path class="lx-filet-dos" d="M${_courbe(0,.8,H-.8,7.05,y).map(_pt).join('L')}"/>`;
+  }
+  return s;
+}
+function _l3Embossage(){
+  const {W,L} = _L3B, {b,TB} = _LXF, H = 2*b + TB + .12;
+  let s = _l3Habille();
+  const relief = (fn) => fn('translate(.55 .55) ', 'lx-emb-ombre') + fn('translate(-.45 -.45) ', 'lx-emb-lumiere') + fn('', 'lx-emb-face');
+  s += relief((dec, cls) => _texteCouv(T('TITRE','TITLE'), 50, 80, H, 14, cls, dec));
+  s += relief((dec, cls) => `<g transform="${dec}">${_cadreCouv(12,62,W-8,100,H,cls + ' lx-emb-cadre')}</g>`);
+  return s;
+}
+function _l3Rhodoid(){
+  const {W,L} = _L3B, {b,TB} = _LXF, H = 2*b + TB;
+  let s = _l3Habille();
+  s += _disqueCouv(50,44,18,H+.1,'lx-illu') + _texteCouv(T('TITRE','TITLE'), 50, 84, H+.1, 13, 'lx-titre-mat');
+  // le film : un peu plus grand que la couverture, qui l'enveloppe au dos
+  s += _dosRond(0,-.5,H+.6,8.6,-.8,L+.8,'lx-film')
+     + _cadreCouv(-.2,-.8,W+1.2,L+.8,H+.6,'lx-film') + _cadreCouv(-.2,-.8,W+1.2,L+.8,H+.62,'lx-film-reflet');
+  return s;
+}
+function _lxfEntrees(){
+  const H = 2*_LXF.b + _LXF.TB;
+  return [
+    { nom:T(`Dos toilé`,`Cloth spine`),
+      def:T(`Le dos est recouvert de toile, qui déborde en bande sur chaque plat ; les plats restent en papier imprimé. La toile renforce la charnière, l'endroit qui s'use le plus.`,
+            `The spine is covered in cloth, which runs onto each board as a strip; the boards stay in printed paper. The cloth strengthens the hinge, where wear is greatest.`),
+      repere:T(`albums cartonnés anciens (Tintin chez Casterman), fac-similés.`,`older hardcover albums, facsimile editions.`),
+      dessin: _l3DosToile() + _l3Rep([7,90,H],30,26,T(`bande de toile`,`cloth strip`)) + _l3Rep([60,60,H],150,16,T(`plats en papier`,`paper boards`)) + _l3Rep([-6,70,13.6],24,152,T(`dos en toile`,`cloth spine`)) },
+    { nom:T(`Pleine toile`,`Full cloth`),
+      def:T(`Toute la couverture, plats et dos, est tendue de toile. Le titre y est alors marqué à chaud ou à froid, et le livre vit souvent sous une jaquette ou dans un étui.`,
+            `The whole cover, boards and spine, is wrapped in cloth. Titles are then hot- or blind-stamped, and the book often comes with a dust jacket or slipcase.`),
+      repere:T(`intégrales, tirages de tête, éditions anniversaire.`,`omnibus editions, limited editions, anniversary editions.`),
+      dessin: _l3PleineToile() + _l3Rep([60,60,H],150,16,T(`toile sur les plats…`,`cloth on the boards…`)) + _l3Rep([-6,70,13.6],24,152,T(`…et sur le dos`,`…and on the spine`)) },
+    { nom:T(`Vernis sélectif`,`Spot varnish`),
+      def:T(`Un vernis brillant posé seulement sur certaines zones (titre, personnage, logo) d'une couverture mate. Le contraste apparaît en inclinant le livre sous la lumière, et se sent au toucher.`,
+            `A glossy varnish applied only to some areas (title, character, logo) of a matt cover. The contrast shows when tilting the book in the light, and can be felt.`),
+      repere:T(`couvertures d'albums récents et de romans graphiques.`,`recent album and graphic-novel covers.`),
+      dessin: _l3Vernis() + _l3Rep([44,40,H],30,24,T(`zone vernie, brillante`,`varnished, glossy area`)) + _l3Rep([80,22,H],200,16,T(`papier mat`,`matt paper`)) },
+    { nom:T(`Cuir ou imitation`,`Leather or imitation`),
+      def:T(`Couverture en peau (chèvre, veau, maroquin) ou dans une matière qui l'imite (simili-cuir, skivertex). Le dos porte souvent des nerfs, ces bourrelets en travers, et des dorures.`,
+            `Cover in real leather (goat, calf, morocco) or a leather-like material (leatherette). The spine often carries raised bands and gilding.`),
+      repere:T(`éditions de luxe, collections reliées façon bibliothèque.`,`deluxe editions, library-style bound collections.`),
+      dessin: _l3Cuir() + _l3Rep([60,60,H],150,16,T(`grain du cuir`,`leather grain`)) + _l3Rep([-8.3,48,13.6],24,152,T(`nerfs`,`raised bands`)) },
+    { nom:T(`Marquage à chaud (or, argent)`,`Hot foil stamping (gold, silver)`),
+      def:T(`Une fine feuille métallique est pressée à chaud sur la couverture : titre, filets, logo. Le métal accroche la lumière et s'imprime en léger creux.`,
+            `A thin metallic foil is pressed onto the cover with heat: title, rules, logo. The metal catches the light and sits slightly debossed.`),
+      repere:T(`titres des éditions de prestige, dos des intégrales.`,`prestige-edition titles, omnibus spines.`),
+      dessin: _l3Dorure() + _l3Rep([36,64,H],24,22,T(`titre doré`,`gold title`)) + _l3Rep([58,92,H],150,12,T(`nom argenté`,`silver name`)) + _l3Rep([-7,60,13.6],24,152,T(`filets dorés au dos`,`gilt rules on the spine`)) },
+    { nom:T(`Embossage à froid`,`Blind embossing`),
+      def:T(`Un relief obtenu par pression, sans encre ni feuille métallique : le motif ressort en bosse (ou s'enfonce, c'est le débossage) dans la couleur même de la couverture. On le voit à la lumière rasante.`,
+            `A relief pressed into the cover with no ink or foil: the design is raised (or sunk, for debossing) in the cover's own colour. It shows in raking light.`),
+      repere:T(`titres en relief, logos d'éditeur, tirages limités.`,`raised titles, publisher logos, limited editions.`),
+      dessin: _l3Embossage() + _l3Rep([40,80,H],24,22,T(`relief sans encre`,`relief, no ink`)) + _l3Rep([80,64,H],200,16,T(`cadre en relief`,`raised frame`)) },
+    { nom:T(`Rhodoïd`,`Rhodoid (clear cover)`),
+      def:T(`Une feuille de plastique transparent enveloppe la couverture et se rabat à l'intérieur des plats. Elle protège de l'usure et des taches tout en laissant voir le décor.`,
+            `A clear plastic sheet wraps the cover and folds inside the boards. It protects against wear and stains while leaving the design visible.`),
+      repere:T(`la Pléiade, tirages de tête, albums de collection.`,`the Pléiade series, limited editions, collectors' albums.`),
+      dessin: _l3Rhodoid() + _l3Rep([70,40,H+.6],200,16,T(`reflet du film`,`film reflection`)) + _l3Rep([-8.6,70,13.6],24,152,T(`film transparent`,`clear film`)) },
+  ];
+}
+function ouvrirLexiqueFinitions(){
+  let bd = document.getElementById('lexiqueFinitionsModal');
+  if(!bd){ bd = document.createElement('div'); bd.className='modal-backdrop'; bd.id='lexiqueFinitionsModal'; document.body.appendChild(bd); }
+  const svg = inner => `<svg viewBox="0 0 260 172" aria-hidden="true" focusable="false">${_LXF_DEFS}${inner}</svg>`;
+  const cartes = _lxfEntrees().map(e=>`<article class="lx-carte">${svg(e.dessin)}<h3>${e.nom}</h3><p>${e.def}</p><p class="lx-repere"><b>${T(`Repère :`,`Typically:`)}</b> ${e.repere}</p></article>`).join('');
+  bd.innerHTML = `<div class="modal">
+    <div class="modal-header"><h2>${T(`Lexique des finitions`,`Finish glossary`)}</h2>
+      <button type="button" class="ghost" onclick="closeModal('lexiqueFinitionsModal')" aria-label="${T(`Fermer`,`Close`)}">✕</button></div>
+    <div class="modal-body">
+      <p class="lx-intro">${T(`La finition, c'est l'habillage de la couverture : sa matière et ce qu'on y imprime ou y presse. Même vue que pour les reliures : le livre posé à plat, de trois quarts. Les finitions se cumulent souvent, par exemple une pleine toile marquée à chaud.`,
+                             `The finish is how the cover is dressed: its material and what is printed or pressed into it. Same view as for bindings: the book lying flat, at three-quarters. Finishes are often combined, e.g. full cloth with hot foil stamping.`)}</p>
+      <div class="lx-grille">${cartes}</div>
+    </div></div>`;
+  openModal('lexiqueFinitionsModal');
   bd.scrollTop = 0;
 }
 function ouvrirFicheCompte(){
@@ -7208,6 +7390,8 @@ function closeModal(id){
   if(!document.querySelector(".modal-backdrop.active")) document.body.style.overflow="";
   if(_modalPrevFocus && document.contains(_modalPrevFocus)){ try{ _modalPrevFocus.focus(); }catch(e){} }
   _modalPrevFocus = null;
+  if(id==='catPickerModal' && _tiroirAjout){ const _t=_tiroirAjout; _tiroirAjout=null; setTimeout(()=>openDrawerModal(_t), 0); }
+  if(id==='itemModal' && _tiroirRetour){ const _t=_tiroirRetour; _tiroirRetour=null; setTimeout(()=>openDrawerModal(_t), 0); }
   if(id==='itemModal' && _fbReturn){ const _r=_fbReturn; _fbReturn=null; const _focus=_r.itemId==='__NEW__'?_lastSavedItemId:_r.itemId; setTimeout(()=>openClasseurReader(_r.pileId, _focus), 0); }
 }
 // Clic sur le fond ne ferme plus le modal (évite les fermetures accidentelles).
@@ -7307,8 +7491,14 @@ function openCategoryPicker(){
 }
 
 function pickCategory(cat){
+  const tiroir = _tiroirAjout; _tiroirAjout = null;   // sinon la fermeture ramènerait au tiroir
   closeModal("catPickerModal");
   openItemForm(null, {categorie: cat});
+  if(tiroir){
+    const loc = document.getElementById('itemLocation');
+    if(loc) loc.value = tiroir;
+    _tiroirRetour = tiroir;
+  }
 }
 
 let _bulkEditIds = null; // null = pas en mode édition groupée
@@ -7412,6 +7602,7 @@ function openItemForm(id=null, opts={}){
   _syncScanDirectBtn();             // bouton de scan accolé à « Remplir automatiquement »
   _syncPhotoBtn();                  // prise de vue : HTTPS seulement
   _fbReturn = null;
+  _tiroirRetour = null;
   _lastSavedItemId = null;
   _bulkEditIds = null;
   _bulkClearLocation = false;
@@ -17672,7 +17863,7 @@ function renderFurniturePlan(container, _secondePasse){
           const wpx = Math.max(3, Math.round(voulu[i]*facteur));
           drawersW += wpx + 1;
           const faces = Array.from({length:Math.max(1, Math.min(8, d.count||1))}, ()=>"<b></b>").join("");
-          return `<span class="m3d-drawers" style="width:${wpx}px">${faces}</span>`;
+          return `<span class="m3d-drawers poignee-${_tiroirPoignee(d)}" style="width:${wpx}px${_tiroirStyle(d)}">${faces}</span>`;
         }).join("");
         const avail = colW - 7 - drawersW; // largeur utile (retire padding + bordures + tiroirs)
         // largeur des tranches calculée pour que TOUS les albums tiennent dans le cadre.
@@ -18392,11 +18583,11 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
           const nm = (d.names||[])[i] || "";
           const cnt = nm ? cache.items.filter(it=>(it.localisation||"").trim()===nm).length : 0;
           const safe = escapeHTML(nm);
-          return `<div class="drawer-face" data-drawer-name="${safe}"
+          return `<div class="drawer-face poignee-${_tiroirPoignee(d)}${cnt?' plein':''}" data-drawer-name="${safe}"
             title="${safe} — ${cnt} ${libUnit(cnt)} (clic : voir le contenu, glisser un ${libUnit(1)} dessus : le ranger)">
             <span class="drawer-label">${safe}</span>${cnt?`<span class="drawer-count">${cnt}</span>`:''}</div>`;
         }).join("");
-        return `<div class="drawer-block" style="width:calc(${pct}% - 3px);height:${hPx}px">${faces}</div>`;
+        return `<div class="drawer-block${_tiroirClair(d)?' tiroir-clair':''}" style="width:calc(${pct}% - 3px);height:${hPx}px${_tiroirStyle(d)}">${faces}</div>`;
       }).join("");
     }
   }
@@ -18709,7 +18900,64 @@ function startMeubleDrag(e, id, tile){
 }
 
 // ---- Tiroirs : gestion des lignes du modal ----
-// Un bloc = {id, col:0-based, row:0-based (0 = haut), count, wCm, names:[du haut vers le bas]}
+// Un bloc = {id, col:0-based, row:0-based (0 = haut), count, wCm, names:[du haut vers le bas],
+//            couleur (facultative : bois du meuble sinon), poignee ('barre' par défaut)}
+// Couleur et poignée sont propres au bloc : des tiroirs en carton posés dans
+// une étagère en bois n'ont ni sa teinte ni ses poignées.
+const TIROIR_COULEURS = [
+  { v:'',        fr:'Bois du meuble', en:'Furniture wood' },
+  { v:'#6b4429', fr:'Brun',           en:'Brown' },
+  { v:'#c4a69c', fr:'Taupe rosé',     en:'Rosy taupe' },
+  { v:'#2b2826', fr:'Noir',           en:'Black' },
+  { v:'#e8e2d6', fr:'Blanc cassé',    en:'Off-white' },
+];
+const TIROIR_POIGNEES = [
+  { v:'barre',   fr:'Barre',              en:'Bar' },
+  { v:'encoche', fr:'Encoche (découpe)',  en:'Notch (cut-out)' },
+  { v:'bouton',  fr:'Bouton',             en:'Knob' },
+  { v:'aucune',  fr:'Aucune',             en:'None' },
+];
+function _tiroirPoignee(d){ return TIROIR_POIGNEES.some(p=>p.v===(d&&d.poignee)) ? d.poignee : 'barre'; }
+function _tiroirStyle(d){ return d && /^#[0-9a-f]{6}$/i.test(d.couleur||'') ? `;--tiroir:${d.couleur}` : ''; }
+// Couleur claire (taupe, blanc…) : le nom du tiroir passe en foncé pour rester lisible.
+function _tiroirClair(d){
+  const c = d && /^#[0-9a-f]{6}$/i.test(d.couleur||'') ? d.couleur : null; if(!c) return false;
+  const [r,g,b] = [1,3,5].map(i=>parseInt(c.slice(i,i+2),16)/255);
+  return 0.2126*r + 0.7152*g + 0.0722*b > 0.5;
+}
+// Changer le bois du meuble met à jour les aperçus des blocs restés « bois du meuble ».
+document.addEventListener('change', e=>{
+  if(e.target && e.target.id === 'meubleWood')
+    document.querySelectorAll('.dcfg-apercu').forEach(a=>a.style.setProperty('--wood', e.target.value));
+});
+function _tiroirReglagesHTML(d){
+  const lbl = 'font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px';
+  const coul = /^#[0-9a-f]{6}$/i.test(d.couleur||'') ? d.couleur.toLowerCase() : '';
+  const preset = TIROIR_COULEURS.some(c=>c.v===coul);
+  const optC = TIROIR_COULEURS.map(c=>`<option value="${c.v}"${preset && c.v===coul?' selected':''}>${T(c.fr,c.en)}</option>`).join('')
+             + `<option value="perso"${!preset?' selected':''}>${T('Autre couleur…','Other colour…')}</option>`;
+  const optP = TIROIR_POIGNEES.map(p=>`<option value="${p.v}"${p.v===_tiroirPoignee(d)?' selected':''}>${T(p.fr,p.en)}</option>`).join('');
+  return `<div><span style="${lbl}">${T('Couleur','Colour')}</span><select class="dcfg-couleur" onchange="_tiroirApercu(this)" style="font-size:12px">${optC}</select>
+      <input type="color" class="dcfg-couleur-perso" value="${coul||'#6b4429'}" oninput="_tiroirApercu(this)" title="${T('Choisir la couleur','Pick the colour')}" style="width:34px;height:30px;padding:1px;vertical-align:middle;${preset?'display:none':''}"></div>
+    <div><span style="${lbl}">${T('Poignée','Handle')}</span><select class="dcfg-poignee" onchange="_tiroirApercu(this)" style="font-size:12px">${optP}</select></div>
+    <div class="drawer-block dcfg-apercu" title="${T('Aperçu','Preview')}" style="width:78px;height:50px${_tiroirStyle({couleur:coul})};--wood:${document.getElementById('meubleWood')?.value||'#5a3f28'}">
+      <div class="drawer-face poignee-${_tiroirPoignee(d)}"></div><div class="drawer-face poignee-${_tiroirPoignee(d)} plein"></div></div>`;
+}
+function _tiroirLireCouleur(row){
+  const sel = row.querySelector('.dcfg-couleur'); if(!sel) return '';
+  return sel.value === 'perso' ? (row.querySelector('.dcfg-couleur-perso').value || '') : sel.value;
+}
+// Met l'aperçu du bloc à jour quand on change sa couleur ou sa poignée.
+function _tiroirApercu(el){
+  const row = el.closest('.drawer-cfg-row'); if(!row) return;
+  const perso = row.querySelector('.dcfg-couleur-perso');
+  perso.style.display = row.querySelector('.dcfg-couleur').value === 'perso' ? '' : 'none';
+  const coul = _tiroirLireCouleur(row), poi = row.querySelector('.dcfg-poignee').value;
+  const ap = row.querySelector('.dcfg-apercu');
+  if(coul) ap.style.setProperty('--tiroir', coul); else ap.style.removeProperty('--tiroir');
+  ap.style.setProperty('--wood', document.getElementById('meubleWood')?.value || '#5a3f28');
+  ap.querySelectorAll('.drawer-face').forEach(f=>{ f.className = f.className.replace(/poignee-\w+/, 'poignee-'+poi); });
+}
 function _drawerRowHTML(d){
   d = d || {};
   const lbl = 'font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:3px';
@@ -18722,6 +18970,7 @@ function _drawerRowHTML(d){
     <div><span style="${lbl}">${T("Étage (1 = bas)","Floor (1 = bottom)")}</span><input type="number" class="dcfg-row" min="1" max="12" value="${d.uiFloor||1}" style="width:64px"></div>
     <div><span style="${lbl}">Tiroirs</span><input type="number" class="dcfg-count" min="1" max="8" value="${count}" oninput="_syncDrawerNameInputs(this)" style="width:64px"></div>
     <div><span style="${lbl}">Largeur (cm)</span><input type="number" class="dcfg-w" min="5" max="400" value="${d.wCm||40}" style="width:74px"></div>
+    ${_tiroirReglagesHTML(d)}
     <button class="ghost" type="button" title="${T(`Dupliquer ce bloc (même étage → le double apparaîtra à droite)`,`Duplicate this block (same floor → the copy will appear on the right)`)}" onclick="duplicateMeubleDrawerRow(this)" style="margin-bottom:2px">⧉</button>
     <button class="ghost" type="button" title="Retirer ce bloc" onclick="this.closest('.drawer-cfg-row').remove()" style="margin-bottom:2px">🗑️</button>
     <div class="dcfg-names" style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:4px">${nameInputs}</div>
@@ -18747,7 +18996,9 @@ function duplicateMeubleDrawerRow(btn){
     col: Math.max(0, v(".dcfg-col") - 1),
     uiFloor: Math.max(1, v(".dcfg-row")),
     count: Math.max(1, v(".dcfg-count")),
-    wCm: Math.max(5, v(".dcfg-w"))
+    wCm: Math.max(5, v(".dcfg-w")),
+    couleur: _tiroirLireCouleur(row),
+    poignee: row.querySelector(".dcfg-poignee")?.value
   }));
 }
 function _renderDrawerRows(drawers, rows){
@@ -18765,7 +19016,11 @@ function _collectDrawerRows(cols, rows, wCm){
     const colWCm = Math.round(wCm/cols);
     const w = Math.max(5, Math.min(colWCm, parseInt(rw.querySelector(".dcfg-w").value)||40));
     const names = [...rw.querySelectorAll(".dcfg-name")].map(i=>i.value.trim()).slice(0, count);
-    out.push({id: rw.dataset.blockId || _newDrawerBlockId(), col, row: rows - floor, count, wCm: w, names});
+    const bloc = {id: rw.dataset.blockId || _newDrawerBlockId(), col, row: rows - floor, count, wCm: w, names};
+    const couleur = _tiroirLireCouleur(rw), poignee = rw.querySelector(".dcfg-poignee")?.value || 'barre';
+    if(/^#[0-9a-f]{6}$/i.test(couleur)) bloc.couleur = couleur.toLowerCase();
+    if(poignee !== 'barre') bloc.poignee = poignee;
+    out.push(bloc);
   });
   return out;
 }
@@ -19615,6 +19870,7 @@ function openDrawerModal(name){
   _currentDrawerName = name;
   document.getElementById("drawerModalTitle").textContent = "🗄️ " + name;
   document.getElementById("drawerModalName").value = name;
+  const _aj = document.getElementById("drawerModalAjouter"); if(_aj) _aj.style.display = GUEST ? "none" : "";
   renderDrawerModalList();
   openModal("drawerModal");
 }
@@ -19650,6 +19906,19 @@ function renderDrawerModalList(){
   // Amener la couverture cherchée sous les yeux, même si la grille défile.
   if(cible) requestAnimationFrame(()=>
     el.querySelector('.dm-vise')?.scrollIntoView({block:'nearest'}));
+}
+// Ajouter une œuvre depuis la page du tiroir, comme depuis un classeur : on
+// choisit la catégorie (un tiroir accueille de tout), la fiche s'ouvre déjà
+// localisée dans ce tiroir, et le tiroir se rouvre une fois la fiche refermée
+// — enregistrée ou non. Fermer le choix de catégorie ramène aussi au tiroir.
+let _tiroirAjout = null;    // tiroir en attente du choix de catégorie
+let _tiroirRetour = null;   // tiroir à rouvrir quand la fiche se referme
+function _tiroirAjouterOeuvre(){
+  if(GUEST || !_currentDrawerName) return;
+  const nom = _currentDrawerName;
+  closeModal('drawerModal');
+  openCategoryPicker();
+  _tiroirAjout = nom;
 }
 async function _removeFromDrawer(id){
   const it = cache.items.find(i=>String(i.id)===String(id));
