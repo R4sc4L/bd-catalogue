@@ -776,9 +776,13 @@
   #itemForm.xl-simple #formSection-acquisition .form-grid > div:has(#itemCurrentValue),
   #itemForm.xl-simple #formSection-acquisition .form-grid > div:has(#itemAcquisitionDate),
   #itemForm.xl-simple #formSection-acquisition .form-grid > div:has(#itemAcquisitionSource){display:none}
-  /* Fiche ex-libris : Localisation pleine largeur ; masquer le sélecteur d'étagère dès qu'un lieu est saisi */
+  /* Fiche ex-libris : Localisation pleine largeur.
+     Le sélecteur d'étagère reste TOUJOURS là : masqué dès qu'un lieu était
+     saisi, il fallait vider le champ pour pouvoir en choisir un autre. Son
+     libellé se raccourcit alors en « ↕ Changer… », pour laisser la place au
+     lieu en place ; ouvert, il propose toujours tout. */
   #itemForm.xl-simple #formSection-acquisition #formFieldLocation{grid-column:1/-1}
-  #itemForm #itemLocation:not(:placeholder-shown) + #itemLocationSelect{display:none}
+  #itemForm #itemLocation:not(:placeholder-shown) + #itemLocationSelect{flex:0 0 auto;max-width:132px!important}
   #itemForm.xl-simple #tab-infos .form-grid > div:has(#itemSubtitle),
   #itemForm.xl-simple #tab-infos .form-grid > div:has(#itemUnivers),
   #itemForm.xl-simple #formFieldCatSec,
@@ -7497,6 +7501,7 @@ function pickCategory(cat){
   if(tiroir){
     const loc = document.getElementById('itemLocation');
     if(loc) loc.value = tiroir;
+    _majLibelleLocalisation();
     _tiroirRetour = tiroir;
   }
 }
@@ -7524,7 +7529,16 @@ function fillLocationSelect(){
   html += `<option value="__clear__">✖ Vider la localisation</option>`;
   sel.innerHTML = html;
   sel.value = "";
+  _majLibelleLocalisation();
 }
+// Le premier libellé du menu suit le champ : « Choisir une étagère… » quand il
+// est vide, « Changer… » quand une localisation est déjà en place.
+function _majLibelleLocalisation(){
+  const loc = document.getElementById("itemLocation"), sel = document.getElementById("itemLocationSelect");
+  if(!loc || !sel || !sel.options.length) return;
+  sel.options[0].textContent = loc.value.trim() ? T("↕ Changer…","↕ Change…") : T("↕ Choisir une étagère…","↕ Choose a shelf…");
+}
+document.addEventListener('input', e => { if(e.target && e.target.id === 'itemLocation') _majLibelleLocalisation(); });
 // Applique le choix du menu déroulant dans le champ texte de localisation.
 function applyLocationPick(v){
   const input = document.getElementById("itemLocation");
@@ -7533,6 +7547,7 @@ function applyLocationPick(v){
   else if(v){ input.value = v; _bulkClearLocation = false; }
   const sel = document.getElementById("itemLocationSelect");
   if(sel) sel.value = ""; // revenir au libellé « Choisir… »
+  _majLibelleLocalisation();
 }
 
 function openBulkEditForm(){
