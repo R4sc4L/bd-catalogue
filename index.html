@@ -2629,7 +2629,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <a class="lien-ext" id="itemIsbnLien" href="#" target="_blank" rel="noopener noreferrer" hidden onclick="_avantOuvertureLienFiche(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></a>
               </div>
             </div>
-            <div><label data-en="Number of pages">Nombre de pages</label><input type="number" id="itemPages" min="1" placeholder="ex: 48"></div>
+            <div><label for="itemPages" data-en="Number of pages">Nombre de pages</label><input type="number" id="itemPages" min="1" placeholder="ex: 48"></div>
             <div id="formFieldFormat"><label>Format</label><input type="text" id="itemFormat" placeholder="ex: 32x24 cm (Hauteur × Largeur)"></div>
             <div id="formFieldPaperQuality"><label data-en="Paper quality">Qualité du papier</label><input type="text" id="itemPaperQuality" list="dl-paperquality" placeholder="ex: Vélin d'Arches 250g, offset mat…" data-en-ph="e.g. Arches vellum 250g, matte offset…"></div>
             <div id="formFieldPageOrder"><label data-en="Page no. (display order)">N° de page (ordre de présentation)</label><input type="number" id="itemPageOrder" min="1" step="1" placeholder="ex: 1, 2, 3…"></div>
@@ -4322,9 +4322,12 @@ const FICHE_ARCHETYPES = {
   },
   // Portfolio / recueil de planches : ni série, ni ISBN, ni reliure ;
   // « planches » au lieu de « pages », emboîtage et diaporama activés.
+  // Le « Contenu additionnel » reste, lui, bien présent : un portfolio est
+  // souvent livré avec un ex-libris, une sérigraphie, un tirage signé ou un
+  // poster — c'est même souvent ce qui en fait le prix.
   portfolio: {
     id:'portfolio', label:'Portfolio / Recueil de planches', labelEn:'Portfolio / Plate set', icon:'📁',
-    hidden:['serie','serieNum','collection','mois','isbn','reliure','couverture','contenu','formatManga','formatComics'],
+    hidden:['serie','serieNum','collection','mois','isbn','reliure','couverture','formatManga','formatComics'],
     pagesLabel:{ fr:'Nombre de planches', en:'Number of plates' },
     autoDiaporama:true,
   },
