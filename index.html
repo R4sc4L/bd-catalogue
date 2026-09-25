@@ -330,6 +330,24 @@
   #editImgOverlay .ei-rvb .ei-nuancier{width:18px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,.25);flex:none}
   #editImgOverlay .ei-balance{display:none;align-items:center;gap:8px;font-size:12px;color:#c9bfae}
   #editImgOverlay .ei-balance button{padding:3px 9px;font-size:11px}
+  /* Les quatre réglages : deux couples, séparés d'un filet. Le bouton de
+     remise à zéro ne se montre que lorsqu'il y a quelque chose à défaire —
+     mais il garde sa place, pour que rien ne saute au premier mouvement. */
+  #editImgOverlay .ei-reglages{width:100%;max-width:300px;display:flex;flex-direction:column;gap:6px;
+    padding:9px 12px 11px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.03)}
+  #editImgOverlay .ei-reg-tete{display:flex;align-items:center;gap:8px;margin-bottom:1px}
+  #editImgOverlay .ei-reg-tete .ei-lbl{margin-right:auto}
+  #editImgOverlay .ei-reg-tete button{padding:3px 9px;font-size:11px;visibility:hidden}
+  #editImgOverlay .ei-reglages.ei-touche .ei-reg-tete button{visibility:visible}
+  #editImgOverlay .ei-reg{display:grid;grid-template-columns:84px 1fr 40px;align-items:center;gap:9px;
+    font-size:12px;color:#c9bfae}
+  /* « Saturation » est le plus long des quatre : c'est lui qui fixe la
+     largeur de la colonne, et il ne doit jamais toucher le curseur. */
+  #editImgOverlay .ei-reg>span:first-child{font-size:11px;letter-spacing:.2px;white-space:nowrap}
+  #editImgOverlay .ei-reg output{text-align:right;font-variant-numeric:tabular-nums;color:#8d8471}
+  #editImgOverlay .ei-reg.ei-mod output,#editImgOverlay .ei-reg.ei-mod>span:first-child{color:var(--gold)}
+  #editImgOverlay .ei-reg input[type=range]{width:100%;height:18px;margin:0;padding:0;accent-color:#e2b86a}
+  #editImgOverlay .ei-reg-filet{height:1px;background:rgba(255,255,255,.1);margin:3px 0 2px}
   @media(max-width:860px){
     #editImgOverlay .ei-bar{grid-template-columns:1fr}
     #editImgOverlay .ei-bar .ei-centre .ei-grp-lbl{position:static;margin-right:2px}
@@ -9714,6 +9732,116 @@ function _eiCharger(src){
   });
 }
 
+// ── Luminosité, contraste, teinte, saturation ───────────────────────────
+// Quatre réglages posés APRÈS la balance des blancs, et jamais cuits dans la
+// source : on peut revenir à zéro à tout instant, et deux allers-retours sur
+// un curseur ne dégradent rien. Le calcul ne porte que sur la petite toile
+// d'affichage et sur l'aperçu — quelques centaines de milliers de pixels —
+// et ne passe en pleine définition qu'une fois, à la validation.
+const EI_REGLAGES_ZERO = { lum:0, con:0, teinte:0, sat:0 };
+function _eiReglagesNeutres(r){ return !r || (!r.lum && !r.con && !r.teinte && !r.sat); }
+
+// Une table de 256 niveaux pour la luminosité et le contraste, puis une
+// matrice 3×3 pour la teinte et la saturation : un pixel ne coûte que trois
+// lectures de table et, si la couleur bouge, neuf multiplications. La table
+// et la matrice sont gardées d'un appel à l'autre — pendant un glissement de
+// poignée, on ne les recalcule pas à chaque image.
+let _eiRegCache = null;
+function _eiReglagesCalc(r){
+  const cle = `${r.lum}|${r.con}|${r.teinte}|${r.sat}`;
+  if(_eiRegCache && _eiRegCache.cle === cle) return _eiRegCache;
+  const C = r.con * 1.28;                                 // −128…+128
+  const f = (259 * (C + 255)) / (255 * (259 - C));        // facteur de contraste
+  const lut = new Uint8ClampedArray(256);
+  for(let v=0; v<256; v++) lut[v] = f * (v - 128) + 128 + r.lum;
+  let mat = null;
+  if(r.teinte || r.sat){
+    // Rotation de teinte : la matrice des filtres CSS, en luminance 709.
+    const a = r.teinte * Math.PI / 180, co = Math.cos(a), si = Math.sin(a);
+    const H = [
+      0.213 + co*0.787 - si*0.213, 0.715 - co*0.715 - si*0.715, 0.072 - co*0.072 + si*0.928,
+      0.213 - co*0.213 + si*0.143, 0.715 + co*0.285 + si*0.140, 0.072 - co*0.072 - si*0.283,
+      0.213 - co*0.213 - si*0.787, 0.715 - co*0.715 + si*0.715, 0.072 + co*0.928 + si*0.072,
+    ];
+    // Saturation : on s'éloigne du gris de même luminance (0 = noir et blanc,
+    // 1 = tel quel, 2 = deux fois plus franc).
+    const s = 1 + r.sat/100, lr = 0.213, lg = 0.715, lb = 0.072;
+    const S = [
+      lr + (1-lr)*s, lg - lg*s,     lb - lb*s,
+      lr - lr*s,     lg + (1-lg)*s, lb - lb*s,
+      lr - lr*s,     lg - lg*s,     lb + (1-lb)*s,
+    ];
+    mat = new Float64Array(9);                            // S · H : la teinte d'abord
+    for(let i=0;i<3;i++) for(let j=0;j<3;j++){
+      let t = 0; for(let k=0;k<3;k++) t += S[i*3+k] * H[k*3+j];
+      mat[i*3+j] = t;
+    }
+  }
+  _eiRegCache = { cle, lut, mat };
+  return _eiRegCache;
+}
+// Applique les réglages à une toile, sur place. Rien à faire quand tout est à
+// zéro : c'est le cas courant, et il ne doit rien coûter.
+function _eiFiltrerToile(toile, r){
+  if(!toile || !toile.width || !toile.height || _eiReglagesNeutres(r)) return toile;
+  const x = toile.getContext('2d', {willReadFrequently:true});
+  const im = x.getImageData(0, 0, toile.width, toile.height), d = im.data;
+  const { lut, mat } = _eiReglagesCalc(r);
+  if(mat){
+    const m0=mat[0],m1=mat[1],m2=mat[2],m3=mat[3],m4=mat[4],m5=mat[5],m6=mat[6],m7=mat[7],m8=mat[8];
+    for(let p=0; p<d.length; p+=4){
+      const R = lut[d[p]], G = lut[d[p+1]], B = lut[d[p+2]];
+      d[p]   = m0*R + m1*G + m2*B;       // Uint8ClampedArray : borné et arrondi
+      d[p+1] = m3*R + m4*G + m5*B;
+      d[p+2] = m6*R + m7*G + m8*B;
+    }
+  } else {
+    for(let p=0; p<d.length; p+=4){ d[p]=lut[d[p]]; d[p+1]=lut[d[p+1]]; d[p+2]=lut[d[p+2]]; }
+  }
+  x.putImageData(im, 0, 0);
+  return toile;
+}
+// Le même calcul sur une seule couleur : ce que la pipette annonce doit être
+// ce que le résultat donnera, réglages compris.
+function _eiPointReglages(p, r){
+  if(!p || _eiReglagesNeutres(r)) return p;
+  const { lut, mat } = _eiReglagesCalc(r);
+  const R = lut[p[0]], G = lut[p[1]], B = lut[p[2]];
+  if(!mat) return [R, G, B];
+  const b = v => Math.max(0, Math.min(255, Math.round(v)));
+  return [ b(mat[0]*R+mat[1]*G+mat[2]*B), b(mat[3]*R+mat[4]*G+mat[5]*B), b(mat[6]*R+mat[7]*G+mat[8]*B) ];
+}
+const _EI_REGLAGES = ['lum','con','teinte','sat'];
+function _eiCurseurHTML(cle, libelle, etendue){
+  return `<label class="ei-reg" id="eiRegLigne-${cle}"><span>${escapeHTML(libelle)}</span>` +
+         `<input type="range" id="eiReg-${cle}" min="-${etendue}" max="${etendue}" step="1" value="0" ` +
+         `oninput="_eiReglageChange('${cle}', this.value)"><output id="eiRegVal-${cle}">0</output></label>`;
+}
+function _eiReglageChange(cle, valeur){
+  const st = _eiState; if(!st || !_EI_REGLAGES.includes(cle)) return;
+  st.reglages[cle] = Math.round(parseFloat(valeur) || 0);
+  _eiReglagesAfficher();
+  _eiDessiner();
+}
+function _eiReglagesRAZ(){
+  const st = _eiState; if(!st) return;
+  st.reglages = { ...EI_REGLAGES_ZERO };
+  _EI_REGLAGES.forEach(c=>{ const e = st.ov.querySelector('#eiReg-'+c); if(e) e.value = 0; });
+  _eiReglagesAfficher();
+  _eiDessiner();
+}
+function _eiReglagesAfficher(){
+  const st = _eiState; if(!st) return;
+  const bloc = st.ov.querySelector('#eiReglages'); if(!bloc) return;
+  _EI_REGLAGES.forEach(c=>{
+    const v = st.reglages[c] || 0;
+    const o = bloc.querySelector('#eiRegVal-'+c);
+    if(o) o.textContent = v ? (v>0?'+':'') + v + (c==='teinte'?'°':'') : '0';
+    bloc.querySelector('#eiRegLigne-'+c)?.classList.toggle('ei-mod', !!v);
+  });
+  bloc.classList.toggle('ei-touche', !_eiReglagesNeutres(st.reglages));
+}
+
 // opts : { titre, sousTitre, detecter, boutons:[{id, libelle, principal}], onFin(id, dataURL) }
 //   detecter : tenter la détection du contour à l'ouverture.
 //   onFin reçoit l'identifiant du bouton pressé et, pour « valider », l'image
@@ -9745,6 +9873,17 @@ async function ouvrirEditeurImage(src, opts){
         <div class="ei-lbl">${T('Résultat','Result')}</div>
         <div class="ei-rvb" id="eiRVB"><span class="ei-nuancier" style="background:#000"></span><span>${T('Pipette : survolez l’image','Eyedropper: hover the image')}</span></div>
         <div class="ei-balance" id="eiBalance"><span></span><button type="button" class="secondary" onclick="_eiBalanceRetirer()">${T('Retirer','Remove')}</button></div>
+        <div class="ei-reglages" id="eiReglages">
+          <div class="ei-reg-tete">
+            <span class="ei-lbl">${T('Réglages','Adjustments')}</span>
+            <button type="button" class="secondary" onclick="_eiReglagesRAZ()">${T('Tout remettre à zéro','Reset all')}</button>
+          </div>
+          ${_eiCurseurHTML('lum',    T('Luminosité','Brightness'), 100)}
+          ${_eiCurseurHTML('con',    T('Contraste','Contrast'),    100)}
+          <div class="ei-reg-filet"></div>
+          ${_eiCurseurHTML('teinte', T('Teinte','Hue'),            180)}
+          ${_eiCurseurHTML('sat',    T('Saturation','Saturation'), 100)}
+        </div>
         <div class="ei-conseils">${T(
           'Posez les quatre coins sur ceux de la couverture. Le cadre peut rester droit pour un simple recadrage ; incliné, il redresse la perspective. Un double-clic dans l’image valide.',
           'Put the four corners on those of the cover. Keep the frame straight for a plain crop; tilt it to fix perspective. Double-click the image to confirm.')}</div>
@@ -9779,12 +9918,14 @@ async function ouvrirEditeurImage(src, opts){
   if(heritee) source = _eiAppliquerGains(source, heritee.gains);
   _eiState = { ov, source, original:_eiOriginalSansBalance(source, heritee), balance:heritee, pipette:false,
                quad:null, canvas:ov.querySelector('#eiCanvas'), echelle:1,
+               reglages:{ ...EI_REGLAGES_ZERO },
                boutons, onFin: opts.onFin || (()=>{}), occupe:false };
   // Un fichier importé est en général déjà cadré : on part de l'image entière,
   // légèrement rentrée pour que les poignées se voient. Le portrait 2:3 reste
   // à un clic pour une photo de téléphone.
   _eiCadre('entier', true);
   _eiBalanceAfficher();      // une correction héritée doit se voir, pas seulement s'appliquer
+  _eiReglagesAfficher();
   _eiAjuster();
   // La détection ne part d'elle-même que sur une image qui vient de l'appareil
   // ou d'un import : rouvrir un visuel déjà recadré, ou cadrer un avatar, n'a
@@ -9865,8 +10006,11 @@ function _eiPivoter(sens){
 
 function _eiDessiner(){
   const st = _eiState; if(!st) return;
-  const cv = st.canvas, ctx = cv.getContext('2d'), e = st.echelle;
+  const cv = st.canvas, ctx = cv.getContext('2d', {willReadFrequently:true}), e = st.echelle;
   ctx.drawImage(st.source, 0, 0, cv.width, cv.height);
+  // Les réglages portent sur l'image, pas sur le voile ni sur les poignées :
+  // on les applique avant de les dessiner.
+  _eiFiltrerToile(cv, st.reglages);
   const q = st.quad.map(([x,y])=>[x*e, y*e]);
   ctx.save();
   ctx.beginPath(); ctx.rect(0,0,cv.width,cv.height);
@@ -9898,7 +10042,7 @@ function _eiApercu(){
     const [L,H] = _tailleRedressee(st.quad, 300);
     const r = redresserQuad(st.source, st.quad, L, H);
     cv.width = L; cv.height = H;
-    if(r) cv.getContext('2d').drawImage(r, 0, 0);
+    if(r) cv.getContext('2d').drawImage(_eiFiltrerToile(r, st.reglages), 0, 0);
     const [vl, vh] = _tailleRedressee(st.quad, PHOTO_MAX);
     const d = st.ov.querySelector('#eiDims');
     if(d) d.textContent = `${vl} × ${vh} px`;
@@ -10009,7 +10153,7 @@ function _eiEchantillon(x, y){
 }
 function _eiLire(x, y, ev){
   const st = _eiState; if(!st) return;
-  const p = _eiEchantillon(x, y); if(!p) return;
+  const p = _eiPointReglages(_eiEchantillon(x, y), st.reglages); if(!p) return;
   const [R,G,B] = p;
   const texte = `R ${R} · V ${G} · B ${B}`;
   const couleur = `rgb(${R},${G},${B})`;
@@ -10095,8 +10239,15 @@ async function _eiFin(id){
     if(b){ b.disabled = true; b.textContent = T('Traitement…','Processing…'); }
     await new Promise(r=>setTimeout(r, 30));
     const [L,H] = _tailleRedressee(st.quad, PHOTO_MAX);
-    const toile = redresserQuad(st.source, st.quad, L, H) || st.source;
-    data = _toileVersJpeg(toile, PHOTO_MAX);
+    // Le redressement rend une toile neuve ; s'il échoue, on recopie la source
+    // plutôt que de la filtrer sur place — elle sert encore ailleurs.
+    let toile = redresserQuad(st.source, st.quad, L, H);
+    if(!toile){
+      toile = document.createElement('canvas');
+      toile.width = st.source.width; toile.height = st.source.height;
+      toile.getContext('2d').drawImage(st.source, 0, 0);
+    }
+    data = _toileVersJpeg(_eiFiltrerToile(toile, st.reglages), PHOTO_MAX);
   }
   const onFin = st.onFin;
   fermerEditeurImage();
