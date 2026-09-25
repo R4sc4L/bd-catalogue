@@ -5048,11 +5048,6 @@ function urlApplication(){
 }
 function quitterModeInvite(){ location.href = urlApplication(); }
 
-// L'image d'origine, telle qu'elle était avant la correction héritée : c'est
-// d'elle qu'on repart si l'on relève une autre balance, ou qu'on l'ôte.
-function _eiOriginalSansBalance(corrigee, balance){
-  return balance ? _eiAppliquerGains(corrigee, balance.gains.map(g=>1/g)) : corrigee;
-}
 
 // ── La fiche ──────────────────────────────────────────────────────────
 let _cpAvatar = '';        // l'avatar en cours d'édition, pas encore enregistré
@@ -6059,6 +6054,11 @@ const SB = (() => {
     groupById:{},                  // itemId → groupe_editions_id
     prefs:{},
   };
+  // Au-delà de ce rang, une ligne de la table « images » n'est pas un visuel
+  // mais la photo d'origine du visuel de rang (position − ORIG_POS). Ranger
+  // les deux dans la même table évite d'en créer une seconde ; le seuil est
+  // assez haut pour qu'aucune fiche n'ait jamais autant de visuels.
+  const ORIG_POS = 1000;
   let _q = Promise.resolve();      // sérialisation des écritures
   const enqueue = fn => { _q = _q.then(fn, fn); return _q; };
 
@@ -6211,9 +6211,18 @@ const SB = (() => {
     it.langue = it.langues.join(', ');
     it.tags = row.tags || [];
     it.linkedEditions = [];   // rempli après (groupes)
-    const imgs = R.imgByItem[row.id] || [];
+    // Les originaux des visuels retouchés sont rangés dans la même table,
+    // au-delà du millier : ils ne paraissent donc jamais comme des visuels,
+    // et il n'y a aucune colonne à créer. Celui du visuel n° i est au rang
+    // ORIG_POS + i, et porte sa recette dans `nom_fichier`.
+    const tous = R.imgByItem[row.id] || [];
+    const imgs = tous.filter(im=>im.position < ORIG_POS);
+    const origs = new Map(tous.filter(im=>im.position >= ORIG_POS)
+                              .map(im=>[im.position - ORIG_POS, im]));
     it.images = imgs.map(im=>im.url);
     it.imageNames = imgs.map(im=>im.nom_fichier||'');
+    it.imagesOriginales = imgs.map((_,i)=>origs.get(i)?.url || '');
+    it.recettesImages = imgs.map((_,i)=>_recetteDeTexte(origs.get(i)?.nom_fichier));
     it.createdAt = row.created_at; it.updatedAt = row.updated_at;
     return it;
   }
@@ -6383,17 +6392,35 @@ const SB = (() => {
     const byUrl = {}; current.forEach(im=>byUrl[im.url]=im);
     const next = [];
     const imgs = it.images||[], names = it.imageNames||[];
-    for(let i=0;i<imgs.length;i++){
-      const src = imgs[i];
-      if(typeof src!=='string' || !src) continue;
-      if(byUrl[src]){ next.push({...byUrl[src], position:i, nom_fichier:names[i]||byUrl[src].nom_fichier}); continue; }
+    const origs = it.imagesOriginales||[], recettes = it.recettesImages||[];
+    // Un dépôt, qu'il s'agisse d'un visuel ou d'un original : même chemin,
+    // seul le rang les distingue. Rend la ligne rangée, ou rien si le
+    // téléversement a échoué.
+    const deposer = async (src, position, nom)=>{
+      if(typeof src!=='string' || !src) return null;
+      if(byUrl[src]){
+        const n = {...byUrl[src], position, nom_fichier: nom || byUrl[src].nom_fichier};
+        next.push(n); return n;
+      }
       const imgId = crypto.randomUUID();
       let path;
       try{
         if(src.startsWith('data:')) path = await uploadB64(`${uid}/oeuvres/${it.id}/${imgId}`, src);
         else path = await uploadExternal(`${uid}/oeuvres/${it.id}/${imgId}`, src);
-      }catch(e){ console.warn('Image ignorée :', e.message); continue; }
-      next.push({ id:imgId, storage_path:path, position:i, nom_fichier:names[i]||null, url:await signOne(path) });
+      }catch(e){ console.warn('Image ignorée :', e.message); return null; }
+      const n = { id:imgId, storage_path:path, position, nom_fichier: nom || null, url:await signOne(path) };
+      next.push(n); return n;
+    };
+    // Les rangs sont recalculés ici : un visuel que l'on n'a pas pu déposer
+    // ne laisse pas de trou, et l'original reste en face du sien.
+    const rangees = [];
+    for(let i=0;i<imgs.length;i++){
+      const v = await deposer(imgs[i], rangees.length, names[i]||null);
+      if(!v) continue;
+      const orig = (origs[i] && origs[i] !== imgs[i])
+        ? await deposer(origs[i], ORIG_POS + rangees.length, _recetteEnTexte(recettes[i]))
+        : null;
+      rangees.push({ visuel:v, origine:orig });
     }
     // Suppressions
     const keep = new Set(next.map(n=>n.id));
@@ -6408,8 +6435,10 @@ const SB = (() => {
         storage_path:n.storage_path, nom_fichier:n.nom_fichier, position:n.position })),{onConflict:'id'}), 'images');
     }
     R.imgByItem[it.id] = next;
-    it.images = next.map(n=>n.url);
-    it.imageNames = next.map(n=>n.nom_fichier||'');
+    it.images = rangees.map(r=>r.visuel.url);
+    it.imageNames = rangees.map(r=>r.visuel.nom_fichier||'');
+    it.imagesOriginales = rangees.map(r=>r.origine ? r.origine.url : '');
+    it.recettesImages = rangees.map(r=>_recetteDeTexte(r.origine?.nom_fichier));
   }
 
   // ── Écritures : opérations ────────────────────────────────────────
@@ -6731,8 +6760,11 @@ const SB = (() => {
     // Renvoie { items:{id:[url…]}, authors:{id:url} } — même ordre que dans le cache.
     async signLong(ttlSeconds){
       ensureClient();
+      // Les photos d'origine des visuels retouchés ne sont pas des visuels :
+      // elles ne partent pas sur la page invité, et ne sont donc pas signées.
+      const visuelsSeuls = l => (l||[]).filter(im=>im.position < ORIG_POS);
       const chemins = [
-        ...Object.values(R.imgByItem||{}).flat().map(im=>im.storage_path),
+        ...Object.values(R.imgByItem||{}).map(visuelsSeuls).flat().map(im=>im.storage_path),
         ...Object.values(R.authorPhoto||{}),
       ].filter(Boolean);
       const map = {};
@@ -6748,7 +6780,7 @@ const SB = (() => {
       }
       const items = {};
       Object.entries(R.imgByItem||{}).forEach(([id,list2])=>{
-        items[id] = list2.map(im=>map[im.storage_path]).filter(Boolean);
+        items[id] = visuelsSeuls(list2).map(im=>map[im.storage_path]).filter(Boolean);
       });
       const authors = {};
       Object.entries(R.authorPhoto||{}).forEach(([id,ch])=>{ if(ch && map[ch]) authors[id] = map[ch]; });
@@ -7580,6 +7612,7 @@ function openBulkEditForm(){
 
   currentItemImages = [];
   currentItemImageNames = [];
+  _retouches = new Map();
   _exlibrisImgIdx = -1;
   const form = document.getElementById("itemForm");
   form.reset();
@@ -7644,6 +7677,7 @@ function openItemForm(id=null, opts={}){
   _bulkClearLocation = false;
   currentItemImages = [];
   currentItemImageNames = [];
+  _retouches = new Map();
   _exlibrisImgIdx = -1;
   const form = document.getElementById("itemForm");
   form.reset();
@@ -7844,6 +7878,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemTags").value = (it.tags||[]).join(", ");
     currentItemImages = [...(it.images||[])];
     currentItemImageNames = [...(it.imageNames||[])];
+    _retouchesDepuisFiche(it);
     _exlibrisImgIdx = (typeof it.exlibrisImageIdx==='number' && it.exlibrisImageIdx>=0 && it.exlibrisImageIdx < currentItemImages.length) ? it.exlibrisImageIdx : -1;
     renderImagePreview("item");
     (it.auteurs||[]).forEach(a=>addAuthorRow(a.auteurId, a.roles||a.role||[]));
@@ -8286,6 +8321,7 @@ async function saveItem(e){
     tags: document.getElementById("itemTags").value.split(",").map(s=>s.trim()).filter(Boolean),
     images: [...currentItemImages],
     imageNames: [...currentItemImageNames],
+    ..._retouchesVersFiche(),
     exlibrisImageIdx: (_exlibrisImgIdx>=0 && _exlibrisImgIdx < currentItemImages.length) ? _exlibrisImgIdx : null,
     collectionType: existing?.collectionType || _collPourNouvelleFiche(document.getElementById("itemCategory").value),
     // Disque (CD / Vinyle / DVD)
@@ -9674,10 +9710,13 @@ function _photoVersEditeur(){
     detecter: true,
     boutons: [{ id:'annuler', libelle:T('Annuler','Cancel') },
               { id:'valider', libelle:T('Ajouter la photo','Add the photo'), principal:true }],
-    onFin: (id, image) => {
+    onFin: (id, image, recette) => {
       if(id !== 'valider' || !image) return;
       currentItemImages.push(image);
       currentItemImageNames.push(T(`Photo ${currentItemImages.length}`, `Photo ${currentItemImages.length}`));
+      // La prise de vue telle qu'elle est sortie du capteur : c'est elle
+      // qu'on gardera, pour pouvoir rouvrir ce cadrage plus tard.
+      _retoucheNoter(image, data, recette);
       renderImagePreview('item');
       toast(T('Photo ajoutée','Photo added'));
     },
@@ -9835,6 +9874,12 @@ function _eiReglagesAfficher(){
   const bloc = st.ov.querySelector('#eiReglages'); if(!bloc) return;
   _EI_REGLAGES.forEach(c=>{
     const v = st.reglages[c] || 0;
+    // Le curseur lui-même : il doit se placer, sinon une retouche rouverte
+    // montrerait des poignées au milieu sur une image déjà corrigée. On ne
+    // récrit que si la valeur diffère, pour ne pas contrarier un glissement
+    // en cours.
+    const e = bloc.querySelector('#eiReg-'+c);
+    if(e && +e.value !== v) e.value = v;
     const o = bloc.querySelector('#eiRegVal-'+c);
     if(o) o.textContent = v ? (v>0?'+':'') + v + (c==='teinte'?'°':'') : '0';
     bloc.querySelector('#eiRegLigne-'+c)?.classList.toggle('ei-mod', !!v);
@@ -9842,11 +9887,47 @@ function _eiReglagesAfficher(){
   bloc.classList.toggle('ei-touche', !_eiReglagesNeutres(st.reglages));
 }
 
-// opts : { titre, sousTitre, detecter, boutons:[{id, libelle, principal}], onFin(id, dataURL) }
+// La recette d'un visuel : de quoi refaire exactement le même chemin depuis
+// la photo nue. Les coins sont en pixels de l'ORIGINAL, pas de l'affichage.
+function _eiRecette(st){
+  const arr = n => Math.round(n * 10) / 10;
+  return {
+    quad: st.quad.map(([x,y])=>[arr(x), arr(y)]),
+    balance: st.balance ? { gains: st.balance.gains.map(g=>+g.toFixed(4)),
+                            point: [...st.balance.point] } : null,
+    reglages: { ...st.reglages },
+  };
+}
+// …et la relecture, prudente : une recette venue d'ailleurs ne doit pas
+// pouvoir casser l'éditeur.
+function _eiRecetteLue(r, L, H){
+  if(!r || typeof r !== 'object') return null;
+  const q = Array.isArray(r.quad) && r.quad.length === 4
+    && r.quad.every(pt=>Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
+    ? r.quad.map(([x,y])=>[Math.max(0, Math.min(L, x)), Math.max(0, Math.min(H, y))])
+    : null;
+  const b = r.balance && Array.isArray(r.balance.gains) && r.balance.gains.length === 3
+    && r.balance.gains.every(g=>Number.isFinite(g) && g > 0)
+    ? { gains: r.balance.gains.map(Number),
+        point: Array.isArray(r.balance.point) ? r.balance.point.map(Number) : [0,0,0] }
+    : null;
+  const g = { ...EI_REGLAGES_ZERO };
+  if(r.reglages) _EI_REGLAGES.forEach(c=>{
+    const v = Number(r.reglages[c]);
+    if(Number.isFinite(v)) g[c] = Math.max(-180, Math.min(180, Math.round(v)));
+  });
+  return (q || b || !_eiReglagesNeutres(g)) ? { quad:q, balance:b, reglages:g } : null;
+}
+
+// opts : { titre, sousTitre, detecter, recette, boutons:[{id, libelle, principal}], onFin(id, dataURL, recette) }
 //   detecter : tenter la détection du contour à l'ouverture.
+//   recette  : rouvrir un visuel déjà retouché — `src` est alors la photo
+//              d'origine, et les poignées, la balance et les curseurs
+//              reprennent les valeurs qu'ils avaient.
 //   onFin reçoit l'identifiant du bouton pressé et, pour « valider », l'image
-//   redressée ; pour tout autre bouton, null. « Échap » vaut le dernier bouton
-//   non principal de la liste (l'annulation, par convention).
+//   redressée et la recette qui l'a produite ; pour tout autre bouton, null.
+//   « Échap » vaut le dernier bouton non principal de la liste (l'annulation,
+//   par convention).
 async function ouvrirEditeurImage(src, opts){
   fermerEditeurImage();
   let source;
@@ -9912,25 +9993,38 @@ async function ouvrirEditeurImage(src, opts){
     </div>`;
   document.body.appendChild(ov);
 
+  // Un visuel déjà retouché rouvre AVEC sa recette : elle prime sur la
+  // balance de la séance, qui appartient à d'autres clichés.
+  const recette = _eiRecetteLue(opts.recette, source.width, source.height);
   // Une séance déjà réglée : la correction s'applique d'emblée au visuel
   // suivant, sans qu'il faille reprendre la pipette à chaque fois.
-  const heritee = _balanceSerie ? { gains:[..._balanceSerie.gains], point:[..._balanceSerie.point] } : null;
+  const heritee = recette ? recette.balance
+    : (_balanceSerie ? { gains:[..._balanceSerie.gains], point:[..._balanceSerie.point] } : null);
+  const original = source;
   if(heritee) source = _eiAppliquerGains(source, heritee.gains);
-  _eiState = { ov, source, original:_eiOriginalSansBalance(source, heritee), balance:heritee, pipette:false,
+  _eiState = { ov, source, original, balance:heritee, pipette:false,
+               // La balance vient-elle de la séance ? La retirer ne romprait
+               // la balance de série que dans ce cas-là.
+               balanceDeSerie: !recette && !!heritee,
                quad:null, canvas:ov.querySelector('#eiCanvas'), echelle:1,
-               reglages:{ ...EI_REGLAGES_ZERO },
+               reglages: recette ? { ...recette.reglages } : { ...EI_REGLAGES_ZERO },
                boutons, onFin: opts.onFin || (()=>{}), occupe:false };
   // Un fichier importé est en général déjà cadré : on part de l'image entière,
   // légèrement rentrée pour que les poignées se voient. Le portrait 2:3 reste
   // à un clic pour une photo de téléphone.
   _eiCadre('entier', true);
+  if(recette && recette.quad) _eiState.quad = recette.quad.map(pt=>[...pt]);
   _eiBalanceAfficher();      // une correction héritée doit se voir, pas seulement s'appliquer
   _eiReglagesAfficher();
+  if(recette) toast(T('Retouche retrouvée — cadre, balance et réglages sont ceux de la dernière fois.',
+                       'Previous edit restored — frame, balance and adjustments are as you left them.'));
   _eiAjuster();
   // La détection ne part d'elle-même que sur une image qui vient de l'appareil
   // ou d'un import : rouvrir un visuel déjà recadré, ou cadrer un avatar, n'a
   // rien d'un album posé sur une table. Le bouton, lui, reste partout.
-  if(opts.detecter) setTimeout(()=>{ if(_eiState && _eiState.ov === ov) _eiDetecter(true); }, 0);
+  // On ne cherche pas un contour sur un visuel qui en a déjà un : la recette
+  // fait foi, c'est le choix qui avait été arrêté.
+  if(opts.detecter && !recette) setTimeout(()=>{ if(_eiState && _eiState.ov === ov) _eiDetecter(true); }, 0);
   _eiBrancher();
   window.addEventListener('resize', _eiAjuster);
   document.addEventListener('keydown', _eiClavier);
@@ -10221,8 +10315,10 @@ function _eiBalanceAfficher(){
 function _eiBalanceRetirer(){
   const st = _eiState; if(!st) return;
   st.balance = null; st.source = st.original;
-  // Il n'y a qu'une référence : la retirer ici, c'est y renoncer pour la série.
-  if(_balanceSerie) poserBalanceSerie(null);
+  // Il n'y a qu'une référence : la retirer ici, c'est y renoncer pour la
+  // série — mais seulement si c'est bien d'elle qu'elle venait. Défaire la
+  // balance d'un vieux visuel ne doit pas rompre la séance en cours.
+  if(_balanceSerie && st.balanceDeSerie) poserBalanceSerie(null);
   _eiBalanceAfficher(); _eiDessiner();
 }
 
@@ -10250,8 +10346,63 @@ async function _eiFin(id){
     data = _toileVersJpeg(_eiFiltrerToile(toile, st.reglages), PHOTO_MAX);
   }
   const onFin = st.onFin;
+  const recette = id === 'valider' ? _eiRecette(st) : null;
   fermerEditeurImage();
-  onFin(id, data);
+  onFin(id, data, recette);
+}
+
+// ── Le registre des retouches ───────────────────────────────────────────
+// Un visuel retouché garde sa photo d'origine et la « recette » qui mène de
+// l'une à l'autre : les quatre coins du cadre, la balance des blancs et les
+// réglages de lumière. Rouvrir l'éditeur repart de l'original et repose les
+// poignées et les curseurs là où on les avait laissés — un recadrage trop
+// serré se rattrape des mois plus tard, et deux passages ne dégradent rien
+// puisqu'on repart toujours de la photo nue.
+//
+// Le registre est rangé par visuel et non par rang : déplacer ou supprimer
+// une vignette n'a donc rien à tenir à jour. Les rangs ne sont recalculés
+// qu'à l'enregistrement, à partir de l'ordre du moment.
+let _retouches = new Map();          // visuel → { origine, recette }
+
+// La recette voyage dans le champ « nom_fichier » de la ligne de l'original :
+// une chaîne courte, et aucune colonne à ajouter en base. Un contenu illisible
+// n'est pas une erreur — on retombe simplement sur un visuel sans recette.
+function _recetteEnTexte(r){
+  if(!r) return null;
+  try { return '⚙' + JSON.stringify(r); } catch(e){ return null; }
+}
+function _recetteDeTexte(t){
+  if(typeof t !== 'string' || t[0] !== '⚙') return null;
+  try { const r = JSON.parse(t.slice(1)); return (r && typeof r === 'object') ? r : null; }
+  catch(e){ return null; }
+}
+
+function _retoucheLire(src){ return (src && _retouches.get(src)) || null; }
+function _retoucheNoter(src, origine, recette){
+  if(!src || !origine || src === origine) return;
+  _retouches.set(src, { origine, recette: recette || null });
+}
+function _retoucheRemplacer(ancien, nouveau, origine, recette){
+  if(ancien && ancien !== nouveau) _retouches.delete(ancien);
+  _retoucheNoter(nouveau, origine, recette);
+}
+// Au chargement d'une fiche : on rebâtit le registre à partir de ce qui a été
+// enregistré. Les visuels d'avant cette version n'ont pas d'original ; ils
+// s'ouvrent comme auparavant, et en acquièrent un dès la première retouche.
+function _retouchesDepuisFiche(it){
+  _retouches = new Map();
+  const imgs = it.images||[], origs = it.imagesOriginales||[], rec = it.recettesImages||[];
+  imgs.forEach((src, i)=>{ if(src && origs[i]) _retoucheNoter(src, origs[i], rec[i]); });
+}
+// À l'enregistrement : les deux tableaux, alignés sur l'ordre des vignettes.
+function _retouchesVersFiche(){
+  const origs = [], rec = [];
+  currentItemImages.forEach(src=>{
+    const r = _retoucheLire(src);
+    origs.push(r ? r.origine : '');
+    rec.push(r ? r.recette : null);
+  });
+  return { imagesOriginales: origs, recettesImages: rec };
 }
 
 // ── Reprendre un visuel du formulaire ───────────────────────────────────
@@ -10260,16 +10411,23 @@ async function _eiFin(id){
 function recadrerImageItem(i){
   const src = currentItemImages[i];
   if(!src) return;
-  ouvrirEditeurImage(src, {
+  // On rouvre la photo d'origine quand on l'a — sinon le visuel lui-même,
+  // qui devient alors l'original : un visuel d'avant cette version gagne sa
+  // réversibilité dès la première retouche.
+  const deja = _retoucheLire(src);
+  const depart = deja ? deja.origine : src;
+  ouvrirEditeurImage(depart, {
     titre: T('Recadrer et redresser','Crop and straighten'),
     sousTitre: currentItemImageNames[i] || T(`Visuel ${i+1}`,`Visual ${i+1}`),
+    recette: deja ? deja.recette : null,
     boutons: [
       { id:'annuler', libelle:T('Annuler','Cancel') },
       { id:'valider', libelle:T('Appliquer','Apply'), principal:true },
     ],
-    onFin: (id, data)=>{
+    onFin: (id, data, recette)=>{
       if(id !== 'valider' || !data) return;
       currentItemImages[i] = data;
+      _retoucheRemplacer(src, data, depart, recette);
       renderImagePreview('item');
       toast(T('Visuel remplacé — pensez à enregistrer la fiche','Visual replaced — remember to save the record'));
     },
@@ -10350,8 +10508,11 @@ function _recadrerLot(lot, k){
       { id:'garder',  libelle:T('Garder telle quelle','Keep as is') },
       { id:'valider', libelle:T('Recadrer et ajouter','Crop and add'), principal:true },
     ],
-    onFin: (id, data)=>{
-      if(id === 'valider' && data) _ajouterEntreeItem({ data, name:e.name });
+    onFin: (id, data, recette)=>{
+      if(id === 'valider' && data){
+        _ajouterEntreeItem({ data, name:e.name });
+        _retoucheNoter(data, e.data, recette);   // le fichier d'origine est gardé
+      }
       else if(id === 'garder')     _ajouterEntreeItem(e);
       // Une image que l'éditeur ne peut pas ouvrir (URL sans CORS) n'est pas
       // perdue pour autant : elle entre telle quelle.
