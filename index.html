@@ -1001,6 +1001,19 @@
   .ed-delier:hover{opacity:1;color:var(--danger);border-color:var(--danger)}
   .ed-lier:hover{opacity:1;color:var(--gold);border-color:var(--gold)}
   @media(hover:none){ .ed-delier,.ed-lier{opacity:1} }
+  /* Un rapprochement supposé ne doit pas avoir l'air d'un lien établi :
+     chaque registre porte son intitulé, et la supposition dit ce qu'elle est. */
+  .ed-groupe{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);
+    margin:10px 0 6px;display:flex;align-items:center;gap:8px}
+  .ed-groupe:first-child{margin-top:0}
+  .ed-note{font-size:12px;color:var(--ink-soft);margin:-2px 0 8px;line-height:1.45}
+  .ed-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;align-self:center}
+  .ed-ecarter{flex-shrink:0;padding:4px 10px;font-size:11px;white-space:nowrap;opacity:.55;transition:opacity .12s}
+  .ed-ecarter:hover{opacity:1;color:var(--danger);border-color:var(--danger)}
+  @media(hover:none){ .ed-ecarter{opacity:1} }
+  .ed-ecartes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;
+    padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--ink-soft)}
+  .ed-ecartes button{padding:3px 9px;font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .edition-link-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-soft);background:var(--bg-alt);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle}
   /* Le déplacement et l'agrandissement passent par une transformation, jamais par les
      barres de défilement : c'est ce qui permet de zoomer autour du pointeur. */
@@ -1327,7 +1340,8 @@
   .book-cover-popup .cover-sub{font-size:9px;color:var(--ink-soft);text-align:center;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* ---- Scène des meubles (vue en légère plongée / 3D) ---- */
   /* Projection axonométrique (sans point de fuite) : les hauteurs restent identiques quel que soit l'angle des meubles */
-  .meuble-scene{position:relative;min-height:820px;border:1px solid var(--border);border-radius:12px;overflow:auto;background:linear-gradient(180deg,#262b33 0%,#1a1d23 70%,#15171c 100%)}
+  .meuble-scene{position:relative;min-height:820px;border:1px solid var(--border);border-radius:12px;overflow:auto;background:linear-gradient(180deg,#262b33 0%,#1a1d23 70%,#15171c 100%);cursor:grab}
+  .meuble-scene.glisse{cursor:grabbing}
   .meuble-scene .floor-grid{position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 1px,transparent 1px 40px);pointer-events:none}
   .plan-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-style:italic;font-size:14px;pointer-events:none}
   .meuble3d{position:absolute;cursor:grab;width:var(--w);transform-style:preserve-3d}
@@ -6006,7 +6020,10 @@ const SB = (() => {
     'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','embossageFroid','rhodoid','bandeau','rubanMarquePage',
     'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
     'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite','emboitageEmbossageFroid',
-    'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche'];
+    'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche',
+    // Les rapprochements automatiques qu'on a refusés : « non, ce n'est pas
+    // la même édition ». Rangés ici, ils n'ont besoin d'aucune colonne SQL.
+    'editionsEcartees'];
   const CONTENU_KEYS = ['exlibris','exlibrisColle','exlibrisSigne','exlibrisNumerote','exlibrisTirage',
     'tirageInclus','serigraphie','marquePage','timbre','carnetCroquis','autocollant','decalcomanie',
     'cartePostale','poster','supplementRedactionnel','objet','objetDesc','objetsAssocies',
@@ -13819,6 +13836,12 @@ const STRINGS = {
     'detail.unlink': '✕ Délier',
     'detail.link_this': '🔗 Lier',
     'detail.other_ed_manage': '🔗 Gérer les liens',
+    'detail.ed_liees': 'Éditions liées',
+    'detail.ed_auto': 'Rapprochements automatiques',
+    'detail.ed_auto_hint': 'Même titre : ce sont peut-être deux éditions d’une même œuvre. À confirmer, ou à écarter.',
+    'detail.dismiss': '✕ Écarter',
+    'detail.ed_ecartes': 'Écartés :',
+    'detail.restore': '↩',
     'detail.no_author': 'Aucun auteur renseigné',
     'detail.no_other_ed': 'Aucune autre édition détectée.',
     'detail.no_other_hint': 'Utilisez le bouton ci-dessus pour en lier une manuellement.',
@@ -14051,6 +14074,12 @@ const STRINGS = {
     'detail.unlink': '✕ Unlink',
     'detail.link_this': '🔗 Link',
     'detail.other_ed_manage': '🔗 Manage links',
+    'detail.ed_liees': 'Linked editions',
+    'detail.ed_auto': 'Automatic matches',
+    'detail.ed_auto_hint': 'Same title: these may be two editions of one work. Confirm, or dismiss.',
+    'detail.dismiss': '✕ Dismiss',
+    'detail.ed_ecartes': 'Dismissed:',
+    'detail.restore': '↩',
     'detail.no_author': 'No author listed',
     'detail.no_other_ed': 'No other edition detected.',
     'detail.no_other_hint': 'Use the button above to link one manually.',
@@ -14405,6 +14434,10 @@ async function linkEditionsMultiple(baseId, ids, opts){
     const member = cache.items.find(i=>i.id===memberId);
     if(!member) continue;
     member.linkedEditions = [...groupe].filter(x=>x!==memberId);
+    // Lier ce qu'on avait écarté lève le refus : les deux ne peuvent pas
+    // tenir ensemble, et c'est le geste le plus récent qui dit l'intention.
+    const ec = editionsEcartees(member).filter(x=>!groupe.has(x));
+    if(ec.length !== editionsEcartees(member).length) member.editionsEcartees = ec;
     member.updatedAt = new Date().toISOString();
     await dbPut("items", member);
   }
@@ -14469,6 +14502,51 @@ async function unlinkEditionsMultiple(baseId, ids, opts){
   return partants.length;
 }
 async function unlinkEdition(id1, id2){ return unlinkEditionsMultiple(id1, [id2]); }
+
+// ── Écarter un rapprochement automatique ────────────────────────────────
+// Deux œuvres peuvent porter le même titre sans être deux éditions l'une de
+// l'autre : une étude et le catalogue qui la reprend, par exemple. Le
+// rapprochement par le titre les propose quand même, et rien ne permettait de
+// dire « non ». C'est ce que fait « Écarter » : le refus vaut pour la paire —
+// il serait absurde qu'une fiche taise la proposition et que l'autre la
+// répète — et il se défait d'un bouton.
+function editionsEcartees(it){
+  return Array.isArray(it && it.editionsEcartees) ? it.editionsEcartees.filter(Boolean) : [];
+}
+function _ecartees(a, b){
+  return editionsEcartees(a).includes(b.id) || editionsEcartees(b).includes(a.id);
+}
+async function _majEcart(baseId, autreId, ajouter){
+  const horodate = new Date().toISOString();
+  let touche = 0;
+  for(const [x, y] of [[baseId, autreId], [autreId, baseId]]){
+    const m = cache.items.find(i=>i.id===x);
+    if(!m) continue;
+    const avant = editionsEcartees(m);
+    const apres = ajouter ? [...new Set([...avant, y])] : avant.filter(v=>v!==y);
+    if(apres.length === avant.length && apres.every((v,i)=>v===avant[i])) continue;
+    m.editionsEcartees = apres;
+    m.updatedAt = horodate;
+    await dbPut("items", m);
+    touche++;
+  }
+  return touche;
+}
+async function ecarterEdition(baseId, autreId){
+  if(!await _majEcart(baseId, autreId, true)) return 0;
+  await reloadCache();
+  renderItemDetail(baseId, false);
+  toast(T('Rapprochement écarté — il ne sera plus proposé.',
+          'Match dismissed — it will no longer be suggested.'));
+  return 1;
+}
+async function retablirEdition(baseId, autreId){
+  if(!await _majEcart(baseId, autreId, false)) return 0;
+  await reloadCache();
+  renderItemDetail(baseId, false);
+  toast(T('Rapprochement rétabli.','Match restored.'));
+  return 1;
+}
 
 // Quatre éditions d'un même titre se lient en une fois : on coche, puis on
 // valide. La sélection survit à un changement de recherche — c'est ce qui
@@ -15176,6 +15254,7 @@ function renderItemDetail(id, pushHistory=true){
       cache.items.forEach(x=>{ if(x.id!==it.id && (x.linkedEditions||[]).includes(it.id)) manualIds.add(x.id); });
       const autoOthers = cache.items.filter(x => {
         if(x.id === it.id || manualIds.has(x.id)) return false;
+        if(_ecartees(it, x)) return false;          // « non, ce n'est pas la même »
         const nt = normTitle(x.titre);
         const sameTitle = titleNorm && nt &&
           (nt === titleNorm || (titleNorm.length > 6 && levenshtein(nt, titleNorm) <= 2));
@@ -15190,7 +15269,10 @@ function renderItemDetail(id, pushHistory=true){
         return !numeroDifferent;
       });
       const manualOthers = cache.items.filter(x => x.id !== it.id && manualIds.has(x.id));
-      const allOthers = [...manualOthers, ...autoOthers];
+      // Les rapprochements écartés, pour pouvoir revenir sur son refus. On
+      // ignore ceux qui désignent une fiche supprimée entre-temps.
+      const ecartes = editionsEcartees(it)
+        .map(id=>cache.items.find(i=>i.id===id)).filter(Boolean);
 
       const editionRow = (x, isManual) => {
         const xAuthors = (x.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2).join(", ");
@@ -15213,17 +15295,39 @@ function renderItemDetail(id, pushHistory=true){
           </div>
           ${GUEST ? '' : (isManual
             ? `<button class="secondary ed-delier" title="${T('Délier cette édition','Unlink this edition')}" onclick="event.stopPropagation();unlinkEdition('${it.id}','${x.id}')">${t('detail.unlink')}</button>`
-            : `<button class="secondary ed-lier" title="${T('Rapprochée automatiquement par son titre. Lier pour que le rapprochement soit tenu pour sûr.','Matched automatically by title. Link it to make the match explicit.')}" onclick="event.stopPropagation();linkEditions('${it.id}','${x.id}')">${t('detail.link_this')}</button>`)}
+            : `<span class="ed-actions"><button class="secondary ed-lier" title="${T('Rapprochée automatiquement par son titre. Lier pour que le rapprochement soit tenu pour sûr.','Matched automatically by title. Link it to make the match explicit.')}" onclick="event.stopPropagation();linkEditions('${it.id}','${x.id}')">${t('detail.link_this')}</button>`
+              + `<button class="secondary ed-ecarter" title="${T('Ce n’est pas la même édition : ne plus la proposer, ni ici ni sur l’autre fiche.','Not the same edition: stop suggesting it, here and on the other record.')}" onclick="event.stopPropagation();ecarterEdition('${it.id}','${x.id}')">${t('detail.dismiss')}</button></span>`)}
         </div>`;
       };
 
-      const total = allOthers.length;
+      // Deux registres à ne pas confondre : ce qui est LIÉ (une décision) et
+      // ce qui est seulement RAPPROCHÉ par le titre (une supposition). Les
+      // mêler sous un seul compte laissait croire à un lien là où il n'y
+      // avait qu'une ressemblance de titres.
+      const liste = rows => `<div style="display:flex;flex-direction:column;gap:8px">${rows}</div>`;
+      const sousTitre = (txt, n) =>
+        `<div class="ed-groupe">${escapeHTML(txt)}${n?` (${n})`:''}</div>`;
+      const blocs = [];
+      if(manualOthers.length){
+        blocs.push(sousTitre(t('detail.ed_liees'), manualOthers.length)
+          + liste(manualOthers.map(x=>editionRow(x, true)).join("")));
+      }
+      if(autoOthers.length){
+        blocs.push(sousTitre(t('detail.ed_auto'), autoOthers.length)
+          + `<p class="ed-note">${t('detail.ed_auto_hint')}</p>`
+          + liste(autoOthers.map(x=>editionRow(x, false)).join("")));
+      }
+      if(ecartes.length && !GUEST){
+        blocs.push(`<div class="ed-ecartes"><span>${t('detail.ed_ecartes')}</span>` +
+          ecartes.map(x=>`<button type="button" class="secondary" title="${T('Reproposer ce rapprochement','Suggest this match again')}" onclick="retablirEdition('${it.id}','${x.id}')">${t('detail.restore')} ${escapeHTML(x.titre||'')}</button>`).join('') +
+          `</div>`);
+      }
       return `<div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${total?'8px':'0'}">
-          <h3 style="margin:0">${t('detail.other_ed')}${total?` (${total})`:""}</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${blocs.length?'8px':'0'}">
+          <h3 style="margin:0">${t('detail.other_ed')}${manualOthers.length?` (${manualOthers.length})`:""}</h3>
           ${GUEST?'':`<button class="secondary" style="padding:4px 10px;font-size:12px" onclick="openLinkEditionModal('${it.id}')">${manualIds.size ? t('detail.other_ed_manage') : t('detail.other_ed_link')}</button>`}
         </div>
-        ${total ? `<div style="display:flex;flex-direction:column;gap:8px">${allOthers.map(x=>editionRow(x, manualIds.has(x.id))).join("")}</div>`
+        ${blocs.length ? blocs.join('')
           : `<p class="muted" style="font-size:13px;margin:8px 0 0">${t('detail.no_other_ed')} <span style="opacity:.7">${t('detail.no_other_hint')}</span></p>`}
       </div>`;
     })()}
@@ -17533,6 +17637,43 @@ let libraryPiles = [];   // [{id, name, localisation (=shelf.name), itemOrder:[a
 let libraryFurniture = []; // [{id, name, x, y, wCm, dCm, cols, rows, rot, color}]
 let libraryLinked = false; // meubles liés : déplacer l'un déplace tout l'ensemble
 let _planVue = { k:1, gauche:0, haut:0, MARGE:26 }; // projection courante du plan (échelle + cadrage)
+// ── Où le plan est posé dans la scène ───────────────────────────────────
+// Le cadrage se calait jusqu'ici sur le meuble le plus à gauche : quoi qu'on
+// déplace, l'ensemble revenait se coller à la marge. Déplacer le plan était
+// donc impossible — il repartait à gauche au premier redessin.
+// On mémorise désormais le coin haut-gauche du cadrage. Tant que personne n'y
+// a touché, il se recalcule à chaque fois comme avant (rien ne change pour qui
+// ne déplace rien) ; dès qu'on déplace un meuble ou le fond, il se fige, et le
+// plan reste où on l'a laissé. « Recadrer » rend la main au calcul.
+let _planCadre = {};                 // { clé de collection : {gauche, haut} }
+function _planCle(){ return isAllCollection() ? '_all' : (_activeCollection || 'bd'); }
+function _planCadreCourant(){ const c = _planCadre[_planCle()]; 
+  return (c && Number.isFinite(c.gauche) && Number.isFinite(c.haut)) ? c : null; }
+async function chargerPlanCadre(){
+  try { const r = await dbGet('meta', 'library-plan-cadre'); _planCadre = (r && r.value) || {}; }
+  catch(e){ _planCadre = {}; }
+}
+async function _enregistrerPlanCadre(){
+  try { await dbPut('meta', { key:'library-plan-cadre', value:_planCadre }); }
+  catch(e){ console.warn('[Plan] cadrage non enregistré', e); }
+}
+// Figer le cadrage tel qu'il est à l'écran : c'est ce qui arrête l'aimantation.
+function _figerPlanCadre(){
+  if(_planCadreCourant()) return false;
+  _planCadre[_planCle()] = { gauche:_planVue.gauche, haut:_planVue.haut };
+  return true;
+}
+// Déplacer le cadrage, c'est déplacer le plan dans le sens inverse.
+function _deplacerPlanCadre(dx, dy){
+  const c = _planCadreCourant(); if(!c) return;
+  _planCadre[_planCle()] = { gauche: c.gauche - dx, haut: c.haut - dy };
+}
+async function recadrerPlan(){
+  delete _planCadre[_planCle()];
+  await _enregistrerPlanCadre();
+  renderLibrary();
+  toast(T('Plan recadré.','Plan re-framed.'));
+}
 let _currentMeubleId = null; // meuble ouvert en vue de face ; null = plan vue de dessus
 let _editingMeubleId = null; // meuble en cours d'édition dans la modale
 let _meubleDragMoved = false;
@@ -17918,6 +18059,9 @@ async function saveLibraryPiles(){
   });
 }
 async function loadLibraryFurniture(){
+  // Le cadrage du plan accompagne le mobilier : tous les chemins qui chargent
+  // l'un chargent l'autre, sans avoir à y penser ailleurs.
+  await chargerPlanCadre();
   return new Promise(res=>{
     const tx = db.transaction("meta","readonly");
     const req = tx.objectStore("meta").get("library-furniture");
@@ -18063,6 +18207,7 @@ async function renderLibrary(){
   } else {
     if(actions) actions.innerHTML = `<button onclick="addMeuble()">${T("+ Nouveau meuble","+ New bookcase")}</button>`
       + (libraryFurniture.length>1 ? `<button class="secondary" onclick="toggleLibraryLink()">${libraryLinked?T('🔓 Délier les meubles','🔓 Unlink bookcases'):T('🔗 Lier les meubles','🔗 Link bookcases')}</button>` : '')
+      + (_planCadreCourant() ? `<button class="secondary" title="${T('Replacer le plan au centre et rendre la main au cadrage automatique','Put the plan back and hand the framing over to the automatic fit')}" onclick="recadrerPlan()">🎯 ${T('Recadrer','Re-frame')}</button>` : '')
       + `<button class="secondary" onclick="openReconcileModal()">🧩 ${T("Localisations","Locations")}</button>`;
     renderFurniturePlan(container);
   }
@@ -18117,8 +18262,13 @@ function renderFurniturePlan(container, _secondePasse){
     haut   = Math.min(haut, y);    bas    = Math.max(bas,   y + _px(m.hCm||237) + _piedsRef(m));
   });
   if(!isFinite(gauche)){ gauche = 0; droite = 1; haut = 0; bas = 1; }
+  // L'échelle, elle, reste toujours calculée sur l'étendue réelle du mobilier :
+  // une pièce plus large doit continuer de tenir dans la page.
   const k = Math.max(0.25, Math.min(2.6,
     Math.min(dispoH / Math.max(1, bas - haut), dispoW / Math.max(1, droite - gauche))));
+  // Le CADRAGE, lui, obéit à ce qu'on a posé — s'il a été posé.
+  const cadre = _planCadreCourant();
+  if(cadre){ gauche = cadre.gauche; haut = cadre.haut; }
   const SC = PLAN_SC * k;                       // px par cm à l'écran
   const projX = x => (x - gauche) * k + MARGE;  // coordonnée mémorisée → écran
   const projY = y => (y - haut)   * k + RESERVE_ACTIONS;
@@ -18289,7 +18439,7 @@ function renderFurniturePlan(container, _secondePasse){
   const titleBaseline = maxBottom + GAP;
   const titlesHTML = labels.map(l=>`<div class="m3d-title" data-cx="${l.cx.toFixed(1)}" data-bas="${l.bottom.toFixed(1)}" style="left:${l.cx}px;top:${titleBaseline}px;transform:translateX(-50%);text-align:center" title="${escapeHTML(l.name)}">${escapeHTML(l.name)}</div>`).join("");
   container.innerHTML = `
-    <p class="muted" style="margin:0 0 10px;font-size:13px">${T(`Vue en perspective — glisse les meubles pour reproduire ta pièce, clique sur un meuble pour l'ouvrir et le remplir. ⟳ incline le meuble (face → mur droit → mur gauche) ; ⬆ ⬇ le font passer devant ou derrière ses voisins (alt+clic : tout devant / tout derrière). Alt + glisser dépose une copie vide du meuble.`,`Perspective view — drag the bookcases to reproduce your room, click a bookcase to open and fill it. ⟳ tilts the bookcase (front → right wall → left wall); ⬆ ⬇ move it in front of or behind its neighbours (alt+click: all the way front / back). Alt + drag drops an empty copy of the bookcase.`)}</p>
+    <p class="muted" style="margin:0 0 10px;font-size:13px">${T(`Vue en perspective — glisse les meubles pour reproduire ta pièce, clique sur un meuble pour l'ouvrir et le remplir. ⟳ incline le meuble (face → mur droit → mur gauche) ; ⬆ ⬇ le font passer devant ou derrière ses voisins (alt+clic : tout devant / tout derrière). Glisse le FOND pour déplacer tout le plan — il reste où tu le laisses. Alt + glisser dépose une copie vide du meuble.`,`Perspective view — drag the bookcases to reproduce your room, click a bookcase to open and fill it. ⟳ tilts the bookcase (front → right wall → left wall); ⬆ ⬇ move it in front of or behind its neighbours (alt+click: all the way front / back). Drag the BACKGROUND to move the whole plan — it stays where you leave it. Alt + drag drops an empty copy of the bookcase.`)}</p>
     <div class="meuble-scene" id="meubleScene" style="height:${Math.round(dispoH + BANDE_TITRES + RESERVE_ACTIONS)}px;min-height:0"><div class="floor-grid"></div>${boxes || `<div class="plan-empty">${T('Aucun meuble. Clique sur « + Nouveau meuble » pour commencer.','No bookcases. Click « + New bookcase » to get started.')}</div>`}${titlesHTML}</div>`;
   container.querySelectorAll(".meuble3d").forEach(tile=>{
     const id = tile.dataset.meubleId;
@@ -18302,6 +18452,8 @@ function renderFurniturePlan(container, _secondePasse){
     tile.addEventListener("click", e=>{ if(e.target.closest(".m3d-actions")) return; if(!_meubleDragMoved) openMeuble(id); });
     tile.addEventListener("mousedown", e=>startMeubleDrag(e,id,tile));
   });
+  const fond = container.querySelector('#meubleScene');
+  if(fond) fond.addEventListener('mousedown', e=>_demarrerGlisseDuPlan(e, fond));
   _placerTitresPlan(container, titleBaseline);
   // Correction en une passe si le bandeau d'aide n'avait pas la hauteur supposée
   const scene = container.querySelector("#meubleScene");
@@ -19189,6 +19341,74 @@ function _demarrerCopieParGlisser(e, id, tile, scene){
   document.addEventListener("keydown", echap);
 }
 
+// Glisser le fond de la scène déplace le plan tout entier — le geste de la
+// main sur une carte. Les meubles ne bougent pas les uns par rapport aux
+// autres : c'est le point de vue qui se déplace.
+function _demarrerGlisseDuPlan(e, scene){
+  if(e.button !== 0 || e.target.closest('.meuble3d')) return;
+  e.preventDefault();
+  _figerPlanCadre();
+  const k = _planVue.k || 1;
+  const depart = _planCadreCourant();
+  if(!depart) return;
+  const x0 = e.clientX, y0 = e.clientY;
+  let bouge = false;
+  scene.classList.add('glisse');
+  // On ne laisse pas le plan sortir tout à fait : il doit rester de quoi le
+  // rattraper à la souris, sinon « Recadrer » serait le seul recours.
+  const tuiles = [...scene.querySelectorAll('.meuble3d')];
+  function mv(ev){
+    const dx = ev.clientX - x0, dy = ev.clientY - y0;
+    if(Math.abs(dx) > 3 || Math.abs(dy) > 3) bouge = true;
+    _planCadre[_planCle()] = { gauche: depart.gauche - dx/k, haut: depart.haut - dy/k };
+    const g = (_planVue.gauche = _planCadre[_planCle()].gauche);
+    const h = (_planVue.haut   = _planCadre[_planCle()].haut);
+    tuiles.forEach(t=>{
+      const m = libraryFurniture.find(x=>x.id === t.dataset.meubleId); if(!m) return;
+      t.style.left = (((m.x ?? 40) - g)*k + _planVue.MARGE).toFixed(1)+'px';
+      t.style.top  = (((m.y ?? 60) - h)*k + (_planVue.HAUT ?? 84)).toFixed(1)+'px';
+    });
+  }
+  async function up(){
+    document.removeEventListener('mousemove', mv);
+    document.removeEventListener('mouseup', up);
+    scene.classList.remove('glisse');
+    if(!bouge) return;
+    // Rattrapage : au moins un bout de mobilier doit rester visible.
+    const r = scene.getBoundingClientRect();
+    let min = Infinity, max = -Infinity, hmin = Infinity, hmax = -Infinity;
+    libraryFurniture.forEach(m=>{
+      const x = m.x ?? 40, y = m.y ?? 60;
+      min = Math.min(min, x); max = Math.max(max, x + (m.wCm||80)*PLAN_SC);
+      hmin = Math.min(hmin, y); hmax = Math.max(hmax, y + (m.hCm||237)*PLAN_SC);
+    });
+    if(isFinite(min)){
+      // Tant que le mobilier tient dans la scène, on l'y garde entier : sortir
+      // à demi un meuble, ou pousser les noms sous le bord, n'apporte rien.
+      // S'il est trop grand pour tenir, on se contente d'en garder de quoi le
+      // rattraper à la souris.
+      // Les noms s'écrivent SOUS les meubles : le bas du plan, c'est la bande
+      // des noms, pas la dernière tablette. Mesurer le mobilier seul les
+      // laissait passer sous le bord dès qu'on descendait un peu.
+      const basPlan = hmax + 70 / k;
+      const vueL = Math.max(1, (r.width  - _planVue.MARGE) / k);
+      const vueH = Math.max(1, (r.height - (_planVue.HAUT ?? 84)) / k);
+      // Une seule règle, dans les deux sens et dans les deux cas : un bord du
+      // plan au moins touche un bord de la scène. Le plan plus petit que la
+      // scène se pose donc où l'on veut entre ses deux bords ; plus grand, il
+      // se parcourt d'un bout à l'autre — mais jamais il ne sort de la vue.
+      const entre = (v, a, b) => Math.max(Math.min(a,b), Math.min(Math.max(a,b), v));
+      const c = _planCadre[_planCle()];
+      c.gauche = entre(c.gauche, min,  max     - vueL);
+      c.haut   = entre(c.haut,   hmin, basPlan - vueH);
+    }
+    await _enregistrerPlanCadre();
+    renderLibrary();
+  }
+  document.addEventListener('mousemove', mv);
+  document.addEventListener('mouseup', up);
+}
+
 function startMeubleDrag(e, id, tile){
   if(e.button!==0 || e.target.closest(".m3d-actions")) return;
   e.preventDefault();
@@ -19222,7 +19442,13 @@ function startMeubleDrag(e, id, tile){
     document.removeEventListener("mousemove", mv);
     document.removeEventListener("mouseup", up);
     tile.classList.remove("dragging");
-    if(_meubleDragMoved){ await saveLibraryFurniture(); renderLibrary(); }
+    if(_meubleDragMoved){
+      // Le cadrage se fige au premier déplacement : sans cela, le redessin
+      // ramènerait aussitôt l'ensemble contre la marge de gauche.
+      if(_figerPlanCadre()) await _enregistrerPlanCadre();
+      await saveLibraryFurniture();
+      renderLibrary();
+    }
     setTimeout(()=>{ _meubleDragMoved = false; }, 60);
   }
   document.addEventListener("mousemove", mv);
