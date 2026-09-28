@@ -8082,7 +8082,38 @@ function _openAuthorOfRow(btn){
   });
 }
 
+// ── Un seul enregistrement à la fois ────────────────────────────────────
+// L'envoi des images peut prendre plusieurs secondes, pendant lesquelles la
+// fenêtre reste ouverte. Un second clic, ou la touche Entrée suivie d'un clic,
+// relançait alors l'enregistrement : la fiche, encore sans identifiant, en
+// recevait un nouveau et l'œuvre se créait en double. On verrouille donc
+// l'enregistrement jusqu'à ce qu'il soit terminé.
+let _saveItemEnCours = false;
+function _boutonsEnregistrerFiche(occupe){
+  document.querySelectorAll('#itemModal button[onclick*="submitFormSafe(\'itemForm\')"]').forEach(b=>{
+    b.disabled = occupe;
+    if(occupe){ b.dataset.libelle = b.textContent; b.textContent = T('Enregistrement…','Saving…'); }
+    else if(b.dataset.libelle){ b.textContent = b.dataset.libelle; delete b.dataset.libelle; }
+  });
+}
 async function saveItem(e){
+  if(e) e.preventDefault();
+  if(_saveItemEnCours) return;
+  _saveItemEnCours = true;
+  _boutonsEnregistrerFiche(true);
+  try { await _saveItemCore(e); }
+  finally { _saveItemEnCours = false; _boutonsEnregistrerFiche(false); }
+}
+// La touche Entrée dans un champ de la fiche n'enregistre plus : seul le
+// bouton « Enregistrer » le fait. Les champs qui ont leur propre usage de la
+// touche (listes, suggestions) le gardent.
+document.addEventListener('DOMContentLoaded', ()=>{
+  const f = document.getElementById('itemForm');
+  if(f) f.addEventListener('keydown', ev=>{
+    if(ev.key==='Enter' && ev.target && ev.target.tagName==='INPUT') ev.preventDefault();
+  });
+});
+async function _saveItemCore(e){
   // La référence de balance ne vaut que pour la séance en cours : une fois
   // l'œuvre enregistrée avec tous ses visuels, elle n'a plus lieu d'être.
   const _cloreLaSeance = () => { if(_balanceSerie) poserBalanceSerie(null); };
@@ -8227,6 +8258,9 @@ async function saveItem(e){
     roles: [...row.querySelectorAll(".role-dropdown-menu input:checked")].map(cb=>cb.value)
   })).filter(a=>a.auteurId);
   const id = document.getElementById("itemId").value || uuid();
+  // L'identifiant est posé tout de suite sur la fiche : si un envoi en trop
+  // passait malgré tout, il mettrait à jour cette œuvre au lieu d'en créer une autre.
+  document.getElementById("itemId").value = id;
   _lastSavedItemId = id;
   const existing = cache.items.find(i=>i.id===id);
   // « Livré avec l'album » : édition choisie explicitement (id), sinon ancien texte libre conservé
