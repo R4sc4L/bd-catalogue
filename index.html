@@ -1569,6 +1569,7 @@
     clip-path:polygon(0 0,100% 0,78% 100%,22% 100%);background:rgba(10,8,6,.88);box-shadow:none}
   .m3d-drawers.poignee-bouton b::after{width:3px;height:3px;border-radius:50%}
   .m3d-drawers.poignee-aucune b::after{display:none}
+  .drawer-face.poignee-barre .drawer-label,.drawer-face.poignee-bouton .drawer-label{transform:translateY(calc(-50% + 9px))}
   .drawer-block.tiroir-clair .drawer-label{color:#1f150d;text-shadow:0 1px 0 rgba(255,255,255,.25)}
   .dcfg-apercu{pointer-events:none;align-self:flex-end}
   .dcfg-apercu .drawer-face{cursor:default}
@@ -1637,7 +1638,9 @@
     opacity:0;transition:opacity .14s}
   .dm-case:hover .dm-sortir{opacity:1}
   .dm-sortir:hover{background:var(--danger,#b23b28);color:#fff}
-  .drawer-label{position:absolute;left:8px;top:50%;transform:translateY(-50%);max-width:calc(50% - 34px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.02em;color:#fff3dc;text-shadow:0 1px 2px rgba(0,0,0,.75);pointer-events:none}
+  /* Nom du tiroir centré sur la façade ; la marge de 34px de chaque côté laisse
+     la place au compteur, à droite, sans décentrer le nom. */
+  .drawer-label{position:absolute;left:34px;right:34px;top:50%;transform:translateY(-50%);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.02em;color:#fff3dc;text-shadow:0 1px 2px rgba(0,0,0,.75);pointer-events:none}
   .drawer-count{position:absolute;right:8px;top:50%;transform:translateY(-50%);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:rgba(0,0,0,.55);color:#f0d9a8;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
   .reconcile-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border)}
   .reconcile-old{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -9914,7 +9917,17 @@ const _EI_REGLAGES = ['lum','con','teinte','sat'];
 function _eiCurseurHTML(cle, libelle, etendue){
   return `<label class="ei-reg" id="eiRegLigne-${cle}"><span>${escapeHTML(libelle)}</span>` +
          `<input type="range" id="eiReg-${cle}" min="-${etendue}" max="${etendue}" step="1" value="0" ` +
-         `oninput="_eiReglageChange('${cle}', this.value)"><output id="eiRegVal-${cle}">0</output></label>`;
+         `oninput="_eiReglageChange('${cle}', this.value)" ondblclick="_eiReglageRAZ('${cle}')" ` +
+         `title="${T('Double-clic : remettre à zéro','Double-click: reset')}"><output id="eiRegVal-${cle}">0</output></label>`;
+}
+// Double-clic sur un curseur : ce seul réglage revient à zéro, comme dans les
+// logiciels de retouche. Les autres restent tels quels.
+function _eiReglageRAZ(cle){
+  const st = _eiState; if(!st || !_EI_REGLAGES.includes(cle)) return;
+  st.reglages[cle] = 0;
+  const e = st.ov.querySelector('#eiReg-'+cle); if(e) e.value = 0;
+  _eiReglagesAfficher();
+  _eiDessiner();
 }
 function _eiReglageChange(cle, valeur){
   const st = _eiState; if(!st || !_EI_REGLAGES.includes(cle)) return;
