@@ -12967,7 +12967,7 @@ function applyFilters(){
             <td style="text-align:center;font-size:18px" title="${escapeHTML(_drapeauxItem(i).titre)}">${_drapeauxItem(i).flags}</td>
             <td>${escapeHTML(i.editeur||"")}</td>
             <td>${(()=>{const d=dateAffichee(i);return d.titre?`<span title="${escapeHTML(d.titre)}">${escapeHTML(d.texte)}</span>`:escapeHTML(d.texte);})()}</td>
-            <td>${escapeHTML(i.etat||"")}</td>
+            <td style="white-space:nowrap">${escapeHTML(i.etat||"")}</td>
             <td class="right">${i.cote?i.cote.toLocaleString("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0}):""}</td>
           </tr>`);
         }
