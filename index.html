@@ -1569,7 +1569,7 @@
     clip-path:polygon(0 0,100% 0,78% 100%,22% 100%);background:rgba(10,8,6,.88);box-shadow:none}
   .m3d-drawers.poignee-bouton b::after{width:3px;height:3px;border-radius:50%}
   .m3d-drawers.poignee-aucune b::after{display:none}
-  .drawer-block.tiroir-clair .drawer-label{color:rgba(45,32,24,.82);text-shadow:0 1px 0 rgba(255,255,255,.35)}
+  .drawer-block.tiroir-clair .drawer-label{color:#1f150d;text-shadow:0 1px 0 rgba(255,255,255,.25)}
   .dcfg-apercu{pointer-events:none;align-self:flex-end}
   .dcfg-apercu .drawer-face{cursor:default}
   .drawer-face:hover{filter:brightness(1.25)}
@@ -1637,7 +1637,7 @@
     opacity:0;transition:opacity .14s}
   .dm-case:hover .dm-sortir{opacity:1}
   .dm-sortir:hover{background:var(--danger,#b23b28);color:#fff}
-  .drawer-label{position:absolute;left:8px;top:50%;transform:translateY(-50%);max-width:calc(50% - 34px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:600;color:rgba(255,240,210,.8);text-shadow:0 1px 2px rgba(0,0,0,.6);pointer-events:none}
+  .drawer-label{position:absolute;left:8px;top:50%;transform:translateY(-50%);max-width:calc(50% - 34px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.02em;color:#fff3dc;text-shadow:0 1px 2px rgba(0,0,0,.75);pointer-events:none}
   .drawer-count{position:absolute;right:8px;top:50%;transform:translateY(-50%);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:rgba(0,0,0,.55);color:#f0d9a8;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
   .reconcile-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border)}
   .reconcile-old{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2786,7 +2786,18 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <div class="form-tab-panel" id="tab-etat">
         <div class="form-section" id="formSection-caracteristiques">
           <h3>Caractéristiques</h3>
-          <!-- Reliure (en tête) -->
+          <!-- Format (en tête) -->
+          <div class="char-group">
+            <label>Format</label>
+            <div class="char-row">
+              <div class="checkbox-row"><input type="checkbox" id="itemFormatCarre"><label for="itemFormatCarre" style="margin:0" data-en="Square">Carré</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemFormatFrancaise"><label for="itemFormatFrancaise" style="margin:0" data-en="Portrait (French)">À la française</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemFormatItalienne"><label for="itemFormatItalienne" style="margin:0" data-en="Landscape (Italian)">À l'italienne</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemFormatManga"><label for="itemFormatManga" style="margin:0">Manga</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemFormatComics"><label for="itemFormatComics" style="margin:0">Comics</label></div>
+            </div>
+          </div>
+          <!-- Reliure -->
           <div id="formReliure" class="char-group">
             <div class="aide-titre">
               <label data-en="Binding">Reliure</label>
@@ -2839,17 +2850,6 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <label for="itemJaquette" style="margin:0;white-space:nowrap;flex-shrink:0" data-en="Dust jacket">Jaquette</label>
                 <input type="text" id="itemJaquetteEtat" placeholder="ex: Très bon état, légères usures aux coins…" data-en-ph="e.g. Very good condition, slight wear at corners…" style="flex:1">
               </div>
-            </div>
-          </div>
-          <!-- Format -->
-          <div class="char-group">
-            <label>Format</label>
-            <div class="char-row">
-              <div class="checkbox-row"><input type="checkbox" id="itemFormatCarre"><label for="itemFormatCarre" style="margin:0" data-en="Square">Carré</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="itemFormatFrancaise"><label for="itemFormatFrancaise" style="margin:0" data-en="Portrait (French)">À la française</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="itemFormatItalienne"><label for="itemFormatItalienne" style="margin:0" data-en="Landscape (Italian)">À l'italienne</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="itemFormatManga"><label for="itemFormatManga" style="margin:0">Manga</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="itemFormatComics"><label for="itemFormatComics" style="margin:0">Comics</label></div>
             </div>
           </div>
           <!-- Démarcation discrète : caractéristiques propres aux tirages de tête & portfolios -->
