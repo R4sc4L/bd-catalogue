@@ -7521,7 +7521,16 @@ const CAT_ICONS = {
   "Carnet de croquis":"🗒️","Catalogue":"📋","Scénario":"📄",
   "Making-of":"🎬","Calendrier":"📅","Publication étrangère":"🌍",
   "Reportage / Documentaire BD":"📡","Strip de presse":"🗞","Anthologie":"🗂️",
+  "Pirate":"🏴‍☠️","Pirates":"🏴‍☠️",
 };
+// Une catégorie saisie à la main peut différer d'une majuscule ou d'un accent
+// de la clé ci-dessus : on la retrouve quand même.
+function _iconeCategorie(cat){
+  if(CAT_ICONS[cat]) return CAT_ICONS[cat];
+  const n = x => String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+  const k = Object.keys(CAT_ICONS).find(c => n(c) === n(cat));
+  return k ? CAT_ICONS[k] : "📁";
+}
 const CAT_PRIORITY = ["Album de BD","Tirage de tête","Édition limitée (numérotée)","Album d'illustration"];
 // Comparaison de titres : les suites de chiffres sont lues comme des nombres, pas comme
 // du texte. Sans cela « Moebius Groove #10 » précède « #8 », puisque le caractère « 1 »
@@ -7546,7 +7555,7 @@ function openCategoryPicker(){
   const retired = new Set(RETIRED_CATEGORIES.map(_normCat));
   all = [...new Set(all)].filter(c => !retired.has(_normCat(c)));
   const btn = cat => {
-    const icon = CAT_ICONS[cat] || "📁";
+    const icon = _iconeCategorie(cat);
     const isPrio = CAT_PRIORITY.includes(cat);
     const isExtra = !activeCatSet.has(cat);
     return `<button class="cat-picker-btn${isPrio?" priority":""}${isExtra?" extra":""}" data-cat="${escapeHTML(cat)}" onclick="pickCategory(this.dataset.cat)">
@@ -20093,12 +20102,22 @@ function _meubleShelfOptions(selectedName, vide){
   _furnitureOrdered().forEach(m=>{
     const cols = Math.max(1, m.cols||1);
     let opts = "";
+    // Les tiroirs sont posés dans une case : ils prennent place dans le menu
+    // juste sous l'étage qui les porte, comme dans le meuble, au lieu d'être
+    // relégués après le dernier étage. Un tiroir dont la case n'a pas
+    // d'étagère recensée reste proposé, en fin de meuble.
+    const tiroirOpt = n => `<option value="${escapeHTML(n)}"${n===selectedName?" selected":""}>\u00a0\u00a0\u00a0🗄️ ${escapeHTML(n)}</option>`;
+    const placés = new Set();
     grille.filter(g=>g.meuble.id===m.id).forEach(g=>{
       const label = `${cols>1?`Col ${g.col+1} · `:""}${T("Étage","Floor")} ${g.etage}`;
       opts += `<option value="${escapeHTML(g.shelf.name)}"${g.shelf.name===selectedName?" selected":""}>${escapeHTML(label)}</option>`;
+      (m.drawers||[]).filter(d=>(d.col||0)===g.col && (m.rows||1)-(d.row||0)===g.etage).forEach(d=>{
+        placés.add(d);
+        (d.names||[]).forEach(n=>{ if(n) opts += tiroirOpt(n); });
+      });
     });
-    (m.drawers||[]).forEach(d=>(d.names||[]).forEach(n=>{
-      if(n) opts += `<option value="${escapeHTML(n)}"${n===selectedName?" selected":""}>🗄️ ${escapeHTML(n)}</option>`;
+    (m.drawers||[]).filter(d=>!placés.has(d)).forEach(d=>(d.names||[]).forEach(n=>{
+      if(n) opts += tiroirOpt(n);
     }));
     if(opts) html += `<optgroup label="${escapeHTML(_meubleLabel(m))}">${opts}</optgroup>`;
   });
