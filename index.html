@@ -839,6 +839,12 @@
   /* Sur la fiche, le même renvoi mais en toutes lettres, à côté du code. */
   .lien-fiche{color:var(--gold);text-decoration:none;font-size:13px;margin-left:8px;white-space:nowrap}
   .lien-fiche:hover{text-decoration:underline}
+  /* Référence Bédéthèque : l'adresse de la fiche album, l'identifiant de
+     l'édition possédée, et le renvoi. */
+  .bdt-ref{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:6px;align-items:stretch}
+  .bdt-ref input{min-width:0}
+  .bdt-aide{font-size:12px;color:var(--ink-soft);margin-top:4px;min-height:1em}
+  .bdt-aide.erreur{color:#b3261e}
   .author-open{flex:none;width:38px;padding:0;display:flex;align-items:center;justify-content:center}
   .author-open .ico{width:19px;height:19px;color:var(--gold);opacity:.8;transition:opacity .15s}
   .author-open:hover .ico{opacity:1}
@@ -2663,6 +2669,14 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <input type="text" id="itemIsbn" oninput="_majLienFiche()">
                 <a class="lien-ext" id="itemIsbnLien" href="#" target="_blank" rel="noopener noreferrer" hidden onclick="_avantOuvertureLienFiche(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></a>
               </div>
+            </div>
+            <div class="span-2" id="formFieldBedetheque"><label data-en="Bédéthèque reference">Référence Bédéthèque</label>
+              <div class="bdt-ref">
+                <input type="url" id="itemBdtUrl" oninput="_majBedetheque(true)" autocomplete="off" placeholder="Adresse de la fiche album (copiée depuis Bédéthèque)" data-en-ph="Album page address (copied from Bédéthèque)">
+                <input type="text" id="itemBdtId" inputmode="numeric" autocomplete="off" oninput="_majBedetheque()" placeholder="Identifiant" data-en-ph="Identifier" title="« Identifiant » de l'édition possédée (EO ou réédition)">
+                <a class="lien-ext" id="itemBdtLien" href="#" target="_blank" rel="noopener noreferrer" hidden title="Ouvrir la fiche sur Bédéthèque"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></a>
+              </div>
+              <div class="bdt-aide" id="itemBdtAide"></div>
             </div>
             <div><label for="itemPages" data-en="Number of pages">Nombre de pages</label><input type="number" id="itemPages" min="1" placeholder="ex: 48"></div>
             <div id="formFieldFormat"><label>Format</label><input type="text" id="itemFormat" placeholder="ex: 32x24 cm (Hauteur × Largeur)"></div>
@@ -6041,7 +6055,9 @@ const SB = (() => {
     'disqueSupport','disqueNb','disqueDuree','disqueGenre','disqueStyle','disquePressage','disqueRemaster',
     'disquePays','disqueRef','disqueEtatPochette','disqueCompilation',
     'disqueGroupe','disqueGroupeId','disqueGroupeNat','disqueMusiciens','disqueDateOrigine',
-    'disqueBoitier','disqueLivret','disqueLivretPages','disqueEncarts'];
+    'disqueBoitier','disqueLivret','disqueLivretPages','disqueEncarts',
+    // Référence Bédéthèque — même sac JSONB, aucune colonne SQL à créer
+    'bedethequeUrl','bedethequeId'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
     'pinsReference','pinsEditionLimitee'];
   // [cléLegacy, colonne, type] — s:texte(''), n:nombre(null), z:nombre(0), b:bool, d:date('')
@@ -7822,6 +7838,8 @@ function openItemForm(id=null, opts={}){
     initLangTagInput(itemLangues(it));
     initObjetsAssocies(it.objetsAssocies||[]);
     document.getElementById("itemCountry").value = it.paysEdition||"";
+    document.getElementById("itemBdtUrl").value = it.bedethequeUrl||"";
+    document.getElementById("itemBdtId").value = it.bedethequeId||"";
     document.getElementById("itemIsbn").value = it.isbn||"";
     _majLienFiche();
     document.getElementById("itemPages").value = it.nbPages||"";
@@ -8301,6 +8319,9 @@ async function _saveItemCore(e){
     objetsAssocies: [..._objetsAssocies],
     paysEdition: document.getElementById("itemCountry").value.trim(),
     isbn: document.getElementById("itemIsbn").value.trim(),
+    bedethequeUrl: bdtDepuisUrl(document.getElementById("itemBdtUrl").value)?.url
+                   || document.getElementById("itemBdtUrl").value.trim(),
+    bedethequeId: bdtIdPropre(document.getElementById("itemBdtId").value),
     nbPages: parseInt(document.getElementById("itemPages").value)||null,
     tirage: document.getElementById("itemPrintRun").value.trim(),
     numeroExemplaire: document.getElementById("itemCopyNumber").value.trim(),
@@ -8570,6 +8591,7 @@ function _renvoiFicheHTML(it, isDisque){
        + ` title="${escapeHTML(r.titre)}">${r.nom} ↗</a>`;
 }
 function _majLienFiche(){
+  _majBedetheque();
   const a = document.getElementById('itemIsbnLien');
   const champ = document.getElementById('itemIsbn');
   if(!a || !champ) return;
@@ -8580,6 +8602,76 @@ function _majLienFiche(){
   if(!r) return;
   a.href = r.url; a.title = r.titre;
   if(r.copier) a.dataset.copier = r.copier;
+}
+
+// ── La référence Bédéthèque ─────────────────────────────────────────────
+// Bédéthèque n'a pas de page par réédition : toutes les éditions d'un album
+// s'affichent sur la page de l'EO (section « Détail des éditions »), chacune
+// avec son « Identifiant ». On garde donc deux choses : l'adresse de la fiche
+// album, commune à toutes les éditions, et l'identifiant de l'édition
+// possédée. Pour une EO, coller l'adresse suffit — l'identifiant s'en déduit ;
+// pour une réédition, on remplace ce numéro par celui relevé sur la page.
+// Aucune récupération automatique : la recherche du site est protégée par un
+// jeton et ses pages ne se laissent pas lire depuis une autre origine.
+const _BDT_URL_RE = /^https?:\/\/(?:www\.)?bedetheque\.com\/BD-[^?#\s]*?-(\d+)\.html/i;
+function bdtDepuisUrl(valeur){
+  const m = String(valeur||'').trim().match(_BDT_URL_RE);
+  return m ? { url: m[0].replace(/^http:/i,'https:'), id: m[1] } : null;
+}
+function bdtIdPropre(valeur){
+  return String(valeur||'').replace(/\D/g,'');
+}
+// Le lien ouvre la fiche album ; pour une réédition, directement sur la
+// liste des éditions, où se trouve celle qu'on possède.
+function bdtLien(url, id){
+  const f = bdtDepuisUrl(url);
+  if(!f) return '';
+  id = bdtIdPropre(id);
+  return (id && id !== f.id) ? f.url + '#reed' : f.url;
+}
+function _majBedetheque(depuisUrl){
+  const bloc = document.getElementById('formFieldBedetheque');
+  const champUrl = document.getElementById('itemBdtUrl');
+  const champId  = document.getElementById('itemBdtId');
+  if(!bloc || !champUrl || !champId) return;
+  const cat = document.getElementById('itemCategory')?.value || '';
+  const pourBD = !archetypeForCategory(cat).showDisque && _collPourNouvelleFiche(cat) === 'bd';
+  bloc.style.display = pourBD ? '' : 'none';
+  const f = bdtDepuisUrl(champUrl.value);
+  // Adresse collée : l'identifiant de la page vient remplir la case si elle
+  // est vide ou ne contient encore que celui de l'adresse précédente.
+  const prec = champUrl.dataset.idPage || '';
+  if(depuisUrl && f){
+    const actuel = champId.value.trim();
+    if(!actuel || actuel === prec) champId.value = f.id;
+  }
+  champUrl.dataset.idPage = f ? f.id : '';
+  const id = bdtIdPropre(champId.value);
+  const a = document.getElementById('itemBdtLien');
+  if(a){
+    const lien = bdtLien(champUrl.value, id);
+    a.hidden = !lien;
+    if(lien) a.href = lien;
+  }
+  const aide = document.getElementById('itemBdtAide');
+  if(aide){
+    const saisie = champUrl.value.trim();
+    let msg = '';
+    if(saisie && !f)
+      msg = T("Ce n'est pas l'adresse d'une fiche album Bédéthèque (…/BD-…-12345.html).",
+              "This is not a Bédéthèque album page address (…/BD-…-12345.html).");
+    else if(f && id && id !== f.id)
+      msg = T(`Réédition n° ${id}, présentée sur la fiche de l'album n° ${f.id}.`,
+              `Reissue no. ${id}, listed on the page of album no. ${f.id}.`);
+    else if(f && id)
+      msg = T(`Édition n° ${id}, celle de la page (en principe l'EO). Pour une réédition, remplacez par son identifiant.`,
+              `Edition no. ${id}, the page's own (usually the first edition). For a reissue, enter its identifier instead.`);
+    else if(id)
+      msg = T("Ajoutez l'adresse de la fiche album pour pouvoir l'ouvrir d'un clic.",
+              "Add the album page address to open it in one click.");
+    aide.textContent = msg;
+    aide.classList.toggle('erreur', !!(saisie && !f));
+  }
 }
 
 // ── Les mentions de remasterisation ─────────────────────────────────────
@@ -15149,6 +15241,7 @@ function renderItemDetail(id, pushHistory=true){
     ${itemLangues(it).length?`<dt>${t('detail.lang_label')}</dt><dd>${itemLangues(it).map(l=>{const f=languageFlag(l);return (f?f+' ':'')+escapeHTML(l)}).join(', ')}</dd>`:""}
     ${it.paysEdition?`<dt>${t('detail.country_label')}</dt><dd>${escapeHTML(it.paysEdition)}</dd>`:""}
     ${it.isbn?`<dt>${isDisque?T('Code-barres','Barcode'):t('detail.isbn_label')}</dt><dd>${escapeHTML(it.isbn)}${_renvoiFicheHTML(it, isDisque)}</dd>`:""}
+    ${(!isDisque && (it.bedethequeId||it.bedethequeUrl))?(()=>{const _l=bdtLien(it.bedethequeUrl,it.bedethequeId);return `<dt>Bédéthèque</dt><dd>${it.bedethequeId?`${T('Identifiant','Identifier')} ${escapeHTML(it.bedethequeId)}`:''}${_l?`<a class="lien-fiche" href="${escapeHTML(_l)}" target="_blank" rel="noopener noreferrer" title="${T('Ouvrir la fiche sur Bédéthèque','Open the page on Bédéthèque')}">${T('Voir la fiche','Open page')} ↗</a>`:''}</dd>`;})():""}
     ${it.nbPages?`<dt>${isPortfolio?t('detail.planches_label'):t('detail.pages_label')}</dt><dd>${it.nbPages}${isPortfolio?" pl.":" p."}</dd>`:""}
     ${it.tirage?`<dt>${t('detail.print_label')}</dt><dd>${escapeHTML(it.tirage)}${it.numeroExemplaire?` · ${_lang==='en'?'copy':'exemplaire'} ${escapeHTML(it.numeroExemplaire)}`:""}</dd>`:""}
     ${it.format?`<dt>${t('detail.format_label')}</dt><dd>${escapeHTML(it.format)}</dd>`:""}
@@ -15815,7 +15908,7 @@ function checkAutoBackup(){
 function exportCSV(type){
   let rows, filename;
   if(type==="items"){
-    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","isbn","nbPages","tirage","numeroExemplaire","format","etat","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","signaturePlanche","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
+    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","isbn","bedethequeId","bedethequeUrl","nbPages","tirage","numeroExemplaire","format","etat","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","signaturePlanche","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
     rows = [headers];
     cache.items.forEach(i=>{
       const authors = (i.auteurs||[]).map(a=>{const r=a.roles&&a.roles.length?a.roles:(a.role?[a.role]:[]);return `${authorDisplay(authorById(a.auteurId))||""}${r.length?" ("+r.join(", ")+")":""}`;}).join("; ");
@@ -16005,6 +16098,8 @@ async function importCSV(e, type){
           langues: (obj.langue||"").split(/[,/]/).map(s=>s.trim()).filter(Boolean),
           paysEdition: obj.paysEdition||"",
           isbn: obj.isbn||"",
+          bedethequeId: String(obj.bedethequeId||"").replace(/\D/g,""),
+          bedethequeUrl: obj.bedethequeUrl||"",
           tirage: obj.tirage||"",
           numeroExemplaire: obj.numeroExemplaire||"",
           format: obj.format||"",
