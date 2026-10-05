@@ -845,6 +845,8 @@
   .bdt-ref input{min-width:0}
   .bdt-aide{font-size:12px;color:var(--ink-soft);margin-top:4px;min-height:1em}
   .bdt-aide.erreur{color:#b3261e}
+  .bdt-installer{font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;color:var(--gold);text-decoration:none;cursor:grab;border:1px dashed var(--gold);border-radius:10px;padding:0 7px}
+  .bdt-installer:hover{background:var(--bg-panel)}
   .author-open{flex:none;width:38px;padding:0;display:flex;align-items:center;justify-content:center}
   .author-open .ico{width:19px;height:19px;color:var(--gold);opacity:.8;transition:opacity .15s}
   .author-open:hover .ico{opacity:1}
@@ -2670,9 +2672,9 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <a class="lien-ext" id="itemIsbnLien" href="#" target="_blank" rel="noopener noreferrer" hidden onclick="_avantOuvertureLienFiche(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></a>
               </div>
             </div>
-            <div class="span-2" id="formFieldBedetheque"><label data-en="Bédéthèque reference">Référence Bédéthèque</label>
+            <div class="span-2" id="formFieldBedetheque"><label><span data-en="Bédéthèque reference">Référence Bédéthèque</span><a class="bdt-installer" id="bdtInstaller" href="#" onclick="event.preventDefault();toast(T('Glissez ce bouton dans la barre de favoris de votre navigateur, puis cliquez dessus sur une fiche Bédéthèque.','Drag this button to your browser’s bookmarks bar, then click it on a Bédéthèque page.'))" title="Glissez-moi dans la barre de favoris" data-en="⇪ Bédéthèque button">⇪ Bouton Bédéthèque</a></label>
               <div class="bdt-ref">
-                <input type="url" id="itemBdtUrl" oninput="_majBedetheque(true)" autocomplete="off" placeholder="Adresse de la fiche album (copiée depuis Bédéthèque)" data-en-ph="Album page address (copied from Bédéthèque)">
+                <input type="url" id="itemBdtUrl" oninput="_majBedetheque(true)" autocomplete="off" placeholder="Adresse de la fiche album, ou collez le bouton Bédéthèque" data-en-ph="Album page address, or paste from the Bédéthèque button">
                 <input type="text" id="itemBdtId" inputmode="numeric" autocomplete="off" oninput="_majBedetheque()" placeholder="Identifiant" data-en-ph="Identifier" title="« Identifiant » de l'édition possédée (EO ou réédition)">
                 <a class="lien-ext" id="itemBdtLien" href="#" target="_blank" rel="noopener noreferrer" hidden title="Ouvrir la fiche sur Bédéthèque"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></a>
               </div>
@@ -8629,6 +8631,166 @@ function bdtLien(url, id){
   id = bdtIdPropre(id);
   return (id && id !== f.id) ? f.url + '#reed' : f.url;
 }
+function _boutonBedetheque(){
+var D=document,PID='bdthq-pick',old=D.getElementById(PID);
+if(old){old.remove();return;}
+var arts=[].slice.call(D.querySelectorAll('article.bdt-edition'));
+if(!/(^|\.)bedetheque\.com$/.test(location.hostname)||!arts.length){alert("Ouvrez d'abord la fiche d'un album sur Bédéthèque.");return;}
+var canon=D.querySelector('link[rel=canonical]');
+var url=((canon&&canon.href)||location.href).split('#')[0].split('?')[0];
+var h1=D.querySelector('h1');
+var serie=h1?h1.innerText.trim():'';
+var ROLES={'Scénario':'Scénariste','Dessin':'Dessinateur','Couleurs':'Coloriste','Encrage':'Encreur','Couverture':'Couverture','Préface':'Préface','Traduction':'Traducteur','Adapté de':'Idée originale','Idée originale':'Idée originale'};
+function dd(a,l){var dts=a.querySelectorAll('dl.bdt-sheet dt');for(var i=0;i<dts.length;i++){if(dts[i].textContent.trim()===l)return dts[i].nextElementSibling;}return null;}
+function txt(a,l){var e=dd(a,l);return e?e.innerText.replace(/\s+/g,' ').trim():'';}
+function lire(a){
+ var h=a.querySelector('.bdt-edition-head h3'),tome=h?h.innerText.replace(/\s+/g,' ').trim():'';
+ var info='',bs=a.querySelectorAll('b');
+ for(var i=0;i<bs.length;i++){if(bs[i].textContent.trim()==='Info édition'){info=bs[i].parentElement.innerText.replace('Info édition','').replace(/\s+/g,' ').trim();}}
+ var auteurs=[];
+ Object.keys(ROLES).forEach(function(l){var e=dd(a,l);if(!e)return;var ns=[].slice.call(e.querySelectorAll('a')).map(function(x){return x.textContent.trim();});if(!ns.length)ns=e.innerText.split(/\s*[;\/]\s*/);ns.forEach(function(n){n=n.trim();if(n&&n.charAt(0)!=='<')auteurs.push({nom:n,role:ROLES[l]});});});
+ var img=a.querySelector('img');
+ return {id:a.id.replace(/^ed-/,''),tome:tome,titre:txt(a,'Titre'),depot:txt(a,'Dépôt légal'),editeur:txt(a,'Éditeur'),collection:txt(a,'Collection'),format:txt(a,'Format'),isbn:txt(a,'EAN/ISBN'),planches:txt(a,'Planches'),eo:!!a.querySelector('[title="Edition originale"]'),info:info,auteurs:auteurs,vignette:img?img.src:''};
+}
+var eds=arts.map(lire);
+function copier(t){
+ function vieux(){var z=D.createElement('textarea');z.value=t;z.style.cssText='position:fixed;top:0;left:0;opacity:0';D.body.appendChild(z);z.select();var ok=false;try{ok=D.execCommand('copy');}catch(e){}z.remove();return ok;}
+ if(navigator.clipboard&&window.isSecureContext){return navigator.clipboard.writeText(t).then(function(){return true;},vieux);}
+ return Promise.resolve(vieux());
+}
+function el(tag,css,texte){var e=D.createElement(tag);if(css)e.style.cssText=css;if(texte!=null)e.textContent=texte;return e;}
+var P=el('div','position:fixed;top:16px;right:16px;z-index:2147483647;width:380px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:#1d1b19;color:#eee;border:1px solid #c9a24a;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.45);font:13px/1.35 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif');
+P.id=PID;
+var tete=el('div','display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #3a3530');
+tete.appendChild(el('div','flex:1;font-weight:600;color:#e7c46c','Quelle édition possédez-vous ?'));
+var x=el('button','background:none;border:0;color:#aaa;font-size:20px;cursor:pointer;line-height:1','×');x.title='Fermer';x.onclick=function(){P.remove();};tete.appendChild(x);
+P.appendChild(tete);
+P.appendChild(el('div','padding:8px 14px;color:#aaa;font-size:12px',serie+' — '+eds.length+' édition'+(eds.length>1?'s':'')));
+var liste=el('div','overflow:auto;padding:4px 8px 10px');P.appendChild(liste);
+var cible=(location.hash.match(/ed-(\d+)/)||[])[1];
+eds.forEach(function(e){
+ var b=el('button','display:flex;gap:10px;width:100%;text-align:left;background:#26231f;color:inherit;border:1px solid #3a3530;border-radius:8px;padding:8px;margin:4px 0;cursor:pointer;font:inherit');
+ if(e.id===cible)b.style.borderColor='#c9a24a';
+ b.onmouseenter=function(){b.style.background='#332e28';};b.onmouseleave=function(){b.style.background='#26231f';};
+ if(e.vignette){var im=el('img','width:44px;height:58px;object-fit:cover;border-radius:3px;flex:none');im.src=e.vignette;im.alt='';b.appendChild(im);}
+ var c=el('div','flex:1;min-width:0');
+ var l1=el('div','font-weight:600',e.tome||e.titre);
+ if(e.eo){l1.appendChild(el('span','margin-left:6px;padding:1px 6px;border-radius:9px;background:#c9a24a;color:#1d1b19;font-size:11px','EO'));}
+ c.appendChild(l1);
+ c.appendChild(el('div','color:#bbb',['n° '+e.id,e.depot&&'DL '+e.depot.split(' ·')[0],e.editeur].filter(Boolean).join(' · ')));
+ if(e.isbn)c.appendChild(el('div','color:#999','ISBN '+e.isbn));
+ if(e.info)c.appendChild(el('div','color:#999;font-style:italic;margin-top:2px',e.info));
+ b.appendChild(c);
+ b.onclick=function(){
+  var d={v:1,url:url,serie:serie,page:(url.match(/-(\d+)\.html$/)||[])[1]||''};for(var k in e)if(k!=='vignette')d[k]=e[k];
+  copier('BDTHQ1 '+JSON.stringify(d)).then(function(ok){
+   liste.innerHTML='';
+   liste.appendChild(el('div','padding:18px 8px;text-align:center;font-size:14px',ok?'✓ Édition n° '+e.id+' copiée':'La copie a échoué.'));
+   if(ok)liste.appendChild(el('div','padding:0 8px 14px;text-align:center;color:#aaa','Collez-la (⌘V) dans le champ « Référence Bédéthèque » de votre fiche.'));
+   setTimeout(function(){P.remove();},ok?2600:5000);
+  });
+ };
+ liste.appendChild(b);
+});
+D.body.appendChild(P);
+}
+
+// ── Ce que le bouton Bédéthèque dépose dans le presse-papier ────────────
+// Le bouton (_boutonBedetheque, ci-dessus) ne tourne pas ici : il est installé
+// dans la barre de favoris et s'exécute sur la page Bédéthèque que l'on
+// consulte. Il y lit les éditions affichées, laisse choisir la sienne et copie
+// une ligne « BDTHQ1 {…} ». Collée n'importe où dans le formulaire, cette ligne
+// remplit la référence et complète les champs encore vides — sans rien écraser.
+function bdtLirePresse(texte){
+  const m = String(texte||'').trim().match(/^BDTHQ1 (\{[\s\S]*\})$/);
+  if(!m) return null;
+  try{ const d = JSON.parse(m[1]); return (d && d.id && bdtDepuisUrl(d.url)) ? d : null; }
+  catch(e){ return null; }
+}
+// Les suffixes de Bédéthèque après le n° de tome : a1982 = réédition de 1982,
+// TL = tirage limité, FL = France Loisirs…
+function _bdtLibelleEdition(d){
+  const suf = String(d.tome||'').replace(/^Tome\s+\S+\s*/i,'').trim();
+  let lib = '';
+  if(/^[a-z]\d{4}/i.test(suf))      lib = T(`Réédition ${suf.slice(1,5)}`, `${suf.slice(1,5)} reissue`);
+  else if(/^TT/i.test(suf))           lib = T('Tirage de tête','Deluxe edition');
+  else if(/^TL/i.test(suf))           lib = T('Tirage limité','Limited edition');
+  else if(/^FL$/i.test(suf))          lib = 'France Loisirs';
+  else if(/^Poche$/i.test(suf))       lib = T('Format poche','Pocket edition');
+  else if(/^Pub$/i.test(suf))         lib = T('Édition publicitaire','Promotional edition');
+  else if(suf)                        lib = suf;
+  return [lib, d.info].filter(Boolean).join(' — ');
+}
+async function appliquerBedetheque(d){
+  const $ = id => document.getElementById(id);
+  const remplis = [];
+  const siVide = (id, v, nom) => {
+    const el = $(id);
+    if(el && v && !String(el.value||'').trim()){ el.value = v; remplis.push(nom); }
+  };
+  $('itemBdtUrl').value = bdtDepuisUrl(d.url).url;
+  $('itemBdtId').value  = bdtIdPropre(d.id);
+  siVide('itemTitle', d.titre, T('titre','title'));
+  siVide('itemSerie', d.serie, T('série','series'));
+  siVide('itemSerieNum', (String(d.tome||'').match(/^Tome\s+(\S+)/i)||[])[1], T('n° de tome','volume no.'));
+  siVide('itemPublisher', d.editeur, T('éditeur','publisher'));
+  if(d.collection && !/^<|^hors collection$/i.test(d.collection)) siVide('itemCollection', d.collection, 'collection');
+  if(String(d.isbn||'').replace(/[^0-9X]/gi,'').length >= 10) siVide('itemIsbn', d.isbn, 'ISBN');
+  const dl = String(d.depot||'').match(/(\d{1,2})\/(\d{4})/);
+  if(dl){
+    siVide('itemMonth', String(parseInt(dl[1],10)), T('mois','month'));
+    siVide('itemYear', dl[2], T('année','year'));
+  }
+  if(d.eo){
+    const eo = $('itemFirstEdition');
+    if(eo && !eo.checked){ eo.checked = true; remplis.push('EO'); }
+  } else {
+    siVide('itemEditionInfo', _bdtLibelleEdition(d), T("précisions d'édition",'edition details'));
+  }
+  // Auteurs : seulement si aucun n'est encore saisi. « Nom, Prénom » chez
+  // Bédéthèque ; une même personne peut cumuler plusieurs rôles.
+  const crees = [];
+  const list = $('itemAuthorsList');
+  if(list && (d.auteurs||[]).length
+     && ![...list.querySelectorAll('.item-author-select')].some(s=>s.value)){
+    const par = new Map();
+    for(const a of d.auteurs){
+      if(!par.has(a.nom)) par.set(a.nom, []);
+      if(a.role && !par.get(a.nom).includes(a.role)) par.get(a.nom).push(a.role);
+    }
+    list.innerHTML = '';
+    for(const [nom, roles] of par){
+      const [n, p] = nom.split(/\s*,\s*/);
+      const affiche = p ? `${p} ${n}` : n;
+      let a = _trouverAuteur(affiche);
+      if(!a){
+        a = await _creerAuteurDepuisNom(affiche, { nom:n, prenom:p||'' });
+        if(a) crees.push(authorDisplay(a));
+      }
+      if(a) addAuthorRow(a.id, roles);
+    }
+    if(par.size) remplis.push(T('auteurs','authors'));
+  }
+  _majLienFiche();
+  toast(T(`Bédéthèque n° ${bdtIdPropre(d.id)} associée` + (remplis.length ? ` — complété : ${remplis.join(', ')}` : ''),
+          `Bédéthèque no. ${bdtIdPropre(d.id)} linked` + (remplis.length ? ` — filled: ${remplis.join(', ')}` : '')));
+  if(crees.length){
+    setTimeout(()=>toast(T(`${crees.length} auteur(s) créé(s) : ${crees.join(', ')}`,
+                           `${crees.length} author(s) created: ${crees.join(', ')}`)), 1500);
+  }
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  const f = document.getElementById('itemForm');
+  if(f) f.addEventListener('paste', ev=>{
+    const d = bdtLirePresse(ev.clipboardData ? ev.clipboardData.getData('text') : '');
+    if(!d) return;                 // collage ordinaire : on ne s'en mêle pas
+    ev.preventDefault();
+    appliquerBedetheque(d);
+  });
+  const lien = document.getElementById('bdtInstaller');
+  if(lien) lien.href = 'javascript:' + encodeURIComponent('(' + _boutonBedetheque.toString() + ')()');
+});
+
 function _majBedetheque(depuisUrl){
   const bloc = document.getElementById('formFieldBedetheque');
   const champUrl = document.getElementById('itemBdtUrl');
