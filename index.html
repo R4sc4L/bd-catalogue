@@ -17081,7 +17081,11 @@ async function autofillSearch(){
       // Les catalogues bibliographiques couvrent mal la BD, surtout ancienne ou
       // de petit éditeur. Plutôt qu'une impasse, on ouvre la recherche sur le web :
       // le titre s'y trouve presque toujours, il suffit de le recopier.
-      const q = encodeURIComponent(cleanISBN || query);
+      // Un code-barres se cherche compacté ; un titre ou un nom, tel qu'il a été
+      // tapé — sinon « Marc Bati Bords cadres » devient « MARCBATIBORDSCADRES ».
+      const estCode = isISBN || estCodeBarresDisque(cleanISBN);
+      const q = encodeURIComponent(estCode ? cleanISBN : query.trim().replace(/\s+/g,' '))
+        .replace(/'/g,'%27');   // l'apostrophe fermerait la chaîne du onclick
       el.innerHTML = `
         <div class="autofill-loading" style="text-align:left">
           ${disque
