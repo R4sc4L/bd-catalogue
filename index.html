@@ -2151,7 +2151,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       </div>
     </div>
     <div class="filters" id="itemFilters">
-      <div class="field"><label data-en="Search">Recherche</label><div style="position:relative;display:flex;align-items:center"><input type="text" id="filterSearch" placeholder="Titre, série, notes..." style="width:100%;padding-right:28px"><button id="filterSearchClear" onclick="document.getElementById('filterSearch').value='';document.getElementById('filterSearchClear').style.display='none';applyFilters()" style="display:none;position:absolute;right:6px;background:none;border:none;color:var(--ink-soft);font-size:16px;cursor:pointer;padding:0;line-height:1" title="Effacer" data-en-title="Clear">✕</button></div></div>
+      <div class="field"><label data-en="Search">Recherche</label><div style="position:relative;display:flex;align-items:center"><input type="text" id="filterSearch" placeholder="Titre, série, notes..." style="width:100%;padding-right:28px"><button id="filterSearchClear" onclick="effacerRechercheCollection()" style="display:none;position:absolute;right:6px;background:none;border:none;color:var(--ink-soft);font-size:16px;cursor:pointer;padding:0;line-height:1" title="Effacer" data-en-title="Clear">✕</button></div></div>
       <div class="field" id="filterFieldCategory"><label id="filterCategoryLabel">Catégorie</label><select id="filterCategory"><option value="">Toutes</option></select></div>
       <div class="field" id="filterFieldGenre" style="display:none"><label data-en="Genre">Genre</label><select id="filterGenre"><option value="">Tous</option></select></div>
       <div class="field" id="filterFieldStyle" style="display:none"><label data-en="Style">Style</label><select id="filterStyle"><option value="">Tous</option></select></div>
@@ -7189,6 +7189,24 @@ function clearCollectionSearch(){
   const clr = document.getElementById('filterSearchClear');
   if(clr) clr.style.display = 'none';
   applyFilters();
+}
+
+// La croix du champ Recherche de la Collection. Si ce texte venait de la
+// recherche de l'en-tête, on vide celle-ci aussi : sinon elle resterait
+// affichée en haut sans plus rien filtrer.
+function effacerRechercheCollection(){
+  const inp = document.getElementById('filterSearch');
+  const glob = document.getElementById('globalSearch');
+  if(glob && inp && glob.value.trim() && glob.value.trim() === inp.value.trim()){
+    glob.value = '';
+    const gx = document.getElementById('globalSearchClear');
+    if(gx) gx.hidden = true;
+  }
+  if(inp) inp.value = '';
+  const clr = document.getElementById('filterSearchClear');
+  if(clr) clr.style.display = 'none';
+  applyFilters();
+  inp?.focus();
 }
 
 function _prefersReducedMotion(){ return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
@@ -16482,6 +16500,10 @@ document.getElementById("globalSearch").addEventListener("input", debounce(e=>{
   }
   showView("collection");
   document.getElementById("filterSearch").value = q;
+  // Le texte arrive par programme, sans événement « input » : la croix du champ
+  // de la Collection ne se montrait donc jamais.
+  const fcx = document.getElementById("filterSearchClear");
+  if(fcx) fcx.style.display = "block";
   renderCollection();
 },250));
 
