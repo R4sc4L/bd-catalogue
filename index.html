@@ -19294,10 +19294,27 @@ function attachLibraryListeners(container){
       el.classList.add("ouvrant");
       setTimeout(()=>{ el.classList.remove("ouvrant"); openDrawerModal(dname); }, 220);
     });
+    // Glisser un tiroir sur un autre : on les intervertit (avec leur contenu).
+    el.addEventListener("dragstart", e=>{
+      e.stopPropagation();
+      _libDragging = true;
+      _libDragItemId = "tiroir:" + dname;
+      _libDragFromShelfId = "__tiroir__";
+      el.classList.add("dragging");
+      try{ e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", dname); }catch(_){}
+    });
+    el.addEventListener("dragend", ()=>{
+      el.classList.remove("dragging");
+      clearIndicators();
+      container.querySelectorAll(".drawer-face.drag-over").forEach(f=>f.classList.remove("drag-over"));
+      _libDragItemId = null; _libDragFromShelfId = null;
+      setTimeout(()=>{ _libDragging = false; }, 150);
+    });
     el.addEventListener("dragover", e=>{
       // Seuls les albums individuels peuvent aller dans un tiroir (pas les piles ni les étagères entières)
       const key = String(_libDragItemId||"");
       if(key.startsWith("pile:") || key.startsWith("shelf:")) return;
+      if(key === "tiroir:" + dname) return;
       e.preventDefault();
       e.stopPropagation();
       el.classList.add("drag-over");
@@ -19313,6 +19330,12 @@ function attachLibraryListeners(container){
       e.stopPropagation();
       clearIndicators();
       el.classList.remove("drag-over");
+      if(key.startsWith("tiroir:")){
+        const autre = key.slice(7);
+        _libDragItemId = null;
+        if(autre && autre !== dname) await _intervertirTiroirs(autre, dname);
+        return;
+      }
       const item = cache.items.find(i=>String(i.id)===key);
       if(!item) return;
       const sourceShelf = libraryShelves.find(s=>s.id===_libDragFromShelfId);
@@ -19328,6 +19351,7 @@ function attachLibraryListeners(container){
   // ---- Shelf-body listeners (cross-shelf drop) ----
   allBodies.forEach(el=>{
     el.addEventListener("dragover", e=>{
+      if(String(_libDragItemId||"").startsWith("tiroir:")) return;
       e.preventDefault();
       el.classList.add("drag-over");
       e.dataTransfer.dropEffect = "move";
@@ -19350,6 +19374,7 @@ function attachLibraryListeners(container){
     const body = section ? section.querySelector(".shelf-body") : null;
     if(!body) return;
     header.addEventListener("dragover", e=>{
+      if(String(_libDragItemId||"").startsWith("tiroir:")) return;
       e.preventDefault();
       body.classList.add("drag-over");
       e.dataTransfer.dropEffect = "move";
@@ -19366,8 +19391,29 @@ function attachLibraryListeners(container){
 }
 
 // Logique de dépôt partagée entre le corps d'étagère et son en-tête (filet de sécurité).
+// Intervertit deux tiroirs (où qu'ils soient : même bloc, autre bloc, autre meuble).
+// Les albums suivent : ils désignent leur tiroir par son nom.
+async function _intervertirTiroirs(a, b){
+  let pa=null, pb=null;
+  for(const m of (libraryFurniture||[])){
+    for(const d of (m.drawers||[])){
+      (d.names||[]).forEach((nm,i)=>{
+        if(nm===a && !pa) pa={d,i};
+        else if(nm===b && !pb) pb={d,i};
+      });
+    }
+  }
+  if(!pa || !pb) return;
+  pa.d.names[pa.i] = b;
+  pb.d.names[pb.i] = a;
+  await saveLibraryFurniture();
+  toast(T(`Tiroirs « ${a} » et « ${b} » intervertis.`,`Drawers « ${a} » and « ${b} » swapped.`));
+  renderLibrary();
+}
+
 async function _handleShelfDrop(targetShelfId){
   if(!_libDragItemId) return;
+  if(String(_libDragItemId).startsWith("tiroir:")) return;
   if(targetShelfId === _libDragFromShelfId) return;
 
   const targetShelf = libraryShelves.find(s=>s.id===targetShelfId);
@@ -19607,8 +19653,8 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
           const nm = (d.names||[])[i] || "";
           const cnt = nm ? cache.items.filter(it=>(it.localisation||"").trim()===nm).length : 0;
           const safe = escapeHTML(nm);
-          return `<div class="drawer-face poignee-${_tiroirPoignee(d)}${cnt?' plein':''}" data-drawer-name="${safe}"
-            title="${safe} — ${cnt} ${libUnit(cnt)} (clic : voir le contenu, glisser un ${libUnit(1)} dessus : le ranger)">
+          return `<div class="drawer-face poignee-${_tiroirPoignee(d)}${cnt?' plein':''}" data-drawer-name="${safe}"${nm?' draggable="true"':''}
+            title="${safe} — ${cnt} ${libUnit(cnt)} (clic : voir le contenu, glisser un ${libUnit(1)} dessus : le ranger, glisser sur un autre tiroir : les intervertir)">
             <span class="drawer-label">${safe}</span>${cnt?`<span class="drawer-count">${cnt}</span>`:''}</div>`;
         }).join("");
         return `<div class="drawer-block${_tiroirClair(d)?' tiroir-clair':''}" style="width:calc(${pct}% - 3px);height:${hPx}px${_tiroirStyle(d)}">${faces}</div>`;
