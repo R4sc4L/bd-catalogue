@@ -844,6 +844,11 @@
   .bdt-ref{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:6px;align-items:stretch}
   .bdt-ref input{min-width:0}
   .bdt-aide{font-size:12px;color:var(--ink-soft);margin-top:4px;min-height:1em}
+  /* Catégorie et tradition dans la même case : la tradition se range à côté. */
+  .cat-trad{display:flex;gap:8px;align-items:flex-end;min-width:0}
+  .cat-trad-cat{flex:3;min-width:0}
+  .cat-trad-trad{flex:2;min-width:0}
+  .cat-trad select{width:100%}
   .bdt-aide.erreur{color:#b3261e}
   .bdt-installer{font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;color:var(--gold);text-decoration:none;cursor:grab;border:1px dashed var(--gold);border-radius:10px;padding:0 7px}
   .bdt-installer:hover{background:var(--bg-panel)}
@@ -2427,7 +2432,17 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div class="span-2"><label data-en="Title *">Titre *</label><input type="text" id="itemTitle" required></div>
             <div><label data-en="Subtitle">Sous-titre</label><input type="text" id="itemSubtitle"></div>
             <div id="formFieldUnivers" style="display:none"><label data-en="Universe / Series">Univers / Cycle</label><input type="text" id="itemUnivers" list="dl-univers" placeholder="ex: Moebius, Les Humanoïdes…" data-en-ph="e.g. Moebius, Les Humanoïdes…"></div>
-            <div><label data-en="Category *">Catégorie *</label><select id="itemCategory" required></select></div>
+            <div class="cat-trad">
+            <div class="cat-trad-cat"><label data-en="Category *">Catégorie *</label><select id="itemCategory" required></select></div>
+            <div id="formFieldTradition" class="cat-trad-trad"><label data-en="Tradition">Tradition</label><select id="itemTradition" title="L'école dont relève l'œuvre, quelle que soit la langue de l'édition possédée" data-en-title="The school the work belongs to, whatever the language of the edition owned">
+              <option value="">—</option>
+              <option value="franco-belge" data-en="Franco-Belgian">Franco-belge</option>
+              <option value="comics" data-en="Comics (US, UK)">Comics (US, UK)</option>
+              <option value="fumetti" data-en="Fumetti (Italy)">Fumetti (Italie)</option>
+              <option value="manga" data-en="Manga (Asia)">Manga (Asie)</option>
+              <option value="autre" data-en="Other">Autre</option>
+            </select></div>
+            </div>
             <div class="span-2" id="formFieldCatSec"><label data-en="Secondary categories">Catégories secondaires</label>
               <div style="position:relative">
                 <div class="cat-tag-input" id="catSecTagInput" onclick="document.getElementById('catSecSearch').focus()"></div>
@@ -2665,7 +2680,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <div class="cat-tag-dropdown" id="langDropdown" style="display:none"></div>
               </div>
             </div>
-            <div><label data-en="Country of publication">Pays d'édition</label><input type="text" id="itemCountry" list="dl-countries"></div>
+            <div><label data-en="Country of publication">Pays d'édition</label><input type="text" id="itemCountry" list="dl-countries" onchange="_proposerTradition()"></div>
             <div><label data-en="ISBN / Reference">ISBN / Référence</label>
               <div class="author-pick">
                 <input type="text" id="itemIsbn" oninput="_majLienFiche()">
@@ -6059,7 +6074,9 @@ const SB = (() => {
     'disqueGroupe','disqueGroupeId','disqueGroupeNat','disqueMusiciens','disqueDateOrigine',
     'disqueBoitier','disqueLivret','disqueLivretPages','disqueEncarts',
     // Référence Bédéthèque — même sac JSONB, aucune colonne SQL à créer
-    'bedethequeUrl','bedethequeId'];
+    'bedethequeUrl','bedethequeId',
+    // Tradition (franco-belge, comics, fumetti, manga…) — même sac JSONB
+    'tradition'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
     'pinsReference','pinsEditionLimitee'];
   // [cléLegacy, colonne, type] — s:texte(''), n:nombre(null), z:nombre(0), b:bool, d:date('')
@@ -7840,6 +7857,7 @@ function openItemForm(id=null, opts={}){
     initLangTagInput(itemLangues(it));
     initObjetsAssocies(it.objetsAssocies||[]);
     document.getElementById("itemCountry").value = it.paysEdition||"";
+    document.getElementById("itemTradition").value = TRADITIONS[it.tradition] ? it.tradition : "";
     document.getElementById("itemBdtUrl").value = it.bedethequeUrl||"";
     document.getElementById("itemBdtId").value = it.bedethequeId||"";
     document.getElementById("itemIsbn").value = it.isbn||"";
@@ -8168,6 +8186,7 @@ async function _saveItemCore(e){
       collection:         document.getElementById("itemCollection").value.trim(),
       langue:             _langues.join(', '),
       paysEdition:        document.getElementById("itemCountry").value.trim(),
+      tradition:          document.getElementById("itemTradition").value,
       tirage:             document.getElementById("itemPrintRun").value.trim(),
       tirageAnnotations:  document.getElementById("itemTirageAnnotations").value.trim(),
       format:             document.getElementById("itemFormat").value.trim(),
@@ -8320,6 +8339,7 @@ async function _saveItemCore(e){
     langue: _langues.join(', '),
     objetsAssocies: [..._objetsAssocies],
     paysEdition: document.getElementById("itemCountry").value.trim(),
+    tradition: document.getElementById("itemTradition").value,
     isbn: document.getElementById("itemIsbn").value.trim(),
     bedethequeUrl: bdtDepuisUrl(document.getElementById("itemBdtUrl").value)?.url
                    || document.getElementById("itemBdtUrl").value.trim(),
@@ -8791,6 +8811,33 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(lien) lien.href = 'javascript:' + encodeURIComponent('(' + _boutonBedetheque.toString() + ')()');
 });
 
+// ── La tradition ─────────────────────────────────────────────────────────
+// L'école dont relève une œuvre : franco-belge, comics, fumetti, manga… Ce
+// n'est ni une catégorie (une intégrale peut être franco-belge ou comics), ni
+// le pays d'édition (Batman traduit chez Urban reste un comics). Elle servira
+// à orienter vers la bonne base de référence. Propre à la collection BD.
+const TRADITIONS = {
+  'franco-belge': {fr:'Franco-belge',     en:'Franco-Belgian'},
+  'comics':       {fr:'Comics',           en:'Comics'},
+  'fumetti':      {fr:'Fumetti',          en:'Fumetti'},
+  'manga':        {fr:'Manga',            en:'Manga'},
+  'autre':        {fr:'Autre tradition',  en:'Other tradition'},
+};
+function traditionLibelle(v){ const t = TRADITIONS[v]; return t ? (_lang==='en' ? t.en : t.fr) : ''; }
+// Une VO se reconnaît à son pays : on propose la tradition, seulement si la
+// case est vide. Une édition française ne dit rien : elle peut être traduite.
+const _TRADITION_PAR_PAYS = {
+  'états-unis':'comics','etats-unis':'comics','usa':'comics','royaume-uni':'comics',
+  'italie':'fumetti','japon':'manga','corée du sud':'manga','coree du sud':'manga',
+};
+function _proposerTradition(){
+  const champ = document.getElementById('itemTradition');
+  const pays  = (document.getElementById('itemCountry')?.value || '').trim().toLowerCase();
+  if(!champ || champ.value || _bulkEditIds?.length) return;
+  const t = _TRADITION_PAR_PAYS[pays];
+  if(t){ champ.value = t; toast(T(`Tradition proposée : ${traditionLibelle(t)}`, `Tradition suggested: ${traditionLibelle(t)}`)); }
+}
+
 function _majBedetheque(depuisUrl){
   const bloc = document.getElementById('formFieldBedetheque');
   const champUrl = document.getElementById('itemBdtUrl');
@@ -8799,6 +8846,8 @@ function _majBedetheque(depuisUrl){
   const cat = document.getElementById('itemCategory')?.value || '';
   const pourBD = !archetypeForCategory(cat).showDisque && _collPourNouvelleFiche(cat) === 'bd';
   bloc.style.display = pourBD ? '' : 'none';
+  const trad = document.getElementById('formFieldTradition');
+  if(trad) trad.style.display = pourBD ? '' : 'none';
   const f = bdtDepuisUrl(champUrl.value);
   // Adresse collée : l'identifiant de la page vient remplir la case si elle
   // est vide ou ne contient encore que celui de l'adresse précédente.
@@ -15395,7 +15444,7 @@ function renderItemDetail(id, pushHistory=true){
   // Init carousel state si diaporama activé
   if(hasDiaporama){ _pcImgs = imgs; _pcNames = imgNames; _pcIdx = 0; }
 
-  const infoMeta = `<span class="tag cat">${escapeHTML(it.categorie||"")}</span>${(it.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}${it.editionOriginale?`<span class="badge-eo">${_lang==='en'?'Original Edition':'Édition Originale'}</span>`:""}${_badgeRemasterHTML(it)}${it.signe?`<span class="badge-signed">${_lang==='en'?'Signed':'Signé'}</span>`:""}${(it.dedicaceSignature||it.dedicaceCheck)?`<span class="badge-signed">${_lang==='en'?'Dedication sig.':'Dédicace sig.'}</span>`:""}${it.dedicaceDessin?`<span class="badge-signed">${_lang==='en'?'Dedication draw.':'Dédicace dessin'}</span>`:""}`;
+  const infoMeta = `<span class="tag cat">${escapeHTML(it.categorie||"")}</span>${(!isDisque && TRADITIONS[it.tradition])?`<span class="tag" title="${T('Tradition','Tradition')}">${escapeHTML(traditionLibelle(it.tradition))}</span>`:""}${(it.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}${it.editionOriginale?`<span class="badge-eo">${_lang==='en'?'Original Edition':'Édition Originale'}</span>`:""}${_badgeRemasterHTML(it)}${it.signe?`<span class="badge-signed">${_lang==='en'?'Signed':'Signé'}</span>`:""}${(it.dedicaceSignature||it.dedicaceCheck)?`<span class="badge-signed">${_lang==='en'?'Dedication sig.':'Dédicace sig.'}</span>`:""}${it.dedicaceDessin?`<span class="badge-signed">${_lang==='en'?'Dedication draw.':'Dédicace dessin'}</span>`:""}`;
   const infoDl = `
     ${disqueDl}
     ${it.editeur?`<dt>${isDisque?T('Label','Label'):t('detail.publisher_label')}</dt><dd>${escapeHTML(it.editeur)}${it.collection?` — ${escapeHTML(it.collection)}`:""}</dd>`:""}
@@ -16070,7 +16119,7 @@ function checkAutoBackup(){
 function exportCSV(type){
   let rows, filename;
   if(type==="items"){
-    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","isbn","bedethequeId","bedethequeUrl","nbPages","tirage","numeroExemplaire","format","etat","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","signaturePlanche","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
+    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","tradition","isbn","bedethequeId","bedethequeUrl","nbPages","tirage","numeroExemplaire","format","etat","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","signaturePlanche","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
     rows = [headers];
     cache.items.forEach(i=>{
       const authors = (i.auteurs||[]).map(a=>{const r=a.roles&&a.roles.length?a.roles:(a.role?[a.role]:[]);return `${authorDisplay(authorById(a.auteurId))||""}${r.length?" ("+r.join(", ")+")":""}`;}).join("; ");
@@ -16259,6 +16308,7 @@ async function importCSV(e, type){
           langue: obj.langue||"",
           langues: (obj.langue||"").split(/[,/]/).map(s=>s.trim()).filter(Boolean),
           paysEdition: obj.paysEdition||"",
+          tradition: TRADITIONS[obj.tradition] ? obj.tradition : "",
           isbn: obj.isbn||"",
           bedethequeId: String(obj.bedethequeId||"").replace(/\D/g,""),
           bedethequeUrl: obj.bedethequeUrl||"",
@@ -16789,6 +16839,127 @@ async function _remplirListeCameras(ov, video){
     }
   };
 }
+// ── Le complément de code-barres ────────────────────────────────────────
+// Un fascicule de kiosque porte, à droite du code principal, un petit code de
+// 2 ou 5 chiffres. Sur un comics américain (UPC), ses 5 chiffres donnent le
+// numéro (3), la variante de couverture (1) et le tirage (1) ; sur un albo
+// italien (EAN en 977, tiré de l'ISSN), le dernier chiffre de l'année et le
+// numéro sur 4 chiffres. Sans lui, le code principal désigne toute la série.
+// Les livres (ISBN en 978/979) en portent parfois un aussi — un prix : on
+// l'ignore, l'ISBN suffit à identifier l'édition.
+//   Ni le lecteur du système (BarcodeDetector) ni la copie de ZXing ne le
+// rendent : le premier ne le connaît pas, la seconde le décode mais le perd
+// en route (vérifié sur des codes générés). D'où ce petit lecteur dédié, qui
+// relit l'image une fois le code principal trouvé.
+const COMPLEMENT_ATTENTE_MS = 2500;   // le temps laissé au complément pour se lire
+function _codeAttendComplement(code){
+  const c = String(code||'').replace(/\D/g,'');
+  return /^\d{12}$/.test(c)            // UPC-A
+      || /^0\d{12}$/.test(c)           // UPC-A rendu en EAN-13
+      || /^977\d{10}$/.test(c);        // périodique (ISSN)
+}
+// Ce que la recherche et la fiche reçoivent, et ce qu'on en dit.
+function _analyseCodeLu(code, complement){
+  const c = String(code||'').replace(/[^0-9Xx]/g,'');
+  const k = String(complement||'').replace(/\D/g,'');
+  if(!k || !/^(\d{2}|\d{5})$/.test(k) || !_codeAttendComplement(c))
+    return { requete:c, complement:'', detail:'' };
+  let detail = '';
+  const upc = c.length===12 ? c : (/^0\d{12}$/.test(c) ? c.slice(1) : '');
+  if(upc && k.length===5){
+    detail = T(`n° ${Number(k.slice(0,3))}, variante ${k[3]}, tirage ${k[4]}`,
+               `issue ${Number(k.slice(0,3))}, variant ${k[3]}, printing ${k[4]}`);
+  } else if(c.startsWith('977') && k.length===5){
+    detail = T(`n° ${Number(k.slice(1))}, année en …${k[0]}`,
+               `issue ${Number(k.slice(1))}, year ending in ${k[0]}`);
+  }
+  return { requete:(upc||c)+k, complement:k, detail };
+}
+// Motifs EAN des chiffres (1 = barre), jeux L et G, et parités du complément à 5.
+const _CP_L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+const _CP_G = _CP_L.map(l=>[...l].map(c=>c==='1'?'0':'1').reverse().join(''));
+const _CP_PARITE5 = [0x18,0x14,0x12,0x11,0x0C,0x06,0x03,0x0A,0x09,0x05];
+// Des largeurs mesurées en pixels → un nombre de modules, total imposé.
+function _cpModules(l, total){
+  const s = l.reduce((a,b)=>a+b,0); if(!s) return null;
+  const v = l.map(w=>w*total/s), m = v.map(x=>Math.max(1,Math.round(x)));
+  let d = total - m.reduce((a,b)=>a+b,0);
+  while(d){
+    const sg = Math.sign(d); let k=-1, best=-Infinity;
+    for(let i=0;i<m.length;i++){ if(sg<0 && m[i]<=1) continue; const e=(v[i]-m[i])*sg; if(e>best){best=e;k=i;} }
+    if(k<0) return null; m[k]+=sg; d-=sg;
+  }
+  return m;
+}
+function _cpChiffre(l){                   // quatre largeurs : blanc, barre, blanc, barre
+  const m = _cpModules(l,7); if(!m) return null;
+  const bits = m.map((n,i)=>(i%2?'1':'0').repeat(n)).join('');
+  let d = _CP_L.indexOf(bits); if(d>=0) return {d, g:false};
+  d = _CP_G.indexOf(bits); if(d>=0) return {d, g:true};
+  return null;
+}
+// r : largeurs successives d'une ligne ; i : la première barre du garde (1-1-2).
+function _cpDecoder(r, i, n){
+  if(i < 1 || i + 3 + n*4 + (n-1)*2 > r.length) return null;
+  const mod = (r[i]+r[i+1]+r[i+2])/4;
+  const ok = (w,k)=> w >= k*mod*0.5 && w <= k*mod*1.7;
+  if(mod < 1 || !ok(r[i],1) || !ok(r[i+1],1) || !ok(r[i+2],2) || r[i-1] < 3*mod) return null;
+  let p = i+3, chiffres = '', motif = 0;
+  for(let x=0; x<n; x++){
+    const l = r.slice(p,p+4), w = l[0]+l[1]+l[2]+l[3];
+    if(w < 7*mod*0.6 || w > 7*mod*1.5) return null;
+    const c = _cpChiffre(l); if(!c) return null;
+    chiffres += c.d; if(c.g) motif |= 1 << (n-1-x); p += 4;
+    if(x < n-1){ if(!ok(r[p],1) || !ok(r[p+1],1)) return null; p += 2; }
+  }
+  if(n === 5){
+    const d = [...chiffres].map(Number);
+    if(_CP_PARITE5.indexOf(motif) !== (3*(d[0]+d[2]+d[4]) + 9*(d[1]+d[3])) % 10) return null;
+  } else if(Number(chiffres) % 4 !== motif) return null;
+  return chiffres;
+}
+// Une ligne de luminances → les compléments plausibles qu'elle contient.
+function _cpLireLigne(g){
+  const t = Array.from(g).sort((a,b)=>a-b);
+  const lo = t[Math.floor(t.length*.1)], hi = t[Math.floor(t.length*.9)];
+  if(hi - lo < 40) return [];
+  const seuil = (lo+hi)/2, r = [], fonce = [];
+  let cur = g[0] < seuil, w = 0;
+  for(let x=0; x<g.length; x++){
+    const f = g[x] < seuil;
+    if(f === cur) w++; else { r.push(w); fonce.push(cur); cur = f; w = 1; }
+  }
+  r.push(w); fonce.push(cur);
+  const trouves = [];
+  for(let i=1; i<r.length; i++){
+    if(!fonce[i]) continue;
+    const v = _cpDecoder(r,i,5) || _cpDecoder(r,i,2);
+    if(v) trouves.push(v);
+  }
+  return trouves;
+}
+// Une image de la caméra → le complément lu sur plusieurs lignes, ou ''.
+let _cpToile = null;
+function _lireComplementImage(video){
+  const W = video.videoWidth, H = video.videoHeight;
+  if(!W || !H) return '';
+  _cpToile = _cpToile || document.createElement('canvas');
+  _cpToile.width = W; _cpToile.height = H;
+  const ctx = _cpToile.getContext('2d', { willReadFrequently:true });
+  ctx.drawImage(video, 0, 0, W, H);
+  const px = ctx.getImageData(0, 0, W, H).data;
+  const votes = {};
+  const ligne = new Uint8Array(W);
+  for(let y = Math.floor(H*.2); y < H*.8; y += 3){
+    for(let x=0, o=y*W*4; x<W; x++, o+=4) ligne[x] = (px[o]*3 + px[o+1]*6 + px[o+2]) / 10;
+    for(const v of _cpLireLigne(ligne)) votes[v] = (votes[v]||0) + 1;
+  }
+  // Deux lignes concordantes au moins : une seule pourrait être un hasard.
+  let best = '', n = 1;
+  for(const [v,c] of Object.entries(votes)) if(c > n || (c === n && v.length > best.length && c > 1)){ best = v; n = c; }
+  return n >= 2 ? best : '';
+}
+
 // Décodeur : API native quand le système la fournit (Android, macOS, ChromeOS),
 // sinon ZXing embarqué dans ce fichier — indispensable sur Windows, Linux, iOS et
 // Firefox, où `BarcodeDetector` n'existe pas. Aucune dépendance réseau.
@@ -16797,7 +16968,7 @@ async function _getBarcodeReader(){
     try{
       const formats = await window.BarcodeDetector.getSupportedFormats();
       if(formats.includes('ean_13')){
-        const det = new window.BarcodeDetector({formats:['ean_13','ean_8','isbn' ].filter(f=>formats.includes(f))});
+        const det = new window.BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e'].filter(f=>formats.includes(f))});
         return { kind:'native', detect: async video => {
           const codes = await det.detect(video);
           return codes && codes.length ? codes[0].rawValue : null;
@@ -16907,12 +17078,35 @@ async function openBarcodeScanner(){
   _remplirListeCameras(ov, video);
   try{
     const dec = await _getBarcodeReader();
+    // Un disque ne porte pas de complément ; un fascicule, si.
+    const attendComplement = code => _codeAttendComplement(code)
+      && !(typeof _rechercheDisque === 'function' && _rechercheDisque());
+    // Code principal lu, complément attendu : on relit l'image un instant,
+    // puis on se contente du code principal.
+    const attendre = code => {
+      if(_scanState.attente) return;
+      const att = _scanState.attente = { code, minuterie: setTimeout(()=>{
+        if(_scanState && !_scanState.stop) _onBarcodeFound(code);
+      }, COMPLEMENT_ATTENTE_MS) };
+      ov.querySelector('.scan-hint').textContent =
+        T('Code lu — gardez le cadre : lecture du petit code à sa droite…',
+          'Code read — hold still: reading the small code on its right…');
+      const relire = ()=>{
+        if(!_scanState || _scanState.stop || _scanState.attente !== att) return;
+        let k = '';
+        try { k = _lireComplementImage(video); } catch(e){}
+        if(k){ _onBarcodeFound(code, k); return; }
+        _scanState.raf = requestAnimationFrame(relire);
+      };
+      relire();
+    };
+    const trouve = code => attendComplement(code) ? attendre(code) : _onBarcodeFound(code);
     if(dec.kind === 'native'){
       const loop = async ()=>{
         if(!_scanState || _scanState.stop) return;
         try{
           const code = await dec.detect(video);
-          if(code){ _onBarcodeFound(code); return; }
+          if(code){ trouve(code); return; }
         }catch(e){ /* image non exploitable : on continue */ }
         _scanState.raf = requestAnimationFrame(loop);
       };
@@ -16920,7 +17114,9 @@ async function openBarcodeScanner(){
     } else {
       // ZXing gère lui-même la boucle sur le flux vidéo
       _scanState.controls = await dec.reader.decodeFromVideoElement(video, (result)=>{
-        if(result && _scanState && !_scanState.stop) _onBarcodeFound(result.getText());
+        if(!result || !_scanState || _scanState.stop) return;
+        if(_scanState.attente) return;               // le complément est en cours de lecture
+        trouve(result.getText());
       });
     }
   }catch(e){
@@ -16957,15 +17153,20 @@ function _reporterCodeSurLaFiche(silencieux){
                           `Barcode carried over to the record: ${code}`));
   return true;
 }
-function _onBarcodeFound(code){
-  const isbn = String(code||'').replace(/[^0-9Xx]/g,'');
+function _onBarcodeFound(code, complement){
+  const a = _analyseCodeLu(code, complement);
+  const isbn = a.requete;
   if(!isbn) return;
   if(navigator.vibrate) { try{ navigator.vibrate(60); }catch(e){} }
   closeBarcodeScanner();
   const q = document.getElementById('autofillQuery');
   if(q){ q.value = isbn; }
   _codeRecherche = isbn;
-  toast(T(`Code lu : ${isbn}`,`Code read: ${isbn}`));
+  const principal = a.complement ? isbn.slice(0, -a.complement.length) : isbn;
+  toast(a.complement
+    ? T(`Code lu : ${principal} + ${a.complement}${a.detail?` (${a.detail})`:''}`,
+        `Code read: ${principal} + ${a.complement}${a.detail?` (${a.detail})`:''}`)
+    : T(`Code lu : ${isbn}`,`Code read: ${isbn}`));
   _autofillFromScan = true;
   autofillSearch();
 }
@@ -16974,6 +17175,7 @@ function closeBarcodeScanner(){
   _scanState.stop = true;
   if(_scanState.raf) cancelAnimationFrame(_scanState.raf);
   if(_scanState.minuterie) clearTimeout(_scanState.minuterie);
+  if(_scanState.attente) clearTimeout(_scanState.attente.minuterie);
   try{ _scanState.controls?.stop?.(); }catch(e){}
   try{ _scanState.stream?.getTracks?.().forEach(t=>t.stop()); }catch(e){}
   _scanState.ov?.remove();
@@ -17033,7 +17235,8 @@ async function autofillSearch(){
   el.innerHTML = `<div class="autofill-loading">${T('⏳ Recherche en cours…','⏳ Searching…')}</div>`;
   _autofillResults = [];
 
-  const isISBN = /^[\d\-Xx ]{9,17}$/.test(query);
+  // Jusqu'à 18 chiffres : un code de périodique (13) suivi de son complément (5).
+  const isISBN = /^[\d\-Xx ]{9,18}$/.test(query);
   const cleanISBN = query.replace(/[\s\-]/g,"").toUpperCase();
   // Tapé au clavier ou lu par la caméra, c'est le même service rendu : le code
   // sera reporté sur la fiche si la recherche ne donne rien.
