@@ -19093,8 +19093,17 @@ async function ensureFurnitureModel(){
     libraryShelves.forEach((s,i)=>{
       if(!s.meubleId){ s.meubleId=first.id; if(s.col==null) s.col=0; if(s.row==null) s.row=i; changed=true; }
     });
-    // Laisser de la place en haut pour le nom + boutons (évite le rognage)
-    libraryFurniture.forEach(m=>{ if((m.y||0) < 90){ m.y = 90; changed=true; } });
+    // Laisser de la place en haut pour le nom + boutons (évite le rognage). On décale TOUT
+    // le mobilier d'un même pas : remonter chaque meuble à 90 séparément, comme auparavant,
+    // désalignait un ensemble glissé trop haut dès l'affichage suivant — sans qu'on y touche.
+    const hautMin = Math.min(...libraryFurniture.map(m=>m.y ?? 60));
+    if(hautMin < 90){
+      const pas = 90 - hautMin;
+      libraryFurniture.forEach(m=>{ m.y = (m.y ?? 60) + pas; });
+      const cadre = _planCadreCourant();      // le cadrage suit, pour que la vue ne saute pas
+      if(cadre){ cadre.haut += pas; await _enregistrerPlanCadre(); }
+      changed = true;
+    }
   }
   // Migration : les tiroirs deviennent des localisations (id de bloc + nom unique par tiroir)
   libraryFurniture.forEach(m=>(m.drawers||[]).forEach(d=>{
@@ -20442,7 +20451,7 @@ function startMeubleDrag(e, id, tile){
 
   // Si les meubles sont liés, on déplace tout l'ensemble ; sinon seulement celui saisi.
   const src = libraryLinked ? libraryFurniture : libraryFurniture.filter(x=>x.id===id);
-  const targets = src.map(m=>({ m, el: scene && scene.querySelector(`.meuble3d[data-meuble-id="${m.id}"]`), ox:m.x||40, oy:m.y||60 }))
+  const targets = src.map(m=>({ m, el: scene && scene.querySelector(`.meuble3d[data-meuble-id="${m.id}"]`), ox:m.x??40, oy:m.y??60 }))   // ?? et non || : un meuble posé à 0 ne doit pas sauter à 40
                      .filter(t=>t.el);
   if(!targets.length) return;
   const startX = e.clientX, startY = e.clientY;
@@ -20454,8 +20463,13 @@ function startMeubleDrag(e, id, tile){
     const dx = ev.clientX-startX, dy = ev.clientY-startY;
     if(Math.abs(dx)>3 || Math.abs(dy)>3) _meubleDragMoved = true;
     const k = _planVue.k || 1;
+    // La butée à 0 s'applique au GROUPE, pas à chaque meuble : sinon, l'ensemble lié poussé
+    // contre un bord, le meuble de tête s'arrêtait pendant que les autres avançaient encore,
+    // et l'alignement était perdu.
+    const ddx = Math.max(dx/k, -Math.min(...targets.map(t=>t.ox)));
+    const ddy = Math.max(dy/k, -Math.min(...targets.map(t=>t.oy)));
     targets.forEach(t=>{
-      t.m.x = Math.max(0, t.ox + dx/k); t.m.y = Math.max(0, t.oy + dy/k);
+      t.m.x = t.ox + ddx; t.m.y = t.oy + ddy;
       t.el.style.left = ((t.m.x - _planVue.gauche)*k + _planVue.MARGE).toFixed(1)+"px";
       t.el.style.top  = ((t.m.y - _planVue.haut)*k + (_planVue.HAUT ?? 84)).toFixed(1)+"px";
     });
