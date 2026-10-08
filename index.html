@@ -1067,6 +1067,38 @@
     #nuageOverlay .nu-foot button{flex:1}
   }
   @media(prefers-reduced-motion:reduce){ #nuageOverlay .nu-monde{animation:none;opacity:1;transform:none} }
+  /* ══ Tableau lumineux : l'autre page d'entrée d'une collection ══
+     Un mur de cases au format de la collection. Au repos chacune luit de la
+     couleur de la dernière couverture qu'elle a montrée, comme un verre teinté
+     éclairé par derrière ; au hasard, l'une s'éclaire, prend la teinte de la
+     suivante et la révèle. Les durées viennent du script, par case. */
+  #nuageOverlay .tl-scene{flex:1;position:relative;min-height:0;overflow:hidden;user-select:none;-webkit-user-select:none}
+  #nuageOverlay .tl-scene .nu-vide{z-index:4}
+  #nuageOverlay .tl-case{position:absolute;border-radius:4px;overflow:hidden;--c:#6b5a45;
+    background-color:color-mix(in srgb,var(--c) 42%,#0b0a10);
+    background-image:radial-gradient(ellipse at 50% 38%,rgba(255,255,255,.07),transparent 72%),linear-gradient(160deg,rgba(255,255,255,.06),transparent 46%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.04),inset 0 -16px 26px rgba(0,0,0,.26);
+    transition:background-color var(--tl-c,900ms) ease,box-shadow var(--tl-c,900ms) ease;
+    animation:tl-allumage .7s ease-out both;animation-delay:var(--tl-retard,0ms)}
+  #nuageOverlay .tl-case.neon{animation-name:tl-neon;animation-duration:1.1s}
+  @keyframes tl-allumage{from{opacity:0}to{opacity:1}}
+  @keyframes tl-neon{0%{opacity:0}12%{opacity:.85}20%{opacity:.1}34%{opacity:1}44%{opacity:.35}60%,100%{opacity:1}}
+  /* La case s'éclaire : sa couleur monte et déborde en halo sur ses voisines */
+  #nuageOverlay .tl-case.eclat{z-index:2;background-color:color-mix(in srgb,var(--c) 86%,white);
+    box-shadow:0 0 28px 3px color-mix(in srgb,var(--c) 58%,transparent),inset 0 0 0 1px rgba(255,255,255,.2)}
+  #nuageOverlay .tl-cov{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;
+    opacity:0;transform:scale(1.035);pointer-events:none;
+    transition:opacity var(--tl-o,600ms) ease,transform var(--tl-o,600ms) ease}
+  #nuageOverlay .tl-case.montre{cursor:pointer}
+  #nuageOverlay .tl-case.montre .tl-cov{opacity:1;transform:scale(1)}
+  /* Liseré au survol : sur un pseudo-élément, pour ne pas hériter de la lente transition du halo */
+  #nuageOverlay .tl-case::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
+    box-shadow:inset 0 0 0 2px var(--nuage-accent,#c8904a);opacity:0;transition:opacity .15s ease}
+  #nuageOverlay .tl-case.montre:hover::after{opacity:1}
+  /* Un voile sur les bords du panneau : il se lit comme un objet éclairé, pas comme une grille */
+  #nuageOverlay .tl-vitre{position:absolute;inset:0;pointer-events:none;z-index:3;
+    background:radial-gradient(ellipse at 50% 42%,transparent 58%,rgba(0,0,0,.3) 100%)}
+  @media(prefers-reduced-motion:reduce){ #nuageOverlay .tl-case,#nuageOverlay .tl-case.neon{animation:none} }
   #pcLightbox{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9500;display:flex;align-items:center;justify-content:center;cursor:zoom-out;overflow:hidden}
   #pcLightbox img{height:92vh;width:auto;max-width:none;flex:none;object-fit:contain;box-shadow:0 0 80px rgba(0,0,0,.8);will-change:transform;transform-origin:center center;user-select:none;-webkit-user-drag:none}
   #pcLightbox.pc-pannable{cursor:grab}
@@ -1378,7 +1410,13 @@
   .meuble3d:hover .m3d-actions{display:flex}
   .m3d-actions button{font-size:15px;line-height:1;padding:5px 8px;border-radius:6px}
   /* Caisson 3D réel : façade + panneaux latéraux + dessus, orientés par rotateY (--yaw) */
-  .m3d-box{position:relative;width:var(--w);height:var(--h);transform-style:preserve-3d;transform:rotateX(-9deg) rotateY(var(--yaw,0deg));transition:transform .3s ease}
+  .m3d-box{position:relative;width:var(--w);height:var(--h);transform-style:preserve-3d;transform:rotateX(-9deg) rotateY(var(--yaw,0deg));transition:transform .3s ease;
+    /* Pivot sur l'arête de JONCTION, au ras du sol : un meuble tourné vers la droite (yaw>0,
+       flanc gauche visible) pivote sur son arête droite, l'inverse sur son arête gauche.
+       Pivoter au centre faisait glisser l'arête visible de w/2·(1−cos yaw) et, combiné au
+       rotateX, la décalait aussi en hauteur : deux meubles alignés sur le plan ne se
+       touchaient plus à l'écran. */
+    transform-origin:var(--pivot,50%) 100% 0}
   /* L'intérieur du caisson est construit en VOLUME, pas peint sur une façade : un fond reculé
      de --d, des tablettes horizontales réelles, des séparations verticales réelles, et un
      cadre de carcasse au ras de l'ouverture. Auparavant tout l'intérieur était un aplat collé
@@ -2063,6 +2101,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <button data-view="categories" role="menuitem">Catégories</button>
         <button data-view="import-export" role="menuitem">Import / Export</button>
         <button type="button" role="menuitem" id="navNuageBtn" data-en="☁️ Cover cloud" onclick="closeNavMore();ouvrirNuage(true)">☁️ Nuage de couvertures</button>
+        <button type="button" role="menuitem" id="navTableauBtn" data-en="✨ Light board" onclick="closeNavMore();ouvrirTableau(true)">✨ Tableau lumineux</button>
       </div>
     </div>
   </nav>
@@ -3044,13 +3083,15 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <div class="form-section">
           <h3 data-en="Preferences">Préférences</h3>
           <p class="muted" style="font-size:12px;margin:-4px 0 14px" data-en="Kept with the account: they follow you from one device to the next.">Conservées avec le compte : elles vous suivent d’un appareil à l’autre.</p>
-          <div class="form-grid three">
+          <div class="form-grid">
             <div><label data-en="Language">Langue</label>
               <select id="cpLangue"><option value="fr">Français</option><option value="en">English</option></select></div>
             <div><label data-en="Appearance">Apparence</label>
               <select id="cpTheme"><option value="dark" data-en="Dark">Sombre</option><option value="light" data-en="Light">Clair</option></select></div>
             <div><label data-en="Opening collection">Collection d’ouverture</label>
               <select id="cpCollectionOuverture"></select></div>
+            <div><label data-en="Collection welcome page">Page d’accueil des collections</label>
+              <select id="cpAccueil"><option value="" data-en="Cover sphere">Sphère de couvertures</option><option value="tableau" data-en="Light board">Tableau lumineux</option><option value="hasard" data-en="One or the other, at random">L’une ou l’autre, au hasard</option></select></div>
           </div>
         </div>
         <div class="modal-actions">
@@ -4969,7 +5010,7 @@ function initCollection(){
 // octets : de quoi le charger avec le reste, sans aller-retour au stockage.
 const AVATAR_MAX = 256;
 const COMPTE_DEFAUT = { nom:'', avatar:'', presentation:'', collectionNom:'', debut:'',
-                        langue:'', theme:'', collectionOuverture:'' };
+                        langue:'', theme:'', collectionOuverture:'', accueil:'' };
 let _compte = { ...COMPTE_DEFAUT };
 
 async function chargerCompte(){
@@ -5500,6 +5541,7 @@ function ouvrirFicheCompte(){
       enabledModules().map(m=>`<option value="${m.id}">${m.icon} ${escapeHTML(_modLabel(m))}</option>`).join('');
     sel.value = _compte.collectionOuverture || '';
   }
+  v('cpAccueil', _compte.accueil || '');
   const mail = courrielCompte();
   const em = document.getElementById('cpMail');
   if(em) em.innerHTML = mail
@@ -5564,7 +5606,8 @@ async function enregistrerCompte(ev){
     presentation: val('cpPresentation'), collectionNom: val('cpCollectionNom'),
     debut: val('cpDebut'),
     langue: val('cpLangue'), theme: val('cpTheme'),
-    collectionOuverture: val('cpCollectionOuverture') };
+    collectionOuverture: val('cpCollectionOuverture'),
+    accueil: val('cpAccueil') };
   try { await sauverCompte(); }
   catch(e){ toast(T('Enregistrement du compte impossible : ','Could not save the account: ')+e.message, 'error'); return; }
   appliquerPreferencesCompte();
@@ -5670,7 +5713,7 @@ let _nuageEtat = null;
 // projette. Ni recalcul de mise en page ni écriture de style superflue —
 // une transformation, une opacité et un ordre de profondeur par couverture.
 function _nuageImage(){
-  const st = _nuageEtat; if(!st) return;
+  const st = _nuageEtat; if(!st || st.type === 'tableau') return;
   st.rafId = 0;
   const now = performance.now();
   const dt = Math.min(48, now - (st.derniere || now)) / 16.67;   // en « images à 60 Hz »
@@ -5710,9 +5753,9 @@ function _nuageImage(){
   }
   if(!st.pause) st.rafId = requestAnimationFrame(_nuageImage);
 }
-function _nuageRelancer(){ const st=_nuageEtat; if(st && !st.rafId && !st.pause) st.rafId = requestAnimationFrame(_nuageImage); }
+function _nuageRelancer(){ const st=_nuageEtat; if(st && st.type !== 'tableau' && !st.rafId && !st.pause) st.rafId = requestAnimationFrame(_nuageImage); }
 function _nuageDimensionner(){
-  const st = _nuageEtat; if(!st) return;
+  const st = _nuageEtat; if(!st || st.type === 'tableau') return;
   const scene = st.ov.querySelector('.nu-scene');
   const L = scene.clientWidth, H = scene.clientHeight;
   if(!L || !H) return;
@@ -5876,6 +5919,7 @@ function ouvrirNuage(force){
 function fermerNuage(sansAtterrir){
   const st = _nuageEtat; if(!st) return;
   if(st.rafId) cancelAnimationFrame(st.rafId);
+  if(st.arreter) st.arreter();          // tableau lumineux : minuteries et chargements en cours
   window.removeEventListener('resize', st.surRedim);
   document.removeEventListener('visibilitychange', st.surVisibilite);
   st.ov.remove();
@@ -5887,8 +5931,393 @@ function proposerNuage(id){
   if(!id || id===ALL_COLL){ _nuageLeverVoile(); return; }
   // Tout de suite, dans le même souffle que la vue qu'elle recouvre : un
   // délai laissait le tableau de bord paraître un instant avant la sphère.
-  ouvrirNuage(false);
+  ouvrirAccueil(false);
   _nuageLeverVoile();
+}
+
+// ============================================================
+// TABLEAU LUMINEUX — l'autre page d'entrée d'une collection
+// ============================================================
+// Un mur de cases au format de la collection (debout pour un album, carré
+// pour un disque). Au repos, chaque case luit doucement de la couleur
+// dominante de la dernière couverture qu'elle a montrée : le tableau devient
+// la mosaïque des teintes de la collection. Au hasard, une case s'éclaire,
+// prend la teinte de la couverture suivante, puis la révèle. La plupart ne
+// font que passer, le temps d'un éclair ; d'autres s'attardent plusieurs
+// secondes — et les pièces marquantes (édition originale, signature,
+// dédicace…) sont de celles-là plus souvent qu'à leur tour.
+// Là où la sphère montre un échantillon, le tableau finit par faire défiler
+// toute la collection : une couverture montrée laisse la place aux autres.
+// Mêmes gestes que la sphère, et même cadre : l'overlay #nuageOverlay, la case
+// « Ne plus montrer », fermerNuage(). La préférence du compte choisit l'une,
+// l'autre, ou l'une ou l'autre au hasard à chaque arrivée.
+
+// Durées en millisecondes, tirées dans [min, max] à chaque passage.
+const TL_FUGACE   = { annonce:[140,260], entree:[160,260],  tenue:[380,1300],  sortie:[380,620] };
+const TL_PERSISTE = { annonce:[600,900], entree:[900,1300], tenue:[4500,9500], sortie:[1300,1900] };
+// Part moyenne des cases occupées par une couverture. Au-delà d'un tiers, le
+// mur se lit comme une grille de vignettes ; bien en deçà, comme un mur éteint.
+const TL_OCCUPATION = 0.32;
+const _tlCouleurs = new Map();   // id d'œuvre → couleur dominante, calculée une fois par session
+const _tlTirer = ([a, b]) => a + Math.random() * (b - a);
+
+// La page d'entrée selon la préférence du compte : la sphère par défaut, le
+// tableau lumineux, ou l'une ou l'autre tirée au sort à chaque arrivée.
+function _accueilChoisi(){
+  const p = (_compte && _compte.accueil) || '';
+  if(p === 'hasard') return Math.random() < 0.5 ? 'tableau' : 'sphere';
+  return p === 'tableau' ? 'tableau' : 'sphere';
+}
+function ouvrirAccueil(force){
+  return _accueilChoisi() === 'tableau' ? ouvrirTableau(force) : ouvrirNuage(force);
+}
+
+// ── Couleur dominante ────────────────────────────────────────────────
+// La teinte la plus présente parmi les pixels vifs : une moyenne brute
+// donnerait un brun boueux pour presque toutes les couvertures. Une
+// couverture sans couleur franche garde sa moyenne, grise s'il le faut.
+function _tlCouleurDominante(img){
+  try {
+    const N = 24, cv = document.createElement('canvas');
+    cv.width = cv.height = N;
+    const x = cv.getContext('2d', { willReadFrequently:true });
+    x.drawImage(img, 0, 0, N, N);
+    const d = x.getImageData(0, 0, N, N).data;   // refusé si l'image vient d'ailleurs sans CORS
+    const seaux = Array.from({ length:12 }, () => ({ p:0, r:0, g:0, b:0 }));
+    const tout = { p:0, r:0, g:0, b:0 };
+    for(let k = 0; k < d.length; k += 4){
+      const r = d[k], g = d[k+1], b = d[k+2];
+      tout.p++; tout.r += r; tout.g += g; tout.b += b;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      const v = mx / 255, s = mx ? (mx - mn) / mx : 0;
+      if(s < 0.2 || v < 0.16) continue;
+      const h = mx === r ? ((g - b) / (mx - mn) + 6) % 6
+              : mx === g ? (b - r) / (mx - mn) + 2
+              :            (r - g) / (mx - mn) + 4;
+      const w = s * v, sc = seaux[Math.floor(h * 2) % 12];
+      sc.p += w; sc.r += r * w; sc.g += g * w; sc.b += b * w;
+    }
+    const fort = seaux.reduce((a, b) => b.p > a.p ? b : a);
+    const src = fort.p > tout.p * 0.03 ? fort : tout;
+    return _tlRecaler(src.r / src.p, src.g / src.p, src.b / src.p);
+  } catch(e){ return null; }
+}
+// Ramène une couleur dans la plage où elle se lit encore, atténuée sur le
+// mur comme éclatante : ni noire, ni délavée.
+function _tlRecaler(r, g, b){
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+  let h = 0, s = 0;
+  if(mx !== mn){
+    const dd = mx - mn;
+    s = l > 0.5 ? dd / (2 - mx - mn) : dd / (mx + mn);
+    h = (mx === r ? (g - b) / dd + (g < b ? 6 : 0) : mx === g ? (b - r) / dd + 2 : (r - g) / dd + 4) / 6;
+  }
+  const L = Math.max(0.38, Math.min(0.62, l));
+  const S = s < 0.12 ? s : Math.max(0.42, Math.min(0.9, s * 1.1));
+  return `hsl(${Math.round(h * 360)} ${Math.round(S * 100)}% ${Math.round(L * 100)}%)`;
+}
+
+// ── Chargement ───────────────────────────────────────────────────────
+// Une image d'une autre origine (le stockage en ligne) est demandée en CORS,
+// pour pouvoir en lire les pixels. Si elle ne passe qu'en mode simple, son
+// hôte ne sert pas le CORS : on le note, pour ne plus le lui demander — ni
+// remplir la console d'un refus par couverture — et ses images prennent la
+// couleur de leur catégorie. Une case ne s'allume que sur une image décodée.
+const _tlHotesSansCors = new Set();
+function _tlCharger(it){
+  const src = _safeUrl((it.images || [])[0]);
+  return new Promise(res => {
+    if(!src){ res(null); return; }
+    let hote = '';
+    try { hote = new URL(src, location.href).host; } catch(e){}
+    const etranger = !/^(data|blob):/i.test(src) && hote !== location.host;
+    const essai = cors => {
+      const im = new Image();
+      if(cors) im.crossOrigin = 'anonymous';
+      im.onload = () => {
+        if(!cors && etranger) _tlHotesSansCors.add(hote);   // passée sans CORS seulement : l'hôte ne le sert pas
+        const fin = () => {
+          if(!_tlCouleurs.has(it.id)) _tlCouleurs.set(it.id, _tlCouleurDominante(im) || itemSpineColor(it));
+          res(im);
+        };
+        if(im.decode) im.decode().then(fin, fin); else fin();
+      };
+      im.onerror = () => cors ? essai(false) : res(null);
+      im.src = src;
+    };
+    essai(etranger && !_tlHotesSansCors.has(hote));
+  });
+}
+// Tirage pondéré par le poids de l'œuvre : une pièce marquante revient plus
+// souvent, sans jamais monopoliser le mur.
+function _tlTirerOeuvre(st, exclue){
+  let tot = 0;
+  for(const it of st.oeuvres) if(!exclue(it.id)) tot += st.poids.get(it.id);
+  if(!tot) return null;
+  let r = Math.random() * tot, dernier = null;
+  for(const it of st.oeuvres){
+    if(exclue(it.id)) continue;
+    dernier = it; r -= st.poids.get(it.id);
+    if(r <= 0) return it;
+  }
+  return dernier;
+}
+// Garde d'avance une réserve de couvertures prêtes. Une petite collection est
+// chargée en entier et gardée ; une grande défile : une couverture montrée
+// quitte la réserve et ne revient qu'après beaucoup d'autres.
+function _tlAlimenter(st){
+  const exclue = st.garder
+    ? id => st.pret.has(id) || st.enCours.has(id) || st.casse.has(id)
+    : id => st.pret.has(id) || st.enCours.has(id) || st.casse.has(id) || st.recentes.has(id) || st.affichees.has(id);
+  while(!st.ferme && st.enCours.size < 8 && st.pret.size + st.enCours.size < st.reserve){
+    const it = _tlTirerOeuvre(st, exclue);
+    if(!it) break;
+    st.enCours.add(it.id);
+    _tlCharger(it).then(im => {
+      st.enCours.delete(it.id);
+      if(st.ferme) return;
+      if(im) st.pret.set(it.id, im); else st.casse.add(it.id);
+    });
+  }
+}
+// La couverture qu'une case va montrer : prête, absente du mur, pas vue il
+// y a peu — à défaut, on relâche ces exigences une à une.
+function _tlPiocher(st){
+  const ids = [...st.pret.keys()];
+  let cand = ids.filter(id => !st.affichees.has(id) && !st.recentes.has(id));
+  if(!cand.length) cand = ids.filter(id => !st.affichees.has(id));
+  if(!cand.length) cand = ids;            // toute petite collection : une couverture peut revenir ailleurs
+  if(!cand.length) return null;
+  let tot = 0;
+  for(const id of cand) tot += st.poids.get(id) || 1;
+  let r = Math.random() * tot, choisi = cand[cand.length - 1];
+  for(const id of cand){ r -= st.poids.get(id) || 1; if(r <= 0){ choisi = id; break; } }
+  const im = st.pret.get(choisi);
+  if(!st.garder) st.pret.delete(choisi);
+  st.affichees.set(choisi, (st.affichees.get(choisi) || 0) + 1);
+  st.recentes.add(choisi); st.recentesFile.push(choisi);
+  while(st.recentesFile.length > st.memoire) st.recentes.delete(st.recentesFile.shift());
+  return { it: st.parId.get(choisi), im };
+}
+function _tlLiberer(st, id){
+  const n = (st.affichees.get(id) || 0) - 1;
+  if(n > 0) st.affichees.set(id, n); else st.affichees.delete(id);
+}
+// Une pièce ordinaire s'attarde une fois sur cinq ; chaque mérite (édition
+// originale, signature, dédicace…) lui en donne un peu plus de chances.
+function _tlChancePersiste(st, id){
+  if(st.reduit) return 1;
+  return Math.min(0.55, 0.2 + 0.07 * ((st.poids.get(id) || 1) - 1));
+}
+// Repos entre deux passages d'une même case : une loi exponentielle, celle
+// des événements sans mémoire — aucune case ne bat la mesure.
+function _tlAttente(st){
+  const passage = st.reduit ? 12000 : 3700;     // durée moyenne d'un passage, du premier éclat au noir
+  const moyenne = passage * (1 / TL_OCCUPATION - 1);
+  return Math.max(250, Math.min(moyenne * 3, -Math.log(1 - Math.random()) * moyenne));
+}
+
+// ── Le mur ───────────────────────────────────────────────────────────
+// Autant de cases que l'écran en porte à une taille où la couverture se
+// reconnaît : à peu près une pour 16 000 px² (un peu plus grandes sur un
+// téléphone), jamais moins de douze. Le format est exact ; la hauteur est
+// remplie, la largeur centrée.
+function _tlGrille(st){
+  const L = st.scene.clientWidth, H = st.scene.clientHeight;
+  if(!L || !H) return null;
+  const ratio = _nuageRatio(st.id);
+  const gap = Math.round(Math.max(4, Math.min(9, Math.min(L, H) * 0.008)));
+  const cible = Math.max(12, Math.min(150, Math.round(L * H / (L < 640 ? 11000 : 16000))));
+  let mieux = null;
+  for(let rangs = 2; rangs <= 18; rangs++){
+    const h = (H - (rangs + 1) * gap) / rangs;
+    if(h < 44) break;
+    const w = h * ratio;
+    const cols = Math.floor((L - gap) / (w + gap));
+    if(cols < 2) continue;
+    const n = rangs * cols, plein = cols * (w + gap) / L;
+    const note = Math.abs(Math.log(n / cible)) + (1 - plein) * 1.5;
+    if(!mieux || note < mieux.note) mieux = { rangs, cols, w, h, gap, L, note };
+  }
+  return mieux;
+}
+function _tlRegler(st, n){
+  st.reserve = Math.max(12, Math.ceil(n * 0.75));
+  st.garder = st.oeuvres.length <= st.reserve;
+  if(st.garder) st.reserve = st.oeuvres.length;
+  st.memoire = Math.min(Math.floor(st.oeuvres.length * 0.6), n * 4);
+}
+function _tlConstruire(st, g, allumage){
+  if(!g) return;
+  for(const c of st.cases){ c.el.remove(); if(c.id) _tlLiberer(st, c.id); }
+  st.cases = [];
+  _tlRegler(st, g.rangs * g.cols);
+  const { rangs, cols, w, h, gap, L } = g;
+  const x0 = (L - cols * w - (cols - 1) * gap) / 2;
+  const cx = (cols - 1) / 2, cy = (rangs - 1) / 2, dmax = Math.hypot(cx, cy) || 1;
+  // Les premières teintes viennent des couvertures déjà arrivées ; à défaut,
+  // de leur catégorie. Le mur s'allume ainsi d'emblée dans les couleurs de la
+  // collection, et chaque case prendra ensuite celle de ce qu'elle montre.
+  const teintes = [...st.pret.keys()].map(id => _tlCouleurs.get(id)).filter(Boolean);
+  const teinte = () => teintes.length ? teintes[Math.floor(Math.random() * teintes.length)]
+    : st.oeuvres.length ? itemSpineColor(st.oeuvres[Math.floor(Math.random() * st.oeuvres.length)])
+    : 'var(--nuage-accent,#c8904a)';
+  const frag = document.createDocumentFragment();
+  const now = performance.now();
+  for(let ry = 0; ry < rangs; ry++) for(let rx = 0; rx < cols; rx++){
+    const el = document.createElement('div');
+    el.className = 'tl-case';
+    el.style.cssText = `left:${(x0 + rx * (w + gap)).toFixed(1)}px;top:${(gap + ry * (h + gap)).toFixed(1)}px;width:${w.toFixed(1)}px;height:${h.toFixed(1)}px`;
+    // L'allumage part du centre et gagne les bords, comme un panneau qu'on
+    // met sous tension ; une case sur cinq grésille avant de prendre.
+    const retard = allumage ? Math.round(Math.hypot(rx - cx, ry - cy) / dmax * 850 + Math.random() * 160) : 0;
+    el.style.setProperty('--tl-retard', retard + 'ms');
+    el.style.setProperty('--c', teinte());
+    if(allumage && !st.reduit && Math.random() < 0.22) el.classList.add('neon');
+    const c = { el, etape:'repos', id:null, img:null, mode:null, survol:false,
+      // Un bon tiers du mur s'anime dès l'allumage ; le reste prend son rythme.
+      prochain: now + retard + (allumage && Math.random() < 0.35 ? 450 + Math.random() * 2400 : 600 + Math.random() * _tlAttente(st)) };
+    el.addEventListener('pointerenter', () => { c.survol = true; });
+    el.addEventListener('pointerleave', () => { c.survol = false; });
+    st.cases.push(c);
+    frag.appendChild(el);
+  }
+  st.scene.insertBefore(frag, st.scene.querySelector('.tl-vitre'));
+}
+// La vie d'une case : repos → annonce (elle s'éclaire dans la teinte de la
+// couverture qui vient) → montre (la couverture paraît et tient) → efface (elle
+// se fond dans sa couleur, qui retombe) → repos.
+function _tlAvancer(st, c, now){
+  const el = c.el;
+  if(c.etape === 'repos'){
+    const tir = _tlPiocher(st);
+    if(!tir){ c.prochain = now + 350; return; }      // rien de prêt : on repasse dans un instant
+    c.id = tir.it.id;
+    c.mode = Math.random() < _tlChancePersiste(st, c.id) ? TL_PERSISTE : TL_FUGACE;
+    const d = _tlTirer(c.mode.annonce);
+    el.style.setProperty('--tl-c', Math.round(d) + 'ms');
+    el.style.setProperty('--c', _tlCouleurs.get(c.id) || itemSpineColor(tir.it));
+    el.classList.add('eclat');
+    c.img = tir.im.cloneNode();
+    c.img.className = 'tl-cov'; c.img.alt = ''; c.img.draggable = false;
+    el.appendChild(c.img);
+    c.etape = 'annonce'; c.prochain = now + d;
+  } else if(c.etape === 'annonce'){
+    const e = _tlTirer(c.mode.entree);
+    el.style.setProperty('--tl-o', Math.round(e) + 'ms');
+    el.classList.add('montre');
+    el.dataset.id = c.id;
+    el.title = (st.parId.get(c.id) || {}).titre || '';
+    c.etape = 'montre'; c.prochain = now + e + _tlTirer(c.mode.tenue);
+  } else if(c.etape === 'montre'){
+    if(c.survol){ c.prochain = now + 250; return; }  // on la regarde : elle attend qu'on s'en aille
+    const s = _tlTirer(c.mode.sortie);
+    el.style.setProperty('--tl-o', Math.round(s) + 'ms');
+    el.style.setProperty('--tl-c', Math.round(s * 1.4) + 'ms');
+    el.classList.remove('montre', 'eclat');
+    c.etape = 'efface'; c.prochain = now + s * 1.4;
+  } else {
+    if(c.img) c.img.remove();
+    c.img = null;
+    delete el.dataset.id; el.removeAttribute('title');
+    _tlLiberer(st, c.id); c.id = null;
+    c.etape = 'repos'; c.prochain = now + _tlAttente(st);
+  }
+}
+function _tlTic(st){
+  if(st.ferme || st.pause) return;
+  const now = performance.now();
+  for(const c of st.cases) if(now >= c.prochain) _tlAvancer(st, c, now);
+  _tlAlimenter(st);
+}
+
+function ouvrirTableau(force){
+  const id = _activeCollection;
+  if(!force && _nuageCoupe(id)) return false;
+  fermerNuage(true);
+  const m = moduleById(id);
+  const tout = _nuageOeuvres(id);
+  if(!force && tout.length < 4) return false;     // trop peu pour faire un mur
+  const ov = document.createElement('div');
+  ov.id = 'nuageOverlay';
+  ov.className = 'nu-tableau';
+  ov.style.setProperty('--nuage-accent', m.accent || '#c8904a');
+  ov.innerHTML = `
+    <div class="nu-head">
+      <h2>${m.icon||''} ${escapeHTML(_modLabel(m))}</h2>
+      <span class="nu-compte">${T(`${tout.length} œuvre${tout.length>1?'s':''}`, `${tout.length} work${tout.length>1?'s':''}`)}</span>
+    </div>
+    <div class="tl-scene">
+      ${tout.length ? '' : `<div class="nu-vide">${T('Aucune couverture à montrer ici.','No cover to show here.')}</div>`}
+      <div class="tl-vitre"></div>
+    </div>
+    <div class="nu-foot">
+      <label><input type="checkbox" id="nuageNePlus" ${_nuageCoupe(id)?'checked':''}> ${T('Ne plus montrer cette page pour cette collection','Don’t show this page again for this collection')}</label>
+      <span class="nu-aide">${T('Une couverture allumée ouvre sa fiche · un clic à côté mène au tableau de bord','A lit cover opens its record · a click beside it goes to the dashboard')}</span>
+      <button type="button" id="nuageEntrer">${T('Entrer','Enter')} →</button>
+    </div>`;
+  document.body.appendChild(ov);
+  const scene = ov.querySelector('.tl-scene');
+  const st = _nuageEtat = {
+    type:'tableau', ov, id, scene, oeuvres:tout, cases:[],
+    poids:new Map(), parId:new Map(),
+    pret:new Map(), enCours:new Set(), casse:new Set(),
+    affichees:new Map(), recentes:new Set(), recentesFile:[],
+    reserve:12, garder:false, memoire:0,
+    reduit: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches),
+    rafId:0, minuterie:0, attente:0, minuterieRedim:0, pause:false, pauseDepuis:0, ferme:false };
+  for(const it of tout){ st.poids.set(it.id, Math.max(1, _nuagePoids(it))); st.parId.set(it.id, it); }
+  st.arreter = () => { st.ferme = true; clearInterval(st.minuterie); clearInterval(st.attente); clearTimeout(st.minuterieRedim); };
+
+  // Le mur s'allume quand une première réserve de couvertures est arrivée —
+  // pour s'allumer dans leurs couleurs — ou au bout de sept dixièmes de
+  // seconde : on n'attend pas un réseau lent.
+  const g0 = _tlGrille(st);
+  _tlRegler(st, g0 ? g0.rangs * g0.cols : 24);
+  const t0 = performance.now();
+  const assez = Math.min(st.reserve, Math.ceil((g0 ? g0.rangs * g0.cols : 24) * 0.5));
+  _tlAlimenter(st);
+  st.attente = setInterval(() => {
+    if(st.ferme){ clearInterval(st.attente); return; }
+    _tlAlimenter(st);
+    if(tout.length && st.pret.size < assez && st.enCours.size && performance.now() - t0 < 700) return;
+    clearInterval(st.attente);
+    _tlConstruire(st, g0 || _tlGrille(st), true);
+    if(tout.length) st.minuterie = setInterval(() => _tlTic(st), 50);
+  }, 40);
+
+  // Un clic sur une couverture (même en train de s'effacer) ouvre sa fiche ;
+  // partout ailleurs, il mène au tableau de bord.
+  scene.addEventListener('click', e => {
+    const cas = e.target.closest('.tl-case[data-id]');
+    if(cas){ const cle = cas.dataset.id; fermerNuage(true); renderItemDetail(cle); }
+    else fermerNuage();
+  });
+  ov.addEventListener('click', e => {
+    if(e.target.closest('.tl-scene') || e.target.closest('.nu-foot')) return;
+    fermerNuage();
+  });
+  ov.querySelector('#nuageEntrer').onclick = () => fermerNuage();
+  ov.querySelector('#nuageNePlus').onchange = e => _nuageRegler(id, e.target.checked);
+  ov.addEventListener('keydown', e => { if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); fermerNuage(); } });
+  ov.tabIndex = -1; ov.focus();
+  st.surRedim = () => {
+    clearTimeout(st.minuterieRedim);
+    st.minuterieRedim = setTimeout(() => { if(!st.ferme && st.cases.length) _tlConstruire(st, _tlGrille(st), false); }, 180);
+  };
+  window.addEventListener('resize', st.surRedim);
+  // Onglet caché : le mur se fige, et reprend où il en était
+  st.surVisibilite = () => {
+    if(document.hidden){ if(!st.pause){ st.pause = true; st.pauseDepuis = performance.now(); } }
+    else if(st.pause){
+      const dec = performance.now() - st.pauseDepuis;
+      st.pause = false;
+      for(const c of st.cases) c.prochain += dec;
+    }
+  };
+  document.addEventListener('visibilitychange', st.surVisibilite);
+  return true;
 }
 
 // ============================================================
@@ -18853,7 +19282,12 @@ function renderFurniturePlan(container, _secondePasse){
     if(bottom < minBottom) minBottom = bottom;
     // Angles : 0 = face, 90 = droit, 135 = droit fort, 180 = gauche, 225 = gauche fort
     const yaw = yawMeuble(m);
-    labels.push({cx, left, bottom, name:m.name, yaw});
+    // Le caisson pivote sur son arête de jonction (cf. .m3d-box) : le milieu VISIBLE de la
+    // façade se déplace vers cette arête, et le nom doit le suivre.
+    const pivot = yaw > 0 ? '100%' : (yaw < 0 ? '0%' : '50%');
+    const demiVu = w/2 * Math.cos(yaw*Math.PI/180);
+    const cxVu = yaw > 0 ? X + w - demiVu : (yaw < 0 ? X + demiVu : cx);
+    labels.push({cx:cxVu, left, bottom, name:m.name, yaw});
     const compartCm = (m.hCm||237)/rows; // hauteur réelle d'une case (cm)
     // Épaisseur du cadre de carcasse, en pixels d'écran : c'est le padding de
     // .m3d-front, et c'est lui qui fixe où la menuiserie découpe les colonnes.
@@ -18955,7 +19389,7 @@ function renderFurniturePlan(container, _secondePasse){
     // meuble vaut (−sin(yaw), 0, cos(yaw)) : un meuble pivoté négativement expose le plat DROIT
     // des livres, positivement le plat gauche.
     const cote = yaw < 0 ? ' vu-d' : (yaw > 0 ? ' vu-g' : '');
-    return `<div class="meuble3d${cote}" data-meuble-id="${m.id}" style="left:${X.toFixed(1)}px;top:${Y.toFixed(1)}px;--w:${w}px;--h:${h}px;--d:${d}px;--yaw:${yaw}deg;--wood:${m.color||'#5a3f28'}">
+    return `<div class="meuble3d${cote}" data-meuble-id="${m.id}" style="left:${X.toFixed(1)}px;top:${Y.toFixed(1)}px;--w:${w}px;--h:${h}px;--d:${d}px;--yaw:${yaw}deg;--pivot:${pivot};--wood:${m.color||'#5a3f28'}">
       <div class="m3d-actions">
         <button class="ghost" title="${T(`Ouvrir`,`Open`)}" data-act="open">↗</button>
         <button class="ghost" title="${T(`Pivoter de ${YAW_PAS}° (actuellement : ${_libelleYaw(yaw)}) — alt+clic : remettre de face. Angle exact dans « Modifier ».`,`Rotate by ${YAW_PAS}° (currently: ${_libelleYaw(yaw)}) — alt+click: reset to front. Exact angle in “Edit”.`)}" data-act="rotate">⟳</button>
