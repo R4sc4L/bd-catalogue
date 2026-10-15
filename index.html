@@ -753,6 +753,93 @@
   svg .lx-emb-ombre.lx-emb-cadre{stroke:rgba(0,0,0,.38)} svg .lx-emb-lumiere.lx-emb-cadre{stroke:rgba(255,255,255,.45)} svg .lx-emb-face.lx-emb-cadre{stroke:var(--lx-couv)}
   svg .lx-film{fill:#fff;fill-opacity:.12;stroke:color-mix(in srgb,var(--ink) 35%,#fff);stroke-opacity:.8;stroke-width:.5}
   svg .lx-film-reflet{fill:url(#lxReflet);opacity:.85}
+  /* Lexique des procédés d'impression : l'estampe à plat + le compte-fils (×10) */
+  #lexiqueImpressionsModal{--lx-papier:#d8cfbd;--lx-ligne:#766d5d}
+  body.theme-light #lexiqueImpressionsModal{--lx-papier:#f3eee3;--lx-ligne:#a59b88}
+  .lxi-defs{position:absolute;width:0;height:0;overflow:hidden}
+  .lx-famille + .lx-famille{margin-top:26px}
+  .lx-famille > h3{font-size:13px;color:var(--gold);border-bottom:1px solid var(--border-warm);padding-bottom:6px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.08em;font-family:"Nunito",sans-serif;font-weight:600}
+  .lx-indice{font-size:13.5px;color:var(--ink-soft);margin:0 0 12px}
+  .lx-indice b{color:var(--accent);font-weight:600}
+  .lx-carte > h4{font-size:17px;margin:2px 0 0;color:var(--ink)}
+  .lx-carte p.lx-type{color:var(--ink-soft);font-size:12.5px;font-style:italic}
+  .lx-texte{display:flex;flex-direction:column;gap:6px}
+  /* une carte seule sur sa ligne s'étale : le titre en haut, puis le croquis à gauche et le texte à droite */
+  @media (min-width:701px){.lx-famille .lx-grille > .lx-carte:last-child:nth-child(odd){grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px;align-items:center}
+    .lx-famille .lx-grille > .lx-carte:last-child:nth-child(odd) > h4{grid-column:1/-1}}
+  svg .lxi-cuv-lum{fill:color-mix(in srgb,var(--lx-papier) 62%,#fff)}
+  svg .lxi-cuv-h{fill:color-mix(in srgb,var(--lx-papier) 80%,#000)}
+  svg .lxi-cuv-s{fill:color-mix(in srgb,var(--lx-papier) 66%,#000)}
+  svg .lxi-papier,svg .lxi-papier-plein{fill:var(--lx-papier)}
+  svg .lxi-encre{fill:#1e1a17}
+  svg .lxi-visee{fill:none;stroke:var(--ink-soft);stroke-width:.6;stroke-dasharray:2 1.6}
+  svg .lxi-vise{fill:none;stroke:var(--ink-soft);stroke-width:.8}
+  svg .lxi-bague{fill:none;stroke:var(--ink-soft);stroke-width:2.4}
+  svg .lxi-bague-int{fill:none;stroke:#000;stroke-opacity:.25;stroke-width:.6}
+  svg .lxi-reflet{fill:none;stroke:#fff;stroke-opacity:.5;stroke-width:1.6;stroke-linecap:round}
+  svg .lxi-x10-fond{fill:var(--bg-alt);stroke:var(--ink-soft);stroke-width:.7}
+  svg .lxi-x10{fill:var(--ink-soft);font-size:7px;font-weight:700;font-family:"Nunito",sans-serif}
+  /* lithographie */
+  svg .lxi-litho-ciel{fill:url(#lxiLithoCiel)}
+  svg .lxi-litho-soleil{fill:#b4522f;fill-opacity:.88}
+  svg .lxi-litho-fond{fill:#2e2925;fill-opacity:.42}
+  svg .lxi-litho-devant{fill:#2e2925;fill-opacity:.8}
+  svg .lxi-grain{fill:url(#lxiGrainP)}
+  svg .lxi-crayon{fill:#77736d;font-family:Georgia,serif;font-style:italic}
+  svg .lxi-signature{fill:none;stroke:#77736d;stroke-width:.4;stroke-linecap:round;stroke-linejoin:round}
+  /* sérigraphie */
+  svg .lxi-seri-1{fill:#f4a321} svg .lxi-seri-1-ep{fill:#b06c0c}
+  svg .lxi-seri-2{fill:#1f6fb5} svg .lxi-seri-2-ep{fill:#123f69}
+  svg .lxi-seri-3{fill:#e0443a} svg .lxi-seri-3-ep{fill:#93231c}
+  svg .lxi-ep-ombre{fill:#000;fill-opacity:.32}
+  svg .lxi-ep-lum{fill:#fff;fill-opacity:.55}
+  /* offset */
+  svg .lxi-off-ciel{fill:url(#lxiOffCiel)} svg .lxi-off-soleil{fill:url(#lxiOffSoleil)}
+  svg .lxi-off-fond{fill:url(#lxiOffFond)} svg .lxi-off-devant{fill:url(#lxiOffDevant)}
+  svg .lxi-isole{isolation:isolate}
+  svg .lxi-cmjn-c{fill:#00a0df;mix-blend-mode:multiply} svg .lxi-cmjn-m{fill:#e5007d;mix-blend-mode:multiply}
+  svg .lxi-cmjn-j{fill:#ffe000;mix-blend-mode:multiply} svg .lxi-cmjn-n{fill:#1d1d1b;mix-blend-mode:multiply}
+  /* gravures en creux */
+  svg .lxi-hach{stroke:#1e1a17;fill:none}
+  svg .lxi-hach-ciel{fill:url(#lxiHachCiel)} svg .lxi-hach-a{fill:url(#lxiHachA)}
+  svg .lxi-hach-b{fill:url(#lxiHachB)} svg .lxi-hach-c{fill:url(#lxiHachC)}
+  svg .lxi-trait-fin{fill:none;stroke:#1e1a17;stroke-width:.35}
+  svg .lxi-relief{fill:#000;fill-opacity:.28}
+  svg .lxi-trait-ef{fill:none;stroke:#1e1a17;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  svg .lxi-trait-ef-feuille{fill:none;stroke:#1e1a17;stroke-width:.42;stroke-linecap:round;stroke-linejoin:round}
+  svg .lxi-barbe{fill:none;stroke:#1e1a17;stroke-opacity:.5;stroke-width:6.4;stroke-linecap:round;filter:url(#lxiVelours)}
+  svg .lxi-barbe-coeur{fill:none;stroke:#1e1a17;stroke-opacity:.75;stroke-width:2.8;stroke-linecap:round;filter:url(#lxiVelours2)}
+  svg .lxi-trait-ps{fill:none;stroke:#1e1a17;stroke-width:1.2;stroke-linecap:round}
+  svg .lxi-trait-ps.lxi-doublure{stroke-width:.8;stroke-opacity:.6}
+  svg .lxi-barbe-feuille{fill:none;stroke:#1e1a17;stroke-opacity:.4;stroke-width:1.5;stroke-linecap:round;filter:url(#lxiVelours2)}
+  svg .lxi-trait-ps-feuille{fill:none;stroke:#1e1a17;stroke-width:.5;stroke-linecap:round}
+  svg .lxi-aq-ciel{fill:#5a3e2b;fill-opacity:.2} svg .lxi-aq-fond{fill:#5a3e2b;fill-opacity:.5}
+  svg .lxi-aq-devant{fill:#3a281c;fill-opacity:.85} svg .lxi-grain-aqua{fill:url(#lxiGrainAq)}
+  svg .lxi-aqua-1{fill:#7a5a43} svg .lxi-aqua-2{fill:#2e1f15}
+  /* gravures en relief */
+  svg .lxi-xylo-cadre{fill:none;stroke:#1e1a17;stroke-width:1.1}
+  svg .lxi-xylo-noir{fill:#1e1a17}
+  svg .lxi-xylo-blanc{fill:none;stroke:var(--lx-papier);stroke-width:.9;stroke-linecap:round}
+  svg .lxi-xylo-rayon{fill:none;stroke:#1e1a17;stroke-width:.9;stroke-linecap:round}
+  svg .lxi-xylo-aplat{fill:#4a423b}
+  svg .lxi-xylo-fil{fill:none;stroke:var(--lx-papier);stroke-opacity:.22;stroke-width:1.1}
+  svg .lxi-xylo-bord{fill:none;stroke:#0c0a09;stroke-width:7}
+  svg .lxi-xylo-gouge-bord{fill:none;stroke:#0c0a09;stroke-width:8.6;stroke-linecap:round}
+  svg .lxi-xylo-gouge{fill:none;stroke:var(--lx-papier);stroke-width:3;stroke-linecap:round}
+  /* vue d'ensemble : les quatre matrices */
+  svg .lx-bois-t{fill:#cfa577} svg .lx-bois-h{fill:#ad8456} svg .lx-bois-s{fill:#8e6a43}
+  svg .lx-encre-t{fill:#1e1a17}
+  svg .lx-cuivre-t{fill:#d48c5c} svg .lx-cuivre-h{fill:#b0693b} svg .lx-cuivre-s{fill:#8f532c}
+  svg .lx-pierre-t{fill:#d9d2c2} svg .lx-pierre-h{fill:#bdb4a2} svg .lx-pierre-s{fill:#a39a88}
+  svg .lx-raclette-t{fill:#3a3a3e} svg .lx-raclette-h{fill:#2c2c30} svg .lx-raclette-s{fill:#232326}
+  svg .lxi-fil-bois{fill:none;stroke:#6f5231;stroke-width:.5;stroke-opacity:.6}
+  svg .lxi-eau{fill:#8fbde0;fill-opacity:.38}
+  svg .lxi-goutte{fill:#bcdcf2;fill-opacity:.8;stroke:#6f9fc4;stroke-width:.2}
+  svg .lxi-goutte-reflet{fill:#fff;fill-opacity:.85}
+  svg .lxi-maille{fill:url(#lxiMaille)}
+  svg .lxi-maille-fil{fill:none;stroke:#8a8f94;stroke-width:.22}
+  svg .lxi-pochoir{fill:#5f9a93;fill-opacity:.92}
+  svg .lxi-legende{fill:var(--ink);font-size:9px;font-weight:700;font-family:"Nunito",sans-serif}
   .char-sub{display:flex;flex-direction:column;gap:var(--space-title)}
   .char-row{display:flex;flex-wrap:wrap;column-gap:var(--space-col);row-gap:var(--space-row)}
   .form-section{margin-bottom:24px}
@@ -1894,6 +1981,58 @@
       scroll-behavior:auto!important;
     }
   }
+
+  /* ───────── Rangement des étagères (SPEC-rangement-etageres.md) ───────── */
+  .rg-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;white-space:nowrap;flex-shrink:0;line-height:1.5}
+  .rg-badge.rg-manuel{background:rgba(255,255,255,.10);color:#e8dcc8;font-weight:600}
+  .rg-badge.rg-ok{background:rgba(127,180,138,.25);color:#d5ecd9}
+  .rg-badge.rg-todo{background:#d9a03a;color:#2b1c0c}
+  .shelf-header .rg-badge{margin-left:2px}
+  .book-spine.rg-move{outline:2px dashed #f0c060;outline-offset:-1px}
+  .rg-modal .modal-body{display:flex;flex-direction:column;gap:0;padding-top:4px}
+  .rg-sec{padding:12px 0;border-bottom:1px solid var(--border)}
+  .rg-t{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin:0 0 10px}
+  .rg-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .rg-chip{background:var(--surface-tint);color:var(--ink);border:1px solid var(--border);font-weight:600;padding:4px 12px;border-radius:999px;font-size:13px}
+  .rg-chip:hover{background:var(--accent-soft)}
+  .rg-chip[aria-pressed="true"]{background:var(--accent-bg);color:var(--on-accent);border-color:var(--accent)}
+  .rg-crit{display:grid;grid-template-columns:22px 1fr 160px;gap:8px;align-items:center;margin-bottom:6px}
+  .rg-crit select{padding:5px 8px;font-size:14px}
+  .rg-k{font-size:12px;color:var(--ink-soft);font-weight:700;text-align:center}
+  .rg-note{font-size:12.5px;color:var(--ink-soft);margin:6px 0 0}
+  .rg-preview{display:grid;grid-template-columns:54px 1fr;gap:6px 10px;align-items:center;font-size:12px;color:var(--ink-soft);font-weight:700}
+  .rg-mini{display:flex;align-items:flex-end;gap:1px;padding:6px 6px 0;min-height:56px;overflow-x:auto;border-radius:4px 4px 0 0;
+    border-bottom:4px solid color-mix(in srgb,var(--wood,#5a3f28) 90%,black);background:color-mix(in srgb,var(--wood,#5a3f28) 18%,var(--bg-alt))}
+  .rg-s{flex-shrink:0;border-radius:1px;box-shadow:inset -1px 0 0 rgba(0,0,0,.3)}
+  .rg-s.rg-move{outline:2px solid #f0c060;outline-offset:-1px}
+  .rg-s.rg-sel{outline:2px solid var(--gold);outline-offset:1px;transform:translateY(-4px)}
+  .rg-counter{display:flex;gap:16px;flex-wrap:wrap;font-size:13.5px;margin-bottom:8px}
+  .rg-counter b{color:var(--gold);font-size:15px}
+  .rg-plan{list-style:none;margin:0;padding:0;counter-reset:rg;max-height:340px;overflow:auto}
+  .rg-plan li{counter-increment:rg;display:grid;grid-template-columns:22px 22px 1fr;gap:8px;align-items:start;padding:6px 0;border-top:1px solid var(--border);font-size:14px}
+  .rg-plan li:first-child{border-top:none}
+  .rg-plan li::before{content:counter(rg);font-size:12px;color:var(--ink-soft);text-align:right;padding-top:1px}
+  .rg-plan input{width:17px;height:17px;margin:2px 0 0;accent-color:var(--accent)}
+  .rg-plan b,.rg-loc b{color:var(--gold)}
+  .rg-plan li.rg-done span{text-decoration:line-through;color:var(--ink-soft)}
+  .rg-rien{color:#7fb48a;font-weight:700;margin:0}
+  .rg-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;padding-top:14px}
+  .rg-loc{margin:0 0 24px;padding:14px 16px;background:var(--bg-panel);border:1px solid var(--border-warm);border-radius:var(--radius)}
+  .rg-loc h3{font-family:"Nunito",sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin:0 0 8px}
+  .rg-crumb{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-weight:600;margin-bottom:8px}
+  .rg-crumb a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--ink-soft)}
+  .rg-crumb a:hover{color:var(--gold);border-color:var(--gold)}
+  .rg-sep{color:var(--ink-soft)}
+  .rg-voisins{font-size:15px;margin:0 0 2px}
+  .rg-rang{font-size:13px;color:var(--ink-soft);margin:0 0 10px}
+  .rg-alert{background:rgba(217,160,58,.14);border:1px solid rgba(217,160,58,.45);border-radius:6px;padding:7px 10px;font-size:13.5px;margin:0 0 10px}
+  .rg-mini-fiche{cursor:pointer;min-height:66px;max-width:640px}
+  .rg-mini-fiche:hover{filter:brightness(1.08)}
+  .rg-bas{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .rg-bas button,.rg-pins button{font-size:12.5px;padding:4px 10px}
+  .rg-pins{display:contents}
+  .rg-pins button[aria-pressed="true"]{border-color:var(--accent);color:var(--gold)}
+  @media(max-width:560px){.rg-crit{grid-template-columns:22px 1fr}.rg-crit select[data-rg-f="s"]{grid-column:2}}
 </style>
 </head>
 <body>
@@ -2519,7 +2658,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div><label data-en="Document type">Type de document <span id="ephFamilyHint" class="muted" style="text-transform:none;letter-spacing:0;font-weight:400;font-size:11px"></span></label>
               <select id="itemTypeDocument" onchange="adaptEphemereType(this.value)"></select>
             </div>
-            <div><label data-en="Printing technique">Technique d'impression</label><input type="text" id="itemTechnique" list="dl-techniques" placeholder="ex: Lithographie, offset, sérigraphie…" data-en-ph="e.g. Lithography, offset, screen print…"></div>
+            <div><div class="aide-titre" style="margin-bottom:4px"><label data-en="Printing technique">Technique d'impression</label><button type="button" class="aide-btn" onclick="ouvrirLexiqueImpressions()" title="Lexique des procédés d'impression illustré" data-en-title="Illustrated printing process glossary" aria-label="Lexique des procédés d'impression">?</button></div><input type="text" id="itemTechnique" list="dl-techniques" placeholder="ex: Lithographie, offset, sérigraphie…" data-en-ph="e.g. Lithography, offset, screen print…"></div>
             <!-- Composition : réservée aux documents multi-feuillets (voir EPHEMERE_MULTIFEUILLET).
                  Quatre compteurs indépendants et facultatifs sur une seule ligne — un même document
                  peut tenir de plusieurs à la fois (« 10 pages sur 2 feuillets + 2 volantes »). -->
@@ -5528,6 +5667,485 @@ function ouvrirLexiqueFinitions(){
   openModal('lexiqueFinitionsModal');
   bd.scrollTop = 0;
 }
+// ── Lexique des procédés d'impression ──────────────────────────────────
+// Fenêtre illustrée ouverte par le « ? » du champ « Technique d'impression ».
+// Chaque croquis montre l'estampe posée à plat, vue de trois quarts comme les
+// reliures (ce que l'on voit à l'œil nu), et à côté le compte-fils : un détail
+// du même tirage à la loupe ×10. Le motif — un soleil sur des collines — est
+// le même partout, pour comparer les procédés entre eux.
+const _LXI = { W:74, L:56 };                          // la feuille, à plat
+// Zones en coordonnées d'image : x vers la droite, y vers le bas depuis le
+// bord du fond. La marge du bas, côté lecteur, reçoit les mentions au crayon.
+const _LXI_IMG = { x:9, y:5, w:56, h:36 };
+const _LXI_CUV = { x:6, y:2.2, w:62, h:41.6 };        // empreinte de la plaque
+const _LXI_LOUPE = { cx:208, cy:70, R:44 };
+const _lxiR = v => +v.toFixed(2);
+const _lxiPts = pts => pts.map(p => p.map(_lxiR).join(' ')).join('L');
+function _lxiCam(){ _l3Cam(76, 150, 1.5); }
+// Pose un dessin 2D (coordonnées d'image) sur le dessus de la feuille, à la hauteur H.
+function _lxiPlan(H, inner){ return `<g transform="${_matPlat(H)} translate(0 ${-_LXI.L})">${inner}</g>`; }
+function _lxiEcran(ix, iy, H){ return _P(ix, _LXI.L - iy, H); }
+function _lxiRepImg(ix, iy, H, x2, y2, txt, ancre){ const [x1,y1] = _lxiEcran(ix, iy, H); return _lxRep(x1, y1, x2, y2, txt, ancre); }
+// Pseudo-hasard reproductible : le grain est le même à chaque ouverture.
+function _lxiAlea(graine){
+  let a = graine >>> 0;
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a;
+    t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+// Une liste de disques [x, y, r] en un seul tracé.
+function _lxiDisques(pts){
+  return pts.map(([x,y,r]) => `M${_lxiR(x-r)} ${_lxiR(y)}a${_lxiR(r)} ${_lxiR(r)} 0 1 0 ${_lxiR(2*r)} 0a${_lxiR(r)} ${_lxiR(r)} 0 1 0 ${_lxiR(-2*r)} 0`).join('');
+}
+// Un semis irrégulier de petits points clairs, pour les motifs de grain.
+function _lxiSemis(graine, cote, n, r0, r1){
+  const rnd = _lxiAlea(graine), pts = [];
+  for(let i=0;i<n;i++) pts.push([rnd()*cote, rnd()*cote, r0 + rnd()*(r1-r0)]);
+  return _lxiDisques(pts);
+}
+// Motifs, dégradés et flous communs, déclarés une fois en tête de la fenêtre.
+let _lxiDefsCache = '';
+function _lxiDefs(){
+  if(_lxiDefsCache) return _lxiDefsCache;
+  const hach = (id, pas, angle, ep) => `<pattern id="${id}" width="${pas}" height="${pas}" patternUnits="userSpaceOnUse" patternTransform="rotate(${angle})"><path class="lxi-hach" d="M0 ${pas/2}H${pas}" stroke-width="${ep}"/></pattern>`;
+  return _lxiDefsCache = `<svg class="lxi-defs" aria-hidden="true" focusable="false"><defs>
+  <pattern id="lxiGrainP" width="9" height="9" patternUnits="userSpaceOnUse"><path class="lxi-papier" d="${_lxiSemis(3, 9, 52, .14, .46)}"/></pattern>
+  <pattern id="lxiGrainAq" width="6" height="6" patternUnits="userSpaceOnUse"><path class="lxi-papier" d="${_lxiSemis(5, 6, 70, .1, .24)}"/></pattern>
+  ${hach('lxiHachCiel', 1.7, 0, .26)}${hach('lxiHachA', 1.15, 35, .4)}${hach('lxiHachB', 1, -18, .44)}${hach('lxiHachC', 1.1, 62, .36)}
+  <linearGradient id="lxiLithoCiel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2e2925" stop-opacity=".34"/><stop offset=".75" stop-color="#2e2925" stop-opacity="0"/></linearGradient>
+  <linearGradient id="lxiOffCiel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5f9bd0"/><stop offset="1" stop-color="#e6eef0"/></linearGradient>
+  <radialGradient id="lxiOffSoleil"><stop offset="0" stop-color="#fffbe2"/><stop offset=".6" stop-color="#ffe27a"/><stop offset="1" stop-color="#f4b73d"/></radialGradient>
+  <linearGradient id="lxiOffFond" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#86a66c"/><stop offset="1" stop-color="#4f7341"/></linearGradient>
+  <linearGradient id="lxiOffDevant" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#47683a"/><stop offset="1" stop-color="#253a1f"/></linearGradient>
+  <pattern id="lxiMaille" width="1.3" height="1.3" patternUnits="userSpaceOnUse"><path class="lxi-maille-fil" d="M0 .65H1.3M.65 0V1.3"/></pattern>
+  <filter id="lxiVelours" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="1.3"/></filter>
+  <filter id="lxiVelours2" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation=".45"/></filter>
+</defs></svg>`;
+}
+
+// ── La feuille ──
+function _lxiFeuille(e){ const {W,L} = _LXI; return _pave(0,W,0,L,0,e,'pg'); }
+// La cuvette : la plaque, plus petite que la feuille, s'y est enfoncée sous la
+// presse. Ses bords biseautés accrochent la lumière devant, restent dans
+// l'ombre au fond.
+function _lxiCuvette(e, d){
+  const {L} = _LXI, c = _LXI_CUV, b = 1.6, f = e - d;
+  const X0 = c.x, X1 = c.x + c.w, Y0 = L - (c.y + c.h), Y1 = L - c.y;
+  const A = [X0,Y0,e], B = [X1,Y0,e], C = [X1,Y1,e], D = [X0,Y1,e];
+  const a = [X0+b,Y0+b,f], bq = [X1-b,Y0+b,f], cq = [X1-b,Y1-b,f], dq = [X0+b,Y1-b,f];
+  return _poly([a,bq,cq,dq], 'lx-f lx-pg-t')
+       + _poly([A,B,bq,a], 'lxi-cuv-lum') + _poly([D,A,a,dq], 'lxi-cuv-lum')
+       + _poly([B,C,cq,bq], 'lxi-cuv-s') + _poly([C,D,dq,cq], 'lxi-cuv-h');
+}
+
+// ── Le motif, en coordonnées d'image (0..56 × 0..36) ──
+const _LXI_MOTIF = {
+  soleil: [40, 10.5, 6],
+  fond:   'M0 22C6 18 12 13.5 20 14C28 14.5 33 21.5 42 22C48 22.3 52 19.5 56 18.5L56 36L0 36Z',
+  crete:  'M0 22C6 18 12 13.5 20 14C28 14.5 33 21.5 42 22C48 22.3 52 19.5 56 18.5',
+  devant: 'M0 31C8 28 16 26 24 27.6C32 29.2 40 27 47 25.2C51 24.2 54 24.1 56 24.4L56 36L0 36Z',
+};
+const _lxiPlace = inner => `<g transform="translate(${_LXI_IMG.x} ${_LXI_IMG.y})">${inner}</g>`;
+function _lxiSoleil(cls, r=_LXI_MOTIF.soleil[2]){ const [x,y] = _LXI_MOTIF.soleil; return `<circle class="${cls}" cx="${x}" cy="${y}" r="${r}"/>`; }
+// Point du motif (coordonnées 0..56 × 0..36) → point à l'écran.
+function _lxiMotifEcran(mx, my, H){ return _lxiEcran(_LXI_IMG.x + mx, _LXI_IMG.y + my, H); }
+
+// ── Le compte-fils : une lentille reliée au point examiné ──
+function _lxiLoupe(id, cible, contenu){
+  const {cx,cy,R} = _LXI_LOUPE, [tx,ty] = cible, rt = 3.6;
+  const dx = cx-tx, dy = cy-ty, dist = Math.hypot(dx,dy), nx = -dy/dist, ny = dx/dist;
+  const visee = `<path class="lxi-visee" d="M${_lxiR(tx+nx*rt)} ${_lxiR(ty+ny*rt)}L${_lxiR(cx+nx*R)} ${_lxiR(cy+ny*R)}M${_lxiR(tx-nx*rt)} ${_lxiR(ty-ny*rt)}L${_lxiR(cx-nx*R)} ${_lxiR(cy-ny*R)}"/>`;
+  const a1 = 200*Math.PI/180, a2 = 248*Math.PI/180, rr = R-4.5;
+  const reflet = `<path class="lxi-reflet" d="M${_lxiR(cx+rr*Math.cos(a1))} ${_lxiR(cy+rr*Math.sin(a1))}A${rr} ${rr} 0 0 1 ${_lxiR(cx+rr*Math.cos(a2))} ${_lxiR(cy+rr*Math.sin(a2))}"/>`;
+  const ax = _lxiR(cx + R*Math.cos(Math.PI/4)), ay = _lxiR(cy - R*Math.sin(Math.PI/4));
+  return visee + `<circle class="lxi-vise" cx="${_lxiR(tx)}" cy="${_lxiR(ty)}" r="${rt}"/>`
+    + `<clipPath id="${id}"><circle cx="${cx}" cy="${cy}" r="${R}"/></clipPath>`
+    + `<g clip-path="url(#${id})"><circle class="lxi-papier" cx="${cx}" cy="${cy}" r="${R}"/>`
+    + `<g transform="translate(${cx} ${cy})">${contenu}</g></g>`
+    + reflet + `<circle class="lxi-bague-int" cx="${cx}" cy="${cy}" r="${R-1.3}"/><circle class="lxi-bague" cx="${cx}" cy="${cy}" r="${R}"/>`
+    + `<rect class="lxi-x10-fond" x="${_lxiR(ax-10)}" y="${_lxiR(ay-5.5)}" width="20" height="11" rx="5.5"/>`
+    + `<text class="lxi-x10" x="${ax}" y="${_lxiR(ay+2.5)}" text-anchor="middle">×10</text>`;
+}
+// Repère pointant un détail de la lentille (coordonnées centrées sur elle).
+function _lxiRepLoupe(x, y, x2, y2, txt, ancre){ const {cx,cy} = _LXI_LOUPE; return _lxRep(_lxiR(cx+x), _lxiR(cy+y), x2, y2, txt, ancre); }
+
+// ── Ce que montre le compte-fils (coordonnées centrées sur la lentille) ──
+// Lithographie : le grain de la pierre, irrégulier, se resserre dans les noirs ;
+// le trait de crayon n'a pas de bord net.
+function _lxiGrainLitho(){
+  const R = _LXI_LOUPE.R, rnd = _lxiAlea(11), taches = [];
+  const ton = (x,y) => {
+    const d = (y + .45*x - 2) / 9, trait = Math.exp(-d*d*1.4) * .92;   // un trait large, en biais
+    const demi = .1 + Math.max(0, (x + y) / (2*R)) * .38;               // une demi-teinte en bas à droite
+    return Math.max(trait, demi);
+  };
+  for(let i=0;i<9000;i++){
+    const x = (rnd()*2-1)*R, y = (rnd()*2-1)*R; if(x*x + y*y > R*R) continue;
+    const t = ton(x,y); if(rnd() > t*.62) continue;
+    taches.push([x, y, .22 + rnd()*.4 + t*rnd()*.55]);
+  }
+  return `<path class="lxi-encre" d="${_lxiDisques(taches)}"/>`;
+}
+// Sérigraphie : des aplats opaques, sans trame ; l'encre, posée en couche
+// épaisse, projette une petite ombre au bord de chaque couleur.
+function _lxiAplatsSeri(){
+  const couche = (d, cls) => `<path class="lxi-ep-ombre" transform="translate(1.5 1.8)" d="${d}"/><path class="lxi-ep-lum" transform="translate(-.6 -.7)" d="${d}"/><path class="${cls}" d="${d}"/>`;
+  return couche('M-60 -60L-60 30C-34 30 -10 10 -6 -16C-4 -30 -8 -46 -14 -60Z', 'lxi-seri-1')
+       + couche('M-60 60L-60 4C-40 -2 -22 2 -4 12C12 21 30 22 60 14L60 60Z', 'lxi-seri-2');
+}
+// Offset : la trame en rosettes, quatre grilles de points (cyan, magenta,
+// jaune, noir) inclinées chacune d'un angle différent.
+function _lxiTrameOffset(){
+  const R = _LXI_LOUPE.R, pas = 6.6;
+  const bord = x => 4 + .3*x + 5*Math.sin(x/11);                        // limite ciel / colline
+  const tons = { j:[0,.68], c:[.26,.58], m:[.06,.16], n:[0,.12] };       // [ciel, colline]
+  const angles = { j:0, c:15, m:75, n:45 };
+  let s = '';
+  for(const k of ['j','c','m','n']){
+    const a = angles[k]*Math.PI/180, ca = Math.cos(a), sa = Math.sin(a), pts = [];
+    for(let i=-10;i<=10;i++) for(let j=-10;j<=10;j++){
+      const x = (i*ca - j*sa)*pas, y = (i*sa + j*ca)*pas;
+      if(x*x + y*y > (R+4)*(R+4)) continue;
+      const cov = y > bord(x) ? tons[k][1] : tons[k][0];
+      if(cov > 0) pts.push([x, y, pas*Math.sqrt(cov/Math.PI)]);
+    }
+    s += `<path class="lxi-cmjn-${k}" d="${_lxiDisques(pts)}"/>`;
+  }
+  return `<g class="lxi-isole">${s}</g>`;
+}
+// Burin : traits nets, renflés au milieu et effilés aux deux bouts (en fuseau) ;
+// l'encre, déposée en léger relief, porte une petite ombre.
+function _lxiFuseau(x0,y0,x1,y1,larg,courbe=0){
+  const n = 24, dx = x1-x0, dy = y1-y0, Lg = Math.hypot(dx,dy), nx = -dy/Lg, ny = dx/Lg, h = [], b = [];
+  for(let i=0;i<=n;i++){
+    const t = i/n, w = larg*Math.pow(Math.sin(Math.PI*t), .7)/2, c = courbe*Math.sin(Math.PI*t);
+    const px = x0 + dx*t + nx*c, py = y0 + dy*t + ny*c;
+    h.push([px + nx*w, py + ny*w]); b.push([px - nx*w, py - ny*w]);
+  }
+  return `M${_lxiPts([...h, ...b.reverse()])}Z`;
+}
+function _lxiLosange(x, y, r){ return `M${_lxiR(x)} ${_lxiR(y-r)}L${_lxiR(x+r*.7)} ${_lxiR(y)}L${_lxiR(x)} ${_lxiR(y+r)}L${_lxiR(x-r*.7)} ${_lxiR(y)}Z`; }
+// Les traits restent dans la lentille, pour que leurs pointes se voient.
+function _lxiTraitsBurin(){
+  const R = _LXI_LOUPE.R, dans = y => Math.sqrt(Math.max(0, R*R - y*y));
+  let d = '';
+  for(let k=0;k<8;k++){                         // une taille : traits parallèles
+    const y0 = -30 + k*8.4, y1 = y0 - 8;
+    const x0 = -dans(y0)*(.66 + .1*(k%3)), x1 = dans(y1)*(.6 + .12*((k+1)%3));
+    d += _lxiFuseau(x0, y0, x1, y1, 2.3 + (k%3)*.55, 2);
+  }
+  for(let k=0;k<4;k++){                         // une contre-taille, en bas à gauche
+    const x = -30 + k*9.5;
+    d += _lxiFuseau(x, 4 + k*1.5, x + 12, 36 - k*2.5, 1.7 + (k%2)*.5, -1.2);
+  }
+  for(let k=0;k<3;k++) for(let j=-1;j<=2;j++){  // points en losange entre les tailles
+    const x = j*11 + (k%2)*5.5 - 4, y = -27.8 + k*8.4 - x*.13;
+    d += _lxiLosange(x, y, 1.25);
+  }
+  return `<path class="lxi-relief" transform="translate(.7 .8)" d="${d}"/><path class="lxi-encre" d="${d}"/>`;
+}
+// Pointe d'un trait de la taille (pour y accrocher le repère).
+function _lxiPointeBurin(k){ const R = _LXI_LOUPE.R, y1 = -30 + k*8.4 - 8; return [Math.sqrt(R*R - y1*y1)*(.6 + .12*((k+1)%3)), y1]; }
+// Eau-forte : le trait, creusé par l'acide, garde la même épaisseur d'un bout
+// à l'autre et se termine en arrondi, comme un dessin à main levée.
+function _lxiTraitsEauForte(){
+  const d = 'M-46 -18C-36 -26 -24 -24 -14 -16S6 -4 18 -10S38 -24 48 -20'
+          + 'M-44 -2C-34 -8 -22 -6 -12 1S8 11 20 5S40 -7 50 -4'
+          + 'M-40 6L-35 22M-33 8L-28 27M-26 10L-20 30M-18 12L-13 31M-10 13L-6 28M-2 12L1 25M6 10L9 21'
+          + 'M18 16C24 12 31 18 27 24S16 29 21 36'
+          + 'M-30 -36C-20 -40 -10 -34 0 -38M8 -41C16 -44 24 -39 32 -42'
+          + 'M30 4L38 16M36 2L44 13';
+  return `<path class="lxi-trait-ef" d="${d}"/>`;
+}
+// Pointe sèche : la pointe soulève des barbes de métal qui retiennent l'encre
+// le long du sillon : un trait velouté, flou, parfois doublé.
+function _lxiTraitsPointeSeche(){
+  const lignes = ['M-48 -22C-28 -32 -6 -24 14 -32S40 -38 50 -30', 'M-50 4C-30 -6 -10 2 10 -6S36 -14 50 -8', 'M-40 26C-24 18 -6 26 12 18S34 12 46 16'];
+  const doublure = 'M-46 8.5C-28 -1 -10 6.5 10 -1.5S36 -9.5 50 -3.5';
+  return lignes.map(l => `<path class="lxi-barbe" transform="translate(.3 1.4)" d="${l}"/><path class="lxi-barbe-coeur" transform="translate(.1 .6)" d="${l}"/>`).join('')
+       + `<path class="lxi-trait-ps lxi-doublure" d="${doublure}"/>`
+       + lignes.map(l => `<path class="lxi-trait-ps" d="${l}"/>`).join('');
+}
+// Aquatinte : la résine a protégé la plaque grain par grain ; l'encre forme un
+// réseau très fin autour de petits points clairs. Plus la morsure a duré,
+// plus le ton est sombre.
+function _lxiReseauAquatinte(){
+  const R = _LXI_LOUPE.R, rnd = _lxiAlea(23), pas = 2.5, pts = [];
+  const bas = x => 8 + .35*x + 4*Math.sin(x/9), haut = x => -22 + .3*x;
+  for(let i=-R;i<=R;i+=pas) for(let j=-R;j<=R;j+=pas){
+    const x = i + (rnd()-.5)*pas*.8, y = j + (rnd()-.5)*pas*.8;
+    if(x*x + y*y > (R+2)*(R+2) || y < haut(x)) continue;
+    pts.push([x, y, (y > bas(x) ? .62 : .95)*(.75 + rnd()*.5)]);
+  }
+  const ligne = f => Array.from({length:25}, (_,k) => { const x = -60 + k*5; return `L${x} ${_lxiR(f(x))}`; }).join('');
+  return `<path class="lxi-aqua-1" d="M-60 60L-60 ${haut(-60)}${ligne(haut)}L60 60Z"/>`
+       + `<path class="lxi-aqua-2" d="M-60 60L-60 ${_lxiR(bas(-60))}${ligne(bas)}L60 60Z"/>`
+       + `<path class="lxi-papier" d="${_lxiDisques(pts)}"/>`;
+}
+// Xylographie, linogravure : la presse chasse l'encre vers le bord des reliefs,
+// qui imprime plus foncé ; dans l'aplat, le fil du bois laisse des stries.
+function _lxiBourreletXylo(id){
+  const forme = 'M-60 60L-60 -2C-40 -12 -22 -10 -6 -2C10 6 24 2 36 -10C44 -18 52 -22 60 -22L60 60Z';
+  const gouge = 'M-30 34C-16 24 2 26 16 18';            // un coup de gouge dans l'aplat
+  let fil = '';
+  for(let k=-6;k<=8;k++){ const y0 = k*5.5; fil += `M-60 ${y0}C-30 ${y0-3} -10 ${y0+4} 20 ${y0}S50 ${y0-4} 60 ${y0+1}`; }
+  return `<clipPath id="${id}"><path d="${forme}"/></clipPath>`
+       + `<path class="lxi-xylo-aplat" d="${forme}"/>`
+       + `<g clip-path="url(#${id})"><path class="lxi-xylo-fil" d="${fil}"/>`
+       + `<path class="lxi-xylo-bord" d="${forme}"/><path class="lxi-xylo-gouge-bord" d="${gouge}"/></g>`
+       + `<path class="lxi-xylo-gouge" d="${gouge}"/>`;
+}
+
+// ── Les estampes, à l'œil nu ──
+function _lxiLitho(){
+  _lxiCam();
+  const e = 2.2, m = _LXI_MOTIF;
+  const image = `<path class="lxi-litho-ciel" d="M0 0H56V36H0Z"/>`
+    + _lxiSoleil('lxi-litho-soleil') + `<path class="lxi-litho-fond" d="${m.fond}"/><path class="lxi-litho-devant" d="${m.devant}"/>`
+    + `<path class="lxi-grain" d="M0 0H56V36H0Z"/>`;
+  const mentions = `<text class="lxi-crayon" x="${_LXI_IMG.x}" y="50" font-size="4.6">12/50</text>`
+    + `<path class="lxi-signature" d="M50 50.5c1.6-3.2 3.2-3.6 3.6-1.5s-1.5 3.4-.2 3.6 2.8-3.8 4-3.6.2 3.2 1.5 3.2 2.3-2.5 3.6-2.7 1.3 2.3 2.5 2.3 1.7-1 3-1.3"/>`;
+  return _lxiFeuille(e) + _lxiPlan(e, _lxiPlace(image) + mentions);
+}
+function _lxiSeri(){
+  _lxiCam();
+  const e = 1.2, m = _LXI_MOTIF, h = .9;
+  const couche = (z, ep) => _lxiPlan(z, _lxiPlace(_lxiSoleil(`lxi-seri-1${ep}`) + `<path class="lxi-seri-2${ep}" d="${m.fond}"/><path class="lxi-seri-3${ep}" d="${m.devant}"/>`));
+  let s = _lxiFeuille(e);
+  for(let k=0;k<5;k++) s += couche(e + h*k/5, '-ep');
+  return s + couche(e + h, '');
+}
+function _lxiOffset(){
+  _lxiCam();
+  const e = .5, m = _LXI_MOTIF, {W,L} = _LXI, sx = (W-5)/56, sy = (L-5)/36;
+  const image = `<g transform="translate(2.5 2.5) scale(${_lxiR(sx)} ${_lxiR(sy)})"><path class="lxi-off-ciel" d="M0 0H56V36H0Z"/>`
+    + _lxiSoleil('lxi-off-soleil', 7) + `<path class="lxi-off-fond" d="${m.fond}"/><path class="lxi-off-devant" d="${m.devant}"/></g>`;
+  return _lxiFeuille(e) + _lxiPlan(e, image);
+}
+// Les gravures en creux : la même feuille, marquée par la plaque.
+const _LXI_TD = { e:2, d:1.3 };
+function _lxiTailleDouce(image){
+  _lxiCam();
+  const {e,d} = _LXI_TD;
+  return _lxiFeuille(e) + _lxiCuvette(e, d) + _lxiPlan(e - d, _lxiPlace(image));
+}
+function _lxiBurin(){
+  const m = _LXI_MOTIF;
+  return _lxiTailleDouce(`<path class="lxi-hach-ciel" d="M0 0H56V36H0Z"/>`
+    + _lxiSoleil('lxi-papier-plein', 7.4) + _lxiSoleil('lxi-trait-fin', 6)
+    + `<path class="lxi-papier-plein" d="${m.fond}"/><path class="lxi-hach-a" d="${m.fond}"/>`
+    + `<path class="lxi-papier-plein" d="${m.devant}"/><path class="lxi-hach-b" d="${m.devant}"/><path class="lxi-hach-c" d="${m.devant}"/>`
+    + `<path class="lxi-trait-fin" d="${m.crete}"/>`);
+}
+function _lxiEauForte(){
+  const d = 'M1 21.5C7 17 12 14 20 14.4C28 15 33 21 41 21.8S52 19.6 55 18.6'
+          + 'M1 30.6C9 27.6 17 26 25 27.8S41 26.6 55 24.2'
+          + 'M34 6.5C38 3 45 4 46.5 9.5S42 17 37.5 15.4S32 9 35.6 6.6'
+          + 'M5 24l3 9M9 22.4l2.6 10M13 20l3 12M17 18.4l2.4 13M21 18l2.6 9.6M28 19l2.4 8.8M33 22.6l2 5'
+          + 'M30 31l4 4M36 30l3.6 4.6M42 29l3 5M48 27.6l2.4 5.6M8 32.4l2 3'
+          + 'M2 4.6C10 3.6 18 5 26 4M3 8.6C9 7.8 15 9 22 8.2';
+  return _lxiTailleDouce(`<path class="lxi-trait-ef-feuille" d="${d}"/>`);
+}
+function _lxiPointeSeche(){
+  const d = 'M1 21.5C7 17 12 14 20 14.4C28 15 33 21 41 21.8S52 19.6 55 18.6'
+          + 'M1 30.6C9 27.6 17 26 25 27.8S41 26.6 55 24.2'
+          + 'M34.5 7C38 3.6 45 4.4 46 9.6S41.6 16.6 37.6 15.2S32.6 9.4 34.5 7'
+          + 'M6 26C12 23 18 23.4 24 24.6M30 26.4C38 24.6 44 23.6 52 22.2';
+  return _lxiTailleDouce(`<path class="lxi-barbe-feuille" d="${d}"/><path class="lxi-trait-ps-feuille" d="${d}"/>`);
+}
+function _lxiAquatinte(){
+  const m = _LXI_MOTIF;
+  return _lxiTailleDouce(`<path class="lxi-aq-ciel" d="M0 0H56V36H0Z"/>` + _lxiSoleil('lxi-papier-plein', 6.4)
+    + `<path class="lxi-aq-fond" d="${m.fond}"/><path class="lxi-aq-devant" d="${m.devant}"/><path class="lxi-grain-aqua" d="M0 0H56V36H0Z"/>`);
+}
+// Xylographie : pas de cuvette ; de grands noirs entaillés de blancs à la gouge.
+function _lxiXylo(){
+  _lxiCam();
+  const e = 1.2, m = _LXI_MOTIF, [sx,sy] = m.soleil;
+  const gouges = 'M4 32.6C10 30.6 15 30.2 20 31M24 31.4C30 30.6 36 29.6 42 28.6M8 26C12 23.6 16 22.6 21 22.4M25 23.8C29 24.8 32 26 36 25.6M44 24.6C47 23.6 50 23 53 22.6';
+  const rayons = Array.from({length:12}, (_,k) => { const a = k*Math.PI/6, c = Math.cos(a), s = Math.sin(a);
+    return `M${_lxiR(sx+8*c)} ${_lxiR(sy+8*s)}L${_lxiR(sx+10.6*c)} ${_lxiR(sy+10.6*s)}`; }).join('');
+  const image = `<path class="lxi-xylo-cadre" d="M0 0H56V36H0Z"/>` + _lxiSoleil('lxi-xylo-noir', 6.4)
+    + `<circle class="lxi-xylo-blanc" cx="${sx}" cy="${sy}" r="4.2"/><path class="lxi-xylo-rayon" d="${rayons}"/>`
+    + `<path class="lxi-xylo-noir" d="${m.fond}"/><path class="lxi-xylo-noir" d="${m.devant}"/><path class="lxi-xylo-blanc" d="${gouges}"/>`;
+  return _lxiFeuille(e) + _lxiPlan(e, _lxiPlace(image));
+}
+
+function _lxiEntrees(){
+  const Hf = _LXI_TD.e - _LXI_TD.d;
+  const loupe = (id, mx, my, H, contenu) => _lxiLoupe(id, _lxiMotifEcran(mx, my, H), contenu);
+  const cuvette = () => _l3Rep([_LXI_CUV.x + _LXI_CUV.w - .8, _LXI.L - 16, _LXI_TD.e - .6], 150, 26, T(`cuvette`,`plate mark`), 'end');
+  return [
+    { famille:0, nom:T(`Lithographie`,`Lithograph`),
+      type:T(`Estampe originale (planographie).`,`Original print (planographic).`),
+      def:T(`L'eau et l'encre grasse se repoussent : sur une pierre calcaire dessinée au corps gras, seul le dessin retient l'encre.`,
+            `Water and greasy ink repel each other: on a limestone drawn with a greasy crayon, only the drawing holds the ink.`),
+      oeil:T(`richesse des nuances, papier souvent épais, numérotation et signature au crayon fréquentes.`,
+             `rich range of tones, often thick paper, frequently numbered and signed in pencil.`),
+      loupe:T(`grain de pierre irrégulier (aspect moucheté), contours des traits légèrement flous.`,
+              `irregular stone grain (speckled look), slightly soft edges to the lines.`),
+      dessin: _lxiLitho() + loupe('lxiL1', 36, 26, 2.2, _lxiGrainLitho())
+        + _lxRep(..._lxiMotifEcran(16, 22, 2.2), 30, 24, T(`nuances au crayon`,`crayon tones`))
+        + _l3Rep([0, 22, 1.1], 14, 156, T(`papier épais`,`thick paper`))
+        + _lxiRepImg(17, 49, 2.2, 74, 156, T(`n° et signature au crayon`,`number and signature in pencil`))
+        + _lxiRepLoupe(14, 20, 254, 136, T(`grain moucheté`,`speckled grain`), 'end') },
+    { famille:0, nom:T(`Sérigraphie`,`Screen print`),
+      type:T(`Estampe originale ou multiple (perméabilité).`,`Original print or multiple (stencil process).`),
+      def:T(`La raclette pousse l'encre à travers un écran de tissu tendu, dont un pochoir bouche les parties qui ne doivent pas imprimer.`,
+            `A squeegee pushes the ink through a stretched fabric screen, whose non-printing areas are blocked by a stencil.`),
+      oeil:T(`aplats de couleurs très saturés, couche d'encre en surépaisseur, perceptible au toucher.`,
+             `very saturated flat colours, a raised layer of ink you can feel with your fingertips.`),
+      loupe:T(`absence totale de trame, aplats lisses et 100 % opaques.`,`no screen dots at all, smooth and 100% opaque flat colour.`),
+      dessin: _lxiSeri() + loupe('lxiL2', 34, 15, 2.1, _lxiAplatsSeri())
+        + _lxRep(..._lxiMotifEcran(8, 20, 2.1), 30, 24, T(`aplats saturés`,`saturated flats`))
+        + _lxRep(..._lxiMotifEcran(26, 27.8, 2.1), 74, 156, T(`encre en surépaisseur`,`raised layer of ink`))
+        + _lxiRepLoupe(-5, 14, 254, 136, T(`aplat opaque, sans trame`,`opaque, no dots`), 'end') },
+    { famille:0, nom:T(`Offset`,`Offset`),
+      type:T(`Impression mécanique industrielle (reproduction).`,`Industrial mechanical printing (reproduction).`),
+      def:T(`L'encre passe d'une plaque à un blanchet en caoutchouc, qui la reporte à son tour sur le papier.`,
+            `The ink is transferred from a plate to a rubber blanket, which in turn offsets it onto the paper.`),
+      oeil:T(`rendu parfaitement lisse, aucune épaisseur d'encre, papier standard (affiches, posters).`,
+             `perfectly smooth finish, no ink thickness, standard paper (posters).`),
+      loupe:T(`trame géométrique régulière de micro-points de couleur (cyan, magenta, jaune, noir).`,
+              `a regular geometric screen of tiny dots in four colours (cyan, magenta, yellow, black).`),
+      dessin: _lxiOffset() + _lxiLoupe('lxiL3', _lxiEcran(50, 30, .5), _lxiTrameOffset())
+        + _lxRep(..._lxiEcran(22, 12, .5), 30, 24, T(`rendu lisse, sans relief`,`smooth, no relief`))
+        + _l3Rep([0, 22, .25], 14, 156, T(`papier standard`,`standard paper`))
+        + _lxiRepLoupe(12, 18, 254, 136, T(`trame CMJN`,`CMYK dots`), 'end') },
+    { famille:1, nom:T(`Burin`,`Engraving (burin)`),
+      type:T(`Gravure directe sur métal (cuivre).`,`Direct intaglio on metal (copper).`),
+      def:T(`Le graveur incise le métal à l'aide d'un outil d'acier tranchant, le burin.`,`The engraver cuts into the metal with a sharp steel tool, the burin.`),
+      critere:T(`trait d'une netteté absolue, rigoureux, qui se termine en pointe fine (forme de losange). Léger relief de l'encre.`,
+                `an absolutely crisp, disciplined line that tapers to a fine point (lozenge-shaped). The ink stands in slight relief.`),
+      dessin: _lxiBurin() + loupe('lxiL4', 30, 26, Hf, _lxiTraitsBurin()) + cuvette()
+        + _lxiRepLoupe(..._lxiPointeBurin(4), 254, 136, T(`trait effilé en pointe`,`line tapering to a point`), 'end') },
+    { famille:1, nom:T(`Eau-forte`,`Etching`),
+      type:T(`Gravure indirecte (chimique) sur métal.`,`Indirect (chemical) intaglio on metal.`),
+      def:T(`La plaque vernie est gravée à la pointe fine, puis plongée dans un bain d'acide qui creuse le métal mis à nu.`,
+            `The varnished plate is drawn into with a fine needle, then dipped in an acid bath that bites the exposed metal.`),
+      critere:T(`trait très libre, souple et aux extrémités arrondies, similaire à un dessin manuel au feutre.`,
+                `a very free, supple line with rounded ends, much like a hand drawing in felt pen.`),
+      dessin: _lxiEauForte() + loupe('lxiL5', 22, 26, Hf, _lxiTraitsEauForte()) + cuvette()
+        + _lxiRepLoupe(-13, 31, 254, 136, T(`trait libre, bouts arrondis`,`free line, rounded ends`), 'end') },
+    { famille:1, nom:T(`Pointe sèche`,`Drypoint`),
+      type:T(`Gravure directe sur métal.`,`Direct intaglio on metal.`),
+      def:T(`Une aiguille d'acier acérée raye le métal et soulève, le long du sillon, des filaments de cuivre : les barbes.`,
+            `A sharp steel needle scratches the metal and throws up copper filaments along the furrow: the burr.`),
+      critere:T(`trait velouté, flou ou doublé, dû à l'encre retenue par les barbes de métal.`,
+                `a velvety line, blurred or doubled, caused by the ink caught in the metal burr.`),
+      dessin: _lxiPointeSeche() + loupe('lxiL6', 20, 24, Hf, _lxiTraitsPointeSeche()) + cuvette()
+        + _lxiRepLoupe(12, 21, 254, 136, T(`trait velouté (barbes)`,`velvety line (burr)`), 'end') },
+    { famille:1, nom:T(`Aquatinte`,`Aquatint`),
+      type:T(`Gravure chimique sur métal (variante de l'eau-forte).`,`Chemical intaglio on metal (a variant of etching).`),
+      def:T(`On saupoudre la plaque de résine avant la morsure à l'acide, pour obtenir des surfaces texturées.`,
+            `The plate is dusted with resin before the acid bite, to obtain textured areas.`),
+      critere:T(`rendu qui imite le lavis ou l'aquarelle. À la loupe : un réseau granuleux très fin.`,
+                `looks like ink wash or watercolour. Under the loupe: a very fine granular network.`),
+      dessin: _lxiAquatinte() + loupe('lxiL7', 34, 22, Hf, _lxiReseauAquatinte()) + cuvette()
+        + _lxRep(..._lxiMotifEcran(14, 28, Hf), 30, 24, T(`aspect de lavis`,`wash-like tones`))
+        + _lxiRepLoupe(16, 28, 254, 136, T(`réseau granuleux`,`granular network`), 'end') },
+    { famille:2, nom:T(`Xylographie et linogravure`,`Woodcut and linocut`),
+      type:T(`Gravure sur bois (xylographie) ou sur linoléum (linogravure).`,`Relief print on wood (woodcut) or linoleum (linocut).`),
+      def:T(`Les blancs sont creusés à la gouge ; les surfaces restées en relief reçoivent l'encre.`,
+            `The whites are cut away with a gouge; the surfaces left standing take the ink.`),
+      critere:T(`bourrelet d'encre sombre sur le contour extérieur des motifs (encre chassée par la pression). Veinage du bois parfois visible dans les aplats encrés.`,
+                `a dark rim of ink around the outer edge of shapes (ink squeezed out by the pressure). Wood grain sometimes visible in the inked solid areas.`),
+      dessin: _lxiXylo() + loupe('lxiL8', 31, 27.6, 1.2, _lxiBourreletXylo('lxiX8'))
+        + _l3Rep([_LXI.W - 4, _LXI.L - 20, 1.2], 150, 26, T(`pas de cuvette`,`no plate mark`), 'end')
+        + _lxiRepLoupe(-22, -9.5, 186, 136, T(`bourrelet d'encre`,`ink rim`), 'end')
+        + _lxiRepLoupe(24, 22, 254, 136, T(`veinage du bois`,`wood grain`), 'end') },
+  ];
+}
+// ── Vue d'ensemble : où se trouve l'encre ? ──
+// Quatre matrices, vues comme les estampes : le bois en relief, la plaque de
+// cuivre creusée, la pierre à plat, l'écran de sérigraphie.
+const _LXI_MAT = { W:44, L:30 };
+function _lxiPlanMat(H, inner){ return `<g transform="${_matPlat(H)} translate(0 ${-_LXI_MAT.L})">${inner}</g>`; }
+function _lxiMatRelief(ox, oy){
+  _l3Cam(ox, oy, 1.65);
+  const {W,L} = _LXI_MAT, b = 6, h = 3.4;
+  let s = _pave(0,W,0,L,0,b,'bois')
+        + _ligne([[0,0,1.6],[W,0,2.1]], 'lxi-fil-bois') + _ligne([[0,0,3.7],[W,0,3.3]], 'lxi-fil-bois');
+  for(const [x0,x1] of [[38,42],[24,33],[15,19],[3,9]]) s += _pave(x0,x1,0,L,b,b+h,'bois','encre');
+  return s;
+}
+function _lxiMatCreux(ox, oy){
+  _l3Cam(ox, oy, 1.65);
+  const {W,L} = _LXI_MAT, H = 3.2, w = 1.05, prof = 2;
+  let s = _pave(0,W,0,L,0,H,'cuivre');
+  for(const x of [7,12,17,25,30,35]){
+    s += _poly([[x-w,0,H],[x+w,0,H],[x+w,L,H],[x-w,L,H]], 'lxi-encre')     // l'encre affleure dans la taille…
+       + _poly([[x-w,0,H],[x+w,0,H],[x,0,H-prof]], 'lxi-encre');           // …creusée en V, vue en coupe
+  }
+  return s;
+}
+function _lxiMatPlat(ox, oy){
+  _l3Cam(ox, oy, 1.65);
+  const {W,L} = _LXI_MAT, H = 9, m = _LXI_MOTIF;
+  const gouttes = [[6,6],[33,4.5],[39,24],[8,25],[24,26.5],[15,3.5]].map(([x,y]) => `<ellipse class="lxi-goutte" cx="${x}" cy="${y}" rx="1.6" ry="1.2"/><circle class="lxi-goutte-reflet" cx="${x-.5}" cy="${y-.4}" r=".45"/>`).join('');
+  // le dessin est inversé sur la pierre : il se redresse à l'impression
+  const dessin = `<g transform="translate(${W-8} 3) scale(-.5 .66)"><circle class="lxi-encre" cx="${m.soleil[0]}" cy="${m.soleil[1]}" r="${m.soleil[2]}"/><path class="lxi-encre" d="${m.fond}"/></g>`;
+  return _pave(0,W,0,L,0,H,'pierre')
+       + _lxiPlanMat(H, `<path class="lxi-eau" d="M0 0H${W}V${L}H0Z"/>${gouttes}${dessin}<path class="lxi-grain" d="M${W-36} 3H${W-8}V27H${W-36}Z"/>`);
+}
+function _lxiMatEcran(ox, oy){
+  _l3Cam(ox, oy, 1.65);
+  const {W,L} = _LXI_MAT, c = 3.2, Hc = 3.6;
+  // le pochoir bouche la toile partout, sauf la forme à imprimer (ici, un soleil)
+  const ouvert = `M14 15a6 6 0 1 0 12 0a6 6 0 1 0 -12 0Z`;
+  const toile = `<path class="lxi-maille" d="M${c} ${c}H${W-c}V${L-c}H${c}Z"/>`
+    + `<path class="lxi-pochoir" fill-rule="evenodd" d="M${c} ${c}H${W-c}V${L-c}H${c}Z${ouvert}"/>`
+    + `<path class="lxi-seri-3" fill-opacity=".85" d="${ouvert}"/>`
+    + `<path class="lxi-seri-3" d="M${W-c-13} ${c+1}C${W-c-15} ${c+6} ${W-c-11.5} ${L-c-8} ${W-c-14} ${L-c-1}L${W-c-9.5} ${L-c-1}L${W-c-9.5} ${c+1}Z"/>`;   // l'encre, poussée devant la raclette
+  return _pave(W-c,W,0,L,0,Hc,'bois') + _pave(0,W,L-c,L,0,Hc,'bois')
+       + _lxiPlanMat(.3, toile)
+       + _pave(0,c,0,L,0,Hc,'bois') + _pave(0,W,0,c,0,Hc,'bois')
+       + _pave(W-c-9.5,W-c-8.3,c+1,L-c-1,.3,6.5,'raclette') + _pave(W-c-10.4,W-c-7.4,c+1,L-c-1,6.5,9,'bois');
+}
+function _lxiVueEnsemble(){
+  const leg = (x, y, txt) => `<text class="lxi-legende" x="${x}" y="${y}" text-anchor="middle">${txt}</text>`;
+  return _lxiMatRelief(74, 74) + leg(80, 87, T(`en relief`,`relief`))
+       + _lxiMatCreux(208, 74) + leg(214, 87, T(`en creux`,`intaglio`))
+       + _lxiMatPlat(74, 153) + leg(80, 166, T(`à plat`,`planographic`))
+       + _lxiMatEcran(208, 153) + leg(214, 166, T(`au travers`,`through a screen`));
+}
+function ouvrirLexiqueImpressions(){
+  let bd = document.getElementById('lexiqueImpressionsModal');
+  if(!bd){ bd = document.createElement('div'); bd.className='modal-backdrop'; bd.id='lexiqueImpressionsModal'; document.body.appendChild(bd); }
+  const svg = inner => `<svg viewBox="0 0 260 172" aria-hidden="true" focusable="false">${inner}</svg>`;
+  const familles = [
+    { titre:T(`Procédés de surface et reproductions`,`Surface processes and reproductions`), indice:'' },
+    { titre:T(`Gravures en creux (taille-douce)`,`Intaglio prints`),
+      indice:T(`présence d'une cuvette, l'empreinte rectangulaire de la plaque enfoncée dans le papier.`,`a plate mark, the rectangular imprint of the plate pressed into the paper.`) },
+    { titre:T(`Gravures en relief (taille d'épargne)`,`Relief prints`),
+      indice:T(`absence de cuvette périphérique.`,`no plate mark around the image.`) },
+  ];
+  const termes = [
+    [T(`En relief`,`Relief`),        T(`taille d'épargne : l'encre se dépose sur les parties laissées en relief (xylographie, linogravure).`,`the ink sits on the parts left standing (woodcut, linocut).`)],
+    [T(`En creux`,`Intaglio`),       T(`taille-douce : l'encre reste dans les tailles de la plaque essuyée ; pressée contre le papier humide, la plaque y laisse sa cuvette.`,`the ink stays in the lines of the wiped plate; pressed into the damp paper, the plate leaves its plate mark.`)],
+    [T(`À plat`,`Planographic`),     T(`planographie : rien n'est creusé ; le gras retient l'encre, l'eau la repousse (lithographie, offset).`,`nothing is cut; grease holds the ink, water repels it (lithograph, offset).`)],
+    [T(`Au travers`,`Through a screen`), T(`perméabilité : l'encre traverse un écran tendu ; le pochoir bouche le reste (sérigraphie).`,`the ink passes through a stretched screen; the stencil blocks the rest (screen print).`)],
+  ].map(([t,d])=>`<dt>${t}</dt><dd>${d}</dd>`).join('');
+  const entrees = _lxiEntrees();
+  const carte = e => `<article class="lx-carte"><h4>${e.nom}</h4>${svg(e.dessin)}<div class="lx-texte"><p class="lx-type">${e.type}</p><p>${e.def}</p>`
+    + (e.critere ? `<p class="lx-repere"><b>${T(`Critère d'identification :`,`Identifying feature:`)}</b> ${e.critere}</p>`
+                 : `<p class="lx-repere"><b>${T(`À l'œil nu :`,`Naked eye:`)}</b> ${e.oeil}</p><p class="lx-repere"><b>${T(`À la loupe (×10) :`,`Under a ×10 loupe:`)}</b> ${e.loupe}</p>`)
+    + `</div></article>`;
+  const sections = familles.map((f,i) => `<section class="lx-famille"><h3>${f.titre}</h3>`
+    + (f.indice ? `<p class="lx-indice"><b>${T(`Indice commun :`,`Common clue:`)}</b> ${f.indice}</p>` : '')
+    + `<div class="lx-grille">${entrees.filter(e=>e.famille===i).map(carte).join('')}</div></section>`).join('');
+  bd.innerHTML = `<div class="modal">
+    <div class="modal-header"><h2>${T(`Lexique des procédés d'impression`,`Printing process glossary`)}</h2>
+      <button type="button" class="ghost" onclick="closeModal('lexiqueImpressionsModal')" aria-label="${T(`Fermer`,`Close`)}">✕</button></div>
+    <div class="modal-body">${_lxiDefs()}
+      <p class="lx-intro">${T(`Chaque croquis montre l'estampe posée à plat, vue de trois quarts comme pour les reliures : c'est l'examen à l'œil nu. Le cercle grossit un détail du même tirage, comme au compte-fils (loupe ×10). Le motif est partout le même, pour comparer les procédés. Commencez par chercher la cuvette : elle signe les gravures en creux.`,
+                             `Each sketch shows the print lying flat, seen at three-quarters as for bindings: what the naked eye sees. The circle magnifies a detail of the same print, as under a ×10 loupe. The picture is the same throughout, so the processes can be compared. Start by looking for a plate mark: it gives away intaglio prints.`)}</p>
+      <section class="lx-anatomie"><svg viewBox="0 0 300 172" aria-hidden="true" focusable="false">${_lxiVueEnsemble()}</svg><div><h3>${T(`Où se trouve l'encre ?`,`Where does the ink sit?`)}</h3><dl>${termes}</dl></div></section>
+      ${sections}
+    </div></div>`;
+  openModal('lexiqueImpressionsModal');
+  bd.scrollTop = 0;
+}
 function ouvrirFicheCompte(){
   _cpAvatar = _compte.avatar || '';
   const v = (id, val) => { const e = document.getElementById(id); if(e) e.value = val; };
@@ -6814,8 +7432,14 @@ const SB = (() => {
         (map[l[key]]=map[l[key]]||[]).push(l.oeuvre_id); });
       return map; };
     const eoMap = orderOf(eo,'etagere_id'), poMap = orderOf(po,'pile_id');
-    R.meta['library-shelves'] = etageres.map(s=>({ id:s.id, name:s.nom,
-      meubleId:s.meuble_id, col:s.col??0, row:s.row??0, itemOrder:eoMap[s.id]||[] }));
+    // Méthode de rangement : hors schéma SQL, rangée dans les préférences du profil
+    // (même principe que le style des classeurs), indexée par l'id écrit en base.
+    const _shelfRg = (profile && profile.preferences && profile.preferences['library-shelves-rangement']) || {};
+    R.meta['library-shelves'] = etageres.map(s=>{
+      const o = { id:s.id, name:s.nom, meubleId:s.meuble_id, col:s.col??0, row:s.row??0, itemOrder:eoMap[s.id]||[] };
+      if(_shelfRg[s.id]) o.regleRangement = _shelfRg[s.id];
+      return o;
+    });
     // La table `piles` ne porte que nom et localisation. Le type (pile ou classeur)
     // et la couleur du classeur sont conservés à part, dans les préférences du profil,
     // ce qui évite une migration SQL. Sans cela, tout classeur redevient une pile au
@@ -7112,6 +7736,13 @@ const SB = (() => {
     valid.forEach(v=>v.order.forEach((oid,idx)=>{
       if(itemIds.has(oid)) links.push({etagere_id:v.row.id, oeuvre_id:oid, user_id:uid, position:idx}); }));
     if(links.length) await q(client.from('etagere_oeuvres').insert(links), 'etagere_oeuvres');
+    // Méthode de rangement → préférences du profil (voir la lecture plus haut)
+    const rg = {};
+    valid.forEach((v,i)=>{ const r = list[i] && list[i].regleRangement; if(r) rg[v.row.id] = r; });
+    if(JSON.stringify(R.prefs['library-shelves-rangement']||{}) !== JSON.stringify(rg)){
+      R.prefs['library-shelves-rangement'] = rg;
+      await q(client.from('profiles').upsert({ user_id:uid, preferences:R.prefs },{onConflict:'user_id'}), 'profiles');
+    }
     R.meta['library-shelves'] = list;
   }
 
@@ -15962,6 +16593,7 @@ function renderItemDetail(id, pushHistory=true){
     </div>`;
 
   const html = `${detailHeader}
+    ${_rgLocBlockHTML(it)}
     ${(()=>{
       // Rendu d'une ligne : libellé seul si « présence » (p:true), sinon libellé + valeur.
       const _dtdd = r => `<dt>${r.k}</dt>${r.p?'':`<dd>${r.v}</dd>`}`;
@@ -19994,6 +20626,384 @@ async function _reorderShelfItem(shelfId, tgtKey){
   renderLibrary();
 }
 
+
+// ═════════════════════════════════════════════════════════════════════════════
+// RANGEMENT DES ÉTAGÈRES PAR MÉTHODE — voir SPEC-rangement-etageres.md
+// La règle est portée par l'étagère (shelf.regleRangement). Elle ne trie jamais
+// en silence : elle calcule un ordre cible et un plan de déplacements minimaux.
+// shelf.itemOrder n'est modifié qu'à la validation « C'est rangé ».
+// Le statut « à reclasser » est recalculé à la volée (ordre réel ≠ ordre cible).
+// ═════════════════════════════════════════════════════════════════════════════
+const _RG_ART = /^(le |la |les |l['’]\s*|un |une |des |the |a |an )/i;
+function _rgStrip(s){ return String(s||'').replace(_RG_ART,'').trim(); }
+function _rgAuteur(it, role){
+  const e = (it.auteurs||[]).find(a=>(a.roles&&a.roles.length?a.roles:(a.role?[a.role]:[])).includes(role));
+  const a = e ? authorById(e.auteurId) : null;
+  return a ? (authorDisplay(a)||'') : '';
+}
+const RG_CRITERES = {
+  categorie:   {fr:'Catégorie',            en:'Category',           t:'s', get:it=>it.categorie ? String(catRank(it.categorie)).padStart(4,'0')+'|'+_normCat(it.categorie) : null},
+  serie:       {fr:'Cycle',                en:'Series',             t:'s', get:it=>_rgStrip(it.serie)||null},
+  numero:      {fr:'N° dans le cycle',     en:'No. in series',      t:'n', get:it=>{const n=_numCycle(it); return isFinite(n)?n:null;}},
+  titre:       {fr:'Titre (sans article)', en:'Title (no article)', t:'s', get:it=>_rgStrip(it.titre)||null},
+  annee:       {fr:"Année d'édition",      en:'Publication year',   t:'n', get:it=>it.anneeEdition ? (+it.anneeEdition)*100+(+it.moisEdition||0) : null},
+  dessinateur: {fr:'Dessinateur',          en:'Artist',             t:'s', get:it=>_rgAuteur(it,'Dessinateur')||null},
+  scenariste:  {fr:'Scénariste',           en:'Writer',             t:'s', get:it=>_rgAuteur(it,'Scénariste')||null},
+  editeur:     {fr:'Éditeur',              en:'Publisher',          t:'s', get:it=>it.editeur||null},
+  collection:  {fr:'Collection éditoriale',en:'Imprint',            t:'s', get:it=>it.collection||null},
+  format:      {fr:'Format (hauteur)',     en:'Format (height)',    t:'n', get:it=>itemHeightCm(it)},
+  acquisition: {fr:"Date d'acquisition",   en:'Acquisition date',   t:'s', get:it=>it.dateAcquisition||null},
+  cote:        {fr:'Cote',                 en:'Value',              t:'n', get:it=>it.cote||null}
+};
+const RG_PRESETS = [
+  {id:'cat_cycle',  fr:'Catégorie + cycle',       en:'Category + series', court:['Catégorie · cycle','Category · series'], cles:[['categorie','asc'],['serie','asc'],['numero','asc'],['annee','asc']]},
+  {id:'cycle',      fr:'Par cycle',               en:'By series',         court:['Cycle · n°','Series · no.'],         cles:[['serie','asc'],['numero','asc'],['annee','asc']]},
+  {id:'parution',   fr:'Chronologie de parution', en:'Publication order', court:['Parution','Publication'],            cles:[['annee','asc'],['titre','asc']]},
+  {id:'alpha',      fr:'Alphabétique',            en:'Alphabetical',      court:['A → Z','A → Z'],                     cles:[['titre','asc']]},
+  {id:'dessinateur',fr:'Par dessinateur',         en:'By artist',         court:['Dessinateur','Artist'],              cles:[['dessinateur','asc'],['serie','asc'],['numero','asc']]},
+  {id:'scenariste', fr:'Par scénariste',          en:'By writer',         court:['Scénariste','Writer'],               cles:[['scenariste','asc'],['serie','asc'],['numero','asc']]},
+  {id:'editeur',    fr:'Éditeur / collection',    en:'Publisher / imprint',court:['Éditeur','Publisher'],              cles:[['editeur','asc'],['collection','asc'],['annee','asc']]},
+  {id:'format',     fr:'Par format',              en:'By format',         court:['Format','Format'],                   cles:[['format','desc'],['serie','asc'],['numero','asc']]},
+  {id:'acquisition',fr:'Acquisition',             en:'Acquisition',       court:['Acquisition','Acquisition'],         cles:[['acquisition','asc']]},
+  {id:'perso',      fr:'Personnalisé…',           en:'Custom…',           court:null,                                  cles:null},
+  {id:'manuel',     fr:'Manuel',                  en:'Manual',            court:['Manuel','Manual'],                   cles:[]}
+];
+const RG_MAX_CLES = 4;
+
+// Contenu réel d'une étagère, dans son ordre réel (albums + "pile:<id>")
+let _rgBk = null;
+function _rgBucket(){ if(!_rgBk){ _rgBk = _bucketItemsByShelf().byShelf||{}; setTimeout(()=>{_rgBk=null;},0); } return _rgBk; }
+function _rgShelfKeys(shelf){
+  const books = (_rgBucket()[shelf.name]||[]).map(b=>String(b.id));
+  const piles = libraryPiles.filter(p=>p.localisation===shelf.name).map(p=>'pile:'+p.id);
+  const all = new Set([...books, ...piles]);
+  const known = (shelf.itemOrder||[]).map(String).filter(k=>all.has(k));
+  return [...new Set([...known, ...books, ...piles])];
+}
+// Objet représentatif d'une clé : l'album, ou la 1re œuvre de la pile
+function _rgObj(key){
+  key = String(key);
+  if(key.startsWith('pile:')){
+    const p = libraryPiles.find(x=>'pile:'+x.id===key);
+    if(!p) return {titre:'?'};
+    const pb = getPileBooks(p);
+    return pb[0] || {titre:p.name};
+  }
+  return cache.items.find(i=>String(i.id)===key) || {titre:'?'};
+}
+function _rgLabel(key){
+  key = String(key);
+  if(key.startsWith('pile:')){
+    const p = libraryPiles.find(x=>'pile:'+x.id===key);
+    return (p && p.kind==='classeur' ? '🗂️ ' : '📚 ') + (p ? p.name : '?');
+  }
+  const it = _rgObj(key);
+  if(it.serie && it.numeroSerie) return `${it.serie} ${it.numeroSerie}`;
+  return it.titre || T('Sans titre','Untitled');
+}
+function _rgCmp(cles){
+  return (a,b)=>{
+    const oa=_rgObj(a), ob=_rgObj(b);
+    for(const [k,sens] of cles){
+      const c = RG_CRITERES[k]; if(!c) continue;
+      const va=c.get(oa), vb=c.get(ob);
+      const ea = va==null||va==='', eb = vb==null||vb==='';
+      if(ea||eb){ if(ea&&eb) continue; return ea?1:-1; }       // valeurs manquantes en fin
+      const r = c.t==='n' ? va-vb : String(va).localeCompare(String(vb),'fr',_CMP_NUM);
+      if(r) return sens==='desc' ? -r : r;
+    }
+    return 0;                                                   // tri stable : l'ordre réel départage
+  };
+}
+function _rgActive(r){ return !!(r && r.cles && r.cles.length); }
+function _rgTarget(keys, r){
+  if(!_rgActive(r)) return keys.slice();
+  const ep = r.epingles || {};
+  const deb = (ep.debut||[]).map(String).filter(k=>keys.includes(k));
+  const fin = (ep.fin||[]).map(String).filter(k=>keys.includes(k)&&!deb.includes(k));
+  const libres = keys.filter(k=>!deb.includes(k)&&!fin.includes(k)).sort(_rgCmp(r.cles));
+  return [...deb, ...libres, ...fin];
+}
+// Plus longue sous-suite croissante : ce qui est déjà bien placé ne bouge pas
+function _rgPlan(cur, tgt){
+  const pos = new Map(tgt.map((k,i)=>[k,i]));
+  const r = cur.map(k=>pos.get(k));
+  const tails=[], tailIdx=[], prev=new Array(r.length).fill(-1);
+  r.forEach((v,i)=>{
+    let lo=0, hi=tails.length;
+    while(lo<hi){ const m=(lo+hi)>>1; if(tails[m]<v) lo=m+1; else hi=m; }
+    tails[lo]=v; tailIdx[lo]=i; prev[i]= lo>0 ? tailIdx[lo-1] : -1;
+  });
+  const keep = new Set();
+  let i = tails.length ? tailIdx[tails.length-1] : -1;
+  while(i>=0){ keep.add(cur[i]); i=prev[i]; }
+  const steps = [];
+  tgt.forEach((k,idx)=>{
+    if(keep.has(k)) return;
+    const before = idx>0 ? tgt[idx-1] : null;
+    let after = null; for(let j=idx+1;j<tgt.length;j++){ if(keep.has(tgt[j])){ after=tgt[j]; break; } }
+    steps.push({k, before, after});
+  });
+  return {keep, steps};
+}
+function _rgEtat(shelf, r){
+  r = r===undefined ? shelf.regleRangement : r;
+  const cur = _rgShelfKeys(shelf);
+  const tgt = _rgTarget(cur, r);
+  const plan = _rgActive(r) ? _rgPlan(cur, tgt) : {keep:new Set(cur), steps:[]};
+  return {cur, tgt, plan};
+}
+function _rgNomCourt(r){
+  if(!_rgActive(r)) return T('Manuel','Manual');
+  const p = RG_PRESETS.find(x=>x.id===r.preset);
+  if(p && p.court) return T(p.court[0], p.court[1]);
+  return r.cles.map(([k])=>T(RG_CRITERES[k].fr, RG_CRITERES[k].en)).join(' · ');
+}
+function _rgNomLong(r){
+  if(!_rgActive(r)) return T('Ordre manuel (glisser-déposer)','Manual order (drag and drop)');
+  return T('Rangé par ','Sorted by ') + r.cles.map(([k,s],i)=>
+    (i?T('puis ','then '):'') + T(RG_CRITERES[k].fr, RG_CRITERES[k].en).toLowerCase() + (s==='desc'?' ↓':'')).join(', ');
+}
+function _rgOu(s){
+  const L = k=>`<b>${escapeHTML(_rgLabel(k))}</b>`;
+  if(s.before && s.after) return T(`entre ${L(s.before)} et ${L(s.after)}`, `between ${L(s.before)} and ${L(s.after)}`);
+  if(s.after)  return T(`en début de planche, avant ${L(s.after)}`, `at the start of the shelf, before ${L(s.after)}`);
+  if(s.before) return T(`en fin de planche, après ${L(s.before)}`, `at the end of the shelf, after ${L(s.before)}`);
+  return T('sur la planche','on the shelf');
+}
+// Badge + bouton pour l'en-tête d'étagère (appelé par buildShelfHTML)
+function _rgHeaderBadge(shelf, compact){
+  const r = shelf.regleRangement;
+  if(!_rgActive(r)) return compact ? '' : ` <span class="rg-badge rg-manuel" title="${T('Ordre manuel','Manual order')}">⇅ ${T('Manuel','Manual')}</span>`;
+  const n = _rgEtat(shelf).plan.steps.length;
+  const nom = escapeHTML(_rgNomCourt(r));
+  if(n) return ` <span class="rg-badge rg-todo" title="${escapeHTML(_rgNomLong(r))}">${compact?'':'⇅ '+nom+' · '}${T('À reclasser','To re-sort')} (${n})</span>`;
+  return compact ? '' : ` <span class="rg-badge rg-ok" title="${escapeHTML(_rgNomLong(r))}">⇅ ${nom} ✓</span>`;
+}
+function _rgMovingSet(shelf){
+  if(!_rgActive(shelf.regleRangement)) return new Set();
+  return new Set(_rgEtat(shelf).plan.steps.map(s=>s.k));
+}
+
+// ───── Mini-planche (aperçu et fiche) ─────
+function _rgMiniHTML(keys, moving=new Set(), sel=null){
+  return keys.map(k=>{
+    const pile = k.startsWith('pile:');
+    const it = _rgObj(k);
+    const col = pile ? 'var(--wood,#5a3f28)' : itemSpineColor(it);
+    const w = pile ? 14 : Math.max(4, Math.min(12, Math.round(spineWidth(it.nbPages)/3)));
+    const hcm = itemHeightCm(it) || 30;
+    const h = Math.max(30, Math.min(70, Math.round(hcm*1.9)));
+    return `<span class="rg-s${moving.has(k)?' rg-move':''}${k===sel?' rg-sel':''}" title="${escapeHTML(_rgLabel(k))}" style="width:${w}px;height:${h}px;background:${col}"></span>`;
+  }).join('');
+}
+
+// ───── Panneau « Ranger » ─────
+let _rgShelfId = null, _rgDraft = null;
+function _rgEnsureModal(){
+  if(document.getElementById('rangementModal')) return;
+  const bd = document.createElement('div');
+  bd.className = 'modal-backdrop'; bd.id = 'rangementModal';
+  bd.innerHTML = `<div class="modal rg-modal" style="max-width:760px">
+    <div class="modal-header"><h2 id="rgTitle"></h2><button class="ghost" onclick="closeModal('rangementModal')">✕</button></div>
+    <div class="modal-body" id="rgBody"></div></div>`;
+  bd.addEventListener('click', e=>{ if(e.target===bd) closeModal('rangementModal'); });
+  document.body.appendChild(bd);
+  bd.addEventListener('click', _rgOnClick);
+  bd.addEventListener('change', _rgOnChange);
+}
+function openRangementPanel(shelfId){
+  const shelf = libraryShelves.find(s=>s.id===shelfId); if(!shelf) return;
+  _rgEnsureModal();
+  _rgShelfId = shelfId;
+  const r = shelf.regleRangement;
+  _rgDraft = _rgActive(r)
+    ? {preset:r.preset||'perso', cles:r.cles.map(c=>c.slice())}
+    : {preset:'cat_cycle', cles:RG_PRESETS[0].cles.map(c=>c.slice())};
+  document.getElementById('rgTitle').textContent = `⇅ ${T('Ranger','Sort')} « ${friendlyLocation(shelf.name)||shelf.name} »`;
+  _rgRenderPanel();
+  openModal('rangementModal');
+}
+function _rgDraftRule(shelf){
+  const r = shelf.regleRangement || {};
+  return {preset:_rgDraft.preset, cles:_rgDraft.cles, epingles:r.epingles||{debut:[],fin:[]}};
+}
+function _rgRenderPanel(){
+  const shelf = libraryShelves.find(s=>s.id===_rgShelfId); if(!shelf) return;
+  const rule = _rgDraftRule(shelf);
+  const {cur, tgt, plan} = _rgEtat(shelf, rule);
+  const moving = new Set(plan.steps.map(s=>s.k));
+  const memeRegle = JSON.stringify((shelf.regleRangement||{}).cles||[]) === JSON.stringify(_rgDraft.cles);
+  const faits = new Set(memeRegle ? ((shelf.regleRangement||{}).faits||[]).map(String) : []);
+  const chips = RG_PRESETS.map(p=>`<button type="button" class="rg-chip" data-rg-preset="${p.id}" aria-pressed="${_rgDraft.preset===p.id}">${T(p.fr,p.en)}</button>`).join('');
+  const opts = k => Object.entries(RG_CRITERES).map(([id,c])=>`<option value="${id}"${id===k?' selected':''}>${T(c.fr,c.en)}</option>`).join('');
+  let crits = '';
+  for(let i=0;i<RG_MAX_CLES;i++){
+    const c = _rgDraft.cles[i];
+    if(!c && i>_rgDraft.cles.length) break;
+    crits += `<div class="rg-crit"><span class="rg-k">${i+1}</span>
+      <select data-rg-ci="${i}" data-rg-f="k" aria-label="${T('Critère','Criterion')} ${i+1}"><option value="">${i?T('— aucun —','— none —'):T('Choisir…','Choose…')}</option>${opts(c&&c[0])}</select>
+      <select data-rg-ci="${i}" data-rg-f="s" aria-label="${T('Sens','Direction')} ${i+1}" ${c?'':'disabled'}>
+        <option value="asc"${c&&c[1]==='asc'?' selected':''}>${T('Croissant ↑','Ascending ↑')}</option>
+        <option value="desc"${c&&c[1]==='desc'?' selected':''}>${T('Décroissant ↓','Descending ↓')}</option></select></div>`;
+  }
+  const ep = rule.epingles||{};
+  const nbEp = (ep.debut||[]).length + (ep.fin||[]).length;
+  let planHTML;
+  if(!_rgDraft.cles.length){
+    planHTML = `<p class="muted">${T("Mode manuel : l'ordre actuel est conservé, vous rangez par glisser-déposer.","Manual mode: the current order is kept, you arrange by drag and drop.")}</p>`;
+  } else if(!plan.steps.length){
+    planHTML = `<p class="rg-rien">✓ ${T('Rien à déplacer : la planche respecte déjà cette méthode.','Nothing to move: the shelf already follows this method.')}</p>`;
+  } else {
+    const nf = plan.steps.filter(s=>faits.has(s.k)).length;
+    planHTML = `<div class="rg-counter"><span><b>${plan.steps.length}</b> ${T('à déplacer','to move')}</span><span><b>${plan.keep.size}</b> ${T('restent en place','stay put')}</span><span><b>${nf}</b> / ${plan.steps.length} ${T('faits','done')}</span></div>
+      <ol class="rg-plan">${plan.steps.map(s=>`<li class="${faits.has(s.k)?'rg-done':''}"><input type="checkbox" data-rg-chk="${escapeHTML(s.k)}" ${faits.has(s.k)?'checked':''} ${memeRegle?'':'disabled title="'+T('Appliquez d\'abord la méthode pour cocher','Apply the method first to tick')+'"'} aria-label="${T('Fait','Done')}"><span>${T('Sortir','Take out')} <b>${escapeHTML(_rgLabel(s.k))}</b> → ${T('le glisser','slide it')} ${_rgOu(s)}</span></li>`).join('')}</ol>`;
+  }
+  const actif = _rgDraft.cles.length>0;
+  document.getElementById('rgBody').innerHTML = `
+    <div class="rg-sec"><p class="rg-t">${T('Méthode','Method')}</p><div class="rg-chips">${chips}</div></div>
+    ${actif?`<div class="rg-sec"><p class="rg-t">${T("Critères (dans l'ordre)","Criteria (in order)")}</p>${crits}
+      <p class="rg-note">${T("Valeurs manquantes en fin de liste · articles initiaux ignorés (Le, La, Les, L'…) · une pile est rangée selon sa première œuvre.","Missing values go last · leading articles ignored · a stack sorts by its first item.")}${nbEp?` · 📌 ${nbEp} ${T('épinglé(s), hors règle','pinned, outside the rule')}`:''}</p></div>`:''}
+    <div class="rg-sec"><p class="rg-t">${T('Aperçu','Preview')}</p>
+      <div class="rg-preview"><span>${T('Avant','Before')}</span><div class="rg-mini">${_rgMiniHTML(cur,moving)}</div>
+      <span>${T('Après','After')}</span><div class="rg-mini">${_rgMiniHTML(tgt,moving)}</div></div></div>
+    <div class="rg-sec"><p class="rg-t">${T('Plan de reclassement','Re-sorting plan')}</p>${planHTML}</div>
+    <div class="rg-actions">
+      <button class="secondary" type="button" onclick="closeModal('rangementModal')">${T('Annuler','Cancel')}</button>
+      ${actif&&plan.steps.length?`<button class="secondary" type="button" data-rg-act="plus-tard">${memeRegle?T('Enregistrer, finir plus tard','Save, finish later'):T('Appliquer, ranger plus tard','Apply, sort later')}</button>`:''}
+      <button type="button" data-rg-act="range">${actif&&plan.steps.length?'✓ '+T("C'est rangé","It's sorted"):'✓ '+T('Appliquer','Apply')}</button>
+    </div>`;
+}
+function _rgOnClick(e){
+  const p = e.target.closest('[data-rg-preset]');
+  if(p){
+    const pr = RG_PRESETS.find(x=>x.id===p.dataset.rgPreset);
+    _rgDraft.preset = pr.id;
+    if(pr.cles) _rgDraft.cles = pr.cles.map(c=>c.slice());
+    else if(!_rgDraft.cles.length) _rgDraft.cles = [['serie','asc']];
+    _rgRenderPanel(); return;
+  }
+  const a = e.target.closest('[data-rg-act]');
+  if(a) _rgCommit(a.dataset.rgAct==='range');
+}
+async function _rgOnChange(e){
+  const s = e.target.closest('[data-rg-ci]');
+  if(s){
+    const i = +s.dataset.rgCi;
+    if(s.dataset.rgF==='k'){
+      if(!s.value) _rgDraft.cles = _rgDraft.cles.slice(0,i);
+      else _rgDraft.cles[i] = [s.value, (_rgDraft.cles[i]||[])[1]||'asc'];
+    } else if(_rgDraft.cles[i]) _rgDraft.cles[i][1] = s.value;
+    _rgDraft.cles = _rgDraft.cles.filter(Boolean);
+    _rgDraft.preset = 'perso';
+    _rgRenderPanel(); return;
+  }
+  const c = e.target.closest('[data-rg-chk]');
+  if(c){
+    const shelf = libraryShelves.find(x=>x.id===_rgShelfId); if(!shelf||!shelf.regleRangement) return;
+    const f = new Set((shelf.regleRangement.faits||[]).map(String));
+    c.checked ? f.add(c.dataset.rgChk) : f.delete(c.dataset.rgChk);
+    shelf.regleRangement.faits = [...f];
+    await saveLibraryShelves();
+    _rgRenderPanel();
+  }
+}
+async function _rgCommit(range){
+  const shelf = libraryShelves.find(s=>s.id===_rgShelfId); if(!shelf) return;
+  const ep = (shelf.regleRangement||{}).epingles || {debut:[],fin:[]};
+  if(!_rgDraft.cles.length){
+    // Manuel : on garde les épingles éventuelles hors règle → on les oublie avec la règle
+    delete shelf.regleRangement;
+  } else {
+    const memeRegle = JSON.stringify((shelf.regleRangement||{}).cles||[]) === JSON.stringify(_rgDraft.cles);
+    shelf.regleRangement = {mode:'regle', preset:_rgDraft.preset, cles:_rgDraft.cles.map(c=>c.slice()), epingles:ep,
+      faits: memeRegle ? ((shelf.regleRangement||{}).faits||[]) : []};
+    if(range){
+      shelf.itemOrder = _rgTarget(_rgShelfKeys(shelf), shelf.regleRangement);
+      shelf.regleRangement.faits = [];
+    }
+  }
+  await saveLibraryShelves();
+  closeModal('rangementModal');
+  if(document.getElementById('libraryContainer') && typeof _currentMeubleId!=='undefined') renderLibrary();
+  const n = shelf.regleRangement ? _rgEtat(shelf).plan.steps.length : 0;
+  toast(!shelf.regleRangement ? T('Étagère en mode manuel.','Shelf set to manual order.')
+    : range ? T('Ordre enregistré : la base reflète la planche.','Order saved: the database matches the shelf.')
+    : T(`Méthode enregistrée — ${n} geste(s) à faire.`,`Method saved — ${n} move(s) to do.`));
+}
+
+// ───── Épingler (depuis la fiche) ─────
+async function rgEpingler(key, ou){
+  key = String(key);
+  const shelf = _rgShelfOfKey(key); if(!shelf) return;
+  if(!shelf.regleRangement){ toast(T("Choisissez d'abord une méthode de rangement pour cette étagère.","Choose a sorting method for this shelf first."),'error'); return; }
+  const ep = shelf.regleRangement.epingles = shelf.regleRangement.epingles || {debut:[],fin:[]};
+  ep.debut = (ep.debut||[]).filter(k=>k!==key); ep.fin = (ep.fin||[]).filter(k=>k!==key);
+  if(ou==='debut' || ou==='fin') ep[ou].push(key);
+  await saveLibraryShelves();
+  const it = cache.items.find(i=>String(i.id)===key);
+  if(it) renderItemDetail(it.id, false);
+}
+function _rgShelfOfKey(key){
+  key = String(key);
+  if(key.startsWith('pile:')){ const p = libraryPiles.find(x=>'pile:'+x.id===key); return p ? libraryShelves.find(s=>s.name===p.localisation) : null; }
+  const it = cache.items.find(i=>String(i.id)===key);
+  const loc = (it && it.localisation || '').trim();
+  return loc ? libraryShelves.find(s=>s.name===loc) : null;
+}
+
+// ───── Bloc Localisation de la fiche ─────
+function _rgLocBlockHTML(it){
+  if(GUEST || !it || !it.localisation) return '';
+  const loc = it.localisation.trim();
+  const pile = libraryPiles.find(p=>p.name===loc);
+  const shelf = libraryShelves.find(s=>s.name===(pile ? pile.localisation : loc));
+  if(!shelf) return '';
+  const key = pile ? 'pile:'+pile.id : String(it.id);
+  const {cur, plan} = _rgEtat(shelf);
+  const idx = cur.indexOf(key);
+  if(idx<0) return '';
+  const r = shelf.regleRangement;
+  const m = libraryFurniture.find(x=>x.id===shelf.meubleId);
+  const cols = m ? Math.max(1, m.cols||1) : 1;
+  const colShelves = libraryShelves.filter(s=>s.meubleId===shelf.meubleId && (s.col||0)===(shelf.col||0)).sort((a,b)=>(a.row||0)-(b.row||0));
+  const floor = colShelves.length - colShelves.findIndex(s=>s.id===shelf.id);
+  const sep = `<span class="rg-sep">›</span>`;
+  const go = `onclick="event.preventDefault();locateOnShelf('${it.id}')"`;
+  const crumb = `<a href="#" ${go}>${escapeHTML(_meubleLabel(m))}</a>${cols>1?sep+`<a href="#" ${go}>${T('Colonne','Column')} ${(shelf.col||0)+1}</a>`:''}${sep}<a href="#" ${go}>${T('Étage','Floor')} ${floor}${shelf.name&&!/^(étagère|etagere|shelf)?\s*\d*$/i.test(shelf.name)?' · '+escapeHTML(shelf.name):''}</a>${pile?sep+`<a href="#" ${go}>${pile.kind==='classeur'?'🗂️':'📚'} ${escapeHTML(pile.name)}</a>`:''}`;
+  const prev = idx>0 ? cur[idx-1] : null, next = idx<cur.length-1 ? cur[idx+1] : null;
+  const L = k=>`<b>${escapeHTML(_rgLabel(k))}</b>`;
+  const qui = pile ? T('La pile','The stack') : '';
+  const voisins = !prev && !next ? T('Seul sur la planche','Alone on the shelf')
+    : !prev ? T(`${qui?qui+' est ':''}Premier de la planche, avant ${L(next)}`, `${qui?qui+' is ':''}First on the shelf, before ${L(next)}`)
+    : !next ? T(`${qui?qui+' est ':''}Dernier de la planche, après ${L(prev)}`, `${qui?qui+' is ':''}Last on the shelf, after ${L(prev)}`)
+    : T(`${qui?qui+' est ':''}Entre ${L(prev)} et ${L(next)}`, `${qui?qui+' is ':''}Between ${L(prev)} and ${L(next)}`);
+  let dansPile = '';
+  if(pile){
+    const pb = getPileBooks(pile); const k = pb.findIndex(b=>b.id===it.id);
+    if(k>=0) dansPile = ` · ${k+1}<sup>${k?'e':'er'}</sup> ${T('sur','of')} ${pb.length} ${T('dans la pile','in the stack')}`;
+  }
+  const step = plan.steps.find(s=>s.k===key);
+  const alerte = step ? `<p class="rg-alert">⚠️ ${T('Pas encore à sa place : à glisser','Not in place yet: slide it')} ${_rgOu(step)}.</p>` : '';
+  const ep = (r && r.epingles) || {};
+  const pin = (ep.debut||[]).includes(key) ? 'debut' : (ep.fin||[]).includes(key) ? 'fin' : null;
+  const pret = estPrete(it) ? ` · <span class="muted">${T('place vide : prêté','empty slot: lent')}</span>` : '';
+  const pinBtns = _rgActive(r) ? `<div class="rg-pins">
+      <button class="secondary" type="button" aria-pressed="${pin==='debut'}" onclick="rgEpingler('${escapeHTML(key)}','debut')">📌 ${T('Toujours en début','Always first')}</button>
+      <button class="secondary" type="button" aria-pressed="${pin==='fin'}" onclick="rgEpingler('${escapeHTML(key)}','fin')">📌 ${T('Toujours en fin','Always last')}</button>
+      ${pin?`<button class="secondary" type="button" onclick="rgEpingler('${escapeHTML(key)}',null)">${T('Désépingler','Unpin')}</button>`:''}
+    </div>` : '';
+  return `<section class="rg-loc">
+    <h3>📍 ${T('Localisation','Location')}</h3>
+    <div class="rg-crumb">${crumb}</div>
+    ${alerte}
+    <p class="rg-voisins">${step?`<span class="muted">${T('Actuellement :','Currently:')}</span> `:''}${voisins}</p>
+    <p class="rg-rang">${idx+1}<sup>${idx?'e':'er'}</sup> ${T('sur','of')} ${cur.length}${dansPile} · ${escapeHTML(_rgNomLong(r))}${pin?` · 📌 ${pin==='debut'?T('épinglé en début','pinned first'):T('épinglé en fin','pinned last')}`:''}${pret}</p>
+    <div class="rg-mini rg-mini-fiche" role="button" tabindex="0" title="${T('Ouvrir la vue meuble, centrée sur cette œuvre','Open the bookcase view, centred on this item')}" ${go} onkeydown="if(event.key==='Enter'){locateOnShelf('${it.id}')}">${_rgMiniHTML(cur, step?new Set([key]):new Set(), key)}</div>
+    <div class="rg-bas"><button class="secondary" type="button" onclick="openRangementPanel('${escapeHTML(shelf.id)}')">⇅ ${T("Ranger l'étagère","Sort the shelf")}</button>${pinBtns}</div>
+  </section>`;
+}
+
 function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW){
   // Piles rattachées à cette étagère
   const shelfPiles = isUnclassed ? [] : libraryPiles.filter(p=>p.localisation===shelf.name);
@@ -20012,6 +21022,7 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
 
   const headerBtns = isUnclassed ? "" : `
     <div class="shelf-actions">
+      <button class="ghost" title="${T(`Ranger l'étagère selon une méthode (cycle, chronologie, alphabétique…)`,`Sort the shelf by a method (series, date, alphabetical…)`)}" onclick="openRangementPanel('${shelf.id}')">⇅</button>
       <button class="ghost" title="${T(`Déplacer tout le contenu vers une étagère — y compris dans un autre meuble`,`Move all contents to a shelf — including in another bookcase`)}" onclick="openMoveShelfPicker(event,'${shelf.id}')">🚚</button>
       ${idx>0?`<button class="ghost" title="Monter" onclick="moveLibraryShelf('${shelf.id}',-1)">▲</button>`:`<button class="ghost" disabled style="opacity:.25;pointer-events:none">▲</button>`}
       ${idx<total-1?`<button class="ghost" title="Descendre" onclick="moveLibraryShelf('${shelf.id}',1)">▼</button>`:`<button class="ghost" disabled style="opacity:.25;pointer-events:none">▼</button>`}
@@ -20044,6 +21055,7 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
     if(naturalW > usable) scaleF = usable / naturalW;
   }
 
+  const _rgMoving = isUnclassed ? new Set() : _rgMovingSet(shelf);
   const contentHTML = rendered.map(({type,item})=>{
     if(type==="pile"){
       return buildPileBlockHTML(item, shelf.id, scaleF);
@@ -20061,7 +21073,7 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
     // Œuvre prêtée : elle n'est physiquement pas sur l'étagère → tranche estompée + marqueur
     const _pret = estPrete(it);
     const _pretInfo = _pret ? ` — ${T(`PRÊTÉ à ${it.preteA}`,`LENT to ${it.preteA}`)}${(()=>{const j=joursDePret(it);return j!==null?T(` depuis ${_formatDuree(j)}`,` for ${_formatDuree(j)}`):'';})()}` : '';
-    return `<div class="book-spine${_pret?' spine-pret':''}" draggable="true"
+    return `<div class="book-spine${_pret?' spine-pret':''}${_rgMoving.has(String(it.id))?' rg-move':''}" draggable="true"
         data-item-id="${it.id}" data-shelf-id="${escapeHTML(shelf.id)}"
         style="background:${color};width:${w}px;height:${h}px"
         title="${title}${tomeInfo} (${archetypeForCategory(it.categorie).id==='disque'
@@ -20120,6 +21132,7 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
   return `<div class="shelf-section${sectionClass}${compactClass}" id="shelf-section-${escapeHTML(shelf.id)}">
     <div class="shelf-header">
       <h3 title="${countParts.join(" + ")}">${floorNum?`<span class="shelf-floor">${T("Étage","Floor")} ${floorNum}</span>`:`${icon}${escapeHTML(shelf.name)}`}${(availW && availW < 380)?'':` <span class="muted" style="font-size:12px;font-weight:normal">(${countParts.join(" + ")})</span>`}</h3>
+      ${isUnclassed?'':_rgHeaderBadge(shelf, !!(availW && availW < 380))}
       ${headerBtns}
     </div>
     <div class="shelf-body${emptyClass}" data-shelf-id="${escapeHTML(shelf.id)}"${availW?' style="flex-wrap:nowrap"':''}>
