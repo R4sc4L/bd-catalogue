@@ -484,6 +484,20 @@
   #itemForm.eph-simple #formSection-contenu,
   #itemForm.eph-simple #formSection-objets-associes,
   #itemForm.eph-simple #formSection-pins{display:none}
+  /* — Affiches et tirages d'art : même fiche mono-page que les éphémères — */
+  #itemForm.ta-simple .form-tabs{display:none}
+  #itemForm.ta-simple .form-tab-panel{display:block}
+  #itemForm.ta-simple #formSection-caracteristiques,
+  #itemForm.ta-simple #formSection-contenu,
+  #itemForm.ta-simple #formSection-objets-associes,
+  #itemForm.ta-simple #formSection-pins,
+  #itemForm.ta-simple #tab-infos .form-grid > div:has(#itemSubtitle),
+  #itemForm.ta-simple #formSection-edition .form-grid > div:has(#itemEditionInfo),
+  #itemForm.ta-simple #formFieldFirstEdition{display:none}
+  .ta-alerte{font-size:12.5px;color:var(--danger);margin:6px 0 0;line-height:1.35}
+  .ta-cases{display:flex;gap:22px;flex-wrap:wrap}
+  .ta-case{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink);font-weight:400;cursor:pointer}
+  .ta-case input{width:17px;height:17px;margin:0;accent-color:var(--accent)}
   /* Champs propres aux albums, hors sujet pour un éphémère */
   #itemForm.eph-simple #tab-infos .form-grid > div:has(#itemSubtitle),
   #itemForm.eph-simple #formSection-edition .form-grid > div:has(#itemEditionInfo),
@@ -839,6 +853,20 @@
   svg .lxi-maille{fill:url(#lxiMaille)}
   svg .lxi-maille-fil{fill:none;stroke:#8a8f94;stroke-width:.22}
   svg .lxi-pochoir{fill:#5f9a93;fill-opacity:.92}
+  svg .lxi-cachet-ombre{fill:#000;fill-opacity:.22} svg .lxi-cachet-lum{fill:#fff;fill-opacity:.65}
+  svg .lxi-helio-ciel{fill:url(#lxiHelioCiel)} svg .lxi-helio-soleil{fill:#f1e6cf}
+  svg .lxi-helio-fond{fill:#5b4433;fill-opacity:.8} svg .lxi-helio-devant{fill:#2b1f16}
+  svg .lxi-helio-titre{fill:#2b1f16;font-family:Georgia,serif;font-weight:700;letter-spacing:.2px}
+  svg .lxi-helio{fill:#33251a}
+  svg .lxi-typo-rouge{fill:#c8372d} svg .lxi-typo-gris{fill:#1e1a17;fill-opacity:.45}
+  svg .lxi-typo-txt{fill:#1e1a17;font-family:Georgia,serif;font-weight:700}
+  svg .lxi-typo-foul-txt{fill:#000;fill-opacity:.22;font-family:Georgia,serif;font-weight:700}
+  svg .lxi-typo-foul{fill:#000;fill-opacity:.25}
+  svg .lxi-typo-aplat{fill:#2b2420} svg .lxi-typo-bord{fill:none;stroke:#0b0908;stroke-width:6}
+  svg .lxi-mn-fond{fill:#1b1612} svg .lxi-mn-gris{fill:#62564b} svg .lxi-mn-sombre{fill:#2c241e} svg .lxi-mn-clair{fill:#d6cbb6}
+  #lexiqueImpressionsModal .lx-filtre{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px;color:var(--ink-soft);
+    background:var(--accent-soft);border:1px solid var(--border-warm);border-radius:var(--radius);padding:8px 12px;margin:0 0 14px}
+  #lexiqueImpressionsModal .lx-filtre button{font-size:12.5px;padding:4px 10px}
   svg .lxi-legende{fill:var(--ink);font-size:9px;font-weight:700;font-family:"Nunito",sans-serif}
   .char-sub{display:flex;flex-direction:column;gap:var(--space-title)}
   .char-row{display:flex;flex-wrap:wrap;column-gap:var(--space-col);row-gap:var(--space-row)}
@@ -2000,6 +2028,9 @@
   .rg-crit select{padding:5px 8px;font-size:14px}
   .rg-k{font-size:12px;color:var(--ink-soft);font-weight:700;text-align:center}
   .rg-note{font-size:12.5px;color:var(--ink-soft);margin:6px 0 0}
+  .rg-cycles{display:flex;gap:10px;align-items:flex-start;margin:10px 0 2px;padding:8px 10px;border:1px solid var(--border-warm);border-radius:6px;background:var(--accent-soft);font-size:13.5px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:400;cursor:pointer}
+  .rg-cycles input{width:18px;height:18px;margin:1px 0 0;flex-shrink:0;accent-color:var(--accent)}
+  .rg-cycles b{color:var(--gold)}
   .rg-preview{display:grid;grid-template-columns:54px 1fr;gap:6px 10px;align-items:center;font-size:12px;color:var(--ink-soft);font-weight:700}
   .rg-mini{display:flex;align-items:flex-end;gap:1px;padding:6px 6px 0;min-height:56px;overflow-x:auto;border-radius:4px 4px 0 0;
     border-bottom:4px solid color-mix(in srgb,var(--wood,#5a3f28) 90%,black);background:color-mix(in srgb,var(--wood,#5a3f28) 18%,var(--bg-alt))}
@@ -2648,6 +2679,28 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <input type="checkbox" id="itemColleDansAlbum">
                 <label for="itemColleDansAlbum" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)" data-en="Still in place in the album (its location follows the album)">Toujours en place dans l'album <span class="muted" style="font-size:12px">(sa localisation suit celle de l'album)</span></label>
               </div>
+            </div>
+          </div>
+        </div>
+        <!-- ── SECTION AFFICHE / TIRAGE D'ART (archétypes affiche et estampe) ── -->
+        <div class="form-section" id="formSection-tirageArt" style="display:none">
+          <h3><span id="taIcone">🖼️</span> <span id="taTitre">Tirage d'art</span></h3>
+          <div class="form-grid">
+            <div data-ta="affiche"><label data-en="Poster type">Type d'affiche</label><select id="itemTaType"></select></div>
+            <div data-ta="affiche"><label data-en="Event / commissioner">Événement / commanditaire</label><input type="text" id="itemTaCommanditaire" placeholder="ex: Festival d'Angoulême 1985" data-en-ph="e.g. Angoulême festival 1985"></div>
+            <div><div class="aide-titre" style="margin-bottom:4px"><label for="itemTaTechnique" data-en="Printing technique">Technique d'impression</label><button type="button" class="aide-btn" onclick="ouvrirLexiqueImpressions(_taArchId())" title="Lexique des procédés d'impression illustré" data-en-title="Illustrated printing process glossary" aria-label="Lexique des procédés d'impression">?</button></div>
+              <select id="itemTaTechnique" onchange="_taSync()"></select>
+              <input type="text" id="itemTaTechniqueAutre" style="display:none;margin-top:6px" placeholder="Préciser la technique" data-en-ph="Specify the technique" oninput="_taSync()">
+              <p id="taTechAlerte" class="ta-alerte" style="display:none" data-en="Offset is a mechanical reproduction, not an original print. Check with the glossary's identification criteria.">L'offset est une reproduction mécanique, pas une estampe originale. Vérifiez avec les critères du lexique.</p>
+            </div>
+            <div><label data-en="Publisher's wording">Appellation de l'éditeur</label><input type="text" id="itemTaAppellation" placeholder="ex: « lithographie » (si différente de la technique réelle)" data-en-ph="e.g. “lithograph” (if it differs from the actual technique)"></div>
+            <div><label data-en="Workshop / printer">Atelier / imprimeur</label><input type="text" id="itemTaImprimeur" placeholder="ex: Atelier Idem, Mourlot…" data-en-ph="e.g. Idem workshop, Mourlot…"></div>
+            <div data-ta="estampe"><label data-en="Image size (H × W)">Dimensions de l'image (H × L)</label><input type="text" id="itemTaDimImage" placeholder="ex: 40 × 30 cm" data-en-ph="e.g. 40 × 30 cm"></div>
+            <div data-ta="estampe"><label data-en="Proof type">Type d'épreuve</label><select id="itemTaEpreuve"></select></div>
+            <div><label data-en="Storage">Conditionnement</label><select id="itemTaConditionnement"></select></div>
+            <div data-ta="estampe" class="span-2 ta-cases">
+              <label class="ta-case"><input type="checkbox" id="itemTaCachetSec"> <span data-en="Blind stamp (publisher or workshop)">Cachet sec (éditeur ou atelier)</span></label>
+              <label class="ta-case"><input type="checkbox" id="itemTaCertificat"> <span data-en="Certificate of authenticity">Certificat d'authenticité</span></label>
             </div>
           </div>
         </div>
@@ -4592,6 +4645,31 @@ const FICHE_ARCHETYPES = {
     formClass:'xl-simple',
     sectionTitles:{ edition:{fr:'Caractéristiques',en:'Characteristics'}, acquisition:{fr:'Localisation',en:'Location'} },
   },
+  // Affiche / poster : fiche mono-onglet. Pas d'attributs de livre ; une
+  // section « Affiche » (type, événement, technique, conditionnement).
+  affiche: {
+    id:'affiche', label:'Affiche / Poster', labelEn:'Poster', icon:'🪧',
+    hidden:['univers','serie','serieNum','collection','mois','isbn','pages','reliure','couverture',
+            'emboitage','contenu','formatManga','formatComics'],
+    showTirageArt:true,
+    formClass:'ta-simple',
+    sectionTitles:{ edition:{fr:'Édition et impression',en:'Edition and printing'},
+                    authors:{fr:'Artistes',en:'Artists'} },
+    fieldLabels:{ itemFormat:{fr:'Dimensions (H × L)', en:'Size (H × W)'} },
+  },
+  // Tirage d'art (sérigraphie, lithographie, print d'art) : grand format
+  // autonome. Les petits formats (ex-libris, cartes) restent des éphémères.
+  estampe: {
+    id:'estampe', label:"Tirage d'art / Estampe", labelEn:'Art print', icon:'🖼️',
+    hidden:['univers','serie','serieNum','collection','mois','isbn','pages','reliure','couverture',
+            'emboitage','contenu','formatManga','formatComics'],
+    showTirageArt:true,
+    formClass:'ta-simple',
+    sectionTitles:{ edition:{fr:'Édition et impression',en:'Edition and printing'},
+                    authors:{fr:'Artistes',en:'Artists'} },
+    fieldLabels:{ itemFormat:{fr:'Dimensions de la feuille (H × L)', en:'Sheet size (H × W)'},
+                  itemPublisher:{fr:'Éditeur / galerie', en:'Publisher / gallery'} },
+  },
   // NOUVEAU — démonstrateur : œuvre originale (pièce unique). Fiche épurée
   // sans attributs d'édition imprimée (ISBN, pages, reliure, série…).
   original: {
@@ -4656,6 +4734,10 @@ const CATEGORY_ARCHETYPE = {
   'Vinyle':'disque',
   'DVD':'disque',
   'Blu-ray':'disque',
+  'Poster / Affiche':'affiche',
+  'Sérigraphie':'estampe',
+  'Lithographie':'estampe',
+  "Print d'art":'estampe',
   'Planche originale':'original',
   'Dessin original':'original',
   'Couverture (originale)':'original',
@@ -4894,7 +4976,15 @@ function archetypeForCategory(cat){
       Object.entries(CATEGORY_ARCHETYPE).map(([k,v])=>[_normCat(k), v])
     );
   }
-  const id = _CAT_ARCH_NORM[_normCat(cat)] || 'standard';
+  let id = _CAT_ARCH_NORM[_normCat(cat)];
+  // Catégorie renommée ou créée à la main (« Affiche », « Posters », « Tirage d'art »,
+  // « Sérigraphies »…) : on reconnaît la famille à son nom.
+  if(!id){
+    const n = _normCat(cat);
+    if(/affiche|poster/.test(n)) id = 'affiche';
+    else if(/serigraph|lithograph|estampe|print d.?art|tirage d.?art|gravure|giclee/.test(n)) id = 'estampe';
+  }
+  id = id || 'standard';
   return FICHE_ARCHETYPES[id] || FICHE_ARCHETYPES.standard;
 }
 
@@ -4913,10 +5003,10 @@ const ETAT_DETAIL_DEFAUT = {
             'quelques coups dans la couverture'],
 };
 // Champs dont un archétype peut réécrire le libellé (voir `fieldLabels`).
-const _ARCH_LABEL_FIELDS = ['itemPublisher','itemIsbn','itemCountry','itemCondition'];
-const _ARCH_EDITION_TITLES = ['Édition','Edition','Caractéristiques','Characteristics','Réalisation','Creation','Identité','Identity','Label et parution','Label and release'];
+const _ARCH_LABEL_FIELDS = ['itemPublisher','itemIsbn','itemCountry','itemCondition','itemFormat'];
+const _ARCH_EDITION_TITLES = ['Édition et impression','Edition and printing','Édition','Edition','Caractéristiques','Characteristics','Réalisation','Creation','Identité','Identity','Label et parution','Label and release'];
 const _ARCH_ACQ_TITLES     = ['Acquisition et valeur','Acquisition and value','Localisation','Location','Conservation'];
-const _ARCH_AUTH_TITLES    = ['Auteurs et contributeurs','Authors and contributors','Artistes et contributeurs','Artists and contributors'];
+const _ARCH_AUTH_TITLES    = ['Artistes','Artists','Auteurs et contributeurs','Authors and contributors','Artistes et contributeurs','Artists and contributors'];
 
 // Moteur déclaratif : applique un archétype au formulaire œuvre.
 function applyArchetype(arch){
@@ -4990,6 +5080,117 @@ function applyArchetype(arch){
   // Hors éphémère, restaurer la section Tirage/Dédicace qu'adaptEphemereType peut masquer
   const sigSec = document.getElementById('formSection-signatures');
   if(sigSec && !arch.showEphemere) sigSec.style.display = '';
+  _taAppliquer(arch);
+}
+
+// ============================================================
+// AFFICHES ET TIRAGES D'ART — section dédiée de la fiche
+// ------------------------------------------------------------
+// La technique d'impression y est une liste fermée propre à la
+// catégorie (l'offset n'est pas une technique d'estampe), avec
+// « Autre… » pour le cas imprévu. Le « ? » ouvre le lexique filtré
+// sur les procédés de la catégorie.
+// ============================================================
+const TA_TECHNIQUES = {
+  affiche: ['Offset','Lithographie','Sérigraphie','Typographie','Héliogravure',
+            'Impression pigmentaire (giclée)','Impression numérique'],
+  estampe: ['Lithographie','Sérigraphie','Burin','Eau-forte','Pointe sèche','Aquatinte',
+            'Manière noire','Xylographie','Linogravure','Impression pigmentaire (giclée)'],
+};
+const TA_TECH_EN = { 'Offset':'Offset','Lithographie':'Lithograph','Sérigraphie':'Screen print','Typographie':'Letterpress',
+  'Héliogravure':'Photogravure (gravure)','Impression pigmentaire (giclée)':'Pigment print (giclée)','Impression numérique':'Digital print',
+  'Burin':'Engraving (burin)','Eau-forte':'Etching','Pointe sèche':'Drypoint','Aquatinte':'Aquatint','Manière noire':'Mezzotint',
+  'Xylographie':'Woodcut','Linogravure':'Linocut' };
+const TA_AFFICHE_TYPES = [
+  ['Festival','Festival'],['Librairie / dédicace','Bookshop / signing'],['Exposition','Exhibition'],
+  ['Salon / événement','Fair / event'],['Promotionnelle (éditeur)','Promotional (publisher)'],['Cinéma','Film'],
+  ['Publicitaire / commerciale','Advertising / commercial'],['Autre','Other']];
+const TA_EPREUVES = [
+  ['Numérotée','Numbered'],["EA — épreuve d'artiste",'AP — artist\'s proof'],['HC — hors commerce','HC — hors commerce'],
+  ['BAT — bon à tirer','BAT — printer\'s proof'],["Épreuve d'essai",'Trial proof'],['Non justifiée','Not numbered']];
+const TA_CONDITIONNEMENTS = {
+  affiche: [['Pliée','Folded'],['Roulée','Rolled'],['À plat','Flat'],['Entoilée','Linen-backed'],['Encadrée','Framed']],
+  estampe: [['À plat (sous chemise)','Flat (in folder)'],['Sous marie-louise','Matted'],['Encadrée','Framed'],['Roulée','Rolled']],
+};
+let _taArch = null;
+function _taArchId(){ return _taArch; }
+function _taOpts(list, val){
+  return `<option value="">—</option>` + list.map(([fr,en])=>`<option value="${escapeHTML(fr)}"${fr===val?' selected':''}>${escapeHTML(T(fr,en))}</option>`).join('');
+}
+function _taAppliquer(arch){
+  const sec = document.getElementById('formSection-tirageArt');
+  _taArch = arch && arch.showTirageArt ? arch.id : null;
+  if(!sec) return;
+  sec.style.display = _taArch ? '' : 'none';
+  if(!_taArch) return;
+  const est = _taArch === 'estampe';
+  document.getElementById('taTitre').textContent = est ? T("Tirage d'art",'Art print') : T('Affiche','Poster');
+  document.getElementById('taIcone').textContent = est ? '🖼️' : '🪧';
+  sec.querySelectorAll('[data-ta]').forEach(el=>{ el.style.display = el.dataset.ta === _taArch ? '' : 'none'; });
+  // Technique : reconstruire la liste en gardant la valeur saisie
+  const cur = _taTechniqueValeur();
+  const sel = document.getElementById('itemTaTechnique');
+  sel.innerHTML = `<option value="">—</option>` + TA_TECHNIQUES[_taArch].map(t=>`<option value="${escapeHTML(t)}">${escapeHTML(T(t, TA_TECH_EN[t]||t))}</option>`).join('')
+    + `<option value="__autre">${T('Autre…','Other…')}</option>`;
+  _taSetTechnique(cur);
+  const cond = document.getElementById('itemTaConditionnement');
+  const cv = cond.value;
+  cond.innerHTML = _taOpts(TA_CONDITIONNEMENTS[_taArch], cv);
+}
+function _taTechniqueValeur(){
+  const sel = document.getElementById('itemTaTechnique');
+  if(!sel) return '';
+  if(sel.value === '__autre') return (document.getElementById('itemTaTechniqueAutre').value||'').trim();
+  return sel.value || '';
+}
+function _taSetTechnique(v){
+  const sel = document.getElementById('itemTaTechnique'), autre = document.getElementById('itemTaTechniqueAutre');
+  if(!sel) return;
+  v = (v||'').trim();
+  const liste = _taArch ? TA_TECHNIQUES[_taArch] : [];
+  // Rapprochement tolérant (casse, accents) avec la liste de la catégorie
+  const hit = liste.find(t=>_normCat(t)===_normCat(v));
+  if(!v){ sel.value=''; autre.value=''; }
+  else if(hit){ sel.value = hit; autre.value=''; }
+  else { sel.value = '__autre'; autre.value = v; }
+  _taSync();
+}
+function _taSync(){
+  const sel = document.getElementById('itemTaTechnique');
+  const autre = document.getElementById('itemTaTechniqueAutre');
+  if(!sel) return;
+  autre.style.display = sel.value === '__autre' ? '' : 'none';
+  const v = _taTechniqueValeur();
+  const alerte = document.getElementById('taTechAlerte');
+  const offsetSurEstampe = _taArch === 'estampe' && /offset/i.test(v);
+  alerte.style.display = offsetSurEstampe ? '' : 'none';
+}
+function _taFill(it){
+  it = it || {};
+  _taSetTechnique(it.technique || '');
+  const set = (id, v) => { const el = document.getElementById(id); if(!el) return; if(el.type==='checkbox') el.checked = !!v; else el.value = v ?? ''; };
+  document.getElementById('itemTaType').innerHTML = _taOpts(TA_AFFICHE_TYPES, it.afficheType||'');
+  document.getElementById('itemTaEpreuve').innerHTML = _taOpts(TA_EPREUVES, it.typeEpreuve||'');
+  if(_taArch) document.getElementById('itemTaConditionnement').innerHTML = _taOpts(TA_CONDITIONNEMENTS[_taArch], it.conditionnement||'');
+  set('itemTaCommanditaire', it.commanditaire); set('itemTaAppellation', it.appellationEditeur);
+  set('itemTaImprimeur', it.imprimeur); set('itemTaDimImage', it.dimImage);
+  set('itemTaCachetSec', it.cachetSec); set('itemTaCertificat', it.certificat);
+}
+function _taCollecter(){
+  if(!_taArch) return {};
+  const v = id => (document.getElementById(id)?.value||'').trim();
+  const est = _taArch === 'estampe';
+  return {
+    afficheType:        est ? '' : v('itemTaType'),
+    commanditaire:      est ? '' : v('itemTaCommanditaire'),
+    appellationEditeur: v('itemTaAppellation'),
+    imprimeur:          v('itemTaImprimeur'),
+    dimImage:           est ? v('itemTaDimImage') : '',
+    typeEpreuve:        est ? v('itemTaEpreuve') : '',
+    cachetSec:          est ? !!document.getElementById('itemTaCachetSec')?.checked : false,
+    certificat:         est ? !!document.getElementById('itemTaCertificat')?.checked : false,
+    conditionnement:    v('itemTaConditionnement'),
+  };
 }
 
 // Archétype de repli quand aucune catégorie n'est encore choisie : si toutes
@@ -5717,6 +5918,8 @@ function _lxiDefs(){
   <radialGradient id="lxiOffSoleil"><stop offset="0" stop-color="#fffbe2"/><stop offset=".6" stop-color="#ffe27a"/><stop offset="1" stop-color="#f4b73d"/></radialGradient>
   <linearGradient id="lxiOffFond" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#86a66c"/><stop offset="1" stop-color="#4f7341"/></linearGradient>
   <linearGradient id="lxiOffDevant" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#47683a"/><stop offset="1" stop-color="#253a1f"/></linearGradient>
+  <linearGradient id="lxiHelioCiel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b5240"/><stop offset="1" stop-color="#e2d3b8"/></linearGradient>
+  <radialGradient id="lxiMnSoleil"><stop offset="0" stop-color="#e9dfcc"/><stop offset=".55" stop-color="#bdb09a"/><stop offset="1" stop-color="#1b1612"/></radialGradient>
   <pattern id="lxiMaille" width="1.3" height="1.3" patternUnits="userSpaceOnUse"><path class="lxi-maille-fil" d="M0 .65H1.3M.65 0V1.3"/></pattern>
   <filter id="lxiVelours" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="1.3"/></filter>
   <filter id="lxiVelours2" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation=".45"/></filter>
@@ -5971,12 +6174,102 @@ function _lxiXylo(){
   return _lxiFeuille(e) + _lxiPlan(e, _lxiPlace(image));
 }
 
+// Impression pigmentaire (giclée) : des gouttelettes semées au hasard (trame
+// aléatoire), sans grille ni rosettes, et aucune épaisseur d'encre.
+function _lxiGoutteletes(){
+  const R = _LXI_LOUPE.R, rnd = _lxiAlea(41);
+  const bord = x => 4 + .3*x + 5*Math.sin(x/11);
+  const tons = { j:[.04,.55], c:[.3,.42], m:[.07,.14], n:[.01,.16] };
+  let s = '';
+  for(const k of ['j','c','m','n']){
+    const pts = [];
+    for(let i=0;i<5200;i++){
+      const x = (rnd()*2-1)*(R+2), y = (rnd()*2-1)*(R+2);
+      if(x*x + y*y > (R+2)*(R+2)) continue;
+      const cov = y > bord(x) ? tons[k][1] : tons[k][0] * (1 - (y + R)/(2.6*R));
+      if(rnd() < cov*.55) pts.push([x, y, .55 + rnd()*.45]);
+    }
+    s += `<path class="lxi-cmjn-${k}" d="${_lxiDisques(pts)}"/>`;
+  }
+  return `<g class="lxi-isole">${s}</g>`;
+}
+function _lxiPigment(){
+  _lxiCam();
+  const e = 1.6, m = _LXI_MOTIF;
+  const image = `<path class="lxi-off-ciel" d="M0 0H56V36H0Z"/>` + _lxiSoleil('lxi-off-soleil', 6.6)
+    + `<path class="lxi-off-fond" d="${m.fond}"/><path class="lxi-off-devant" d="${m.devant}"/>`;
+  const mentions = `<text class="lxi-crayon" x="${_LXI_IMG.x}" y="50" font-size="4.6">25/100</text>`
+    + `<circle class="lxi-cachet-ombre" cx="31.4" cy="49.4" r="2.7"/><circle class="lxi-cachet-lum" cx="30.6" cy="48.6" r="2.7"/><circle class="lxi-papier-plein" cx="31" cy="49" r="2.5"/>`
+    + `<path class="lxi-signature" d="M50 50.5c1.6-3.2 3.2-3.6 3.6-1.5s-1.5 3.4-.2 3.6 2.8-3.8 4-3.6.2 3.2 1.5 3.2 2.3-2.5 3.6-2.7 1.3 2.3 2.5 2.3 1.7-1 3-1.3"/>`;
+  return _lxiFeuille(e) + _lxiPlan(e, _lxiPlace(image) + mentions);
+}
+// Héliogravure : des alvéoles carrées, plus grandes dans les noirs, séparées
+// par de fins murs blancs ; une lettre prend un bord en dents de scie.
+function _lxiAlveoles(){
+  const R = _LXI_LOUPE.R, pas = 5, pts = [];
+  const bord = x => 6 + .3*x + 5*Math.sin(x/11);
+  const lettre = (x, y) => (x > -44 && x < -8 && y > -36 && y < -26) || (x > -30 && x < -21 && y >= -26 && y < 2);  // un « T »
+  let d = '';
+  for(let i=-10;i<=10;i++) for(let j=-10;j<=10;j++){
+    const x = i*pas, y = j*pas;
+    if(x*x + y*y > (R+4)*(R+4)) continue;
+    let t = lettre(x, y) ? 1 : y > bord(x) ? .78 : .12 + .3*(y + R)/(2*R);
+    const c = pas*.9*Math.sqrt(t), h = c/2;
+    d += `M${_lxiR(x-h)} ${_lxiR(y-h)}h${_lxiR(c)}v${_lxiR(c)}h${_lxiR(-c)}Z`;
+  }
+  return `<path class="lxi-helio" d="${d}"/>`;
+}
+function _lxiHelio(){
+  _lxiCam();
+  const e = .45, m = _LXI_MOTIF, {W,L} = _LXI, sx = (W-5)/56, sy = (L-5)/36;
+  const image = `<g transform="translate(2.5 2.5) scale(${_lxiR(sx)} ${_lxiR(sy)})"><path class="lxi-helio-ciel" d="M0 0H56V36H0Z"/>`
+    + _lxiSoleil('lxi-helio-soleil', 6.4) + `<path class="lxi-helio-fond" d="${m.fond}"/><path class="lxi-helio-devant" d="${m.devant}"/>`
+    + `<text class="lxi-helio-titre" x="4" y="7.4" font-size="5.6">LE JOURNAL</text></g>`;
+  return _lxiFeuille(e) + _lxiPlan(e, image);
+}
+// Typographie : la forme encrée en relief foule le papier ; l'encre chassée
+// fonce le contour de la lettre, l'aplat reste parfois moucheté.
+function _lxiFoulageTypo(id){
+  const lettre = 'M-46 -40H44V-16H12V48H-12V-16H-46Z';
+  return `<path class="lxi-typo-foul" transform="translate(1.6 2)" d="${lettre}"/>`
+       + `<clipPath id="${id}"><path d="${lettre}"/></clipPath>`
+       + `<path class="lxi-typo-aplat" d="${lettre}"/>`
+       + `<g clip-path="url(#${id})"><path class="lxi-typo-bord" d="${lettre}"/><path class="lxi-papier" fill-opacity=".55" d="${_lxiSemis(17, 90, 120, .3, .9).replace(/M(-?[\d.]+) (-?[\d.]+)/g, (m0, a, b) => `M${_lxiR(+a-45)} ${_lxiR(+b-45)}`)}"/></g>`;
+}
+function _lxiTypo(){
+  _lxiCam();
+  const e = 1.2, m = _LXI_MOTIF;
+  const image = _lxiSoleil('lxi-typo-rouge', 6.4) + `<path class="lxi-typo-gris" d="${m.fond}"/><path class="lxi-xylo-noir" d="${m.devant}"/>`;
+  const titre = (cls, dx) => `<text class="${cls}" x="${37 + dx}" y="${51.4 + dx}" font-size="6.2" text-anchor="middle">SALON DE LA BD</text>`;
+  return _lxiFeuille(e) + _lxiPlan(e, _lxiPlace(image) + titre('lxi-typo-foul-txt', .35) + titre('lxi-typo-txt', 0));
+}
+// Manière noire : la plaque grenée imprime un noir velouté ; les clairs
+// naissent du grain écrasé au brunissoir, sans un seul trait.
+function _lxiGrainMN(){
+  const R = _LXI_LOUPE.R, rnd = _lxiAlea(57), clairs = [], sombres = [];
+  const cx = -8, cy = -10, r = 24;
+  for(let i=0;i<4200;i++){
+    const x = (rnd()*2-1)*R, y = (rnd()*2-1)*R;
+    if(x*x + y*y > R*R) continue;
+    const d = Math.hypot(x-cx, y-cy);
+    if(d > r + 6) clairs.push([x, y, .25 + rnd()*.35]);
+    else if(d < r - 4 && rnd() < .25) sombres.push([x, y, .25 + rnd()*.3]);
+  }
+  return `<path class="lxi-mn-fond" d="M-60 -60H60V60H-60Z"/><circle fill="url(#lxiMnSoleil)" cx="${cx}" cy="${cy}" r="${r+6}"/>`
+       + `<path class="lxi-mn-clair" fill-opacity=".55" d="${_lxiDisques(clairs)}"/><path class="lxi-mn-fond" fill-opacity=".45" d="${_lxiDisques(sombres)}"/>`;
+}
+function _lxiManiereNoire(){
+  const m = _LXI_MOTIF;
+  return _lxiTailleDouce(`<path class="lxi-mn-fond" d="M0 0H56V36H0Z"/>` + _lxiSoleil('lxi-mn-clair', 6.2)
+    + `<path class="lxi-mn-gris" d="${m.fond}"/><path class="lxi-mn-sombre" d="${m.devant}"/><path class="lxi-grain-aqua" d="M0 0H56V36H0Z"/>`);
+}
+
 function _lxiEntrees(){
   const Hf = _LXI_TD.e - _LXI_TD.d;
   const loupe = (id, mx, my, H, contenu) => _lxiLoupe(id, _lxiMotifEcran(mx, my, H), contenu);
   const cuvette = () => _l3Rep([_LXI_CUV.x + _LXI_CUV.w - .8, _LXI.L - 16, _LXI_TD.e - .6], 150, 26, T(`cuvette`,`plate mark`), 'end');
   return [
-    { famille:0, nom:T(`Lithographie`,`Lithograph`),
+    { famille:0, pour:['affiche','estampe'], nom:T(`Lithographie`,`Lithograph`),
       type:T(`Estampe originale (planographie).`,`Original print (planographic).`),
       def:T(`L'eau et l'encre grasse se repoussent : sur une pierre calcaire dessinée au corps gras, seul le dessin retient l'encre.`,
             `Water and greasy ink repel each other: on a limestone drawn with a greasy crayon, only the drawing holds the ink.`),
@@ -5989,7 +6282,7 @@ function _lxiEntrees(){
         + _l3Rep([0, 22, 1.1], 14, 156, T(`papier épais`,`thick paper`))
         + _lxiRepImg(17, 49, 2.2, 74, 156, T(`n° et signature au crayon`,`number and signature in pencil`))
         + _lxiRepLoupe(14, 20, 254, 136, T(`grain moucheté`,`speckled grain`), 'end') },
-    { famille:0, nom:T(`Sérigraphie`,`Screen print`),
+    { famille:0, pour:['affiche','estampe'], nom:T(`Sérigraphie`,`Screen print`),
       type:T(`Estampe originale ou multiple (perméabilité).`,`Original print or multiple (stencil process).`),
       def:T(`La raclette pousse l'encre à travers un écran de tissu tendu, dont un pochoir bouche les parties qui ne doivent pas imprimer.`,
             `A squeegee pushes the ink through a stretched fabric screen, whose non-printing areas are blocked by a stencil.`),
@@ -6000,7 +6293,7 @@ function _lxiEntrees(){
         + _lxRep(..._lxiMotifEcran(8, 20, 2.1), 30, 24, T(`aplats saturés`,`saturated flats`))
         + _lxRep(..._lxiMotifEcran(26, 27.8, 2.1), 74, 156, T(`encre en surépaisseur`,`raised layer of ink`))
         + _lxiRepLoupe(-5, 14, 254, 136, T(`aplat opaque, sans trame`,`opaque, no dots`), 'end') },
-    { famille:0, nom:T(`Offset`,`Offset`),
+    { famille:0, pour:['affiche'], nom:T(`Offset`,`Offset`),
       type:T(`Impression mécanique industrielle (reproduction).`,`Industrial mechanical printing (reproduction).`),
       def:T(`L'encre passe d'une plaque à un blanchet en caoutchouc, qui la reporte à son tour sur le papier.`,
             `The ink is transferred from a plate to a rubber blanket, which in turn offsets it onto the paper.`),
@@ -6012,14 +6305,39 @@ function _lxiEntrees(){
         + _lxRep(..._lxiEcran(22, 12, .5), 30, 24, T(`rendu lisse, sans relief`,`smooth, no relief`))
         + _l3Rep([0, 22, .25], 14, 156, T(`papier standard`,`standard paper`))
         + _lxiRepLoupe(12, 18, 254, 136, T(`trame CMJN`,`CMYK dots`), 'end') },
-    { famille:1, nom:T(`Burin`,`Engraving (burin)`),
+    { famille:0, pour:['affiche','estampe'], nom:T(`Impression pigmentaire (giclée)`,`Pigment print (giclée)`),
+      type:T(`Reproduction numérique (jet d'encre pigmentaire).`,`Digital reproduction (pigment inkjet).`),
+      def:T(`Une imprimante à jet d'encre de haute qualité dépose des encres pigmentaires, de huit à douze couleurs, sur un papier beaux-arts. On parle aussi de « tirage Fine Art ».`,
+            `A high-end inkjet printer lays down pigment inks, eight to twelve colours, on fine-art paper. Also sold as a “Fine Art print”.`),
+      oeil:T(`dégradés continus, noirs profonds, papier mat et épais ; souvent signé, numéroté et frappé d'un cachet sec. Aucune épaisseur d'encre.`,
+             `continuous gradients, deep blacks, thick matte paper; often signed, numbered and blind-stamped. No ink thickness.`),
+      loupe:T(`nuage de gouttelettes de couleur semées au hasard (trame aléatoire), sans grille ni rosettes.`,
+              `a cloud of colour droplets scattered at random (stochastic screen), with no grid and no rosettes.`),
+      dessin: _lxiPigment() + loupe('lxiL9', 36, 27, 1.6, _lxiGoutteletes())
+        + _lxRep(..._lxiMotifEcran(14, 8, 1.6), 30, 24, T(`dégradés continus`,`continuous gradients`))
+        + _lxiRepImg(31, 49, 1.6, 74, 156, T(`cachet sec`,`blind stamp`))
+        + _lxiRepLoupe(14, 18, 254, 136, T(`gouttelettes au hasard`,`random droplets`), 'end') },
+    { famille:0, pour:['affiche'], nom:T(`Héliogravure`,`Photogravure (gravure)`),
+      type:T(`Impression photomécanique en creux (reproduction).`,`Photomechanical intaglio printing (reproduction).`),
+      def:T(`L'image photographique est gravée dans un cylindre de cuivre en milliers d'alvéoles plus ou moins profondes ; l'encre liquide qu'elles retiennent passe sur le papier. Procédé des magazines illustrés et de certaines affiches.`,
+            `The photographic image is etched into a copper cylinder as thousands of cells of varying depth; the liquid ink they hold passes onto the paper. Used for illustrated magazines and some posters.`),
+      oeil:T(`noirs profonds et veloutés, dégradés de qualité photographique, papier souvent fin ; textes aux contours légèrement crénelés.`,
+             `deep, velvety blacks, photographic-quality gradients, often thin paper; text with slightly jagged edges.`),
+      loupe:T(`réseau régulier de petites cellules carrées séparées par de fins murs blancs ; les lettres ont des bords en dents de scie.`,
+              `a regular grid of small square cells divided by thin white walls; letters have saw-toothed edges.`),
+      dessin: _lxiHelio() + _lxiLoupe('lxiL10', _lxiEcran(14, 11, .45), _lxiAlveoles())
+        + _lxRep(..._lxiEcran(36, 30, .45), 30, 24, T(`noirs veloutés`,`velvety blacks`))
+        + _l3Rep([0, 22, .22], 14, 156, T(`papier fin`,`thin paper`))
+        + _lxiRepLoupe(-21, 0, 186, 136, T(`bord en dents de scie`,`saw-toothed edge`), 'end')
+        + _lxiRepLoupe(20, 30, 254, 136, T(`alvéoles carrées`,`square cells`), 'end') },
+    { famille:1, pour:['estampe'], nom:T(`Burin`,`Engraving (burin)`),
       type:T(`Gravure directe sur métal (cuivre).`,`Direct intaglio on metal (copper).`),
       def:T(`Le graveur incise le métal à l'aide d'un outil d'acier tranchant, le burin.`,`The engraver cuts into the metal with a sharp steel tool, the burin.`),
       critere:T(`trait d'une netteté absolue, rigoureux, qui se termine en pointe fine (forme de losange). Léger relief de l'encre.`,
                 `an absolutely crisp, disciplined line that tapers to a fine point (lozenge-shaped). The ink stands in slight relief.`),
       dessin: _lxiBurin() + loupe('lxiL4', 30, 26, Hf, _lxiTraitsBurin()) + cuvette()
         + _lxiRepLoupe(..._lxiPointeBurin(4), 254, 136, T(`trait effilé en pointe`,`line tapering to a point`), 'end') },
-    { famille:1, nom:T(`Eau-forte`,`Etching`),
+    { famille:1, pour:['estampe'], nom:T(`Eau-forte`,`Etching`),
       type:T(`Gravure indirecte (chimique) sur métal.`,`Indirect (chemical) intaglio on metal.`),
       def:T(`La plaque vernie est gravée à la pointe fine, puis plongée dans un bain d'acide qui creuse le métal mis à nu.`,
             `The varnished plate is drawn into with a fine needle, then dipped in an acid bath that bites the exposed metal.`),
@@ -6027,7 +6345,7 @@ function _lxiEntrees(){
                 `a very free, supple line with rounded ends, much like a hand drawing in felt pen.`),
       dessin: _lxiEauForte() + loupe('lxiL5', 22, 26, Hf, _lxiTraitsEauForte()) + cuvette()
         + _lxiRepLoupe(-13, 31, 254, 136, T(`trait libre, bouts arrondis`,`free line, rounded ends`), 'end') },
-    { famille:1, nom:T(`Pointe sèche`,`Drypoint`),
+    { famille:1, pour:['estampe'], nom:T(`Pointe sèche`,`Drypoint`),
       type:T(`Gravure directe sur métal.`,`Direct intaglio on metal.`),
       def:T(`Une aiguille d'acier acérée raye le métal et soulève, le long du sillon, des filaments de cuivre : les barbes.`,
             `A sharp steel needle scratches the metal and throws up copper filaments along the furrow: the burr.`),
@@ -6035,7 +6353,7 @@ function _lxiEntrees(){
                 `a velvety line, blurred or doubled, caused by the ink caught in the metal burr.`),
       dessin: _lxiPointeSeche() + loupe('lxiL6', 20, 24, Hf, _lxiTraitsPointeSeche()) + cuvette()
         + _lxiRepLoupe(12, 21, 254, 136, T(`trait velouté (barbes)`,`velvety line (burr)`), 'end') },
-    { famille:1, nom:T(`Aquatinte`,`Aquatint`),
+    { famille:1, pour:['estampe'], nom:T(`Aquatinte`,`Aquatint`),
       type:T(`Gravure chimique sur métal (variante de l'eau-forte).`,`Chemical intaglio on metal (a variant of etching).`),
       def:T(`On saupoudre la plaque de résine avant la morsure à l'acide, pour obtenir des surfaces texturées.`,
             `The plate is dusted with resin before the acid bite, to obtain textured areas.`),
@@ -6044,7 +6362,17 @@ function _lxiEntrees(){
       dessin: _lxiAquatinte() + loupe('lxiL7', 34, 22, Hf, _lxiReseauAquatinte()) + cuvette()
         + _lxRep(..._lxiMotifEcran(14, 28, Hf), 30, 24, T(`aspect de lavis`,`wash-like tones`))
         + _lxiRepLoupe(16, 28, 254, 136, T(`réseau granuleux`,`granular network`), 'end') },
-    { famille:2, nom:T(`Xylographie et linogravure`,`Woodcut and linocut`),
+    { famille:1, pour:['estampe'], nom:T(`Manière noire`,`Mezzotint`),
+      type:T(`Gravure en creux sur métal, travaillée du noir vers le blanc.`,`Intaglio on metal, worked from black to white.`),
+      def:T(`La plaque est entièrement grenée au berceau : imprimée telle quelle, elle donnerait un noir uniforme. Le graveur écrase ensuite le grain au grattoir et au brunissoir pour faire naître les clairs.`,
+            `The whole plate is roughened with a rocker: printed as is, it would give a solid black. The engraver then flattens the grain with scraper and burnisher to bring out the lights.`),
+      critere:T(`noirs profonds et veloutés d'où émergent les formes en lumière, passages très doux, sans trait ni hachure. À la loupe : un grain serré de minuscules points, lissé dans les clairs.`,
+                `deep, velvety blacks from which the shapes emerge in light, very soft transitions, no lines or hatching. Under the loupe: a tight grain of tiny dots, smoothed in the lights.`),
+      dessin: _lxiManiereNoire() + loupe('lxiL11', 38, 12, Hf, _lxiGrainMN()) + cuvette()
+        + _lxRep(..._lxiMotifEcran(14, 6, Hf), 30, 24, T(`noir velouté`,`velvety black`))
+        + _lxiRepLoupe(-8, -10, 186, 136, T(`grain écrasé (clair)`,`flattened grain (light)`), 'end')
+        + _lxiRepLoupe(26, 26, 254, 136, T(`grain serré`,`tight grain`), 'end') },
+    { famille:2, pour:['estampe'], nom:T(`Xylographie et linogravure`,`Woodcut and linocut`),
       type:T(`Gravure sur bois (xylographie) ou sur linoléum (linogravure).`,`Relief print on wood (woodcut) or linoleum (linocut).`),
       def:T(`Les blancs sont creusés à la gouge ; les surfaces restées en relief reçoivent l'encre.`,
             `The whites are cut away with a gouge; the surfaces left standing take the ink.`),
@@ -6054,6 +6382,17 @@ function _lxiEntrees(){
         + _l3Rep([_LXI.W - 4, _LXI.L - 20, 1.2], 150, 26, T(`pas de cuvette`,`no plate mark`), 'end')
         + _lxiRepLoupe(-22, -9.5, 186, 136, T(`bourrelet d'encre`,`ink rim`), 'end')
         + _lxiRepLoupe(24, 22, 254, 136, T(`veinage du bois`,`wood grain`), 'end') },
+    { famille:2, pour:['affiche'], nom:T(`Typographie`,`Letterpress`),
+      type:T(`Impression en relief (caractères mobiles, clichés).`,`Relief printing (movable type, blocks).`),
+      def:T(`Des caractères de plomb ou de bois et des clichés, encrés en relief, sont pressés contre le papier : la technique des affiches anciennes et des affichettes de librairie.`,
+            `Lead or wooden type and printing blocks, inked in relief, are pressed against the paper: the technique of old posters and bookshop bills.`),
+      critere:T(`foulage : les lettres s'enfoncent légèrement dans le papier (relief visible au revers). À la loupe : contour des lettres plus sombre (encre écrasée), aplats parfois mouchetés, aucune trame.`,
+                `impression: the letters sink slightly into the paper (relief visible on the back). Under the loupe: a darker outline to the letters (squeezed ink), sometimes speckled solids, no screen.`),
+      dessin: _lxiTypo() + _lxiLoupe('lxiL12', _lxiEcran(31, 50, 1.2), _lxiFoulageTypo('lxiX12'))
+        + _l3Rep([_LXI.W - 4, _LXI.L - 20, 1.2], 150, 26, T(`pas de cuvette`,`no plate mark`), 'end')
+        + _lxiRepImg(17, 50, 1.2, 74, 156, T(`lettres foulées`,`debossed letters`))
+        + _lxiRepLoupe(-12, 30, 186, 136, T(`contour écrasé`,`squeezed outline`), 'end')
+        + _lxiRepLoupe(4, 22, 254, 136, T(`aplat moucheté`,`speckled solid`), 'end') },
   ];
 }
 // ── Vue d'ensemble : où se trouve l'encre ? ──
@@ -6109,7 +6448,8 @@ function _lxiVueEnsemble(){
        + _lxiMatPlat(74, 153) + leg(80, 166, T(`à plat`,`planographic`))
        + _lxiMatEcran(208, 153) + leg(214, 166, T(`au travers`,`through a screen`));
 }
-function ouvrirLexiqueImpressions(){
+function ouvrirLexiqueImpressions(filtre){
+  filtre = (filtre === 'affiche' || filtre === 'estampe') ? filtre : null;
   let bd = document.getElementById('lexiqueImpressionsModal');
   if(!bd){ bd = document.createElement('div'); bd.className='modal-backdrop'; bd.id='lexiqueImpressionsModal'; document.body.appendChild(bd); }
   const svg = inner => `<svg viewBox="0 0 260 172" aria-hidden="true" focusable="false">${inner}</svg>`;
@@ -6126,12 +6466,17 @@ function ouvrirLexiqueImpressions(){
     [T(`À plat`,`Planographic`),     T(`planographie : rien n'est creusé ; le gras retient l'encre, l'eau la repousse (lithographie, offset).`,`nothing is cut; grease holds the ink, water repels it (lithograph, offset).`)],
     [T(`Au travers`,`Through a screen`), T(`perméabilité : l'encre traverse un écran tendu ; le pochoir bouche le reste (sérigraphie).`,`the ink passes through a stretched screen; the stencil blocks the rest (screen print).`)],
   ].map(([t,d])=>`<dt>${t}</dt><dd>${d}</dd>`).join('');
-  const entrees = _lxiEntrees();
+  const toutes = _lxiEntrees();
+  const entrees = filtre ? toutes.filter(e=>(e.pour||[]).includes(filtre)) : toutes;
+  const nomFiltre = filtre === 'affiche' ? T('affiches','posters') : T("tirages d'art",'art prints');
+  const bandeau = filtre
+    ? `<p class="lx-filtre">${T(`Procédés proposés pour les ${nomFiltre} : ${entrees.length} sur ${toutes.length}.`,`Processes offered for ${nomFiltre}: ${entrees.length} of ${toutes.length}.`)} <button type="button" class="secondary" onclick="ouvrirLexiqueImpressions()">${T('Voir tous les procédés','Show all processes')}</button></p>`
+    : '';
   const carte = e => `<article class="lx-carte"><h4>${e.nom}</h4>${svg(e.dessin)}<div class="lx-texte"><p class="lx-type">${e.type}</p><p>${e.def}</p>`
     + (e.critere ? `<p class="lx-repere"><b>${T(`Critère d'identification :`,`Identifying feature:`)}</b> ${e.critere}</p>`
                  : `<p class="lx-repere"><b>${T(`À l'œil nu :`,`Naked eye:`)}</b> ${e.oeil}</p><p class="lx-repere"><b>${T(`À la loupe (×10) :`,`Under a ×10 loupe:`)}</b> ${e.loupe}</p>`)
     + `</div></article>`;
-  const sections = familles.map((f,i) => `<section class="lx-famille"><h3>${f.titre}</h3>`
+  const sections = familles.map((f,i) => !entrees.some(e=>e.famille===i) ? '' : `<section class="lx-famille"><h3>${f.titre}</h3>`
     + (f.indice ? `<p class="lx-indice"><b>${T(`Indice commun :`,`Common clue:`)}</b> ${f.indice}</p>` : '')
     + `<div class="lx-grille">${entrees.filter(e=>e.famille===i).map(carte).join('')}</div></section>`).join('');
   bd.innerHTML = `<div class="modal">
@@ -6140,6 +6485,7 @@ function ouvrirLexiqueImpressions(){
     <div class="modal-body">${_lxiDefs()}
       <p class="lx-intro">${T(`Chaque croquis montre l'estampe posée à plat, vue de trois quarts comme pour les reliures : c'est l'examen à l'œil nu. Le cercle grossit un détail du même tirage, comme au compte-fils (loupe ×10). Le motif est partout le même, pour comparer les procédés. Commencez par chercher la cuvette : elle signe les gravures en creux.`,
                              `Each sketch shows the print lying flat, seen at three-quarters as for bindings: what the naked eye sees. The circle magnifies a detail of the same print, as under a ×10 loupe. The picture is the same throughout, so the processes can be compared. Start by looking for a plate mark: it gives away intaglio prints.`)}</p>
+      ${bandeau}
       <section class="lx-anatomie"><svg viewBox="0 0 300 172" aria-hidden="true" focusable="false">${_lxiVueEnsemble()}</svg><div><h3>${T(`Où se trouve l'encre ?`,`Where does the ink sit?`)}</h3><dl>${termes}</dl></div></section>
       ${sections}
     </div></div>`;
@@ -7110,6 +7456,8 @@ const SB = (() => {
     'cartePostale','poster','supplementRedactionnel','objet','objetDesc','objetsAssocies',
     // Éphémères — synchronisés dans le JSONB « contenus » (aucune colonne SQL à créer)
     'typeDocument','technique','evenement','dateEvenement','lieuEvenement','hote',
+    // Affiches et tirages d'art — même sac JSONB, aucune colonne SQL à créer
+    'afficheType','commanditaire','appellationEditeur','imprimeur','dimImage','typeEpreuve','cachetSec','certificat','conditionnement',
     'publication','dateParution','rubrique','pagination','sourceUrl','albumSource','albumSourceId','exlibrisImageIdx',
     'etendue','etendueUnite','ephPages','ephFeuillets','ephVolets','ephVolantes',
     'ephCahiers','ephVolants','ephVolantsRectoSeul','ephVolantsEncartes',
@@ -8848,6 +9196,7 @@ function openItemForm(id=null, opts={}){
   _majListeGenres(""); _majStylesProposes();
   document.getElementById("itemTypeDocument").innerHTML = _buildTypeDocumentOptions(opts.typeDocument||"");
   adaptEphemereType(opts.typeDocument||"");
+  _taFill({});
   // Suivi personnel : masquer les actions de prêt tant qu'aucun emprunteur n'est saisi
   _syncPretFields();
   // Emprunteurs déjà utilisés (suggestion)
@@ -8925,6 +9274,7 @@ function openItemForm(id=null, opts={}){
     _syncPretFields();
     document.getElementById("itemTypeDocument").innerHTML = _buildTypeDocumentOptions(it.typeDocument||"");
     adaptEphemereType(it.typeDocument||"");
+    _taFill(it);
     initCatTagInput(it.categoriesSecondaires||[]);
     document.getElementById("itemSerie").value = it.serie||"";
     document.getElementById("itemSerieNum").value = it.numeroSerie||"";
@@ -9550,7 +9900,8 @@ async function _saveItemCore(e){
     diaporama:       !!document.getElementById("itemDiaporama")?.checked,
     // Éphémères — type de document + champs spécifiques
     typeDocument:    document.getElementById("itemTypeDocument")?.value||"",
-    technique:       document.getElementById("itemTechnique")?.value.trim()||"",
+    technique:       _taArch ? _taTechniqueValeur() : (document.getElementById("itemTechnique")?.value.trim()||""),
+    ..._taCollecter(),
     evenement:       document.getElementById("itemEvenement")?.value.trim()||"",
     dateEvenement:   document.getElementById("itemDateEvenement")?.value.trim()||"",
     lieuEvenement:   document.getElementById("itemLieuEvenement")?.value.trim()||"",
@@ -16296,6 +16647,25 @@ function _attachedToLine(it){
 // --------- Detail views ---------
 // Vue détail dédiée aux éphémères — reprend la structure du prototype :
 // en-tête (visuel + type + créateur), puis Identité / bloc selon le type / Conservation.
+function _taDetailArch(it){ const a = archetypeForCategory(it.categorie).id; return (a==='affiche'||a==='estampe') ? a : null; }
+function _taDetailHTML(it){
+  if(!_taDetailArch(it)) return '';
+  const L = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : '';
+  const E = v => v ? escapeHTML(v) : '';
+  const tr = (list, v) => { const x = list.find(([fr])=>fr===v); return x ? escapeHTML(T(x[0],x[1])) : E(v); };
+  const conds = [...TA_CONDITIONNEMENTS.affiche, ...TA_CONDITIONNEMENTS.estampe];
+  const tech = it.technique ? `${escapeHTML(T(it.technique, TA_TECH_EN[it.technique]||it.technique))} <button type="button" class="aide-btn" style="vertical-align:1px" onclick="ouvrirLexiqueImpressions('${_taDetailArch(it)}')" title="${T('Lexique des procédés','Process glossary')}">?</button>`
+    + (it.appellationEditeur ? ` <span class="muted" style="font-size:12.5px">— ${T('vendu comme','sold as')} « ${E(it.appellationEditeur)} »</span>` : '') : '';
+  const extras = [it.cachetSec ? T('cachet sec','blind stamp') : '', it.certificat ? T("certificat d'authenticité",'certificate of authenticity') : ''].filter(Boolean).join(' · ');
+  return L(T("Type d'affiche",'Poster type'), tr(TA_AFFICHE_TYPES, it.afficheType))
+    + L(T('Événement','Event'), E(it.commanditaire))
+    + L(T("Technique d'impression",'Printing technique'), tech)
+    + L(T('Atelier / imprimeur','Workshop / printer'), E(it.imprimeur))
+    + L(T("Dimensions de l'image",'Image size'), E(it.dimImage))
+    + L(T("Épreuve",'Proof'), tr(TA_EPREUVES, it.typeEpreuve))
+    + L(T('Marques','Marks'), extras)
+    + L(T('Conditionnement','Storage'), tr(conds, it.conditionnement));
+}
 function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
   const type = it.typeDocument || (_lang==='en'?'Ephemera':'Éphémère');
   const norm = _normCat(type);
@@ -16533,7 +16903,8 @@ function renderItemDetail(id, pushHistory=true){
     ${(!isDisque && (it.bedethequeId||it.bedethequeUrl))?(()=>{const _l=bdtLien(it.bedethequeUrl,it.bedethequeId);return `<dt>Bédéthèque</dt><dd>${it.bedethequeId?`${T('Identifiant','Identifier')} ${escapeHTML(it.bedethequeId)}`:''}${_l?`<a class="lien-fiche" href="${escapeHTML(_l)}" target="_blank" rel="noopener noreferrer" title="${T('Ouvrir la fiche sur Bédéthèque','Open the page on Bédéthèque')}">${T('Voir la fiche','Open page')} ↗</a>`:''}</dd>`;})():""}
     ${it.nbPages?`<dt>${isPortfolio?t('detail.planches_label'):t('detail.pages_label')}</dt><dd>${it.nbPages}${isPortfolio?" pl.":" p."}</dd>`:""}
     ${it.tirage?`<dt>${t('detail.print_label')}</dt><dd>${escapeHTML(it.tirage)}${it.numeroExemplaire?` · ${_lang==='en'?'copy':'exemplaire'} ${escapeHTML(it.numeroExemplaire)}`:""}</dd>`:""}
-    ${it.format?`<dt>${t('detail.format_label')}</dt><dd>${escapeHTML(it.format)}</dd>`:""}
+    ${it.format?`<dt>${_taDetailArch(it)?T('Dimensions','Size'):t('detail.format_label')}</dt><dd>${escapeHTML(it.format)}</dd>`:""}
+    ${_taDetailHTML(it)}
     ${it.paperQuality?`<dt>${_lang==='en'?'Paper':'Papier'}</dt><dd>${escapeHTML(it.paperQuality)}</dd>`:""}
     ${it.editionInfo?`<dt>${t('detail.edition_label')}</dt><dd>${escapeHTML(it.editionInfo)}</dd>`:""}
     ${(it.etat||it.etatDetail)?`<dt>${t('detail.condition_label')}</dt><dd>${escapeHTML(it.etat||'')}${it.etatDetail?`${it.etat?' — ':''}<span class="muted">${escapeHTML(it.etatDetail)}</span>`:''}</dd>`:""}
@@ -20699,7 +21070,7 @@ function _rgLabel(key){
   }
   const it = _rgObj(key);
   if(it.serie && it.numeroSerie) return `${it.serie} ${it.numeroSerie}`;
-  return it.titre || T('Sans titre','Untitled');
+  return (it.titre || T('Sans titre','Untitled')) + (it.anneeEdition ? ` (${it.anneeEdition})` : '');
 }
 function _rgCmp(cles){
   return (a,b)=>{
@@ -20721,9 +21092,28 @@ function _rgTarget(keys, r){
   const ep = r.epingles || {};
   const deb = (ep.debut||[]).map(String).filter(k=>keys.includes(k));
   const fin = (ep.fin||[]).map(String).filter(k=>keys.includes(k)&&!deb.includes(k));
-  const libres = keys.filter(k=>!deb.includes(k)&&!fin.includes(k)).sort(_rgCmp(r.cles));
+  const libres0 = keys.filter(k=>!deb.includes(k)&&!fin.includes(k));
+  const libres = r.cycles ? _rgTriCycles(libres0, r.cles) : libres0.sort(_rgCmp(r.cles));
   return [...deb, ...libres, ...fin];
 }
+// « Préserver les cycles » : chaque cycle forme un bloc, rangé dans l'ordre de ses tomes.
+// Le bloc est placé selon son premier tome (ex. chronologie : date de parution du tome 1),
+// les tomes suivants le suivent quelle que soit leur propre date.
+function _rgTriCycles(keys, cles){
+  const groupes = new Map();
+  keys.forEach(k=>{
+    const sr = _rgStrip(_rgObj(k).serie);
+    const g = sr ? 'c:'+_normCat(sr) : 'k:'+k;
+    if(!groupes.has(g)) groupes.set(g, []);
+    groupes.get(g).push(k);
+  });
+  const interne = _rgCmp([['numero','asc'],['annee','asc'],['titre','asc']]);
+  const blocs = [...groupes.values()].map(g=>g.sort(interne));
+  const externe = _rgCmp(cles);
+  blocs.sort((a,b)=>externe(a[0], b[0]));
+  return blocs.flat();
+}
+function _rgSig(r){ return JSON.stringify([(r&&r.cles)||[], !!(r&&r.cycles)]); }
 // Plus longue sous-suite croissante : ce qui est déjà bien placé ne bouge pas
 function _rgPlan(cur, tgt){
   const pos = new Map(tgt.map((k,i)=>[k,i]));
@@ -20756,17 +21146,19 @@ function _rgEtat(shelf, r){
 function _rgNomCourt(r){
   if(!_rgActive(r)) return T('Manuel','Manual');
   const p = RG_PRESETS.find(x=>x.id===r.preset);
-  if(p && p.court) return T(p.court[0], p.court[1]);
-  return r.cles.map(([k])=>T(RG_CRITERES[k].fr, RG_CRITERES[k].en)).join(' · ');
+  const cy = r.cycles ? T(' · cycles groupés',' · series kept') : '';
+  if(p && p.court) return T(p.court[0], p.court[1]) + cy;
+  return r.cles.map(([k])=>T(RG_CRITERES[k].fr, RG_CRITERES[k].en)).join(' · ') + cy;
 }
 function _rgNomLong(r){
   if(!_rgActive(r)) return T('Ordre manuel (glisser-déposer)','Manual order (drag and drop)');
   return T('Rangé par ','Sorted by ') + r.cles.map(([k,s],i)=>
-    (i?T('puis ','then '):'') + T(RG_CRITERES[k].fr, RG_CRITERES[k].en).toLowerCase() + (s==='desc'?' ↓':'')).join(', ');
+    (i?T('puis ','then '):'') + T(RG_CRITERES[k].fr, RG_CRITERES[k].en).toLowerCase() + (s==='desc'?' ↓':'')).join(', ')
+    + (r.cycles ? T(' — cycles préservés',' — series kept together') : '');
 }
 function _rgOu(s){
   const L = k=>`<b>${escapeHTML(_rgLabel(k))}</b>`;
-  if(s.before && s.after) return T(`entre ${L(s.before)} et ${L(s.after)}`, `between ${L(s.before)} and ${L(s.after)}`);
+  if(s.before) return T(`juste après ${L(s.before)}`, `right after ${L(s.before)}`);
   if(s.after)  return T(`en début de planche, avant ${L(s.after)}`, `at the start of the shelf, before ${L(s.after)}`);
   if(s.before) return T(`en fin de planche, après ${L(s.before)}`, `at the end of the shelf, after ${L(s.before)}`);
   return T('sur la planche','on the shelf');
@@ -20818,22 +21210,22 @@ function openRangementPanel(shelfId){
   _rgShelfId = shelfId;
   const r = shelf.regleRangement;
   _rgDraft = _rgActive(r)
-    ? {preset:r.preset||'perso', cles:r.cles.map(c=>c.slice())}
-    : {preset:'cat_cycle', cles:RG_PRESETS[0].cles.map(c=>c.slice())};
+    ? {preset:r.preset||'perso', cles:r.cles.map(c=>c.slice()), cycles:!!r.cycles}
+    : {preset:'cat_cycle', cles:RG_PRESETS[0].cles.map(c=>c.slice()), cycles:false};
   document.getElementById('rgTitle').textContent = `⇅ ${T('Ranger','Sort')} « ${friendlyLocation(shelf.name)||shelf.name} »`;
   _rgRenderPanel();
   openModal('rangementModal');
 }
 function _rgDraftRule(shelf){
   const r = shelf.regleRangement || {};
-  return {preset:_rgDraft.preset, cles:_rgDraft.cles, epingles:r.epingles||{debut:[],fin:[]}};
+  return {preset:_rgDraft.preset, cles:_rgDraft.cles, cycles:!!_rgDraft.cycles, epingles:r.epingles||{debut:[],fin:[]}};
 }
 function _rgRenderPanel(){
   const shelf = libraryShelves.find(s=>s.id===_rgShelfId); if(!shelf) return;
   const rule = _rgDraftRule(shelf);
   const {cur, tgt, plan} = _rgEtat(shelf, rule);
   const moving = new Set(plan.steps.map(s=>s.k));
-  const memeRegle = JSON.stringify((shelf.regleRangement||{}).cles||[]) === JSON.stringify(_rgDraft.cles);
+  const memeRegle = _rgSig(shelf.regleRangement) === _rgSig(_rgDraft);
   const faits = new Set(memeRegle ? ((shelf.regleRangement||{}).faits||[]).map(String) : []);
   const chips = RG_PRESETS.map(p=>`<button type="button" class="rg-chip" data-rg-preset="${p.id}" aria-pressed="${_rgDraft.preset===p.id}">${T(p.fr,p.en)}</button>`).join('');
   const opts = k => Object.entries(RG_CRITERES).map(([id,c])=>`<option value="${id}"${id===k?' selected':''}>${T(c.fr,c.en)}</option>`).join('');
@@ -20863,6 +21255,8 @@ function _rgRenderPanel(){
   document.getElementById('rgBody').innerHTML = `
     <div class="rg-sec"><p class="rg-t">${T('Méthode','Method')}</p><div class="rg-chips">${chips}</div></div>
     ${actif?`<div class="rg-sec"><p class="rg-t">${T("Critères (dans l'ordre)","Criteria (in order)")}</p>${crits}
+      <label class="rg-cycles"><input type="checkbox" data-rg-cycles ${_rgDraft.cycles?'checked':''}>
+        <span><b>${T('Préserver les cycles','Keep series together')}</b> — ${T("chaque cycle reste groupé dans l'ordre de ses tomes, placé selon son premier tome.","each series stays together in volume order, placed according to its first volume.")}</span></label>
       <p class="rg-note">${T("Valeurs manquantes en fin de liste · articles initiaux ignorés (Le, La, Les, L'…) · une pile est rangée selon sa première œuvre.","Missing values go last · leading articles ignored · a stack sorts by its first item.")}${nbEp?` · 📌 ${nbEp} ${T('épinglé(s), hors règle','pinned, outside the rule')}`:''}</p></div>`:''}
     <div class="rg-sec"><p class="rg-t">${T('Aperçu','Preview')}</p>
       <div class="rg-preview"><span>${T('Avant','Before')}</span><div class="rg-mini">${_rgMiniHTML(cur,moving)}</div>
@@ -20898,6 +21292,7 @@ async function _rgOnChange(e){
     _rgDraft.preset = 'perso';
     _rgRenderPanel(); return;
   }
+  if(e.target.matches('[data-rg-cycles]')){ _rgDraft.cycles = e.target.checked; _rgRenderPanel(); return; }
   const c = e.target.closest('[data-rg-chk]');
   if(c){
     const shelf = libraryShelves.find(x=>x.id===_rgShelfId); if(!shelf||!shelf.regleRangement) return;
@@ -20915,8 +21310,8 @@ async function _rgCommit(range){
     // Manuel : on garde les épingles éventuelles hors règle → on les oublie avec la règle
     delete shelf.regleRangement;
   } else {
-    const memeRegle = JSON.stringify((shelf.regleRangement||{}).cles||[]) === JSON.stringify(_rgDraft.cles);
-    shelf.regleRangement = {mode:'regle', preset:_rgDraft.preset, cles:_rgDraft.cles.map(c=>c.slice()), epingles:ep,
+    const memeRegle = _rgSig(shelf.regleRangement) === _rgSig(_rgDraft);
+    shelf.regleRangement = {mode:'regle', preset:_rgDraft.preset, cles:_rgDraft.cles.map(c=>c.slice()), cycles:!!_rgDraft.cycles, epingles:ep,
       faits: memeRegle ? ((shelf.regleRangement||{}).faits||[]) : []};
     if(range){
       shelf.itemOrder = _rgTarget(_rgShelfKeys(shelf), shelf.regleRangement);
