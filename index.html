@@ -491,6 +491,7 @@
   #itemForm.ta-simple #formSection-contenu,
   #itemForm.ta-simple #formSection-objets-associes,
   #itemForm.ta-simple #formSection-pins,
+  #itemForm.ta-simple #formSection-suivi,
   #itemForm.ta-simple #tab-infos .form-grid > div:has(#itemSubtitle),
   #itemForm.ta-simple #formSection-edition .form-grid > div:has(#itemEditionInfo),
   #itemForm.ta-simple #formFieldFirstEdition{display:none}
@@ -4653,6 +4654,8 @@ const FICHE_ARCHETYPES = {
             'emboitage','contenu','formatManga','formatComics'],
     showTirageArt:true,
     formClass:'ta-simple',
+    // Une affiche ne s'écrit pas : ni scénariste, ni préface, ni journaliste.
+    roles:['Dessinateur','Illustrateur','Idée originale','Coloriste','Encreur','Graphiste','Photographe','Lettreur'],
     sectionTitles:{ edition:{fr:'Édition et impression',en:'Edition and printing'},
                     authors:{fr:'Artistes',en:'Artists'} },
     fieldLabels:{ itemFormat:{fr:'Dimensions (H × L)', en:'Size (H × W)'} },
@@ -4667,6 +4670,7 @@ const FICHE_ARCHETYPES = {
     formClass:'ta-simple',
     sectionTitles:{ edition:{fr:'Édition et impression',en:'Edition and printing'},
                     authors:{fr:'Artistes',en:'Artists'} },
+    roles:['Dessinateur','Illustrateur','Idée originale','Coloriste','Encreur','Graveur','Lithographe','Sérigraphe'],
     fieldLabels:{ itemFormat:{fr:'Dimensions de la feuille (H × L)', en:'Sheet size (H × W)'},
                   itemPublisher:{fr:'Éditeur / galerie', en:'Publisher / gallery'} },
   },
@@ -5081,6 +5085,7 @@ function applyArchetype(arch){
   const sigSec = document.getElementById('formSection-signatures');
   if(sigSec && !arch.showEphemere) sigSec.style.display = '';
   _taAppliquer(arch);
+  _majRolesLignes();
 }
 
 // ============================================================
@@ -9478,6 +9483,24 @@ function setAuthorsScope(tous){
 // Chaque fiche s'ouvre sur la portée par défaut (auteurs collectionnés) ; la
 // bascule éventuelle faite sur une fiche ne se propage pas à la suivante.
 function resetAuthorsScope(){ _authorsCollectedOnly = true; }
+// Rôles proposés sur la fiche : ceux de l'archétype s'il en déclare (affiche,
+// tirage d'art), sinon ceux de la collection.
+function _rolesFiche(){
+  const cat = document.getElementById('itemCategory')?.value || '';
+  const arch = cat ? archetypeForCategory(cat) : null;
+  return (arch && arch.roles) || rolesActifs();
+}
+// Changement de catégorie : reconstruire le menu des rôles des lignes déjà
+// présentes, en gardant les rôles cochés (même hors liste).
+function _majRolesLignes(){
+  const dispo = _rolesFiche();
+  document.querySelectorAll('#itemAuthorsList .role-dropdown-menu').forEach(menu=>{
+    const coches = [...menu.querySelectorAll('input:checked')].map(i=>i.value);
+    const name = menu.querySelector('input')?.name || ('role_'+uuid());
+    const tous = [...dispo, ...coches.filter(r=>!dispo.includes(r))];
+    menu.innerHTML = tous.map(r=>`<label class="role-check-item"${dispo.includes(r)?'':' style="font-style:italic"'}><input type="checkbox" name="${name}" value="${escapeHTML(r)}" ${coches.includes(r)?'checked':''}>${escapeHTML(r)}</label>`).join('');
+  });
+}
 function addAuthorRow(auteurId="", roles=[]){
   // Compat : si roles est une string (ancien format), convertir
   if(typeof roles === "string") roles = roles ? [roles] : [];
@@ -9489,7 +9512,7 @@ function addAuthorRow(auteurId="", roles=[]){
   const authorsOptions = _authorOptionsHTML(auteurId, true);   // portée commune à toutes les lignes
   const initialLabel = roles.length ? roles.join(", ") : T("— Rôles —","— Roles —");
   // Rôles standards + rôles non-standards préservés (ex: ancien format)
-  const rolesDispo = rolesActifs();
+  const rolesDispo = _rolesFiche();
   const extraRoles = roles.filter(r => !rolesDispo.includes(r));
   const allRoles = [...rolesDispo, ...extraRoles];
   const checksHTML = allRoles.map(r=>{
