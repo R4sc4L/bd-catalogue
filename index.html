@@ -2000,9 +2000,6 @@
   .rg-crit select{padding:5px 8px;font-size:14px}
   .rg-k{font-size:12px;color:var(--ink-soft);font-weight:700;text-align:center}
   .rg-note{font-size:12.5px;color:var(--ink-soft);margin:6px 0 0}
-  .rg-cycles{display:flex;gap:10px;align-items:flex-start;margin:10px 0 2px;padding:8px 10px;border:1px solid var(--border-warm);border-radius:6px;background:var(--accent-soft);font-size:13.5px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:400;cursor:pointer}
-  .rg-cycles input{width:18px;height:18px;margin:1px 0 0;flex-shrink:0;accent-color:var(--accent)}
-  .rg-cycles b{color:var(--gold)}
   .rg-preview{display:grid;grid-template-columns:54px 1fr;gap:6px 10px;align-items:center;font-size:12px;color:var(--ink-soft);font-weight:700}
   .rg-mini{display:flex;align-items:flex-end;gap:1px;padding:6px 6px 0;min-height:56px;overflow-x:auto;border-radius:4px 4px 0 0;
     border-bottom:4px solid color-mix(in srgb,var(--wood,#5a3f28) 90%,black);background:color-mix(in srgb,var(--wood,#5a3f28) 18%,var(--bg-alt))}
@@ -20702,7 +20699,7 @@ function _rgLabel(key){
   }
   const it = _rgObj(key);
   if(it.serie && it.numeroSerie) return `${it.serie} ${it.numeroSerie}`;
-  return (it.titre || T('Sans titre','Untitled')) + (it.anneeEdition ? ` (${it.anneeEdition})` : '');
+  return it.titre || T('Sans titre','Untitled');
 }
 function _rgCmp(cles){
   return (a,b)=>{
@@ -20724,28 +20721,9 @@ function _rgTarget(keys, r){
   const ep = r.epingles || {};
   const deb = (ep.debut||[]).map(String).filter(k=>keys.includes(k));
   const fin = (ep.fin||[]).map(String).filter(k=>keys.includes(k)&&!deb.includes(k));
-  const libres0 = keys.filter(k=>!deb.includes(k)&&!fin.includes(k));
-  const libres = r.cycles ? _rgTriCycles(libres0, r.cles) : libres0.sort(_rgCmp(r.cles));
+  const libres = keys.filter(k=>!deb.includes(k)&&!fin.includes(k)).sort(_rgCmp(r.cles));
   return [...deb, ...libres, ...fin];
 }
-// « Préserver les cycles » : chaque cycle forme un bloc, rangé dans l'ordre de ses tomes.
-// Le bloc est placé selon son premier tome (ex. chronologie : date de parution du tome 1),
-// les tomes suivants le suivent quelle que soit leur propre date.
-function _rgTriCycles(keys, cles){
-  const groupes = new Map();
-  keys.forEach(k=>{
-    const sr = _rgStrip(_rgObj(k).serie);
-    const g = sr ? 'c:'+_normCat(sr) : 'k:'+k;
-    if(!groupes.has(g)) groupes.set(g, []);
-    groupes.get(g).push(k);
-  });
-  const interne = _rgCmp([['numero','asc'],['annee','asc'],['titre','asc']]);
-  const blocs = [...groupes.values()].map(g=>g.sort(interne));
-  const externe = _rgCmp(cles);
-  blocs.sort((a,b)=>externe(a[0], b[0]));
-  return blocs.flat();
-}
-function _rgSig(r){ return JSON.stringify([(r&&r.cles)||[], !!(r&&r.cycles)]); }
 // Plus longue sous-suite croissante : ce qui est déjà bien placé ne bouge pas
 function _rgPlan(cur, tgt){
   const pos = new Map(tgt.map((k,i)=>[k,i]));
@@ -20778,19 +20756,17 @@ function _rgEtat(shelf, r){
 function _rgNomCourt(r){
   if(!_rgActive(r)) return T('Manuel','Manual');
   const p = RG_PRESETS.find(x=>x.id===r.preset);
-  const cy = r.cycles ? T(' · cycles groupés',' · series kept') : '';
-  if(p && p.court) return T(p.court[0], p.court[1]) + cy;
-  return r.cles.map(([k])=>T(RG_CRITERES[k].fr, RG_CRITERES[k].en)).join(' · ') + cy;
+  if(p && p.court) return T(p.court[0], p.court[1]);
+  return r.cles.map(([k])=>T(RG_CRITERES[k].fr, RG_CRITERES[k].en)).join(' · ');
 }
 function _rgNomLong(r){
   if(!_rgActive(r)) return T('Ordre manuel (glisser-déposer)','Manual order (drag and drop)');
   return T('Rangé par ','Sorted by ') + r.cles.map(([k,s],i)=>
-    (i?T('puis ','then '):'') + T(RG_CRITERES[k].fr, RG_CRITERES[k].en).toLowerCase() + (s==='desc'?' ↓':'')).join(', ')
-    + (r.cycles ? T(' — cycles préservés',' — series kept together') : '');
+    (i?T('puis ','then '):'') + T(RG_CRITERES[k].fr, RG_CRITERES[k].en).toLowerCase() + (s==='desc'?' ↓':'')).join(', ');
 }
 function _rgOu(s){
   const L = k=>`<b>${escapeHTML(_rgLabel(k))}</b>`;
-  if(s.before) return T(`juste après ${L(s.before)}`, `right after ${L(s.before)}`);
+  if(s.before && s.after) return T(`entre ${L(s.before)} et ${L(s.after)}`, `between ${L(s.before)} and ${L(s.after)}`);
   if(s.after)  return T(`en début de planche, avant ${L(s.after)}`, `at the start of the shelf, before ${L(s.after)}`);
   if(s.before) return T(`en fin de planche, après ${L(s.before)}`, `at the end of the shelf, after ${L(s.before)}`);
   return T('sur la planche','on the shelf');
@@ -20842,22 +20818,22 @@ function openRangementPanel(shelfId){
   _rgShelfId = shelfId;
   const r = shelf.regleRangement;
   _rgDraft = _rgActive(r)
-    ? {preset:r.preset||'perso', cles:r.cles.map(c=>c.slice()), cycles:!!r.cycles}
-    : {preset:'cat_cycle', cles:RG_PRESETS[0].cles.map(c=>c.slice()), cycles:false};
+    ? {preset:r.preset||'perso', cles:r.cles.map(c=>c.slice())}
+    : {preset:'cat_cycle', cles:RG_PRESETS[0].cles.map(c=>c.slice())};
   document.getElementById('rgTitle').textContent = `⇅ ${T('Ranger','Sort')} « ${friendlyLocation(shelf.name)||shelf.name} »`;
   _rgRenderPanel();
   openModal('rangementModal');
 }
 function _rgDraftRule(shelf){
   const r = shelf.regleRangement || {};
-  return {preset:_rgDraft.preset, cles:_rgDraft.cles, cycles:!!_rgDraft.cycles, epingles:r.epingles||{debut:[],fin:[]}};
+  return {preset:_rgDraft.preset, cles:_rgDraft.cles, epingles:r.epingles||{debut:[],fin:[]}};
 }
 function _rgRenderPanel(){
   const shelf = libraryShelves.find(s=>s.id===_rgShelfId); if(!shelf) return;
   const rule = _rgDraftRule(shelf);
   const {cur, tgt, plan} = _rgEtat(shelf, rule);
   const moving = new Set(plan.steps.map(s=>s.k));
-  const memeRegle = _rgSig(shelf.regleRangement) === _rgSig(_rgDraft);
+  const memeRegle = JSON.stringify((shelf.regleRangement||{}).cles||[]) === JSON.stringify(_rgDraft.cles);
   const faits = new Set(memeRegle ? ((shelf.regleRangement||{}).faits||[]).map(String) : []);
   const chips = RG_PRESETS.map(p=>`<button type="button" class="rg-chip" data-rg-preset="${p.id}" aria-pressed="${_rgDraft.preset===p.id}">${T(p.fr,p.en)}</button>`).join('');
   const opts = k => Object.entries(RG_CRITERES).map(([id,c])=>`<option value="${id}"${id===k?' selected':''}>${T(c.fr,c.en)}</option>`).join('');
@@ -20887,8 +20863,6 @@ function _rgRenderPanel(){
   document.getElementById('rgBody').innerHTML = `
     <div class="rg-sec"><p class="rg-t">${T('Méthode','Method')}</p><div class="rg-chips">${chips}</div></div>
     ${actif?`<div class="rg-sec"><p class="rg-t">${T("Critères (dans l'ordre)","Criteria (in order)")}</p>${crits}
-      <label class="rg-cycles"><input type="checkbox" data-rg-cycles ${_rgDraft.cycles?'checked':''}>
-        <span><b>${T('Préserver les cycles','Keep series together')}</b> — ${T("chaque cycle reste groupé dans l'ordre de ses tomes, placé selon son premier tome.","each series stays together in volume order, placed according to its first volume.")}</span></label>
       <p class="rg-note">${T("Valeurs manquantes en fin de liste · articles initiaux ignorés (Le, La, Les, L'…) · une pile est rangée selon sa première œuvre.","Missing values go last · leading articles ignored · a stack sorts by its first item.")}${nbEp?` · 📌 ${nbEp} ${T('épinglé(s), hors règle','pinned, outside the rule')}`:''}</p></div>`:''}
     <div class="rg-sec"><p class="rg-t">${T('Aperçu','Preview')}</p>
       <div class="rg-preview"><span>${T('Avant','Before')}</span><div class="rg-mini">${_rgMiniHTML(cur,moving)}</div>
@@ -20924,7 +20898,6 @@ async function _rgOnChange(e){
     _rgDraft.preset = 'perso';
     _rgRenderPanel(); return;
   }
-  if(e.target.matches('[data-rg-cycles]')){ _rgDraft.cycles = e.target.checked; _rgRenderPanel(); return; }
   const c = e.target.closest('[data-rg-chk]');
   if(c){
     const shelf = libraryShelves.find(x=>x.id===_rgShelfId); if(!shelf||!shelf.regleRangement) return;
@@ -20942,8 +20915,8 @@ async function _rgCommit(range){
     // Manuel : on garde les épingles éventuelles hors règle → on les oublie avec la règle
     delete shelf.regleRangement;
   } else {
-    const memeRegle = _rgSig(shelf.regleRangement) === _rgSig(_rgDraft);
-    shelf.regleRangement = {mode:'regle', preset:_rgDraft.preset, cles:_rgDraft.cles.map(c=>c.slice()), cycles:!!_rgDraft.cycles, epingles:ep,
+    const memeRegle = JSON.stringify((shelf.regleRangement||{}).cles||[]) === JSON.stringify(_rgDraft.cles);
+    shelf.regleRangement = {mode:'regle', preset:_rgDraft.preset, cles:_rgDraft.cles.map(c=>c.slice()), epingles:ep,
       faits: memeRegle ? ((shelf.regleRangement||{}).faits||[]) : []};
     if(range){
       shelf.itemOrder = _rgTarget(_rgShelfKeys(shelf), shelf.regleRangement);
