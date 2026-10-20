@@ -14920,7 +14920,10 @@ document.getElementById("toggleLayoutBtn").addEventListener("click", ()=>{
   layoutBtnEl.textContent = labels[collectionLayout];
   layoutBtnEl.dataset.layout = collectionLayout;
   const isSm = collectionLayout === "grid-sm";
-  document.getElementById("bulkModeBtn").style.display = "";
+  // En mode invité le bouton « Sélectionner » est retiré : sans garde, l'erreur
+  // sur l'élément absent empêchait le re-rendu et la mise en page ne changeait pas.
+  const bulkBtnEl = document.getElementById("bulkModeBtn");
+  if(bulkBtnEl) bulkBtnEl.style.display = "";
   applyFilters();
 });
 
@@ -19408,8 +19411,10 @@ function setBulkMode(on){
   });
   const btn = document.getElementById("bulkModeBtn");
   const container = document.getElementById("itemsContainer");
-  btn.textContent = _bulkMode ? T("✕ Sélection","✕ Selection") : T("☐ Sélectionner","☐ Select");
-  btn.classList.toggle("active-filter", _bulkMode);
+  if(btn){
+    btn.textContent = _bulkMode ? T("✕ Sélection","✕ Selection") : T("☐ Sélectionner","☐ Select");
+    btn.classList.toggle("active-filter", _bulkMode);
+  }
   container.classList.toggle("bulk-mode", _bulkMode);
   applyFilters();   // re-rendu : injecte les cases à cocher (grille) / la colonne de sélection (liste)
   updateBulkBar();
