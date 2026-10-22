@@ -6734,6 +6734,17 @@ async function confirmerSuppressionCompte(){
   toast(T('Votre compte et toutes vos données ont été supprimés.','Your account and all your data have been deleted.'));
   setTimeout(()=>{ SB.signOut().catch(()=>{}).finally(()=>location.reload()); }, 2500);
 }
+// Les champs de catalogue ne reprennent pas l'historique de saisie du navigateur :
+// il est propre au navigateur, pas au compte, et proposerait sur un ordinateur
+// partagé les noms tapés sous un autre compte. Posé au premier focus, ce qui
+// couvre aussi les champs créés à la volée (lignes d'auteurs…).
+document.addEventListener('focusin', e=>{
+  const el = e.target;
+  if(!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
+  if(el.hasAttribute('autocomplete') || !el.closest('.modal')) return;
+  if(/^(password|email)$/i.test(el.type)) return;
+  el.setAttribute('autocomplete', 'off');
+});
 // Entrée dans ces champs déclenche leur propre action, pas l'enregistrement du profil.
 document.addEventListener('DOMContentLoaded', ()=>{
   const sur = (ids, fn) => ids.forEach(id => document.getElementById(id)?.addEventListener('keydown', e=>{
@@ -9677,7 +9688,12 @@ function resetAuthorsScope(){ _authorsCollectedOnly = true; }
 function _rolesFiche(){
   const cat = document.getElementById('itemCategory')?.value || '';
   const arch = cat ? archetypeForCategory(cat) : null;
-  return (arch && arch.roles) || rolesActifs();
+  if(arch && arch.roles) return arch.roles;
+  // Vue agrégée « Ma Collection » : les rôles de la collection de la fiche
+  // (déduite de sa catégorie, la BD par défaut), pas l'union de toutes —
+  // sinon une BD se voyait proposer d'abord Chant, Mixage, Mastering…
+  if(isAllCollection()) return moduleById(_collPourNouvelleFiche(cat))?.roles || ROLES;
+  return rolesActifs();
 }
 // Changement de catégorie : reconstruire le menu des rôles des lignes déjà
 // présentes, en gardant les rôles cochés (même hors liste).
