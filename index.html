@@ -101,6 +101,9 @@
   #compteModal .cp-avatar-zone .avatar{width:76px;height:76px;font-size:26px}
   #compteModal .cp-avatar-actions{display:flex;flex-direction:column;gap:6px}
   #compteModal .cp-avatar-actions button{padding:5px 12px;font-size:12px}
+  #compteModal .cp-zone-danger{border:1px solid rgba(192,57,43,.45);border-radius:10px;padding:14px 16px}
+  #compteModal .cp-zone-danger h3{color:#c0392b}
+  #compteModal .cp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   #compteModal .cp-mail{font-size:13px;color:var(--ink-soft)}
   #compteModal .cp-mail strong{color:var(--ink);font-weight:600}
   #compteModal textarea{min-height:70px;resize:vertical}
@@ -3287,11 +3290,67 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               <select id="cpAccueil"><option value="" data-en="Cover sphere">Sphère de couvertures</option><option value="tableau" data-en="Light board">Tableau lumineux</option><option value="hasard" data-en="One or the other, at random">L’une ou l’autre, au hasard</option></select></div>
           </div>
         </div>
+        <div class="form-section" id="cpSecurite">
+          <h3 data-en="Sign-in and security">Connexion et sécurité</h3>
+          <div class="form-grid">
+            <div><label for="cpCourriel" data-en="Email address">Adresse e-mail</label>
+              <input type="email" id="cpCourriel" autocomplete="email" maxlength="254"></div>
+            <div style="align-self:end"><button type="button" class="secondary" onclick="changerCourrielCompte()" data-en="Change address">Modifier l’adresse</button></div>
+          </div>
+          <p class="muted" style="font-size:12px;margin:6px 0 16px" data-en="A confirmation link is sent to both addresses; the change only takes effect once confirmed.">Un lien de confirmation est envoyé aux deux adresses ; le changement ne prend effet qu’après validation.</p>
+          <div class="form-grid">
+            <div><label for="cpMdpActuel" data-en="Current password">Mot de passe actuel</label>
+              <input type="password" id="cpMdpActuel" autocomplete="current-password"></div>
+            <div><label for="cpMdpNouveau" data-en="New password (10 characters min.)">Nouveau mot de passe (10 caractères min.)</label>
+              <input type="password" id="cpMdpNouveau" autocomplete="new-password" minlength="10"></div>
+            <div><label for="cpMdpConfirm" data-en="Confirm the new password">Confirmer le nouveau mot de passe</label>
+              <input type="password" id="cpMdpConfirm" autocomplete="new-password" minlength="10"></div>
+          </div>
+          <div class="cp-actions"><button type="button" class="secondary" onclick="changerMotDePasseCompte()" data-en="Change password">Changer le mot de passe</button></div>
+        </div>
+        <div class="form-section" id="cpDonnees">
+          <h3 data-en="My data">Mes données</h3>
+          <p class="muted" style="font-size:12px;margin:-4px 0 10px" data-en="Your data belongs to you: you can take a complete copy of it at any time.">Vos données vous appartiennent : vous pouvez en emporter une copie complète à tout moment.</p>
+          <p id="cpDonneesBilan" style="font-size:13px;margin:0"></p>
+          <div class="cp-actions">
+            <button type="button" class="secondary" onclick="exportJSON()" data-en="💾 Export everything (JSON, images included)">💾 Tout exporter (JSON, images comprises)</button>
+            <button type="button" class="secondary" onclick="exportCSV('items')" data-en="📊 Works (CSV)">📊 Œuvres (CSV)</button>
+            <button type="button" class="secondary" onclick="exportCSV('authors')" data-en="👥 Authors (CSV)">👥 Auteurs (CSV)</button>
+          </div>
+        </div>
+        <div class="form-section cp-zone-danger" id="cpSuppression">
+          <h3 data-en="Delete my account">Supprimer mon compte</h3>
+          <p class="muted" style="font-size:12px;margin:-4px 0 0" data-en="Permanently erases the account, all collections and all images. This cannot be undone.">Efface définitivement le compte, toutes les collections et toutes les images. Cette action est irréversible.</p>
+          <div class="cp-actions"><button type="button" class="danger" onclick="ouvrirSuppressionCompte()" data-en="Delete my account…">Supprimer mon compte…</button></div>
+        </div>
         <div class="modal-actions">
           <button type="button" class="secondary" onclick="closeModal('compteModal')" data-en="Cancel">Annuler</button>
           <button type="submit" data-en="Save">Enregistrer</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPRESSION DU COMPTE (SPEC comptes, étape 2) -->
+<div class="modal-backdrop" id="suppressionCompteModal">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-header">
+      <h2 data-en="Delete my account">Supprimer mon compte</h2>
+      <button class="ghost" onclick="closeModal('suppressionCompteModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-top:0" data-en="The following will be permanently erased:">Seront définitivement effacés :</p>
+      <ul id="scBilan" style="margin:0 0 14px 18px;font-size:13px;line-height:1.7"></ul>
+      <p class="muted" style="font-size:12px" data-en="No copy is kept. Export your data first if you want to keep it.">Aucune copie n’est conservée. Exportez d’abord vos données si vous souhaitez les garder.</p>
+      <div style="margin:10px 0 18px"><button type="button" class="secondary" onclick="exportJSON()" data-en="💾 Export my data first">💾 Exporter d’abord mes données</button></div>
+      <label for="scCourriel"><span data-en="To confirm, type your email address:">Pour confirmer, saisissez votre adresse e-mail :</span> <strong id="scCourrielAttendu"></strong></label>
+      <input type="email" id="scCourriel" autocomplete="off" spellcheck="false" oninput="_majBoutonSuppression()">
+      <div class="login-error" id="scErreur" style="margin-top:8px"></div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" onclick="closeModal('suppressionCompteModal')" data-en="Cancel">Annuler</button>
+        <button type="button" class="danger" id="scValider" disabled onclick="confirmerSuppressionCompte()" data-en="Delete permanently">Supprimer définitivement</button>
+      </div>
     </div>
   </div>
 </div>
@@ -6517,6 +6576,7 @@ function ouvrirFicheCompte(){
     ? T(`Connecté en tant que <strong>${escapeHTML(mail)}</strong>`, `Signed in as <strong>${escapeHTML(mail)}</strong>`)
     : T('Collection locale, sans compte en ligne.','Local collection, no online account.');
   _cpApercuAvatar();
+  _cpMajSectionsCompte();
   openModal('compteModal');
 }
 // L'aperçu suit la saisie : changer de nom change les initiales.
@@ -6584,6 +6644,105 @@ async function enregistrerCompte(ev){
   closeModal('compteModal');
   toast(T('Compte enregistré ✓','Account saved ✓'));
 }
+// ── Mon compte : sécurité, données, effacement (SPEC comptes, étape 2) ──
+// Les sections Connexion et Suppression n'ont de sens qu'avec un compte en
+// ligne ; « Mes données » vaut aussi pour la variante locale.
+function _cpMajSectionsCompte(){
+  const enLigne = CLOUD && !!courrielCompte();
+  ['cpSecurite','cpSuppression'].forEach(id=>{
+    const e = document.getElementById(id); if(e) e.style.display = enLigne ? '' : 'none'; });
+  const c = document.getElementById('cpCourriel'); if(c) c.value = courrielCompte();
+  ['cpMdpActuel','cpMdpNouveau','cpMdpConfirm'].forEach(id=>{
+    const e = document.getElementById(id); if(e) e.value = ''; });
+  const b = document.getElementById('cpDonneesBilan'); if(b) b.textContent = _bilanDonneesCompte();
+}
+function _bilanDonneesCompte(){
+  const tout = cache.items || [];
+  const oeuvres = tout.filter(i=>!i._isWish), souhaits = tout.length - oeuvres.length;
+  const images = oeuvres.reduce((n,i)=>n + (i.images||[]).length, 0);
+  const auteurs = (cache.authors||[]).length;
+  return T(`${oeuvres.length} œuvre(s), ${images} image(s), ${auteurs} fiche(s) auteur, ${souhaits} souhait(s).`,
+           `${oeuvres.length} work(s), ${images} image(s), ${auteurs} author record(s), ${souhaits} wish(es).`);
+}
+async function changerMotDePasseCompte(){
+  const v = id => document.getElementById(id)?.value || '';
+  const actuel = v('cpMdpActuel'), nouveau = v('cpMdpNouveau'), conf = v('cpMdpConfirm');
+  if(!actuel) return toast(T('Saisissez votre mot de passe actuel.','Enter your current password.'), 'error');
+  if(nouveau.length < 10) return toast(T('Le nouveau mot de passe doit compter au moins 10 caractères.','The new password must be at least 10 characters long.'), 'error');
+  if(nouveau !== conf) return toast(T('Les deux saisies du nouveau mot de passe diffèrent.','The two entries of the new password differ.'), 'error');
+  if(nouveau === actuel) return toast(T('Le nouveau mot de passe est identique à l’actuel.','The new password is the same as the current one.'), 'error');
+  try { await SB.changerMotDePasse(actuel, nouveau); }
+  catch(e){ return toast(e.message, 'error'); }
+  ['cpMdpActuel','cpMdpNouveau','cpMdpConfirm'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  toast(T('Mot de passe modifié ✓','Password changed ✓'));
+}
+async function changerCourrielCompte(){
+  const nouveau = (document.getElementById('cpCourriel')?.value || '').trim();
+  const actuel = courrielCompte();
+  if(!nouveau || nouveau.toLowerCase() === actuel.toLowerCase())
+    return toast(T('Saisissez la nouvelle adresse dans le champ.','Type the new address in the field.'), 'error');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nouveau))
+    return toast(T('Adresse e-mail invalide.','Invalid email address.'), 'error');
+  try { await SB.changerCourriel(nouveau); }
+  catch(e){ return toast(e.message, 'error'); }
+  toast(T(`Lien de confirmation envoyé à ${nouveau} et à ${actuel}. Le changement prendra effet après validation.`,
+          `Confirmation link sent to ${nouveau} and ${actuel}. The change takes effect once confirmed.`));
+}
+function ouvrirSuppressionCompte(){
+  const mail = courrielCompte();
+  if(!mail) return toast(T('Session inconnue : reconnectez-vous.','Unknown session: sign in again.'), 'error');
+  document.getElementById('scCourrielAttendu').textContent = mail;
+  document.getElementById('scCourriel').value = '';
+  document.getElementById('scErreur').textContent = '';
+  const lignes = [
+    _bilanDonneesCompte(),
+    T('vos collections, catégories, meubles, étagères et classeurs','your collections, categories, furniture, shelves and binders'),
+    T('votre profil, votre avatar et vos préférences','your profile, avatar and preferences'),
+    T(`le compte de connexion ${mail}`,`the sign-in account ${mail}`),
+  ];
+  document.getElementById('scBilan').innerHTML = lignes.map(l=>`<li>${escapeHTML(l)}</li>`).join('');
+  const b = document.getElementById('scValider');
+  if(b) b.textContent = T('Supprimer définitivement','Delete permanently');
+  _majBoutonSuppression();
+  openModal('suppressionCompteModal');
+  setTimeout(()=>document.getElementById('scCourriel')?.focus(), 50);
+}
+function _majBoutonSuppression(){
+  const mail = courrielCompte().toLowerCase();
+  const saisi = (document.getElementById('scCourriel')?.value || '').trim().toLowerCase();
+  const b = document.getElementById('scValider');
+  if(b) b.disabled = _suppressionEnCours || !mail || saisi !== mail;
+}
+let _suppressionEnCours = false;
+async function confirmerSuppressionCompte(){
+  _majBoutonSuppression();
+  const b = document.getElementById('scValider');
+  if(!b || b.disabled) return;
+  _suppressionEnCours = true;
+  b.disabled = true; b.textContent = T('Suppression en cours…','Deleting…');
+  const err = document.getElementById('scErreur'); err.textContent = '';
+  try { await SB.supprimerCompte(); }
+  catch(e){
+    _suppressionEnCours = false;
+    b.textContent = T('Supprimer définitivement','Delete permanently');
+    _majBoutonSuppression();
+    err.textContent = T(`La suppression n’a pas abouti : ${e.message}. Le compte existe toujours ; vous pouvez réessayer, elle reprendra là où elle s’est arrêtée.`,
+                        `Deletion did not complete: ${e.message}. The account still exists; you can try again, it will resume where it stopped.`);
+    return;
+  }
+  closeModal('suppressionCompteModal'); closeModal('compteModal');
+  toast(T('Votre compte et toutes vos données ont été supprimés.','Your account and all your data have been deleted.'));
+  setTimeout(()=>{ SB.signOut().catch(()=>{}).finally(()=>location.reload()); }, 2500);
+}
+// Entrée dans ces champs déclenche leur propre action, pas l'enregistrement du profil.
+document.addEventListener('DOMContentLoaded', ()=>{
+  const sur = (ids, fn) => ids.forEach(id => document.getElementById(id)?.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); fn(); } }));
+  sur(['cpMdpActuel','cpMdpNouveau','cpMdpConfirm'], changerMotDePasseCompte);
+  sur(['cpCourriel'], changerCourrielCompte);
+  sur(['scCourriel'], confirmerSuppressionCompte);
+});
+
 // Les préférences du compte l'emportent sur celles du navigateur : c'est ce
 // qui les fait suivre d'un appareil à l'autre.
 function appliquerPreferencesCompte(){
@@ -7498,7 +7657,7 @@ const SB = (() => {
   const SIGN_TTL = 60*60*24*7; // URLs signées : 7 jours
 
   // ── État ──────────────────────────────────────────────────────────
-  let client = null, uid = null;
+  let client = null, uid = null, courriel = '';
   const R = {
     collBySlug:{}, slugByColl:{},
     cats:[],                       // rows {id, collection_id, nom, position}
@@ -8206,24 +8365,54 @@ const SB = (() => {
       if(!getCfg()) return false;
       ensureClient();
       const {data} = await client.auth.getSession();
-      if(data && data.session){ uid = data.session.user.id; return true; }
+      if(data && data.session){ uid = data.session.user.id; courriel = data.session.user.email || ''; return true; }
       return false;
     },
     async signIn(email, password){
       ensureClient();
       const {data, error} = await client.auth.signInWithPassword({email, password});
       if(error) throw new Error(error.message||T('connexion refusée','sign-in refused'));
-      uid = data.session.user.id;
+      uid = data.session.user.id; courriel = data.session.user.email || '';
     },
     async signUp(email, password){
       ensureClient();
       const {data, error} = await client.auth.signUp({email, password});
       if(error) throw new Error(error.message||T('création refusée','account creation refused'));
       if(!data.session) throw new Error(T('Compte créé — confirme ton email puis connecte-toi.','Account created — confirm your email, then sign in.'));
-      uid = data.session.user.id;
+      uid = data.session.user.id; courriel = data.session.user.email || '';
     },
     async signOut(){ if(client) await client.auth.signOut(); },
-    userEmail(){ return client?.auth?.getSession ? null : null; },
+    // L'adresse de la session ouverte (elle revenait toujours vide).
+    userEmail(){ return courriel; },
+    // Mon compte (SPEC comptes, étape 2). Le mot de passe actuel est revérifié
+    // avant tout changement : une session restée ouverte ne suffit pas.
+    async changerMotDePasse(actuel, nouveau){
+      ensureClient();
+      if(!courriel) throw new Error(T('Session inconnue : reconnectez-vous.','Unknown session: sign in again.'));
+      const {error:e1} = await client.auth.signInWithPassword({email:courriel, password:actuel});
+      if(e1) throw new Error(T('Mot de passe actuel incorrect.','Current password is incorrect.'));
+      const {error:e2} = await client.auth.updateUser({password:nouveau});
+      if(e2) throw new Error(e2.message);
+    },
+    // Supabase envoie un lien de confirmation ; rien ne change avant validation.
+    async changerCourriel(nouveau){
+      ensureClient();
+      const {error} = await client.auth.updateUser({email:nouveau},
+        {emailRedirectTo: location.origin + location.pathname});
+      if(error) throw new Error(error.message);
+    },
+    // Effacement complet : Edge Function « supprimer-compte » (Storage puis compte).
+    async supprimerCompte(){
+      ensureClient();
+      const {data, error} = await client.functions.invoke('supprimer-compte',
+        { body:{ confirmation:'SUPPRIMER' } });
+      if(error){
+        let detail = error.message;
+        try { const j = await error.context?.json?.(); if(j && j.erreur) detail = j.erreur; } catch(_){}
+        throw new Error(detail);
+      }
+      return data;
+    },
     // Re-signe toutes les images avec une durée longue, pour la page invité.
     // Renvoie { items:{id:[url…]}, authors:{id:url} } — même ordre que dans le cache.
     async signLong(ttlSeconds){
@@ -8256,7 +8445,7 @@ const SB = (() => {
     },
     async init(){ ensureClient();
       if(!uid){ const {data} = await client.auth.getSession();
-        if(!data.session) throw new Error(T('non connecté','not signed in')); uid = data.session.user.id; }
+        if(!data.session) throw new Error(T('non connecté','not signed in')); uid = data.session.user.id; courriel = data.session.user.email || ''; }
       await loadAll();
     },
     makeFakeDb,
