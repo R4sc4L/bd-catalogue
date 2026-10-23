@@ -141,6 +141,11 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   header{background:var(--bg-alt);color:var(--ink);padding:14px 28px;display:flex;align-items:center;gap:24px;box-shadow:0 1px 0 var(--border);border-bottom:1px solid var(--border-warm)}
   header h1{color:var(--ink);font-size:22px;margin:0;display:flex;align-items:center;gap:10px;font-family:"Orbitron",sans-serif;font-weight:400;letter-spacing:.02em}
   header h1 span{color:var(--gold)}
+  /* Icône de collection en image (Pin's) : un peu plus grande que le texte, car le
+     papillon, plus large que haut, paraît plus petit qu'un émoji à taille égale. */
+  .coll-ico-img{width:1em;height:1em;object-fit:contain;vertical-align:-.12em;display:inline-block;
+    transform:scale(1.35);margin:0 .18em}  /* agrandie à l'œil, mais n'occupe qu'1em : les lignes et les tuiles restent alignées */
+  #collectionIcon{display:inline-flex;align-items:center}
   nav{display:flex;gap:4px;flex:1;flex-wrap:wrap}
   nav button{background:transparent;color:var(--ink-soft);border:1px solid transparent;padding:6px 14px;border-radius:999px;font-weight:500;font-size:14px;letter-spacing:.02em}
   nav button:hover{background:var(--bg-panel);color:var(--ink);border-color:var(--border)}
@@ -4296,6 +4301,12 @@ const CONDITIONS = ["Neuf","Très bon","Bon","Moyen","Mauvais"];
 //   status : 'ready' (utilisable) | 'soon' (à venir, non activable)
 //   core   : true => toujours actif, non désactivable (BD)
 // ============================================================
+// Icône du Pin's : papillon émaillé avec son attache, fourni par Pascal (2026-10-23),
+// détouré et réduit à 128 px (WebP, ~10 Ko). L'émoji 🦋 la remplace là où une image
+// ne peut pas s'afficher (menus déroulants natifs).
+const PINS_ICONE_IMG = 'data:image/webp;base64,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';
+// Icône d'une collection pour un contexte HTML : son image si elle en a une, sinon son émoji.
+function iconeColl(m){ return (m && m.iconImg) ? `<img class="coll-ico-img" src="${m.iconImg}" alt="" aria-hidden="true">` : ((m && m.icon) || ''); }
 const MODULES = [
   {
     id:'bd', label:'BD', icon:'📚', desc:'Bandes dessinées & comics', descEn:'Comic books & comics',
@@ -4309,7 +4320,7 @@ const MODULES = [
     tabs:{ wishlist:true, library:true },
   },
   {
-    id:'pins', label:"Pin's", labelEn:'Pins', icon:'📌', desc:"Pin's & badges", descEn:'Pins & badges',
+    id:'pins', label:"Pin's", labelEn:'Pins', icon:'🦋', iconImg:PINS_ICONE_IMG, desc:"Pin's & badges", descEn:'Pins & badges',
     accent:'#7a9fc8', core:false, status:'ready',
     terms:{ item:'fiche', itemPlural:'fiches', creator:'éditeur', creatorsTab:'Éditeurs',
             addItem:'Ajouter une fiche', addCreator:'Ajouter un éditeur' },
@@ -4387,7 +4398,7 @@ const MODULES = [
 ];
 
 // COLLECTION_TYPES conservé (dérivé) pour compatibilité avec le picker existant.
-const COLLECTION_TYPES = MODULES.map(m=>({ id:m.id, label:m.label, labelEn:m.labelEn, icon:m.icon, desc:m.desc, descEn:m.descEn, soon: m.status!=='ready' }));
+const COLLECTION_TYPES = MODULES.map(m=>({ id:m.id, label:m.label, labelEn:m.labelEn, icon:m.icon, iconImg:m.iconImg, desc:m.desc, descEn:m.descEn, soon: m.status!=='ready' }));
 
 // Pseudo-collection « Mes Collections » : agrège tous les items de toutes les
 // collections. Son ancien nom, « Ma Collection », était aussi celui de
@@ -4500,7 +4511,7 @@ function buildCollectionPicker(){
          role="menuitem" ${c.soon?'aria-disabled="true"':'tabindex="0"'}
          ${c.id===_activeCollection?'aria-current="true"':''}
          ${c.soon?'':'onclick="switchCollection(\''+c.id+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();switchCollection(\''+c.id+'\')}"'}>
-      <span class="coll-icon">${c.icon}</span>
+      <span class="coll-icon">${iconeColl(c)}</span>
       <span class="coll-info">
         <div class="coll-label">${_modLabel(c)}</div>
         <div class="coll-desc">${_modDesc(c)}</div>
@@ -4689,7 +4700,7 @@ function switchCollection(id, opts){
   const ct = _collInfo(id);
   document.getElementById('collectionLabel').textContent = _modLabel(ct);
   // L'icône de l'en-tête suit la collection, comme dans le menu déroulant.
-  const _ico = document.getElementById('collectionIcon'); if(_ico) _ico.textContent = ct.icon || '📚';
+  const _ico = document.getElementById('collectionIcon'); if(_ico) _ico.innerHTML = iconeColl(ct) || '📚';
   document.getElementById('collectionPicker').classList.remove('open');
   document.getElementById('collectionPicker').style.display = 'none';
   const _cw = document.getElementById('collectionWord');
@@ -5577,7 +5588,7 @@ function initCollection(){
   const ct = _collInfo(_activeCollection);
   document.getElementById('collectionLabel').textContent = _modLabel(ct);
   // L'icône de l'en-tête suit la collection, comme dans le menu déroulant.
-  const _ico = document.getElementById('collectionIcon'); if(_ico) _ico.textContent = ct.icon || '📚';
+  const _ico = document.getElementById('collectionIcon'); if(_ico) _ico.innerHTML = iconeColl(ct) || '📚';
   document.body.classList.add('coll-'+_activeCollection);
   document.title = _titreOnglet(ct);
   _adaptCollectionLabels();
@@ -7131,7 +7142,7 @@ function ouvrirNuage(force){
   ov.style.setProperty('--nuage-accent', m.accent || '#c8904a');
   ov.innerHTML = `
     <div class="nu-head">
-      <h2>${m.icon||''} ${escapeHTML(_modLabel(m))}</h2>
+      <h2>${iconeColl(m)} ${escapeHTML(_modLabel(m))}</h2>
       <span class="nu-compte">${oeuvres.length < tout.length
         ? T(`${tout.length} œuvres — en voici ${oeuvres.length}`, `${tout.length} works — here are ${oeuvres.length}`)
         : T(`${tout.length} œuvre${tout.length>1?'s':''}`, `${tout.length} work${tout.length>1?'s':''}`)}</span>
@@ -7562,7 +7573,7 @@ function ouvrirTableau(force){
   ov.style.setProperty('--nuage-accent', m.accent || '#c8904a');
   ov.innerHTML = `
     <div class="nu-head">
-      <h2>${m.icon||''} ${escapeHTML(_modLabel(m))}</h2>
+      <h2>${iconeColl(m)} ${escapeHTML(_modLabel(m))}</h2>
       <span class="nu-compte">${T(`${tout.length} œuvre${tout.length>1?'s':''}`, `${tout.length} work${tout.length>1?'s':''}`)}</span>
     </div>
     <div class="tl-scene">
@@ -7672,7 +7683,7 @@ function renderHub(){
     const removable = !m.core;
     return `<div class="hub-tile" role="button" tabindex="0" aria-label="${escapeHTML(_modLabel(m))}" style="--mod-accent:${m.accent}" onclick="enterModule('${m.id}')">
       ${removable?`<button class="hub-disable" title="${T('Désactiver ce module','Disable this module')}" onclick="event.stopPropagation();toggleModule('${m.id}')">${T('Désactiver','Disable')}</button>`:''}
-      <span class="hub-icon">${m.icon}</span>
+      <span class="hub-icon">${iconeColl(m)}</span>
       <span class="hub-name">${escapeHTML(_modLabel(m))}</span>
       <span class="hub-desc">${escapeHTML(_modDesc(m))}</span>
       <span class="hub-count">${n} ${unit}</span>
@@ -7693,7 +7704,7 @@ function renderHub(){
       avail.map(m=>{
         const ready = m.status==='ready';
         return `<div class="hub-avail" style="--mod-accent:${m.accent}">
-          <span class="hub-icon">${m.icon}</span>
+          <span class="hub-icon">${iconeColl(m)}</span>
           <span class="hub-info"><div class="hub-name">${escapeHTML(_modLabel(m))}</div>
           <div class="hub-desc">${escapeHTML(_modDesc(m))}</div></span>
           ${ready
@@ -7728,7 +7739,7 @@ function renderGlobal(){
       const n=_moduleItemCount(m.id);
       const pct=Math.round(n/max*100);
       return `<div class="bar-row" style="display:flex;align-items:center;gap:10px;margin:6px 0">
-        <span style="width:140px;font-size:13px">${m.icon} ${escapeHTML(_modLabel(m))}</span>
+        <span style="width:140px;font-size:13px">${iconeColl(m)} ${escapeHTML(_modLabel(m))}</span>
         <span style="flex:1;height:10px;background:var(--bg-alt);border-radius:5px;overflow:hidden">
           <span class="bar-fill" style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,${m.accent},var(--gold))"></span>
         </span>
@@ -13285,7 +13296,7 @@ function renderDashboard(){
     const subtitle = isPins
       ? (i.pinsMarque || i.editeur || "—")
       : ((i.auteurs||[]).map(x=>authorDisplay(authorById(x.auteurId))).filter(Boolean).join(", ") || "—");
-    const itemIcon = isPins ? "📌" : "📖";
+    const itemIcon = isPins ? iconeColl(moduleById('pins')) : "📖";
     return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="renderItemDetail('${i.id}')">
       <div style="width:40px;height:60px;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}" style="max-width:100%;max-height:100%;object-fit:contain;background:transparent">`:itemIcon}</div>
       <div style="flex:1;min-width:0">
@@ -13294,7 +13305,7 @@ function renderDashboard(){
         <div class="muted" style="font-size:11px">${escapeHTML(i.categorie||"")}</div>
       </div>
     </div>`;
-  }).join("") : `<div class="empty"><div class="icon">${isPins?"📌":"📚"}</div>${isPins?T("Votre collection de pin's est vide. Commencez par ajouter un pin's !","Your pin collection is empty. Start by adding a pin!"):T("Votre collection est vide. Commencez par ajouter une œuvre !","Your collection is empty. Start by adding a work!")}</div>`;
+  }).join("") : `<div class="empty"><div class="icon">${isPins?iconeColl(moduleById('pins')):"📚"}</div>${isPins?T("Votre collection de pin's est vide. Commencez par ajouter un pin's !","Your pin collection is empty. Start by adding a pin!"):T("Votre collection est vide. Commencez par ajouter une œuvre !","Your collection is empty. Start by adding a work!")}</div>`;
 
   // Top authors / Top publishers
   const titleEl = document.getElementById("topAuthorsTitle");
@@ -14229,7 +14240,7 @@ function renderObjetsAssociesChips(){
   wrap.innerHTML = _objetsAssocies.map((o,idx)=>{
     const m = moduleById(o.type);
     const it = o.itemId ? cache.items.find(x=>x.id===o.itemId) : null;
-    const label = m.icon + ' ' + escapeHTML(m.label) + (it ? ' · ' + escapeHTML(it.titre||'Sans titre') : '');
+    const label = iconeColl(m) + ' ' + escapeHTML(m.label) + (it ? ' · ' + escapeHTML(it.titre||'Sans titre') : '');
     return `<span class="cat-tag-chip" style="border-color:${m.accent}66;background:${m.accent}1f;color:var(--ink)">${label}<button type="button" onclick="removeObjetAssocie(${idx})" title="Retirer">×</button></span>`;
   }).join('');
 }
@@ -14517,7 +14528,7 @@ function renderRangementArtistes(){
       `${liste.length} record(s) whose works all belong to a collection other than the one they are filed in.`)}</p>` +
     Object.entries(parCible).map(([cible,list])=>{
       const m = moduleById(cible);
-      return `<div style="margin:14px 0"><div style="font-weight:700;color:${m.accent};margin-bottom:6px">${m.icon} ${T('Vers','To')} « ${escapeHTML(_modLabel(m))} » <span class="muted" style="font-weight:400">(${list.length})</span></div>` +
+      return `<div style="margin:14px 0"><div style="font-weight:700;color:${m.accent};margin-bottom:6px">${iconeColl(m)} ${T('Vers','To')} « ${escapeHTML(_modLabel(m))} » <span class="muted" style="font-weight:400">(${list.length})</span></div>` +
         list.map(c=>`<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px;cursor:pointer">
           <input type="checkbox" class="rang-cb" value="${c.id}" checked style="width:15px;height:15px">
           <span>${escapeHTML(c.nom)}</span>
@@ -14896,7 +14907,7 @@ function renderMissingDimensions(){
   body.innerHTML = `<p class="muted" style="margin-top:0;font-size:13px">${T(`${missing.length} œuvre(s) sans hauteur exploitable (champ Format vide ou illisible). Clique une œuvre pour la modifier.`,`${missing.length} work(s) without a usable height (Format field empty or unreadable). Click a work to edit it.`)}</p>` +
     Object.entries(byColl).map(([c,list])=>{
       const m = moduleById(c);
-      return `<div style="margin:12px 0"><div style="font-weight:700;color:${m.accent};margin-bottom:4px">${m.icon} ${escapeHTML(m.label)} <span class="muted" style="font-weight:400">(${list.length})</span></div>` +
+      return `<div style="margin:12px 0"><div style="font-weight:700;color:${m.accent};margin-bottom:4px">${iconeColl(m)} ${escapeHTML(m.label)} <span class="muted" style="font-weight:400">(${list.length})</span></div>` +
         list.map(i=>`<div onclick="closeModal('missingDimsModal');openItemForm('${i.id}')" style="display:flex;justify-content:space-between;gap:10px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:14px" onmouseover="this.style.background='var(--surface-tint)'" onmouseout="this.style.background='transparent'"><span>${escapeHTML(i.titre||'(sans titre)')}</span><span class="muted" style="font-size:12px;white-space:nowrap">${i.format?escapeHTML(i.format):'— vide —'}</span></div>`).join('') +
         `</div>`;
     }).join('');
@@ -14916,7 +14927,7 @@ function renderMigration(){
   body.innerHTML = `<p class="muted" style="margin-top:0;font-size:13px">${T(`${cands.length} œuvre(s) ont une catégorie correspondant à une autre collection. Coche celles à déplacer vers leur vraie collection — leur catégorie « transcollection » sera retirée, le reste de la fiche est conservé. Les catégories ainsi vidées seront retirées de la liste BD.`,`${cands.length} work(s) have a category matching another collection. Tick the ones to move to their real collection — their « cross-collection » category will be removed, the rest of the record is kept. Categories emptied this way will be removed from the BD list.`)}</p>` +
     Object.entries(byTarget).map(([t,list])=>{
       const m=moduleById(t);
-      return `<div style="margin:14px 0"><div style="font-weight:700;color:${m.accent};margin-bottom:6px">${m.icon} ${T("Vers","To")} « ${escapeHTML(_modLabel(m))} » <span class="muted" style="font-weight:400">(${list.length})</span></div>` +
+      return `<div style="margin:14px 0"><div style="font-weight:700;color:${m.accent};margin-bottom:6px">${iconeColl(m)} ${T("Vers","To")} « ${escapeHTML(_modLabel(m))} » <span class="muted" style="font-weight:400">(${list.length})</span></div>` +
         list.map(c=>`<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px;cursor:pointer"><input type="checkbox" class="migr-cb" value="${c.id}" data-to="${t}" data-via="${escapeHTML(c.via)}" checked style="width:15px;height:15px"> <span>${escapeHTML(c.titre)}</span> <span class="muted" style="font-size:12px">— cat. « ${escapeHTML(c.via)} »</span></label>`).join('') +
         `</div>`;
     }).join('');
@@ -15309,7 +15320,7 @@ function cardItemHTML(i, compact=false){
   return `<div class="card${selClass}${_mCollIt?' card-coll':''}" role="button" tabindex="0" aria-label="${escapeHTML(i.titre||T('Sans titre','Untitled'))}" style="position:relative${_mCollIt?`;${_teinteCollection(_mCollIt)}`:''}" ${isCoverLocked ? adultClickHandler : clickHandler} oncontextmenu="showCardContextMenu(event,'${i.id}')">
     ${locateBtn}
     <div class="card-img${isCoverLocked?' card-img-adult':''}">
-      ${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}">`:(isPins?"📌":(archetypeForItem(i).id==='disque'?"💿":archetypeForItem(i).id==='video'?"🎬":"📖"))}
+      ${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}">`:(isPins?iconeColl(moduleById('pins')):(archetypeForItem(i).id==='disque'?"💿":archetypeForItem(i).id==='video'?"🎬":"📖"))}
       ${isCoverLocked?`<div class="adult-overlay"><span class="adult-lock-icon">🔒</span><span class="adult-badge">🔞 ADULTE</span></div>`:""}
       ${selCb}
       ${i.lu?(()=>{const _t=termesSuivi(i.categorie);return `<span class="card-lu" title="${escapeHTML(T(_t.fait.fr,_t.fait.en)+(i.dateLecture?` — ${i.dateLecture}`:''))}">${_t.icone}</span>`;})():""}
@@ -15323,7 +15334,7 @@ function cardItemHTML(i, compact=false){
         : `<div class="card-sub">${escapeHTML(authors||"—")}</div>`
       }
       <div class="card-meta">
-        ${isAllCollection()?(()=>{const m=moduleById(i.collectionType||'bd');return `<span class="tag" title="${escapeHTML(m.label)}" style="background:${m.accent}22;border-color:${m.accent}66;color:var(--ink)">${m.icon} ${escapeHTML(m.label)}</span>`;})():""}
+        ${isAllCollection()?(()=>{const m=moduleById(i.collectionType||'bd');return `<span class="tag" title="${escapeHTML(m.label)}" style="background:${m.accent}22;border-color:${m.accent}66;color:var(--ink)">${iconeColl(m)} ${escapeHTML(m.label)}</span>`;})():""}
         <span class="tag cat">${escapeHTML(i.categorie||"—")}</span>
         ${(i.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}
         ${(()=>{const d=_drapeauxItem(i);return d.flags?`<span title="${escapeHTML(d.titre)}" style="font-size:16px;line-height:1">${d.flags}</span>`:""})()}
@@ -15629,7 +15640,7 @@ function applyAuthorFilters(){
       if(cid !== precedent){
         const m = moduleById(cid);
         const n = list.filter(x=>(x.collectionType||'bd')===cid).length;
-        morceaux.push(`<h3 class="auteurs-groupe" style="${_teinteCollection(m)}">${m.icon} ${escapeHTML(_modLabel(m))} <span class="muted">${n}</span></h3>`);
+        morceaux.push(`<h3 class="auteurs-groupe" style="${_teinteCollection(m)}">${iconeColl(m)} ${escapeHTML(_modLabel(m))} <span class="muted">${n}</span></h3>`);
         precedent = cid;
       }
       morceaux.push(cartes[k]);
@@ -17523,7 +17534,7 @@ function renderItemDetail(id, pushHistory=true){
       const assoc = it.objetsAssocies||[];
       const assocPanel = assoc.length ? `<div class="panel"><h3>🔗 ${_lang==='en'?'Linked objects':'Objets associés'}</h3><div style="display:flex;flex-wrap:wrap;gap:8px">${assoc.map(o=>{
         const m=moduleById(o.type); const lk=o.itemId?cache.items.find(x=>x.id===o.itemId):null;
-        const label=m.icon+' '+escapeHTML(m.label)+(lk?' · '+escapeHTML(lk.titre||'Sans titre'):'');
+        const label=iconeColl(m)+' '+escapeHTML(m.label)+(lk?' · '+escapeHTML(lk.titre||'Sans titre'):'');
         return lk
           ? `<button class="secondary" style="padding:5px 12px;border-color:${m.accent};color:${m.accent}" onclick="openAssocItem('${o.type}','${o.itemId}')">${label} ›</button>`
           : `<span class="tag" style="border-color:${m.accent}66;color:${m.accent};background:${m.accent}1f">${label}</span>`;
