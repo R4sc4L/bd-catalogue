@@ -2397,7 +2397,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       <div class="field adv-filter" id="filterFieldPrete"><label data-en="Lent">Prêté</label><select id="filterPrete"><option value="">Tous</option><option value="true">Prêtés</option><option value="late">En retard</option><option value="false">Non prêtés</option></select></div>
       <div class="field adv-filter"><label data-en="Location">Localisation</label><select id="filterLocation"><option value="">Toutes</option></select></div>
       <div class="field adv-filter" style="display:flex;align-items:center;height:38px;align-self:end"><div class="checkbox-row" style="align-items:center"><input type="checkbox" id="filterCollected"><label for="filterCollected" style="margin:0;text-transform:none;letter-spacing:0;font-weight:600;font-size:13px;color:var(--ink);cursor:pointer"><span data-en="⭐ Collected author">⭐ Auteur collectionné</span></label></div></div>
-      <div class="field"><label data-en="Sort by">Trier par</label><select id="sortBy"><option value="cat_chrono" selected data-en="Category + cycle + no.">Catégorie + cycle + n°</option><option value="annee_asc" data-en="Year (oldest first)">Année (plus ancien)</option><option value="annee_desc" data-en="Year (newest first)">Année (plus récent)</option><option value="titre" data-en="Title (A-Z)">Titre (A-Z)</option><option value="dessinateur" data-en="Artist (A-Z)">Dessinateur (A-Z)</option><option value="scenariste" data-en="Writer (A-Z)">Scénariste (A-Z)</option><option value="acquisition_desc" data-en="Acquisition (recent)">Acquisition (récente)</option><option value="cote_desc" data-en="Value (highest)">Cote (haute)</option></select></div>
+      <div class="field"><label data-en="Sort by">Trier par</label><select id="sortBy"><option value="cat_chrono" selected data-en="Category + cycle + no.">Catégorie + cycle + n°</option><option value="annee_asc" data-en="Year (oldest first)">Année (plus ancien)</option><option value="annee_desc" data-en="Year (newest first)">Année (plus récent)</option><option value="titre" data-en="Title (A-Z)">Titre (A-Z)</option><option value="dessinateur" data-en="Artist (A-Z)">Dessinateur (A-Z)</option><option value="scenariste" data-en="Writer (A-Z)">Scénariste (A-Z)</option><option value="acquisition_desc" data-en="Acquisition (recent)">Acquisition (récente)</option><option value="ajout_desc" data-en="Last added">Dernier ajout</option><option value="cote_desc" data-en="Value (highest)">Cote (haute)</option></select></div>
       <div class="field" style="align-self:end"><button type="button" class="secondary" id="advFiltersToggle" aria-expanded="false" aria-controls="itemFilters" onclick="toggleAdvFilters(this)"><span data-en="More filters">Plus de filtres</span> <span class="caret" aria-hidden="true">▾</span></button></div>
       <div class="field" style="grid-column:-2 / -1;display:flex;justify-content:flex-end;align-self:end"><button class="secondary" onclick="resetFilters()">↺ Réinitialiser les filtres</button></div>
     </div>
@@ -2883,6 +2883,76 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           </div>
           <p class="muted" style="font-size:11px;margin:8px 0 0" data-en="Label, year and barcode are in the section below; the band, the artists and the performers in “Artists and contributors”.">Le label, l'année et le code-barres sont dans la section suivante ; le groupe, les artistes et les interprètes dans « Artistes et contributeurs ».</p>
         </div>
+        <div class="form-section" id="formSection-video" style="display:none">
+          <h3>🎬 <span data-en="Film">Film</span></h3>
+          <div class="form-grid">
+            <div class="span-2"><label data-en="Original title">Titre original</label>
+              <input type="text" id="itemVideoTitreOriginal" placeholder="ex: The Shining" data-en-ph="e.g. Le Mépris"></div>
+            <div><label data-en="Film release year">Année du film</label>
+              <input type="number" id="itemVideoAnneeFilm" min="1880" max="2100" placeholder="ex: 1980" data-en-ph="e.g. 1980"></div>
+            <div><label data-en="Running time">Durée</label>
+              <input type="text" id="itemVideoDuree" placeholder="ex: 2 h 26 ou 146 min" data-en-ph="e.g. 2 h 26 or 146 min"></div>
+            <div><label data-en="Genre">Genre</label>
+              <input type="text" id="itemVideoGenre" list="dl-genres-film" placeholder="ex: Science-fiction" data-en-ph="e.g. Science fiction"></div>
+            <div><label data-en="Edition">Édition</label>
+              <input type="text" id="itemVideoEdition" list="dl-editions-film" placeholder="ex: Édition collector 2 disques" data-en-ph="e.g. 2-disc collector's edition"></div>
+            <div><label data-en="Number of discs / tapes">Nombre de disques / cassettes</label>
+              <input type="number" id="itemVideoNb" min="1" max="99" placeholder="1"></div>
+            <div><label data-en="Region / zone">Zone</label>
+              <input type="text" id="itemVideoZone" list="dl-zones-video" placeholder="ex: Zone 2, Région B" data-en-ph="e.g. Region 2, Region B"></div>
+            <div><label data-en="Picture format">Format d'image</label>
+              <select id="itemVideoFormatImage">
+                <option value=""></option>
+                <option>4/3 (1.33:1)</option><option>16/9 (1.78:1)</option><option>1.66:1</option>
+                <option>1.85:1</option><option>2.35:1 / 2.39:1</option><option>Plein écran recadré</option>
+              </select></div>
+            <div><label data-en="Video standard">Standard</label>
+              <select id="itemVideoStandard">
+                <option value=""></option><option>PAL</option><option>SECAM</option><option>NTSC</option>
+              </select></div>
+            <div><label data-en="Audio languages">Langues audio</label>
+              <input type="text" id="itemVideoLangues" placeholder="ex: français, anglais (VO)" data-en-ph="e.g. French, English (original)"></div>
+            <div><label data-en="Subtitles">Sous-titres</label>
+              <input type="text" id="itemVideoSousTitres" placeholder="ex: français, anglais, néerlandais" data-en-ph="e.g. French, English, Dutch"></div>
+            <div><label data-en="Packaging">Conditionnement</label>
+              <select id="itemVideoBoitier">
+                <option value=""></option>
+                <option>Boîtier Amaray</option><option>Boîtier slim</option><option>Boîtier Blu-ray</option>
+                <option>Steelbook</option><option>Digipack</option><option>Mediabook</option>
+                <option>Fourreau carton</option><option>Coffret</option><option>Boîtier VHS</option>
+                <option>Pochette LaserDisc</option><option>Sans boîtier</option>
+              </select></div>
+            <div><label data-en="Cover condition">État de la jaquette</label>
+              <select id="itemVideoEtatJaquette">
+                <option value=""></option>
+                <option>Neuf / scellé</option><option>Très bon</option><option>Bon</option>
+                <option>Moyen</option><option>Usé</option>
+              </select></div>
+            <div><label data-en="Catalogue number">Référence catalogue</label>
+              <input type="text" id="itemVideoRef" placeholder="ex: 3 344 428 012 345" data-en-ph="e.g. 3 344 428 012 345"></div>
+            <div class="span-2"><label data-en="Extras and bonus features">Bonus et suppléments</label>
+              <textarea id="itemVideoBonus" rows="2" placeholder="ex: commentaire audio du réalisateur, making-of, scènes coupées, livret 24 pages…" data-en-ph="e.g. director's commentary, making-of, deleted scenes, 24-page booklet…"></textarea></div>
+          </div>
+          <p class="muted" style="font-size:11px;margin:8px 0 0" data-en="Publisher, edition year and barcode are in the section below; the director, cast and crew in “Cast and crew”.">L'éditeur, l'année d'édition et le code-barres sont dans la section suivante ; le réalisateur, les acteurs et l'équipe dans « Équipe du film ».</p>
+        </div>
+        <datalist id="dl-genres-film">
+          <option>Action</option><option>Animation</option><option>Aventure</option><option>Biopic</option>
+          <option>Comédie</option><option>Comédie dramatique</option><option>Comédie musicale</option>
+          <option>Documentaire</option><option>Drame</option><option>Espionnage</option><option>Fantastique</option>
+          <option>Film noir</option><option>Guerre</option><option>Historique</option><option>Horreur</option>
+          <option>Péplum</option><option>Policier</option><option>Romance</option><option>Science-fiction</option>
+          <option>Série TV</option><option>Thriller</option><option>Western</option><option>Court métrage</option>
+        </datalist>
+        <datalist id="dl-editions-film">
+          <option>Édition simple</option><option>Édition collector</option><option>Édition limitée</option>
+          <option>Édition spéciale</option><option>Version restaurée</option><option>Director's cut</option>
+          <option>Version longue</option><option>Intégrale / Coffret</option><option>Steelbook</option>
+          <option>Édition de location</option><option>Édition kiosque</option>
+        </datalist>
+        <datalist id="dl-zones-video">
+          <option>Zone 2</option><option>Zone 1</option><option>Zone 0 / toutes zones</option>
+          <option>Région B</option><option>Région A</option><option>Région A/B/C</option><option>Sans zone (4K UHD)</option>
+        </datalist>
         <datalist id="dl-groupes"></datalist>
         <datalist id="dl-membres"></datalist>
         <datalist id="dl-instruments">
@@ -4163,6 +4233,15 @@ const ROLES_DISQUE = [
   "Réalisateur","Pochette / Illustration","Photographe",
 ];
 
+// Films (collection DVD) : l'équipe d'un film, pas celle d'un disque.
+// Même logique d'ordre : qui le fait, qui le joue, puis les métiers.
+const ROLES_FILM = [
+  "Réalisateur","Scénariste","Auteur de l'œuvre originale",
+  "Acteur / Actrice","Voix","Producteur","Compositeur",
+  "Directeur de la photographie","Montage","Décors","Costumes",
+  "Effets spéciaux","Studio / Production","Illustration de jaquette",
+];
+
 // Rôles de la collection active. « Ma Collection » accepte tout : on présente
 // l'union, sans doublon, pour qu'aucun rôle existant ne devienne inatteignable.
 // ============================================================
@@ -4186,10 +4265,11 @@ const TERMES_SUIVI = {
 // Sans catégorie (filtres de la liste), on se rabat sur la collection active.
 function termesSuivi(cat){
   if(cat){
-    if(/^(DVD|Blu-ray)$/i.test(String(cat).trim())) return TERMES_SUIVI.video;
+    if(/^(DVD|Blu-ray|Blu-ray 4K UHD|VHS|LaserDisc)$/i.test(String(cat).trim())) return TERMES_SUIVI.video;
     if(archetypeForCategory(cat).id === 'disque')   return TERMES_SUIVI.audio;
     return TERMES_SUIVI.livre;
   }
+  if(_activeCollection === 'dvd') return TERMES_SUIVI.video;
   const par = (moduleById(_activeCollection)?.defaultCategories) || [];
   if(par.length && par.every(c=>archetypeForCategory(c).id === 'disque')) return TERMES_SUIVI.audio;
   return TERMES_SUIVI.livre;
@@ -4256,7 +4336,9 @@ const MODULES = [
     tabs:{ wishlist:false, library:false },
   },
   {
-    id:'vinyle-cd-dvd', label:'Vinyle / CD / DVD', icon:'💿', desc:'Disques vinyles, CD & DVD', descEn:'Vinyl records, CDs & DVDs',
+    // L'identifiant reste « vinyle-cd-dvd » : il est enregistré dans la base
+    // (slug de collection) et sur chaque œuvre. Seul l'affichage change.
+    id:'vinyle-cd-dvd', label:'Vinyle / CD', icon:'💿', desc:'Disques vinyles & CD', descEn:'Vinyl records & CDs',
     accent:'#9b7fc0', core:false, status:'ready',
     terms:{ item:'disque', itemPlural:'disques', creator:'artiste', creatorsTab:'Artistes',
             addItem:'Ajouter un disque', addCreator:'Ajouter un artiste' },
@@ -4264,7 +4346,7 @@ const MODULES = [
     categoriesMetaKey:'vinyle_cd_dvd_categories',
     libraryLabel:{ fr:'CDthèque', en:'Disc library' },
     libraryUnit:{ fr:['disque','disques'], en:['disc','discs'] },
-    defaultCategories:['CD','Vinyle','DVD'],
+    defaultCategories:['CD','Vinyle'],
     roles:ROLES_DISQUE,
     // Une fiche d'artiste peut y décrire un groupe plutôt qu'une personne.
     // Les autres collections ignorent tout de cette notion.
@@ -4273,8 +4355,31 @@ const MODULES = [
     // (l'édition originale et la dédicace d'auteur n'ont pas d'équivalent ici).
     dashboard:{
       welcome:{fr:'Bienvenue dans votre bibliothèque musicale', en:'Welcome to your music library'},
-      desc:{fr:"Gérez votre collection de disques : CD, vinyles et DVD. Organisez vos albums par artiste, label, genre et bien plus. N'oubliez pas d'exporter régulièrement vos données pour les sauvegarder dans votre cloud.",
-            en:'Manage your record collection: CDs, vinyl and DVDs. Organise your albums by artist, label, genre and more. Remember to regularly export your data to save it to your cloud.'},
+      desc:{fr:"Gérez votre collection de disques : CD et vinyles. Organisez vos albums par artiste, label, genre et bien plus. N'oubliez pas d'exporter régulièrement vos données pour les sauvegarder dans votre cloud.",
+            en:'Manage your record collection: CDs and vinyl. Organise your albums by artist, label, genre and more. Remember to regularly export your data to save it to your cloud.'},
+      statsMasquees:['eo','signes'],
+    },
+    tabs:{ wishlist:false, library:true },
+  },
+  {
+    // Films sur support physique. Séparée de Vinyle / CD le 2026-10-23 : un film
+    // ne se décrit ni ne se crédite comme un disque. Les DVD saisis auparavant
+    // dans Vinyle / CD y restent tant qu'on ne les déplace pas.
+    id:'dvd', label:'DVD / Blu-ray', labelEn:'DVD / Blu-ray', icon:'🎬',
+    desc:'Films en DVD, Blu-ray, 4K, VHS…', descEn:'Films on DVD, Blu-ray, 4K, VHS…',
+    accent:'#c4785a', core:false, status:'ready',
+    terms:{ item:'film', itemPlural:'films', creator:'personne', creatorsTab:'Réalisateurs & acteurs',
+            addItem:'Ajouter un film', addCreator:'Ajouter une personne' },
+    formSections:['edition'],
+    categoriesMetaKey:'dvd_categories',
+    libraryLabel:{ fr:'Vidéothèque', en:'Video library' },
+    libraryUnit:{ fr:['film','films'], en:['film','films'] },
+    defaultCategories:['DVD','Blu-ray','Blu-ray 4K UHD','VHS','LaserDisc'],
+    roles:ROLES_FILM,
+    dashboard:{
+      welcome:{fr:'Bienvenue dans votre vidéothèque', en:'Welcome to your video library'},
+      desc:{fr:"Gérez votre collection de films : DVD, Blu-ray, 4K UHD, VHS et LaserDisc. Organisez-la par réalisateur, éditeur, genre et bien plus. N'oubliez pas d'exporter régulièrement vos données.",
+            en:'Manage your film collection: DVD, Blu-ray, 4K UHD, VHS and LaserDisc. Organise it by director, publisher, genre and more. Remember to export your data regularly.'},
       statsMasquees:['eo','signes'],
     },
     tabs:{ wishlist:false, library:true },
@@ -4786,6 +4891,32 @@ const FICHE_ARCHETYPES = {
                 'craquements en début de face'],
     },
   },
+  // Film sur support vidéo (collection DVD). Même fiche resserrée qu'un disque,
+  // avec sa propre section : un film a un titre original, une zone, un format
+  // d'image, des langues, des bonus — ni pressage ni style Discogs.
+  video: {
+    id:'video', label:'Film (DVD / Blu-ray / VHS)', labelEn:'Film (DVD / Blu-ray / VHS)', icon:'🎬',
+    hidden:['univers','serie','serieNum','collection','mois','pages','reliure','couverture',
+            'emboitage','contenu','formatManga','formatComics'],
+    showVideo:true,
+    formClass:'disque-simple',
+    roles:ROLES_FILM,
+    sectionTitles:{ edition:{fr:'Éditeur et parution',en:'Publisher and release'},
+                    authors:{fr:'Équipe du film',en:'Cast and crew'} },
+    fieldLabels:{
+      itemPublisher:{fr:'Éditeur vidéo / Studio', en:'Video publisher / Studio'},
+      itemIsbn:     {fr:'Code-barres (EAN)',      en:'Barcode (EAN)'},
+      itemCountry:  {fr:"Pays d'édition",         en:'Country of release'},
+      itemCondition:{fr:'État du disque',         en:'Disc condition'},
+    },
+    etatDetail:{
+      ph:{fr:'ex: rayures légères, jaquette insolée, boîtier fêlé…',
+          en:'e.g. light scratches, faded cover, cracked case…'},
+      exemples:['disque impeccable','rayures légères sur le disque','boîtier fêlé','boîtier remplacé',
+                'jaquette insolée','jaquette froissée','fourreau abîmé','steelbook enfoncé',
+                'cassette rembobinée','bande usée','étiquette de location','sous blister'],
+    },
+  },
   // Éphémères : petit imprimé non relié (ex-libris, invitations, marque-pages,
   // flyers, coupures de presse…). Fiche épurée + section « Éphémère » dédiée
   // dont le sous-bloc dépend du champ « type de document » (voir adaptEphemereType).
@@ -4812,7 +4943,10 @@ const CATEGORY_ARCHETYPE = {
   'CD':'disque',
   'Vinyle':'disque',
   'DVD':'disque',
-  'Blu-ray':'disque',
+  'Blu-ray':'disque',          // dans la collection DVD : fiche film (archetypeForItem)
+  'Blu-ray 4K UHD':'video',
+  'VHS':'video',
+  'LaserDisc':'video',
   'Poster / Affiche':'affiche',
   'Sérigraphie':'estampe',
   'Lithographie':'estampe',
@@ -4981,7 +5115,7 @@ function familyForType(type){
 function _modLabelEph(f){ return _lang==='en' ? (f.labelEn||f.label) : f.label; }
 
 // Une œuvre relève-t-elle des éphémères ?
-function _isEphItem(i){ return !i._isWish && archetypeForCategory(i.categorie).id==='ephemere'; }
+function _isEphItem(i){ return !i._isWish && archetypeForItem(i).id==='ephemere'; }
 
 // Localisation effective d'une œuvre, utilisée par TOUTES les vues (carte, fiche).
 // Cas particulier : un éphémère collé dans son album n'a pas de rangement propre —
@@ -5152,6 +5286,9 @@ function applyArchetype(arch){
   // reste un champ du disque : il ne s'affiche que pour ces archétypes-là.
   const grpChamp = document.getElementById('itemFieldGroupe');
   if(grpChamp) grpChamp.style.display = arch.showDisque ? '' : 'none';
+  // Section « Film » (collection DVD)
+  const videoSec = document.getElementById('formSection-video');
+  if(videoSec) videoSec.style.display = arch.showVideo ? '' : 'none';
   _majLienFiche();
   // Section « Éphémère » (type de document + sous-blocs)
   const ephSec = document.getElementById('formSection-ephemere');
@@ -5284,6 +5421,25 @@ function _archetypeParDefautCollection(){
   return ids.length === 1 ? FICHE_ARCHETYPES[ids[0]] : null;
 }
 
+// Archétype d'une œuvre : sa catégorie, corrigée par sa collection. Dans la
+// collection DVD, un « DVD » ou un « Blu-ray » est un film, pas un disque ; une
+// affiche ou une estampe rangée là garde, elle, sa propre fiche.
+function _archetypeDansCollection(coll, cat){
+  const a = archetypeForCategory(cat);
+  if(coll === 'dvd' && (a.id === 'disque' || a.id === 'standard')) return FICHE_ARCHETYPES.video;
+  return a;
+}
+function archetypeForItem(it){
+  return _archetypeDansCollection(it ? (it.collectionType||'bd') : '', it && it.categorie);
+}
+// Collection de la fiche ouverte : celle de l'œuvre si elle existe déjà, sinon
+// celle où elle sera créée (déduite de la catégorie dans la vue agrégée).
+function _collectionDeLaFiche(cat){
+  const id = document.getElementById('itemId')?.value;
+  const it = id && (cache.items||[]).find(i=>i.id===id);
+  return it ? (it.collectionType||'bd') : _collPourNouvelleFiche(cat);
+}
+
 // Point d'entrée conservé (appelé partout) : résout l'archétype de la
 // catégorie courante et l'applique au formulaire.
 // Les suggestions de « Précisions sur l'état » : le vocabulaire du support,
@@ -5300,7 +5456,7 @@ function _majEtatDetail(arch){
   const coll = _collPourNouvelleFiche(document.getElementById('itemCategory')?.value || '');
   const dejaEcrits = (cache.items||[])
     .filter(i=>(i.collectionType||'bd') === coll
-            && archetypeForCategory(i.categorie).id === arch.id)
+            && archetypeForItem(i).id === arch.id)
     .map(i=>(i.etatDetail||'').trim()).filter(Boolean);
   const vues = new Map();
   [...dejaEcrits, ...(cfg.exemples||[])].forEach(v=>{
@@ -5311,10 +5467,12 @@ function _majEtatDetail(arch){
 }
 
 function adaptFormToCategory(cat){
-  const arch = (!cat && _archetypeParDefautCollection()) || archetypeForCategory(cat);
+  const coll = _collectionDeLaFiche(cat);
+  const arch = coll === 'dvd' ? _archetypeDansCollection('dvd', cat)
+             : ((!cat && _archetypeParDefautCollection()) || archetypeForCategory(cat));
   applyArchetype(arch);
-  // Suivi personnel : « Lu » sur un album, « Écouté » sur un disque, « Vu » sur un DVD.
-  const t = termesSuivi(cat || (arch.id==='disque' ? 'CD' : ''));
+  // Suivi personnel : « Lu » sur un album, « Écouté » sur un disque, « Vu » sur un film.
+  const t = arch.id==='video' ? TERMES_SUIVI.video : termesSuivi(cat || (arch.id==='disque' ? 'CD' : ''));
   const luLbl = document.querySelector('label[for="itemLu"]');
   if(luLbl){ luLbl.textContent = T(t.fait.fr, t.fait.en); luLbl.setAttribute('data-en', t.fait.en); }
   const dtLbl = document.querySelector('#formFieldDateLecture label');
@@ -5387,7 +5545,7 @@ function _adaptCollectionLabels(){
   const vTitle = document.getElementById('authorsViewTitle');
   if(vTitle){
     const countSpan = document.getElementById('authorsCount');
-    const icone = isPins ? '🏷️' : (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : '✒️');
+    const icone = isPins ? '🏷️' : (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : _activeCollection === 'dvd' ? '🎬' : '✒️');
     vTitle.innerHTML = `${icone} ${libelleCreateurs()} ` + (countSpan ? countSpan.outerHTML : '<span class="muted" id="authorsCount"></span>');
   }
   // "Souhaités" nav tab: hide in non-BD collections
@@ -7671,6 +7829,10 @@ const SB = (() => {
     'disquePays','disqueRef','disqueEtatPochette','disqueCompilation',
     'disqueGroupe','disqueGroupeId','disqueGroupeNat','disqueMusiciens','disqueDateOrigine',
     'disqueBoitier','disqueLivret','disqueLivretPages','disqueEncarts',
+    // Films (collection DVD) — même sac JSONB, aucune colonne SQL à créer
+    'videoTitreOriginal','videoAnneeFilm','videoDuree','videoGenre','videoEdition','videoNb',
+    'videoZone','videoFormatImage','videoStandard','videoLangues','videoSousTitres',
+    'videoBoitier','videoEtatJaquette','videoRef','videoBonus',
     // Référence Bédéthèque — même sac JSONB, aucune colonne SQL à créer
     'bedethequeUrl','bedethequeId',
     // Tradition (franco-belge, comics, fumetti, manga…) — même sac JSONB
@@ -8734,11 +8896,15 @@ const DIM_DISQUE_CM = {
   'Vinyle 45 tours':  {h:17.8, l:17.8},
   'DVD':              {h:19,   l:13.5},
   'Blu-ray':          {h:17,   l:13.5},
+  'Blu-ray 4K UHD':   {h:17,   l:13.5},
+  'VHS':              {h:18.7, l:10.4},
+  'LaserDisc':        {h:30.5, l:30.5},
   'Cassette':         {h:10.9, l:6.9},
   'Coffret':          {h:14,   l:14.5},
 };
 // Repli par catégorie quand le support n'est pas renseigné (fiche saisie à la main).
-const DIM_DISQUE_CAT = { 'CD':'CD', 'Vinyle':'Vinyle 33 tours', 'DVD':'DVD', 'Blu-ray':'Blu-ray' };
+const DIM_DISQUE_CAT = { 'CD':'CD', 'Vinyle':'Vinyle 33 tours', 'DVD':'DVD', 'Blu-ray':'Blu-ray',
+                         'Blu-ray 4K UHD':'Blu-ray 4K UHD', 'VHS':'VHS', 'LaserDisc':'LaserDisc' };
 function dimDisqueCm(it){
   if(!it) return null;
   return DIM_DISQUE_CM[it.disqueSupport]
@@ -9442,7 +9608,7 @@ function openItemForm(id=null, opts={}){
   _renderAlbumSourceField();
   // Datalist des titres (suggestion pour « Titre promu » du bloc Promotion)
   const _albTitles = [...new Set(cache.items
-    .filter(x=>archetypeForCategory(x.categorie).id!=='ephemere')
+    .filter(x=>archetypeForItem(x).id!=='ephemere')
     .map(x=>x.titre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr',_CMP_NUM));
   const _dlAlb = document.getElementById("dl-albums");
   if(_dlAlb) _dlAlb.innerHTML = _albTitles.map(a=>`<option>${escapeHTML(a)}</option>`).join("");
@@ -9636,6 +9802,22 @@ function openItemForm(id=null, opts={}){
     _syncLivretPages();
     const _comp = document.getElementById("itemDisqueCompilation");
     if(_comp) _comp.checked = !!it.disqueCompilation;
+    // Film (collection DVD)
+    _setD("itemVideoTitreOriginal", it.videoTitreOriginal);
+    _setD("itemVideoAnneeFilm", it.videoAnneeFilm);
+    _setD("itemVideoDuree", it.videoDuree);
+    _setD("itemVideoGenre", it.videoGenre);
+    _setD("itemVideoEdition", it.videoEdition);
+    _setD("itemVideoNb", it.videoNb);
+    _setD("itemVideoZone", it.videoZone);
+    _setD("itemVideoFormatImage", it.videoFormatImage);
+    _setD("itemVideoStandard", it.videoStandard);
+    _setD("itemVideoLangues", it.videoLangues);
+    _setD("itemVideoSousTitres", it.videoSousTitres);
+    _setD("itemVideoBoitier", it.videoBoitier);
+    _setD("itemVideoEtatJaquette", it.videoEtatJaquette);
+    _setD("itemVideoRef", it.videoRef);
+    _setD("itemVideoBonus", it.videoBonus);
     // Pin's specific fields
     if(document.getElementById("itemPinsMarque")) document.getElementById("itemPinsMarque").value = it.pinsMarque||"";
     if(document.getElementById("itemPinsTheme"))  document.getElementById("itemPinsTheme").value  = it.pinsTheme||"";
@@ -9715,12 +9897,13 @@ function resetAuthorsScope(){ _authorsCollectedOnly = true; }
 // tirage d'art), sinon ceux de la collection.
 function _rolesFiche(){
   const cat = document.getElementById('itemCategory')?.value || '';
-  const arch = cat ? archetypeForCategory(cat) : null;
+  const coll = _collectionDeLaFiche(cat);
+  const arch = (cat || coll === 'dvd') ? _archetypeDansCollection(coll, cat) : null;
   if(arch && arch.roles) return arch.roles;
   // Vue agrégée « Ma Collection » : les rôles de la collection de la fiche
   // (déduite de sa catégorie, la BD par défaut), pas l'union de toutes —
   // sinon une BD se voyait proposer d'abord Chant, Mixage, Mastering…
-  if(isAllCollection()) return moduleById(_collPourNouvelleFiche(cat))?.roles || ROLES;
+  if(isAllCollection()) return moduleById(coll)?.roles || ROLES;
   return rolesActifs();
 }
 // Changement de catégorie : reconstruire le menu des rôles des lignes déjà
@@ -10142,6 +10325,22 @@ async function _saveItemCore(e){
     disqueLivret:       !!document.getElementById("itemDisqueLivret")?.checked,
     disqueLivretPages:  parseInt(document.getElementById("itemDisqueLivretPages")?.value)||null,
     disqueEncarts:      document.getElementById("itemDisqueEncarts")?.value.trim()||"",
+    // Film (collection DVD)
+    videoTitreOriginal: document.getElementById("itemVideoTitreOriginal")?.value.trim()||"",
+    videoAnneeFilm:     parseInt(document.getElementById("itemVideoAnneeFilm")?.value)||null,
+    videoDuree:         document.getElementById("itemVideoDuree")?.value.trim()||"",
+    videoGenre:         document.getElementById("itemVideoGenre")?.value.trim()||"",
+    videoEdition:       document.getElementById("itemVideoEdition")?.value.trim()||"",
+    videoNb:            parseInt(document.getElementById("itemVideoNb")?.value)||null,
+    videoZone:          document.getElementById("itemVideoZone")?.value.trim()||"",
+    videoFormatImage:   document.getElementById("itemVideoFormatImage")?.value||"",
+    videoStandard:      document.getElementById("itemVideoStandard")?.value||"",
+    videoLangues:       document.getElementById("itemVideoLangues")?.value.trim()||"",
+    videoSousTitres:    document.getElementById("itemVideoSousTitres")?.value.trim()||"",
+    videoBoitier:       document.getElementById("itemVideoBoitier")?.value||"",
+    videoEtatJaquette:  document.getElementById("itemVideoEtatJaquette")?.value||"",
+    videoRef:           document.getElementById("itemVideoRef")?.value.trim()||"",
+    videoBonus:         document.getElementById("itemVideoBonus")?.value.trim()||"",
     // Pin's specific fields
     pinsMarque:        document.getElementById("itemPinsMarque")?.value.trim()||"",
     pinsTheme:         document.getElementById("itemPinsTheme")?.value||"",
@@ -13303,7 +13502,7 @@ function _majFiltreGenre(){
   const selS   = document.getElementById('filterStyle');
   if(!champG || !selG || !champS || !selS) return;
   const disques = cache.items.filter(i=>itemInActiveCollection(i)
-    && archetypeForCategory(i.categorie).id === 'disque');
+    && archetypeForItem(i).id === 'disque');
   if(!disques.length){
     champG.style.display='none'; champS.style.display='none';
     selG.value=''; selS.value='';
@@ -13334,7 +13533,7 @@ function _majFiltreStyle(){
   const gid = selG.value;
   const vus = new Map();
   cache.items.filter(i=>itemInActiveCollection(i)
-      && archetypeForCategory(i.categorie).id === 'disque'
+      && archetypeForItem(i).id === 'disque'
       && (!gid || familleGenre(i.disqueGenre) === gid))
     .forEach(i=>stylesDeItem(i).forEach(v=>{ const k=v.toLowerCase(); if(!vus.has(k)) vus.set(k, v); }));
   const prev = selS.value;
@@ -13838,7 +14037,7 @@ function _majIconeNavCreateurs(){
   const b = document.getElementById('navAuthorsBtn');
   if(!b) return;
   b.dataset.icone = _activeCollection === 'pins' ? '🏷️'
-                  : (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : '✒️');
+                  : (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : _activeCollection === 'dvd' ? '🎬' : '✒️');
 }
 
 function libelleCreateurs(){
@@ -13877,7 +14076,7 @@ function interpreteAffiche(it){
 // concert) plutôt que l'année du pressage qu'on possède — un remaster de 1999
 // n'apprend rien sur l'œuvre. On retombe sur l'année d'édition si elle manque.
 function dateAffichee(it){
-  if(archetypeForCategory(it.categorie).id === 'disque' && it.disqueDateOrigine)
+  if(archetypeForItem(it).id === 'disque' && it.disqueDateOrigine)
     return { texte: it.disqueDateOrigine,
              titre: it.anneeEdition ? T(`Parution originale — pressage ${it.anneeEdition}`,
                                         `Original release — pressing ${it.anneeEdition}`)
@@ -13911,7 +14110,7 @@ function artistFlags(it){
 }
 // Quel drapeau montrer ? La langue pour un livre, le pays de l'artiste pour un disque.
 function _drapeauxItem(it){
-  if(archetypeForCategory(it.categorie).id === 'disque')
+  if(archetypeForItem(it).id === 'disque')
     return { flags: artistFlags(it), titre: itemNationalites(it).join(', ') };
   return { flags: langFlags(it), titre: itemLangues(it).join(', ') };
 }
@@ -14042,7 +14241,8 @@ const CROSS_ALIASES = {
   'pins':            ['pin','pins','broche','badge'],
   'cartes-postales': ['carte postale','cartes postales','postale','cpa'],
   'cartes-jouer':    ['carte a jouer','cartes a jouer','jeu de cartes','tarot'],
-  'vinyle-cd-dvd':   ['vinyl','vinyle','cd','dvd','disque','blu ray','bluray','33 tours','45 tours']
+  'vinyle-cd-dvd':   ['vinyl','vinyle','cd','disque','33 tours','45 tours'],
+  'dvd':             ['dvd','blu ray','bluray','4k','uhd','vhs','laserdisc','laser disc','hd dvd']
 };
 function _detectCrossCollection(label){
   const n = _normCat(label||'');
@@ -14061,6 +14261,10 @@ function _migrationCandidates(){
   const out = [];
   (cache.items||[]).forEach(it=>{
     const cur = it.collectionType||'bd';
+    // Conçu pour sortir des œuvres de la BD (il retire leur catégorie BD) : les
+    // DVD restés dans Vinyle / CD se déplaceront par un outil dédié, qui garde
+    // la catégorie et recopie les fiches des personnes liées.
+    if(cur !== 'bd') return;
     const labels = [it.categorie, ...(it.categoriesSecondaires||[])].filter(Boolean);
     for(const lbl of labels){
       const t = _detectCrossCollection(lbl);
@@ -14079,7 +14283,7 @@ function openMigrationAssistant(){ renderMigration(); openModal('migrationModal'
 function _genresAScinder(){
   const parLibelle = new Map();
   (cache.items||[]).forEach(it=>{
-    if(archetypeForCategory(it.categorie).id !== 'disque') return;
+    if(archetypeForItem(it).id !== 'disque') return;
     const brut = (it.disqueGenre||'').trim();
     if(!brut) return;
     const gid = familleGenre(brut);
@@ -14181,7 +14385,7 @@ function _pencheVersSoul(it){
 }
 function _disquesFunkSoul(){
   return (cache.items||[])
-    .filter(it => archetypeForCategory(it.categorie).id === 'disque' && _estAncienFunkSoul(it.disqueGenre))
+    .filter(it => archetypeForItem(it).id === 'disque' && _estAncienFunkSoul(it.disqueGenre))
     .map(it => ({
       id: it.id,
       titre: it.titre || T('(sans titre)','(untitled)'),
@@ -14368,7 +14572,7 @@ function _analyserMusiciens(texte, coll){
 function _groupesARepriser(){
   const parNom = new Map();
   cache.items.forEach(it=>{
-    if(archetypeForCategory(it.categorie).id !== 'disque') return;
+    if(archetypeForItem(it).id !== 'disque') return;
     const nom = (it.disqueGroupe||'').trim();
     if(!nom) return;
     if(groupeDeItem(it)) return;                 // déjà une fiche : rien à faire
@@ -14593,10 +14797,10 @@ async function applyEphRegroup(){
 // Candidats : albums (non-éphémères) avec i.exlibris coché et sans fiche ex-libris déjà rattachée.
 function _exlibrisConvertCandidates(){
   const linked = new Set(cache.items
-    .filter(i=>archetypeForCategory(i.categorie).id==='ephemere' && i.albumSourceId)
+    .filter(i=>archetypeForItem(i).id==='ephemere' && i.albumSourceId)
     .map(i=>i.albumSourceId));
   return cache.items.filter(i=>!!i.exlibris
-    && archetypeForCategory(i.categorie).id!=='ephemere'
+    && archetypeForItem(i).id!=='ephemere'
     && !linked.has(i.id));
 }
 function openExlibrisConversion(){
@@ -14823,6 +15027,7 @@ function applyFilters(){
         // dans la fiche du groupe. L'ancien texte libre reste interrogé pour
         // les albums que la reprise n'a pas encore traités.
         i.disqueGroupe, i.disqueMusiciens, i.disqueGenre, i.disqueStyle, i.disqueRemaster,
+        i.videoTitreOriginal, i.videoGenre, i.videoEdition,
         _membresPourRecherche(i),
         i._isWish ? i._wishAuteurs : (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).join(" ")
       ].join(" "));
@@ -14866,6 +15071,9 @@ function applyFilters(){
       case "annee_desc":      return (b.anneeEdition||0)-(a.anneeEdition||0) || (b.moisEdition||0)-(a.moisEdition||0) || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
       case "annee_asc":       return (a.anneeEdition||9999)-(b.anneeEdition||9999) || (a.moisEdition||0)-(b.moisEdition||0) || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
       case "acquisition_desc":return (b.dateAcquisition||"").localeCompare(a.dateAcquisition||"");
+      // Date de saisie dans l'application (createdAt), à ne pas confondre avec la date
+      // d'acquisition renseignée sur la fiche : les fiches les plus récemment créées d'abord.
+      case "ajout_desc":      return (b.createdAt||"").localeCompare(a.createdAt||"") || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
       case "cote_desc":       return (b.cote||0)-(a.cote||0);
       case "dessinateur":     return authorByRole(a,"Dessinateur").localeCompare(authorByRole(b,"Dessinateur"),"fr") || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
       case "scenariste":      return authorByRole(a,"Scénariste").localeCompare(authorByRole(b,"Scénariste"),"fr") || (a.titre||"").localeCompare(b.titre||"","fr",_CMP_NUM);
@@ -14996,7 +15204,7 @@ function applyFilters(){
             <td class="right"><button class="secondary" style="font-size:11px;padding:3px 8px" title="${T('Ajouter cette œuvre à ma collection','Add this work to my collection')}" onclick="event.stopPropagation();acquireWish('${i.id}')">➕ ${T('Ajouter','Add')}</button></td>
           </tr>`);
         } else {
-          const authors = (archetypeForCategory(i.categorie).id === 'disque'
+          const authors = (archetypeForItem(i).id === 'disque'
             ? [interpreteAffiche(i)].filter(Boolean)
             : (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2)
             ).map(a=>escapeHTML(a)).join("<br>");
@@ -15044,7 +15252,7 @@ function cardItemHTML(i, compact=false){
   const collectedAuthorName  = collectedAuthorEntry ? authorDisplay(authorById(collectedAuthorEntry.auteurId)) : null;
   const authors = isPins
     ? (i.pinsMarque || i.editeur || "—")
-    : (archetypeForCategory(i.categorie).id === 'disque'
+    : (archetypeForItem(i).id === 'disque'
         ? interpreteAffiche(i)
         : (i.auteurs||[]).map(a=>authorDisplay(authorById(a.auteurId))).filter(Boolean).slice(0,2).join(", "));
   // Auteurs hors auteur collectionné (évite de citer deux fois la vedette ⭐ sur la vignette)
@@ -15062,9 +15270,9 @@ function cardItemHTML(i, compact=false){
     if(i.dedicaceDessin) badgesBL.push(`<span class="badge-signed">${T('Déd. dessin','Ded. drawing')}</span>`);
     if(i.dedicaceTampon) badgesBL.push(`<span class="badge-signed">${T('Déd. tampon','Ded. stamp')}</span>`);
     // Album livré avec un ex-libris intégré (distinct des éphémères autonomes)
-    if(i.exlibris && archetypeForCategory(i.categorie).id!=='ephemere') badgesBL.push(`<span class="badge-xlibris" title="${T('Album livré avec un ex-libris intégré','Album delivered with an integrated ex-libris')}">🖼️ ${T('ex-libris','ex-libris')}</span>`);
+    if(i.exlibris && archetypeForItem(i).id!=='ephemere') badgesBL.push(`<span class="badge-xlibris" title="${T('Album livré avec un ex-libris intégré','Album delivered with an integrated ex-libris')}">🖼️ ${T('ex-libris','ex-libris')}</span>`);
     // Éphémère lui-même livré avec un album (distinct des éphémères vraiment indépendants)
-    if(archetypeForCategory(i.categorie).id==='ephemere' && (i.albumSourceId||i.albumSource)) badgesBL.push(`<span class="badge-xlibris" title="${T('Éphémère livré avec un album','Ephemera delivered with an album')}">📗 ${T('avec album','with album')}</span>`);
+    if(archetypeForItem(i).id==='ephemere' && (i.albumSourceId||i.albumSource)) badgesBL.push(`<span class="badge-xlibris" title="${T('Éphémère livré avec un album','Ephemera delivered with an album')}">📗 ${T('avec album','with album')}</span>`);
     // Prêté : mention visible (l'œuvre n'est physiquement plus là)
     if(estPrete(i)){
       const j = joursDePret(i), retard = pretEnRetard(i);
@@ -15097,7 +15305,7 @@ function cardItemHTML(i, compact=false){
   return `<div class="card${selClass}${_mCollIt?' card-coll':''}" role="button" tabindex="0" aria-label="${escapeHTML(i.titre||T('Sans titre','Untitled'))}" style="position:relative${_mCollIt?`;${_teinteCollection(_mCollIt)}`:''}" ${isCoverLocked ? adultClickHandler : clickHandler} oncontextmenu="showCardContextMenu(event,'${i.id}')">
     ${locateBtn}
     <div class="card-img${isCoverLocked?' card-img-adult':''}">
-      ${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}">`:(isPins?"📌":(archetypeForCategory(i.categorie).id==='disque'?"💿":"📖"))}
+      ${i.images?.[0]?`<img src="${_safeUrl(i.images[0])}">`:(isPins?"📌":(archetypeForItem(i).id==='disque'?"💿":archetypeForItem(i).id==='video'?"🎬":"📖"))}
       ${isCoverLocked?`<div class="adult-overlay"><span class="adult-lock-icon">🔒</span><span class="adult-badge">🔞 ADULTE</span></div>`:""}
       ${selCb}
       ${i.lu?(()=>{const _t=termesSuivi(i.categorie);return `<span class="card-lu" title="${escapeHTML(T(_t.fait.fr,_t.fait.en)+(i.dateLecture?` — ${i.dateLecture}`:''))}">${_t.icone}</span>`;})():""}
@@ -16763,7 +16971,7 @@ function _albumSourceCandidates(){
   const curId = document.getElementById('itemId')?.value || '';
   return cache.items.filter(x=>
     String(x.id)!==String(curId)
-    && archetypeForCategory(x.categorie).id!=='ephemere'
+    && archetypeForItem(x).id!=='ephemere'
     && (x.collectionType||'bd')===((_activeCollection===ALL_COLL?'bd':_activeCollection)||'bd')
   );
 }
@@ -16906,7 +17114,7 @@ function _attachedToLine(it){
 // --------- Detail views ---------
 // Vue détail dédiée aux éphémères — reprend la structure du prototype :
 // en-tête (visuel + type + créateur), puis Identité / bloc selon le type / Conservation.
-function _taDetailArch(it){ const a = archetypeForCategory(it.categorie).id; return (a==='affiche'||a==='estampe') ? a : null; }
+function _taDetailArch(it){ const a = archetypeForItem(it).id; return (a==='affiche'||a==='estampe') ? a : null; }
 function _taDetailHTML(it){
   if(!_taDetailArch(it)) return '';
   const L = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : '';
@@ -17102,13 +17310,13 @@ function renderItemDetail(id, pushHistory=true){
   const imgs = (it.images||[]);
   const imgNames = (it.imageNames||[]);
   // Éphémères : vue détail dédiée (façon prototype) au lieu de la mise en page album.
-  if(archetypeForCategory(it.categorie).id === 'ephemere'){
+  if(archetypeForItem(it).id === 'ephemere'){
     return renderEphemereDetail(it, imgs, imgNames, authors, pushHistory);
   }
   const isPortfolio = it.categorie === 'Portfolio';
   // Disque : mêmes panneaux que l'album, mais les lignes du support passent en tête
   // et les libellés d'édition parlent musique (Label, code-barres).
-  const isDisque = archetypeForCategory(it.categorie).id === 'disque';
+  const isDisque = archetypeForItem(it).id === 'disque';
   // Le groupe : sa fiche si elle existe (nom cliquable, nationalité et membres
   // lus dessus), sinon l'ancien texte libre de l'album, tel qu'il a été saisi.
   const _grp = isDisque ? groupeDeItem(it) : null;
@@ -17147,14 +17355,33 @@ function renderItemDetail(id, pushHistory=true){
    // Le troisième élément dit que la valeur est déjà du HTML sûr (un lien vers
    // la fiche du groupe) : elle a été échappée à la construction.
    .map(([l,v,brut])=>`<dt>${escapeHTML(l)}</dt><dd>${brut?String(v):escapeHTML(String(v))}</dd>`).join('');
+  const isFilm = archetypeForItem(it).id === 'video';
+  const filmDl = !isFilm ? '' : [
+    [T('Titre original','Original title'),        it.videoTitreOriginal],
+    [T('Année du film','Film year'),               it.videoAnneeFilm],
+    [T('Durée','Running time'),                    it.videoDuree],
+    [T('Genre','Genre'),                           it.videoGenre],
+    [T('Édition','Edition'),                       it.videoEdition],
+    [T('Disques / cassettes','Discs / tapes'),     it.videoNb],
+    [T('Zone','Region'),                           it.videoZone],
+    [T("Format d'image",'Picture format'),         it.videoFormatImage],
+    [T('Standard','Standard'),                     it.videoStandard],
+    [T('Langues audio','Audio languages'),         it.videoLangues],
+    [T('Sous-titres','Subtitles'),                 it.videoSousTitres],
+    [T('Conditionnement','Packaging'),             it.videoBoitier],
+    [T('État de la jaquette','Cover condition'),   it.videoEtatJaquette],
+    [T('Référence catalogue','Catalogue no.'),     it.videoRef],
+    [T('Bonus et suppléments','Extras'),           it.videoBonus],
+  ].filter(([,v])=>v!==null && v!==undefined && v!=='')
+   .map(([l,v])=>`<dt>${escapeHTML(l)}</dt><dd>${escapeHTML(String(v))}</dd>`).join('');
   const hasDiaporama = !!(it.diaporama ?? isPortfolio); // rétrocompat : Portfolio = diapo par défaut
   // Init carousel state si diaporama activé
   if(hasDiaporama){ _pcImgs = imgs; _pcNames = imgNames; _pcIdx = 0; }
 
   const infoMeta = `<span class="tag cat">${escapeHTML(it.categorie||"")}</span>${(!isDisque && TRADITIONS[it.tradition])?`<span class="tag" title="${T('Tradition','Tradition')}">${escapeHTML(traditionLibelle(it.tradition))}</span>`:""}${(it.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}${it.editionOriginale?`<span class="badge-eo">${_lang==='en'?'Original Edition':'Édition Originale'}</span>`:""}${_badgeRemasterHTML(it)}${it.signe?`<span class="badge-signed">${_lang==='en'?'Signed':'Signé'}</span>`:""}${(it.dedicaceSignature||it.dedicaceCheck)?`<span class="badge-signed">${_lang==='en'?'Dedication sig.':'Dédicace sig.'}</span>`:""}${it.dedicaceDessin?`<span class="badge-signed">${_lang==='en'?'Dedication draw.':'Dédicace dessin'}</span>`:""}`;
   const infoDl = `
-    ${disqueDl}
-    ${it.editeur?`<dt>${isDisque?T('Label','Label'):t('detail.publisher_label')}</dt><dd>${escapeHTML(it.editeur)}${it.collection?` — ${escapeHTML(it.collection)}`:""}</dd>`:""}
+    ${disqueDl}${filmDl}
+    ${it.editeur?`<dt>${isDisque?T('Label','Label'):isFilm?T('Éditeur vidéo','Video publisher'):t('detail.publisher_label')}</dt><dd>${escapeHTML(it.editeur)}${it.collection?` — ${escapeHTML(it.collection)}`:""}</dd>`:""}
     ${it.anneeEdition?`<dt>${t('detail.release_label')}</dt><dd>${it.moisEdition?t('month.'+it.moisEdition)+" ":""}${it.anneeEdition}</dd>`:""}
     ${itemLangues(it).length?`<dt>${t('detail.lang_label')}</dt><dd>${itemLangues(it).map(l=>{const f=languageFlag(l);return (f?f+' ':'')+escapeHTML(l)}).join(', ')}</dd>`:""}
     ${it.paysEdition?`<dt>${t('detail.country_label')}</dt><dd>${escapeHTML(it.paysEdition)}</dd>`:""}
@@ -18921,7 +19148,10 @@ function openAutofillModal(opts){
   _codeRecherche = '';
   // Annoncer la source réellement interrogée : un disque ne va pas chez les libraires.
   const hint = document.getElementById('autofillHint');
-  if(hint) hint.textContent = _rechercheDisque()
+  if(hint) hint.textContent = _rechercheFilm()
+    ? T("Pas encore de catalogue de films connecté : la recherche ouvre le web et DVDFr. Un code-barres saisi ici sera reporté sur la fiche.",
+        "No film catalogue connected yet: the search opens the web and DVDFr. A barcode typed here will be copied to the record.")
+    : _rechercheDisque()
     ? T("Code-barres (EAN) pour une correspondance exacte, ou « artiste titre » pour une recherche. Source : MusicBrainz, pochettes Cover Art Archive.",
         "Barcode (EAN) for an exact match, or “artist title” to search. Source: MusicBrainz, covers from the Cover Art Archive.")
     : T("ISBN pour une correspondance exacte, ou titre, auteur, ou les deux — « moebius arzak ». Sources : BnF (dépôt légal, remonte avant l'ISBN), Google Books, Open Library.",
@@ -18957,10 +19187,13 @@ async function autofillSearch(){
   // Un disque ne se cherche pas dans un catalogue de livres : on aiguille
   // vers MusicBrainz dès que la collection (ou la catégorie) est un disque.
   const disque = _rechercheDisque();
+  const film = _rechercheFilm();
 
   try {
     let results = [];
-    if(disque){
+    if(film){
+      results = [];   // aucun catalogue de films interrogé (voir _rechercheFilm)
+    } else if(disque){
       results = estCodeBarresDisque(cleanISBN)
         ? await fetchMusicBrainzBarcode(cleanISBN)
         : await fetchMusicBrainzTitre(query);
@@ -19004,14 +19237,18 @@ async function autofillSearch(){
         .replace(/'/g,'%27');   // l'apostrophe fermerait la chaîne du onclick
       el.innerHTML = `
         <div class="autofill-loading" style="text-align:left">
-          ${disque
+          ${film
+            ? T("Pas de catalogue de films connecté pour l'instant.","No film catalogue connected yet.")
+            : disque
             ? T("Aucun résultat dans MusicBrainz.","No results in MusicBrainz.")
             : T("Aucun résultat dans les catalogues (BnF, Google Books, Open Library).","No results in the catalogues (BnF, Google Books, Open Library).")}
           ${(isISBN && !disque)?`<div class="muted" style="font-size:12px;margin-top:6px">${T("Les catalogues couvrent mal la BD ancienne ou de petit éditeur.","Catalogues poorly cover older or small-publisher comics.")}</div>`:''}
           ${disque?`<div class="muted" style="font-size:12px;margin-top:6px">${T("MusicBrainz couvre bien les CD et vinyles, moins bien les DVD et les pressages confidentiels.","MusicBrainz covers CDs and vinyl well, DVDs and small pressings less so.")}</div>`:''}
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
             <button class="secondary" onclick="window.open('https://www.google.com/search?q=${q}','_blank','noopener')">🌐 ${T("Chercher sur le web","Search the web")}</button>
-            ${disque
+            ${film
+              ? `<button class="secondary" onclick="window.open('https://www.google.com/search?q=site%3Advdfr.com+${q}','_blank','noopener')">🎬 ${T("Chercher sur DVDFr","Search DVDFr")}</button>`
+              : disque
               ? `<button class="secondary" onclick="window.open('https://www.discogs.com/search/?q=${q}','_blank','noopener')">💿 ${T("Chercher sur Discogs","Search Discogs")}</button>`
               : `<button class="secondary" onclick="window.open('https://www.google.com/search?q=site%3Abedetheque.com+${q}','_blank','noopener')">📚 ${T("Chercher sur Bédéthèque","Search Bédéthèque")}</button>`}
           </div>
@@ -19174,7 +19411,14 @@ async function fetchMusicBrainzTitre(q){
 
 // La recherche doit-elle viser les disques plutôt que les livres ?
 // Deux indices : la collection active, et la catégorie déjà choisie dans la fiche.
+// Fiche de film (collection DVD) : aucun catalogue de films libre et sans clé
+// n'est branché pour l'instant ; on le dit, et on ouvre la recherche sur le web.
+function _rechercheFilm(){
+  const cat = document.getElementById('itemCategory')?.value || '';
+  return _archetypeDansCollection(_collectionDeLaFiche(cat), cat).id === 'video';
+}
 function _rechercheDisque(){
+  if(_rechercheFilm()) return false;
   if(_activeCollection === 'vinyle-cd-dvd') return true;
   const cat = document.getElementById('itemCategory')?.value || '';
   return archetypeForCategory(cat).id === 'disque';
@@ -20093,7 +20337,7 @@ function genreDeItem(it){
 
 // Couleur de tranche d'une œuvre : le genre pour un disque, la catégorie sinon.
 function itemSpineColor(it){
-  if(it && archetypeForCategory(it.categorie).id === 'disque'){
+  if(it && archetypeForItem(it).id === 'disque'){
     const c = couleurGenre(genreDeItem(it));
     if(c) return c;
     return "#8a7a6a";                            // disque sans genre : brun neutre
@@ -21732,8 +21976,10 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
     return `<div class="book-spine${_pret?' spine-pret':''}${_rgMoving.has(String(it.id))?' rg-move':''}" draggable="true"
         data-item-id="${it.id}" data-shelf-id="${escapeHTML(shelf.id)}"
         style="background:${color};width:${w}px;height:${h}px"
-        title="${title}${tomeInfo} (${archetypeForCategory(it.categorie).id==='disque'
+        title="${title}${tomeInfo} (${archetypeForItem(it).id==='disque'
             ? [it.disqueSupport, genreDeItem(it)].filter(Boolean).map(escapeHTML).join(' · ') || T("genre non renseigné","genre not set")
+            : archetypeForItem(it).id==='video'
+            ? [it.categorie, it.videoGenre].filter(Boolean).map(escapeHTML).join(' · ') || T("genre non renseigné","genre not set")
             : (it.nbPages?it.nbPages+"p":T("pages inconnues","unknown pages"))}${hcm?", "+hcm+" cm":""})${it.format?" — "+T("Format stocké:","Stored format:")+" "+escapeHTML(it.format):""}${_pretInfo} — ${T("glisser pour réordonner, double-clic pour ouvrir","drag to reorder, double-click to open")}"
         data-open-id="${it.id}">
       ${_pret?`<span class="spine-pret-mark">📤</span>`:''}
