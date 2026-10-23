@@ -2269,7 +2269,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
 <div id="app-wrapper">
 
 <header>
-  <h1>📚
+  <h1><span id="collectionIcon" aria-hidden="true">📚</span>
     <button type="button" id="collectionWord" class="collection-switcher" aria-haspopup="menu" aria-expanded="false" aria-label="Changer de collection" onclick="toggleCollectionPicker(event)" title="Changer de collection" data-en-title="Switch collection">
       <span id="collectionLabel">BD</span><span class="caret" aria-hidden="true">▾</span>
     </button>
@@ -4688,6 +4688,8 @@ function switchCollection(id, opts){
   localStorage.setItem('bdapp_collection', id);
   const ct = _collInfo(id);
   document.getElementById('collectionLabel').textContent = _modLabel(ct);
+  // L'icône de l'en-tête suit la collection, comme dans le menu déroulant.
+  const _ico = document.getElementById('collectionIcon'); if(_ico) _ico.textContent = ct.icon || '📚';
   document.getElementById('collectionPicker').classList.remove('open');
   document.getElementById('collectionPicker').style.display = 'none';
   const _cw = document.getElementById('collectionWord');
@@ -5574,6 +5576,8 @@ function _titreOnglet(ct){
 function initCollection(){
   const ct = _collInfo(_activeCollection);
   document.getElementById('collectionLabel').textContent = _modLabel(ct);
+  // L'icône de l'en-tête suit la collection, comme dans le menu déroulant.
+  const _ico = document.getElementById('collectionIcon'); if(_ico) _ico.textContent = ct.icon || '📚';
   document.body.classList.add('coll-'+_activeCollection);
   document.title = _titreOnglet(ct);
   _adaptCollectionLabels();
