@@ -608,16 +608,17 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   body.theme-light .card-edit-btn,body.theme-light .card-locate-btn,body.theme-light .fb-edit,body.theme-light .fb-manage{background:rgba(255,252,244,.88);color:var(--ink);border-color:rgba(0,0,0,.15)}
   .card-edit-btn:hover{background:var(--accent-bg);color:var(--on-accent);border-color:transparent}
   /* Adult content protection */
-  /* Flou des œuvres sensibles : flouté à l'intérieur, bords nets. Un flou CSS déborde
-     de l'image et la fond dans le décor ; on rogne donc 6 % de chaque côté (clip-path,
-     appliqué après le filtre) puis on agrandit d'autant (1/0,88) : même taille, bords francs. */
-  .card-img-adult img{filter:blur(6px);clip-path:inset(6%);transform:scale(1.136);transition:filter .3s}
+  /* Flou des œuvres sensibles : filtre SVG #flou-sensible (voir en tête de <body>). Contrairement
+     à blur() en CSS, il recopie les pixels du bord et s'arrête au cadre de l'image : l'intérieur
+     est flouté, les bords restent nets, et l'image garde exactement sa taille et son cadrage. */
+  /* Sans ombre portée : Chromium l'inclut dans la zone du filtre et la floute avec l'image. */
+  .card-img-adult img{filter:url(#flou-sensible);box-shadow:none}
   .card-img-adult .adult-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;z-index:3;pointer-events:none}
   .adult-lock-icon{font-size:22px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))}
   .adult-badge{background:rgba(160,20,20,.85);color:#fff;font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:999px;backdrop-filter:blur(4px)}
   /* Detail view adult lock */
   .adult-img-wrap{position:relative;display:inline-block}
-  .adult-img-wrap img{filter:blur(8px);clip-path:inset(6%);transform:scale(1.136)}
+  .adult-img-wrap img{filter:url(#flou-sensible-fort);box-shadow:none}
   .adult-unlock-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.35);border-radius:var(--radius);cursor:pointer}
   .adult-unlock-overlay span{font-size:32px}
   .adult-unlock-overlay button{font-size:13px;padding:6px 16px}
@@ -2275,6 +2276,19 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
 
 <!-- ══ APP ══ -->
 <div id="app-wrapper">
+<!-- Filtres de flou des œuvres sensibles. La zone du filtre (x/y/width/height) est exactement celle
+     de l'image : rien ne déborde. Le flou rend semi-transparents les pixels proches du bord (ils se
+     mélangent au vide extérieur) : feFuncA leur rend leur opacité, d'où des bords nets, sans rognage
+     ni agrandissement. Le seuil (0 → 1 entre 0 et 10 % d'opacité) garde transparentes les zones
+     réellement transparentes d'une image détourée. edgeMode="duplicate" fait de même sous Safari. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <filter id="flou-sensible" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+    <feGaussianBlur stdDeviation="6" edgeMode="duplicate"/>
+    <feComponentTransfer><feFuncA type="table" tableValues="0 1 1 1 1 1 1 1 1 1 1"/></feComponentTransfer></filter>
+  <filter id="flou-sensible-fort" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+    <feGaussianBlur stdDeviation="8" edgeMode="duplicate"/>
+    <feComponentTransfer><feFuncA type="table" tableValues="0 1 1 1 1 1 1 1 1 1 1"/></feComponentTransfer></filter>
+</svg>
 
 <header>
   <h1><span id="collectionIcon" aria-hidden="true">📚</span>
@@ -17434,7 +17448,7 @@ function renderItemDetail(id, pushHistory=true){
         }${imgs[0]
           ? (adultLocked /* cover locked */
             ? `<div class="adult-img-wrap" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">
-                 <img src="${_safeUrl(imgs[0])}" style="max-width:100%;max-height:100%;object-fit:contain;filter:blur(8px);clip-path:inset(6%);transform:scale(1.136)">
+                 <img src="${_safeUrl(imgs[0])}" style="max-width:100%;max-height:100%;object-fit:contain;filter:url(#flou-sensible-fort);box-shadow:none">
                  <div class="adult-unlock-overlay" onclick="requireAdultPin(()=>renderItemDetail('${it.id}',false))">
                    <span>🔒</span>
                    <span style="font-size:13px;color:#fff;font-weight:600">${_lang==='en'?'Protected content':'Contenu protégé'}</span>
