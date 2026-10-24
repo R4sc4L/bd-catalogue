@@ -11447,8 +11447,8 @@ function _ouvrirRecadrage(source){
     </div>`;
   st.ov.querySelector('#poActions').innerHTML = `
     <span class="muted" style="font-size:12px" id="poAide">${T(
-      'Faites glisser les quatre coins sur ceux de la couverture ; double-cliquez pour valider.',
-      'Drag the four corners onto the corners of the cover; double-click to confirm.')}</span>
+      'Faites glisser les quatre coins sur ceux de la couverture, ou un côté entier pour déplacer ses deux coins ; double-cliquez pour valider.',
+      'Drag the four corners onto the corners of the cover, or a whole side to move both its corners; double-click to confirm.')}</span>
     <span class="po-groupe">
     <button type="button" class="secondary po-ico" aria-label="${T('Un quart de tour à gauche','Quarter turn left')}" title="${T('Un quart de tour à gauche','Quarter turn left')}" onclick="_photoPivoter(-1)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-rot-gauche"></use></svg></button>
     <button type="button" class="secondary po-ico" aria-label="${T('Un quart de tour à droite','Quarter turn right')}" title="${T('Un quart de tour à droite','Quarter turn right')}" onclick="_photoPivoter(1)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-rot-droite"></use></svg></button>
@@ -11906,6 +11906,50 @@ function _tracerCadreTirets(ctx, q){
   ctx.restore();
 }
 
+// ── Saisie dans le cadre : un coin, ou un côté entier ─────────────────────
+// Un coin l'emporte sur un côté (il est au bout de deux côtés). Côté i : de
+// quad[i] à quad[(i+1)%4]. Les seuils sont en pixels de l'image d'origine.
+function _distSegment(px, py, [ax,ay], [bx,by]){
+  const dx = bx-ax, dy = by-ay, l2 = dx*dx + dy*dy;
+  const t = l2 ? Math.max(0, Math.min(1, ((px-ax)*dx + (py-ay)*dy) / l2)) : 0;
+  return Math.hypot(px - (ax + t*dx), py - (ay + t*dy));
+}
+function _cadreCible(quad, x, y, seuilCoin, seuilCote){
+  let ci = -1, dmin = Infinity;
+  quad.forEach(([qx,qy], i)=>{ const d = Math.hypot(qx-x, qy-y); if(d < dmin){ dmin = d; ci = i; } });
+  if(dmin <= seuilCoin) return { type:'coin', i:ci };
+  let ki = -1, dk = Infinity;
+  for(let i=0; i<4; i++){ const d = _distSegment(x, y, quad[i], quad[(i+1)%4]); if(d < dk){ dk = d; ki = i; } }
+  return dk <= seuilCote ? { type:'cote', i:ki } : null;
+}
+// Curseur au survol : une double flèche perpendiculaire au côté (le sens dans
+// lequel il se déplace), « move » sur un coin, celui de la toile ailleurs.
+function _cadreCurseur(quad, cible){
+  if(!cible) return '';
+  if(cible.type === 'coin') return 'move';
+  const a = quad[cible.i], b = quad[(cible.i+1)%4];
+  const ang = ((Math.atan2(b[1]-a[1], b[0]-a[0]) * 180/Math.PI) % 180 + 180) % 180;   // 0–180°, y vers le bas
+  if(ang < 22.5 || ang >= 157.5) return 'ns-resize';     // côté horizontal → flèche verticale
+  if(ang < 67.5)                 return 'nesw-resize';   // côté « \ » → flèche « / »
+  if(ang < 112.5)                return 'ew-resize';     // côté vertical → flèche horizontale
+  return 'nwse-resize';                                  // côté « / » → flèche « \ »
+}
+// Glisser un côté : ses deux coins se déplacent ensemble, perpendiculairement
+// au côté (le sens de la flèche), sans sortir de l'image.
+function _coteSaisi(quad, i, x, y){
+  const j = (i+1)%4, a = quad[i], b = quad[j];
+  const dx = b[0]-a[0], dy = b[1]-a[1], L = Math.hypot(dx, dy) || 1;
+  return { i, j, x0:x, y0:y, a:[...a], b:[...b], n:[-dy/L, dx/L] };
+}
+function _coteDeplacer(quad, c, x, y, W, H){
+  const p = (x - c.x0)*c.n[0] + (y - c.y0)*c.n[1];
+  let dx = p*c.n[0], dy = p*c.n[1];
+  dx = Math.max(-Math.min(c.a[0], c.b[0]), Math.min(W - Math.max(c.a[0], c.b[0]), dx));
+  dy = Math.max(-Math.min(c.a[1], c.b[1]), Math.min(H - Math.max(c.a[1], c.b[1]), dy));
+  quad[c.i] = [c.a[0]+dx, c.a[1]+dy];
+  quad[c.j] = [c.b[0]+dx, c.b[1]+dy];
+}
+
 function _photoApercu(){
   const st = _photoState;
   const cv = st?.ov?.querySelector('#poPreview');
@@ -11926,7 +11970,7 @@ function _photoApercu(){
 
 function _photoBrancherPoignees(cv){
   const st = _photoState;
-  let saisi = -1;
+  let saisi = -1, cote = null;
   const versImage = ev => {
     const r = cv.getBoundingClientRect();
     // La toile est mise à l'échelle par le CSS : on ramène d'abord aux pixels
@@ -11936,22 +11980,20 @@ function _photoBrancherPoignees(cv){
   };
   cv.addEventListener('pointerdown', ev=>{
     const [x,y] = versImage(ev);
-    const seuil = 26 / st.echelle;
-    let meilleur = -1, dmin = Infinity;
-    st.quad.forEach(([qx,qy], i)=>{
-      const d = Math.hypot(qx-x, qy-y);
-      if(d < dmin){ dmin = d; meilleur = i; }
-    });
-    if(dmin <= seuil){ saisi = meilleur; cv.setPointerCapture(ev.pointerId); ev.preventDefault(); }
+    const c = _cadreCible(st.quad, x, y, 26 / st.echelle, 14 / st.echelle);
+    if(!c) return;
+    if(c.type === 'coin') saisi = c.i; else cote = _coteSaisi(st.quad, c.i, x, y);
+    cv.setPointerCapture(ev.pointerId); ev.preventDefault();
   });
   cv.addEventListener('pointermove', ev=>{
-    if(saisi < 0) return;
     const [x,y] = versImage(ev);
+    if(cote){ _coteDeplacer(st.quad, cote, x, y, st.source.width, st.source.height); _photoDessiner(); return; }
+    if(saisi < 0){ cv.style.cursor = _cadreCurseur(st.quad, _cadreCible(st.quad, x, y, 26 / st.echelle, 14 / st.echelle)); return; }
     st.quad[saisi] = [ Math.max(0, Math.min(st.source.width,  x)),
                        Math.max(0, Math.min(st.source.height, y)) ];
     _photoDessiner();
   });
-  const fin = ev=>{ if(saisi<0) return; saisi = -1; try{ cv.releasePointerCapture(ev.pointerId); }catch(e){} };
+  const fin = ev=>{ if(saisi<0 && !cote) return; saisi = -1; cote = null; try{ cv.releasePointerCapture(ev.pointerId); }catch(e){} };
   cv.addEventListener('pointerup', fin);
   cv.addEventListener('pointercancel', fin);
   // Comme dans Photoshop : un double-clic dans l'image valide le redressement.
@@ -12268,8 +12310,8 @@ async function ouvrirEditeurImage(src, opts){
           ${_eiCurseurHTML('sat',    T('Saturation','Saturation'), 100)}
         </div>
         <div class="ei-conseils">${T(
-          'Posez les quatre coins sur ceux de la couverture. Le cadre peut rester droit pour un simple recadrage ; incliné, il redresse la perspective. Un double-clic dans l’image valide.',
-          'Put the four corners on those of the cover. Keep the frame straight for a plain crop; tilt it to fix perspective. Double-click the image to confirm.')}</div>
+          'Posez les quatre coins sur ceux de la couverture, ou faites glisser un côté pour déplacer ses deux coins à la fois. Le cadre peut rester droit pour un simple recadrage ; incliné, il redresse la perspective. Un double-clic dans l’image valide.',
+          'Put the four corners on those of the cover, or drag a side to move both its corners at once. Keep the frame straight for a plain crop; tilt it to fix perspective. Double-click the image to confirm.')}</div>
       </div>
     </div>
     <div class="ei-bar">
@@ -12446,7 +12488,7 @@ function _eiApercu(){
 
 function _eiBrancher(){
   const st = _eiState, cv = st.canvas;
-  let saisi = -1;
+  let saisi = -1, cote = null;
   const versImage = ev => {
     const r = cv.getBoundingClientRect();
     return [ (ev.clientX - r.left) * (cv.width / r.width)  / st.echelle,
@@ -12455,20 +12497,21 @@ function _eiBrancher(){
   cv.addEventListener('pointerdown', ev=>{
     const [x,y] = versImage(ev);
     if(st.pipette){ ev.preventDefault(); _eiBalanceDepuis(x, y); return; }
-    const seuil = 30 / st.echelle;
-    let meilleur=-1, dmin=Infinity;
-    st.quad.forEach(([qx,qy],i)=>{ const d=Math.hypot(qx-x,qy-y); if(d<dmin){dmin=d;meilleur=i;} });
-    if(dmin <= seuil){ saisi = meilleur; cv.setPointerCapture(ev.pointerId); ev.preventDefault(); }
+    const c = _cadreCible(st.quad, x, y, 30 / st.echelle, 14 / st.echelle);
+    if(!c) return;
+    if(c.type === 'coin') saisi = c.i; else cote = _coteSaisi(st.quad, c.i, x, y);
+    cv.setPointerCapture(ev.pointerId); ev.preventDefault();
   });
   cv.addEventListener('pointermove', ev=>{
     if(st.pipette){ const [x,y] = versImage(ev); _eiLire(x, y, ev); return; }
-    if(saisi<0) return;
     const [x,y] = versImage(ev);
+    if(cote){ _coteDeplacer(st.quad, cote, x, y, st.source.width, st.source.height); _eiDessiner(); return; }
+    if(saisi<0){ cv.style.cursor = _cadreCurseur(st.quad, _cadreCible(st.quad, x, y, 30 / st.echelle, 14 / st.echelle)); return; }
     st.quad[saisi] = [ Math.max(0, Math.min(st.source.width, x)), Math.max(0, Math.min(st.source.height, y)) ];
     _eiDessiner();
   });
   cv.addEventListener('pointerleave', ()=>{ const l = st.ov.querySelector('#eiLecture'); if(l) l.style.display = 'none'; });
-  const fin = ev=>{ if(saisi<0) return; saisi=-1; try{ cv.releasePointerCapture(ev.pointerId); }catch(e){} };
+  const fin = ev=>{ if(saisi<0 && !cote) return; saisi=-1; cote=null; try{ cv.releasePointerCapture(ev.pointerId); }catch(e){} };
   cv.addEventListener('pointerup', fin);
   cv.addEventListener('pointercancel', fin);
   // Comme dans Photoshop : un double-clic dans l'image valide le recadrage.
