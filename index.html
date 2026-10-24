@@ -11883,17 +11883,27 @@ function _photoDessiner(){
   ctx.fillStyle = 'rgba(0,0,0,.55)';
   ctx.fill('evenodd');
   ctx.restore();
-  ctx.beginPath();
-  ctx.moveTo(q[0][0], q[0][1]);
-  for(let i=1; i<4; i++) ctx.lineTo(q[i][0], q[i][1]);
-  ctx.closePath();
-  ctx.strokeStyle = '#e2b86a'; ctx.lineWidth = 2; ctx.stroke();
+  _tracerCadreTirets(ctx, q);
   q.forEach(([x,y])=>{
     ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI*2);
     ctx.fillStyle = 'rgba(226,184,106,.9)'; ctx.fill();
     ctx.strokeStyle = '#1a1927'; ctx.lineWidth = 2; ctx.stroke();
   });
   _photoApercu();
+}
+
+// Contour du cadre de recadrage : des tirets courts, et non un trait plein, pour voir
+// l'image entre eux pendant qu'on aligne le cadre sur un bord. Chaque tiret est
+// doublé d'un liseré sombre (lisible sur un papier blanc comme sur un fond noir) ;
+// les intervalles restent entièrement transparents.
+function _tracerCadreTirets(ctx, q){
+  const chemin = () => { ctx.beginPath(); ctx.moveTo(q[0][0],q[0][1]); for(let i=1;i<4;i++) ctx.lineTo(q[i][0],q[i][1]); ctx.closePath(); };
+  const tirets = [9, 7];
+  ctx.save();
+  ctx.setLineDash(tirets); ctx.lineCap = 'butt';
+  chemin(); ctx.strokeStyle = 'rgba(20,18,28,.75)'; ctx.lineWidth = 3.5; ctx.stroke();
+  chemin(); ctx.strokeStyle = '#e2b86a'; ctx.lineWidth = 1.6; ctx.stroke();
+  ctx.restore();
 }
 
 function _photoApercu(){
@@ -12402,8 +12412,7 @@ function _eiDessiner(){
   ctx.beginPath(); ctx.rect(0,0,cv.width,cv.height);
   ctx.moveTo(q[0][0],q[0][1]); for(let i=3;i>=1;i--) ctx.lineTo(q[i][0],q[i][1]); ctx.closePath();
   ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fill('evenodd'); ctx.restore();
-  ctx.beginPath(); ctx.moveTo(q[0][0],q[0][1]); for(let i=1;i<4;i++) ctx.lineTo(q[i][0],q[i][1]); ctx.closePath();
-  ctx.strokeStyle='#e2b86a'; ctx.lineWidth=2; ctx.stroke();
+  _tracerCadreTirets(ctx, q);
   // Un repère discret sur le coin haut-gauche : c'est lui qui décide de
   // l'orientation du résultat, et les boutons de pivot le font tourner.
   q.forEach(([x,y],i)=>{
