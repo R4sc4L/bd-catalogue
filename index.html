@@ -3081,11 +3081,11 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div><label data-en="Copy number">N° d'exemplaire</label><input type="text" id="itemCopyNumber" placeholder="ex: 42/500"></div>
             <div><label data-en="Print run annotations">Annotations de tirage</label><input type="text" id="itemTirageAnnotations" placeholder="ex: Numérotation au stylo, papier vélin…" data-en-ph="e.g. Pen numbering, vellum paper…"></div>
             <div class="checkbox-row"><input type="checkbox" id="itemSigned"><label for="itemSigned" style="margin:0" data-en="Signed">Signé</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="itemSignaturePlanche"><label for="itemSignaturePlanche" style="margin:0" title="Signature intégrée au dessin imprimé, et non ajoutée à la main" data-en-title="Signature printed within the artwork, not added by hand" data-en="Signature in the artwork">Signature dans la planche</label></div>
+            <div class="checkbox-row" id="champTamponSec" style="visibility:hidden"><input type="checkbox" id="itemTamponSec"><label for="itemTamponSec" style="margin:0" title="Empreinte en relief, sans encre, de l'éditeur ou de l'atelier (aussi appelée cachet sec ou timbre sec)" data-en-title="Inkless relief mark of the publisher or workshop" data-en="Blind stamp">Tampon à sec (cachet sec)</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="itemDedicaceTampon"><label for="itemDedicaceTampon" style="margin:0" data-en="Dedication (stamp)">Dédicace (tampon)</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemDedicaceSignature"><label for="itemDedicaceSignature" style="margin:0" data-en="Dedication (signature)">Dédicace (signature)</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemDedicaceDessin"><label for="itemDedicaceDessin" style="margin:0" data-en="Dedication (drawing)">Dédicace (dessin)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="itemDedicaceTampon"><label for="itemDedicaceTampon" style="margin:0" data-en="Dedication (stamp)">Dédicace (tampon)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="itemSignaturePlanche"><label for="itemSignaturePlanche" style="margin:0" title="Signature intégrée au dessin imprimé, et non ajoutée à la main" data-en-title="Signature printed within the artwork, not added by hand" data-en="Signature in the artwork">Signature dans la planche</label></div>
-            <div class="checkbox-row" id="champTamponSec" style="display:none"><input type="checkbox" id="itemTamponSec"><label for="itemTamponSec" style="margin:0" title="Empreinte en relief, sans encre, de l'éditeur ou de l'atelier (aussi appelée cachet sec ou timbre sec)" data-en-title="Inkless relief mark of the publisher or workshop" data-en="Blind stamp">Tampon à sec (cachet sec)</label></div>
             <div class="span-3"><label data-en="Dedication / inscription details">Détail de la dédicace / mention</label><input type="text" id="itemDedication" placeholder="ex: Dessin original en noir, ex-libris numéroté…" data-en-ph="e.g. Original drawing in black, numbered ex-libris…"></div>
           </div>
         </div>
@@ -5211,7 +5211,7 @@ function adaptEphemereType(type){
   const sig  = document.getElementById('formSection-signatures');
   if(sig && form?.classList.contains('eph-simple')) sig.style.display = '';
   const tsChamp = document.getElementById('champTamponSec');
-  if(tsChamp) tsChamp.style.display = (fam && fam.id === 'estampe') ? '' : 'none';
+  if(tsChamp) tsChamp.style.visibility = (fam && fam.id === 'estampe') ? 'visible' : 'hidden';
   // Rappel de la famille à côté du type
   const hint = document.getElementById('ephFamilyHint');
   if(hint) hint.textContent = fam ? `${fam.icon} ${_modLabelEph(fam)}` : '';
@@ -5332,7 +5332,8 @@ function applyArchetype(arch){
   // les estampes (ex-libris, sérigraphie…). La fiche Tirage d'art a son propre
   // « Cachet sec » : même donnée (cachetSec), pas de doublon à l'écran.
   const tsChamp = document.getElementById('champTamponSec');
-  if(tsChamp && arch.id !== 'ephemere') tsChamp.style.display = 'none';
+  // visibility (et non display) : la case garde sa place, l'alignement des deux lignes ne bouge pas.
+  if(tsChamp && arch.id !== 'ephemere') tsChamp.style.visibility = 'hidden';
   const rattSec = document.getElementById('formSection-rattachement');
   if(rattSec) rattSec.style.display = ['ephemere','affiche','estampe'].includes(arch.id) ? '' : 'none';
   _majLienFiche();
