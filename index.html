@@ -782,6 +782,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   svg .lx-cuir-t{fill:#7d3f21} svg .lx-cuir-h{fill:#663219} svg .lx-cuir-s{fill:#522811}
   svg .lx-tex-toile{fill:url(#lxToile);stroke:none} svg .lx-tex-grain{fill:url(#lxGrain);stroke:none}
   svg .lx-illu{fill:#3f7a8c;stroke:none}
+.lx-vign-papier{fill:#f1ece2;stroke:none}.lx-vign-ombre{fill:#000;fill-opacity:.35;stroke:none}.lx-vign-motif{fill:#e2b86a;fill-opacity:.85;stroke:none}
   svg .lx-vernis{fill:url(#lxReflet);stroke:#fff;stroke-opacity:.75;stroke-width:.45}
   svg .lx-titre-mat{fill:#2c2016;fill-opacity:.8;font-family:Georgia,serif;font-weight:700;letter-spacing:.5px}
   svg .lx-nerf{fill:none;stroke:#3b1c0c;stroke-width:2.8;stroke-linecap:round}
@@ -3084,6 +3085,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div class="checkbox-row"><input type="checkbox" id="itemDedicaceDessin"><label for="itemDedicaceDessin" style="margin:0" data-en="Dedication (drawing)">Dédicace (dessin)</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemDedicaceTampon"><label for="itemDedicaceTampon" style="margin:0" data-en="Dedication (stamp)">Dédicace (tampon)</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemSignaturePlanche"><label for="itemSignaturePlanche" style="margin:0" title="Signature intégrée au dessin imprimé, et non ajoutée à la main" data-en-title="Signature printed within the artwork, not added by hand" data-en="Signature in the artwork">Signature dans la planche</label></div>
+            <div class="checkbox-row" id="champTamponSec" style="display:none"><input type="checkbox" id="itemTamponSec"><label for="itemTamponSec" style="margin:0" title="Empreinte en relief, sans encre, de l'éditeur ou de l'atelier (aussi appelée cachet sec ou timbre sec)" data-en-title="Inkless relief mark of the publisher or workshop" data-en="Blind stamp">Tampon à sec (cachet sec)</label></div>
             <div class="span-3"><label data-en="Dedication / inscription details">Détail de la dédicace / mention</label><input type="text" id="itemDedication" placeholder="ex: Dessin original en noir, ex-libris numéroté…" data-en-ph="e.g. Original drawing in black, numbered ex-libris…"></div>
           </div>
         </div>
@@ -3213,6 +3215,8 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <div class="checkbox-row"><input type="checkbox" id="itemCuirImitation"><label for="itemCuirImitation" style="margin:0" data-en="Leather or imitation">Cuir ou imitation</label></div>
                 <div class="checkbox-row"><input type="checkbox" id="itemMarquageChaud"><label for="itemMarquageChaud" style="margin:0" data-en="Hot foil stamping (Gold/Silver)">Marquage à chaud (Or/Argent)</label></div>
                 <div class="checkbox-row"><input type="checkbox" id="itemEmbossageFroid"><label for="itemEmbossageFroid" style="margin:0" title="Relief obtenu par pression, sans encre ni feuille métallique" data-en-title="Relief pressed into the board, without ink or foil" data-en="Blind embossing">Embossage à froid</label></div>
+                <div class="checkbox-row"><input type="checkbox" id="itemVignetteContrecollee" onchange="if(!this.checked) document.getElementById('itemVignetteCuvette').checked=false"><label for="itemVignetteContrecollee" style="margin:0" title="Illustration imprimée à part et collée sur le premier plat" data-en-title="Illustration printed separately and glued onto the front board" data-en="Tipped-on plate">Vignette contrecollée</label>
+                  <input type="checkbox" id="itemVignetteCuvette" style="margin-left:8px" onchange="if(this.checked) document.getElementById('itemVignetteContrecollee').checked=true"><label for="itemVignetteCuvette" style="margin:0;font-size:12px;color:var(--ink-soft)" title="Logée dans un creux pressé dans le carton, elle affleure à la surface" data-en-title="Set into a pressed recess in the board, flush with the surface" data-en="in a sunken panel">en cuvette</label></div>
                 <div class="checkbox-row"><input type="checkbox" id="itemRhodoid"><label for="itemRhodoid" style="margin:0" title="Film plastique transparent protégeant la couverture" data-en-title="Clear plastic film protecting the cover" data-en="Rhodoid (clear cover)">Rhodoïd</label></div>
               </div>
             </div>
@@ -5206,6 +5210,8 @@ function adaptEphemereType(type){
   const form = document.getElementById('itemForm');
   const sig  = document.getElementById('formSection-signatures');
   if(sig && form?.classList.contains('eph-simple')) sig.style.display = '';
+  const tsChamp = document.getElementById('champTamponSec');
+  if(tsChamp) tsChamp.style.display = (fam && fam.id === 'estampe') ? '' : 'none';
   // Rappel de la famille à côté du type
   const hint = document.getElementById('ephFamilyHint');
   if(hint) hint.textContent = fam ? `${fam.icon} ${_modLabelEph(fam)}` : '';
@@ -5322,6 +5328,11 @@ function applyArchetype(arch){
   // « Rattachement à un album » : n'a de sens que pour ce qui accompagne un album
   // (éphémère, affiche ou poster, sérigraphie et autres tirages d'art), pas pour
   // l'album lui-même. Masquée ailleurs ; les valeurs déjà saisies sont conservées.
+  // « Tampon à sec » : masqué hors éphémère ; adaptEphemereType le montre pour
+  // les estampes (ex-libris, sérigraphie…). La fiche Tirage d'art a son propre
+  // « Cachet sec » : même donnée (cachetSec), pas de doublon à l'écran.
+  const tsChamp = document.getElementById('champTamponSec');
+  if(tsChamp && arch.id !== 'ephemere') tsChamp.style.display = 'none';
   const rattSec = document.getElementById('formSection-rattachement');
   if(rattSec) rattSec.style.display = ['ephemere','affiche','estampe'].includes(arch.id) ? '' : 'none';
   _majLienFiche();
@@ -6078,6 +6089,19 @@ function _l3Embossage(){
   s += relief((dec, cls) => `<g transform="${dec}">${_cadreCouv(12,62,W-8,100,H,cls + ' lx-emb-cadre')}</g>`);
   return s;
 }
+// Vignette contrecollée : une illustration sur papier collée sur un plat toilé,
+// encadrée d'un filet doré. Son ombre dit la petite surépaisseur du papier.
+function _l3Vignette(){
+  const {W,L} = _L3B, {b,TB} = _LXF, H = 2*b + TB;
+  let s = _l3Habille({plat:'toile', dos:'toile', tex:'toile'});
+  s += `<g class="lx-or">${_cadreCouv(12,10,W-7,86,H+.15,'lx-filet-or')}</g>`;
+  s += _cadreCouv(17.2,15.2,W-10.8,82.2,H+.05,'lx-vign-ombre')
+     + _cadreCouv(16,14,W-12,81,H+.6,'lx-vign-papier')
+     + _cadreCouv(19,17,W-15,78,H+.62,'lx-illu')
+     + _disqueCouv(46,40,9,H+.64,'lx-vign-motif');
+  s += _texteCouv(T('TITRE','TITLE'), 50, 104, H+.15, 14, 'lx-or-texte');
+  return s;
+}
 function _l3Rhodoid(){
   const {W,L} = _L3B, {b,TB} = _LXF, H = 2*b + TB;
   let s = _l3Habille();
@@ -6120,6 +6144,11 @@ function _lxfEntrees(){
             `A relief pressed into the cover with no ink or foil: the design is raised (or sunk, for debossing) in the cover's own colour. It shows in raking light.`),
       repere:T(`titres en relief, logos d'éditeur, tirages limités.`,`raised titles, publisher logos, limited editions.`),
       dessin: _l3Embossage() + _l3Rep([40,80,H],24,22,T(`relief sans encre`,`relief, no ink`)) + _l3Rep([80,64,H],200,16,T(`cadre en relief`,`raised frame`)) },
+    { nom:T(`Vignette contrecollée`,`Tipped-on plate`),
+      def:T(`Une illustration imprimée à part, sur papier, puis collée sur le premier plat d'une couverture en toile ou en cuir. Posée à plat, elle forme une légère surépaisseur ; logée dans un creux pressé dans le carton (« en cuvette »), elle affleure à la surface. Un filet doré l'encadre souvent.`,
+            `An illustration printed separately on paper and glued onto the front board of a cloth or leather cover. Laid flat, it sits slightly proud; set into a recess pressed into the board (a "sunken panel"), it lies flush. A gilt rule often frames it.`),
+      repere:T(`éditions toilées de prestige, portfolios, intégrales anciennes.`,`prestige cloth editions, portfolios, older omnibus editions.`),
+      dessin: _l3Vignette() + _l3Rep([60,30,_LXF.b*2+_LXF.TB+.62],150,16,T(`vignette contrecollée`,`tipped-on plate`)) + _l3Rep([12,70,_LXF.b*2+_LXF.TB],24,152,T(`filet doré d'encadrement`,`gilt frame rule`)) },
     { nom:T(`Rhodoïd`,`Rhodoid (clear cover)`),
       def:T(`Une feuille de plastique transparent enveloppe la couverture et se rabat à l'intérieur des plats. Elle protège de l'usure et des taches tout en laissant voir le décor.`,
             `A clear plastic sheet wraps the cover and folds inside the boards. It protects against wear and stains while leaving the design visible.`),
@@ -7842,7 +7871,7 @@ const SB = (() => {
   // ── Constantes de mapping (identiques à l'outil de migration) ────
   const CARACT_KEYS = ['broche','relie','relieTranchefile','dosAgrafe','dosSpiral','couvertureSouple','couvertureCartonnee',
     'rabats','aLaSuisse','bradel','cousu','dosCarreColle','anneaux','formatCarre','formatFrancaise','formatItalienne','formatManga','formatComics',
-    'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','embossageFroid','rhodoid','bandeau','rubanMarquePage',
+    'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','embossageFroid','vignetteContrecollee','vignetteCuvette','rhodoid','bandeau','rubanMarquePage',
     'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
     'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite','emboitageEmbossageFroid',
     'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche',
@@ -9741,6 +9770,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemDedicaceSignature").checked = !!(it.dedicaceSignature ?? it.dedicaceCheck);
     document.getElementById("itemDedicaceDessin").checked = !!it.dedicaceDessin;
     document.getElementById("itemDedicaceTampon").checked = !!it.dedicaceTampon;
+    document.getElementById("itemTamponSec").checked = !!it.cachetSec;
     document.getElementById("itemSignaturePlanche").checked = !!it.signaturePlanche;
     document.getElementById("itemExlibris").checked = !!it.exlibris;
     document.getElementById("itemExlibrisColle").checked = !!it.exlibrisColle;
@@ -9794,6 +9824,8 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemCuirImitation").checked = !!it.cuirImitation;
     document.getElementById("itemMarquageChaud").checked = !!it.marquageChaud;
     document.getElementById("itemEmbossageFroid").checked = !!it.embossageFroid;
+    document.getElementById("itemVignetteContrecollee").checked = !!it.vignetteContrecollee;
+    document.getElementById("itemVignetteCuvette").checked = !!it.vignetteCuvette;
     document.getElementById("itemRhodoid").checked = !!it.rhodoid;
     document.getElementById("itemBandeau").checked = !!it.bandeau;
     document.getElementById("itemRubanMarquePage").checked = !!it.rubanMarquePage;
@@ -10118,7 +10150,7 @@ async function _saveItemCore(e){
     const tagsRaw = document.getElementById("itemTags").value.trim();
     // Cases à cocher : appliquer seulement si non-indéterminées
     const cbIds = [
-      "itemLu","itemFirstEdition","itemSigned","itemDedicaceSignature","itemDedicaceDessin","itemDedicaceTampon",
+      "itemLu","itemFirstEdition","itemSigned","itemDedicaceSignature","itemDedicaceDessin","itemDedicaceTampon","itemTamponSec",
       "itemExlibris","itemExlibrisColle","itemExlibrisSigne","itemExlibrisNumerote","itemTirageInclus","itemSerigraphie",
       "itemMarquePage","itemTimbre","itemCarnetCroquis","itemAutocollant","itemDecalcomanie","itemCartePostale",
       "itemPoster","itemSupplementRedactionnel",
@@ -10126,12 +10158,12 @@ async function _saveItemCore(e){
       "itemBroche","itemRelie","itemRelieTranchefile","itemDosAgrafe","itemDosSpiral","itemCouvertureSouple","itemCouvertureCartonnee",
       "itemRabats","itemALaSuisse","itemBradel","itemCousu","itemDosCarreColle","itemAnneaux",
       "itemFormatCarre","itemFormatFrancaise","itemFormatItalienne","itemFormatManga","itemFormatComics",
-      "itemDosToile","itemPleineToile","itemVernisSelectif","itemCuirImitation","itemMarquageChaud","itemEmbossageFroid","itemRhodoid","itemEmboitageEmbossageFroid","itemFinitionCarton","itemFinitionBristol","itemFinitionDecoupeLaser","itemFinitionPlexiglas","itemEmboitagePleineToile",
+      "itemDosToile","itemPleineToile","itemVernisSelectif","itemCuirImitation","itemMarquageChaud","itemEmbossageFroid","itemVignetteContrecollee","itemVignetteCuvette","itemRhodoid","itemEmboitageEmbossageFroid","itemFinitionCarton","itemFinitionBristol","itemFinitionDecoupeLaser","itemFinitionPlexiglas","itemEmboitagePleineToile",
       "itemBandeau","itemRubanMarquePage","itemJaquette"
     ];
     const cbMap = { // id → clé objet
       itemLu:"lu", itemFirstEdition:"editionOriginale", itemSigned:"signe",
-      itemDedicaceSignature:"dedicaceSignature", itemDedicaceDessin:"dedicaceDessin", itemDedicaceTampon:"dedicaceTampon",
+      itemDedicaceSignature:"dedicaceSignature", itemDedicaceDessin:"dedicaceDessin", itemDedicaceTampon:"dedicaceTampon", itemTamponSec:"cachetSec",
       itemSignaturePlanche:"signaturePlanche",
       itemExlibris:"exlibris", itemExlibrisColle:"exlibrisColle", itemExlibrisSigne:"exlibrisSigne", itemExlibrisNumerote:"exlibrisNumerote",
       itemTirageInclus:"tirageInclus", itemSerigraphie:"serigraphie",
@@ -10146,7 +10178,7 @@ async function _saveItemCore(e){
       itemFormatCarre:"formatCarre", itemFormatFrancaise:"formatFrancaise", itemFormatItalienne:"formatItalienne", itemFormatManga:"formatManga", itemFormatComics:"formatComics",
       itemDosToile:"dosToile", itemPleineToile:"pleineToile",
       itemVernisSelectif:"vernisSelectif", itemCuirImitation:"cuirImitation", itemMarquageChaud:"marquageChaud",
-      itemEmbossageFroid:"embossageFroid", itemRhodoid:"rhodoid", itemEmboitageEmbossageFroid:"emboitageEmbossageFroid",
+      itemEmbossageFroid:"embossageFroid", itemVignetteContrecollee:"vignetteContrecollee", itemVignetteCuvette:"vignetteCuvette", itemRhodoid:"rhodoid", itemEmboitageEmbossageFroid:"emboitageEmbossageFroid",
       itemFinitionCarton:"finitionCarton", itemFinitionBristol:"finitionBristol", itemFinitionDecoupeLaser:"finitionDecoupeLaser", itemFinitionPlexiglas:"finitionPlexiglas",
       itemEmboitagePleineToile:"emboitagePleineToile",
       itemBandeau:"bandeau", itemRubanMarquePage:"rubanMarquePage", itemJaquette:"jaquette"
@@ -10314,6 +10346,8 @@ async function _saveItemCore(e){
     cuirImitation: document.getElementById("itemCuirImitation").checked,
     marquageChaud: document.getElementById("itemMarquageChaud").checked,
     embossageFroid: document.getElementById("itemEmbossageFroid").checked,
+    vignetteContrecollee: document.getElementById("itemVignetteContrecollee").checked,
+    vignetteCuvette: document.getElementById("itemVignetteCuvette").checked,
     rhodoid: document.getElementById("itemRhodoid").checked,
     emboitageEmbossageFroid: document.getElementById("itemEmboitageEmbossageFroid").checked,
     bandeau: document.getElementById("itemBandeau").checked,
@@ -10393,6 +10427,9 @@ async function _saveItemCore(e){
     // Éphémères — type de document + champs spécifiques
     typeDocument:    document.getElementById("itemTypeDocument")?.value||"",
     technique:       _taArch ? _taTechniqueValeur() : (document.getElementById("itemTechnique")?.value.trim()||""),
+    // Tampon à sec des éphémères ; pour un tirage d'art, _taCollecter() ci-dessous
+    // fournit sa propre valeur (case « Cachet sec ») et la remplace.
+    cachetSec: !!document.getElementById("itemTamponSec")?.checked,
     ..._taCollecter(),
     evenement:       document.getElementById("itemEvenement")?.value.trim()||"",
     dateEvenement:   document.getElementById("itemDateEvenement")?.value.trim()||"",
@@ -17316,6 +17353,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
     it.dedicaceDessin   ? T('Dédicace (dessin)','Dedication (drawing)') : '',
     it.dedicaceTampon   ? T('Dédicace (tampon)','Dedication (stamp)') : '',
     it.signaturePlanche ? T('Signature dans la planche','Signature in the artwork') : '',
+    it.cachetSec        ? T('Tampon à sec','Blind stamp') : '',
   ].filter(Boolean).join(' · ');
   const dedicaceRows = F(T('Mentions','Marks'), _mentions) + F(T('Détail','Details'), it.dedicace);
   const dedicacePanel = dedicaceRows
@@ -17597,6 +17635,9 @@ function renderItemDetail(id, pushHistory=true){
       if(it.cuirImitation) finitions.push(_lang==='en'?'Leatherette':'Cuir ou imitation');
       if(it.marquageChaud) finitions.push(_lang==='en'?'Hot stamping':'Marquage à chaud');
       if(it.embossageFroid) finitions.push(_lang==='en'?'Blind embossing':'Embossage à froid');
+      if(it.vignetteContrecollee) finitions.push(it.vignetteCuvette
+        ? (_lang==='en'?'Tipped-on plate in a sunken panel':'Vignette contrecollée en cuvette')
+        : (_lang==='en'?'Tipped-on plate':'Vignette contrecollée'));
       if(it.rhodoid) finitions.push(_lang==='en'?'Rhodoid (clear cover)':'Rhodoïd');
       if(finitions.length) carRows.push({k:t('caract.finition'),v:finitions.join(" + ")});
       if(it.bandeau) carRows.push({k:t('caract.bandeau'),p:true});
