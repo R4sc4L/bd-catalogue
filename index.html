@@ -5319,6 +5319,11 @@ function applyArchetype(arch){
   // Section « Film » (collection DVD)
   const videoSec = document.getElementById('formSection-video');
   if(videoSec) videoSec.style.display = arch.showVideo ? '' : 'none';
+  // « Rattachement à un album » : n'a de sens que pour ce qui accompagne un album
+  // (éphémère, affiche ou poster, sérigraphie et autres tirages d'art), pas pour
+  // l'album lui-même. Masquée ailleurs ; les valeurs déjà saisies sont conservées.
+  const rattSec = document.getElementById('formSection-rattachement');
+  if(rattSec) rattSec.style.display = ['ephemere','affiche','estampe'].includes(arch.id) ? '' : 'none';
   _majLienFiche();
   // Section « Éphémère » (type de document + sous-blocs)
   const ephSec = document.getElementById('formSection-ephemere');
