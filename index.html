@@ -2719,8 +2719,12 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             </div>
             <div class="span-2" id="ephFieldColle">
               <div class="checkbox-row">
-                <input type="checkbox" id="itemColleDansAlbum">
+                <input type="checkbox" id="itemColleDansAlbum" onchange="if(!this.checked){ const c=document.getElementById('itemCollePage'); if(c) c.checked=false; }">
                 <label for="itemColleDansAlbum" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)" data-en="Still in place in the album (its location follows the album)">Toujours en place dans l'album <span class="muted" style="font-size:12px">(sa localisation suit celle de l'album)</span></label>
+              </div>
+              <div class="checkbox-row" id="champCollePage" style="display:none;margin-top:6px">
+                <input type="checkbox" id="itemCollePage" onchange="if(this.checked) document.getElementById('itemColleDansAlbum').checked=true">
+                <label for="itemCollePage" style="margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)" data-en="Glued (pasted onto a page of the album)">Collé <span class="muted" style="font-size:12px">(sur une page de l'album)</span></label>
               </div>
             </div>
           </div>
@@ -5210,6 +5214,9 @@ function adaptEphemereType(type){
   const form = document.getElementById('itemForm');
   const sig  = document.getElementById('formSection-signatures');
   if(sig && form?.classList.contains('eph-simple')) sig.style.display = '';
+  // « Collé » : propre à l'ex-libris (collé sur une page de l'album).
+  const cpChamp = document.getElementById('champCollePage');
+  if(cpChamp) cpChamp.style.display = /^ex.?libris$/i.test(String(type||'').trim()) ? '' : 'none';
   const tsChamp = document.getElementById('champTamponSec');
   if(tsChamp) tsChamp.style.visibility = (fam && fam.id === 'estampe') ? 'visible' : 'hidden';
   // Rappel de la famille à côté du type
@@ -5334,6 +5341,8 @@ function applyArchetype(arch){
   const tsChamp = document.getElementById('champTamponSec');
   // visibility (et non display) : la case garde sa place, l'alignement des deux lignes ne bouge pas.
   if(tsChamp && arch.id !== 'ephemere') tsChamp.style.visibility = 'hidden';
+  const cpChamp = document.getElementById('champCollePage');
+  if(cpChamp && arch.id !== 'ephemere') cpChamp.style.display = 'none';
   const rattSec = document.getElementById('formSection-rattachement');
   if(rattSec) rattSec.style.display = ['ephemere','affiche','estampe'].includes(arch.id) ? '' : 'none';
   _majLienFiche();
@@ -7890,7 +7899,7 @@ const SB = (() => {
     'etendue','etendueUnite','ephPages','ephFeuillets','ephVolets','ephVolantes',
     'ephCahiers','ephVolants','ephVolantsRectoSeul','ephVolantsEncartes',
     'titrePromu','support','diffusion','matiere','quantite','expediteur','destinataire','dateCorrespondance','supportCorr',
-    'colleDansAlbum','lu','dateLecture','preteA','datePret','retourPrevu',
+    'colleDansAlbum','collePage','lu','dateLecture','preteA','datePret','retourPrevu',
     // Disques (CD / Vinyle / DVD) — même sac JSONB, aucune colonne SQL à créer
     'disqueSupport','disqueNb','disqueDuree','disqueGenre','disqueStyle','disquePressage','disqueRemaster',
     'disquePays','disqueRef','disqueEtatPochette','disqueCompilation',
@@ -9732,6 +9741,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemDateCorrespondance").value = it.dateCorrespondance||"";
     document.getElementById("itemSupportCorr").value   = it.supportCorr||"";
     document.getElementById("itemColleDansAlbum").checked = !!it.colleDansAlbum;
+    document.getElementById("itemCollePage").checked = !!it.collePage;
     document.getElementById("itemLu").checked = !!it.lu;
     document.getElementById("itemDateLecture").value = it.dateLecture||"";
     document.getElementById("itemPreteA").value = it.preteA||"";
@@ -10463,6 +10473,7 @@ async function _saveItemCore(e){
     dateCorrespondance: document.getElementById("itemDateCorrespondance")?.value.trim()||"",
     supportCorr:     document.getElementById("itemSupportCorr")?.value.trim()||"",
     colleDansAlbum:  !!document.getElementById("itemColleDansAlbum")?.checked,
+    collePage:       !!document.getElementById("itemCollePage")?.checked,
     // Suivi personnel
     lu:              !!document.getElementById("itemLu")?.checked,
     dateLecture:     document.getElementById("itemDateLecture")?.value||"",
@@ -14989,6 +15000,7 @@ async function applyExlibrisConversion(){
       signe: !!a.exlibrisSigne,
       // Ex-libris collé dans l'album : sa localisation suivra celle de l'album
       colleDansAlbum: !!a.exlibrisColle,
+      collePage: !!a.exlibrisColle,
       numeroExemplaire: a.exlibrisTirage||'',
       technique: a.serigraphie ? 'Sérigraphie' : '',
       images: imgs,
@@ -17222,7 +17234,7 @@ function _attachedPanel(it){
         <div style="width:36px;height:52px;flex-shrink:0;border-radius:3px;overflow:hidden;background:var(--ph);display:flex;align-items:center;justify-content:center;font-size:16px">${cover?`<img src="${_safeUrl(cover)}" style="max-width:100%;max-height:100%;object-fit:contain">`:'🗂️'}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:14px">${escapeHTML(x.titre||T('Sans titre','Untitled'))}</div>
-          <div style="font-size:12px;color:var(--ink-soft)">${escapeHTML([label, x.anneeEdition].filter(Boolean).join(' · '))}${x.colleDansAlbum?` · ${T('toujours en place','still in place')}`:''}</div>
+          <div style="font-size:12px;color:var(--ink-soft)">${escapeHTML([label, x.anneeEdition].filter(Boolean).join(' · '))}${x.colleDansAlbum?` · ${x.collePage?T('collé','glued'):T('toujours en place','still in place')}`:''}</div>
         </div>
         <span class="tag cat" style="font-size:10px;flex-shrink:0">${escapeHTML(x.categorie||'')}</span>
       </div>`;
@@ -17233,7 +17245,7 @@ function _attachedPanel(it){
 // Ligne « Livré avec l'album » pour la vue détail standard (non-éphémère)
 function _attachedToLine(it){
   const alb = it.albumSourceId ? cache.items.find(x=>String(x.id)===String(it.albumSourceId)) : null;
-  if(alb) return `<dt>${T("Livré avec l'album",'Delivered with album')}</dt><dd><a href="#item/${alb.id}" onclick="event.preventDefault();renderItemDetail('${alb.id}')">${escapeHTML(alb.titre||T('Sans titre','Untitled'))}</a>${it.colleDansAlbum?` <span class="muted" style="font-size:12px">— ${T('toujours en place','still in place')}</span>`:''}</dd>`;
+  if(alb) return `<dt>${T("Livré avec l'album",'Delivered with album')}</dt><dd><a href="#item/${alb.id}" onclick="event.preventDefault();renderItemDetail('${alb.id}')">${escapeHTML(alb.titre||T('Sans titre','Untitled'))}</a>${it.colleDansAlbum?` <span class="muted" style="font-size:12px">— ${it.collePage?T('collé','glued'):T('toujours en place','still in place')}</span>`:''}</dd>`;
   if(it.albumSource) return `<dt>${T("Livré avec l'album",'Delivered with album')}</dt><dd>${escapeHTML(it.albumSource)}</dd>`;
   return '';
 }
@@ -17292,7 +17304,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
 
   // « Livré avec l'album » : lien cliquable si l'album source existe encore, sinon texte
   const albumLine = albObj
-    ? `<div class="eph-f"><span class="eph-l">${T("Livré avec l'album",'Delivered with album')}</span><span class="eph-v"><a href="#item/${albObj.id}" onclick="event.preventDefault();renderItemDetail('${albObj.id}')">${escapeHTML(albObj.titre||(_lang==='en'?'Untitled':'Sans titre'))}</a></span>${glued?`<span class="muted" style="font-size:12px">${T("toujours en place dans l'album",'still in place in the album')}</span>`:''}</div>`
+    ? `<div class="eph-f"><span class="eph-l">${T("Livré avec l'album",'Delivered with album')}</span><span class="eph-v"><a href="#item/${albObj.id}" onclick="event.preventDefault();renderItemDetail('${albObj.id}')">${escapeHTML(albObj.titre||(_lang==='en'?'Untitled':'Sans titre'))}</a></span>${glued?`<span class="muted" style="font-size:12px">${it.collePage?T("collé dans l'album",'glued in the album'):T("toujours en place dans l'album",'still in place in the album')}</span>`:''}</div>`
     : (it.albumSource ? F(T("Livré avec l'album",'Delivered with album'), it.albumSource) : '');
 
   // Section Identité (commune à tous les éphémères)
