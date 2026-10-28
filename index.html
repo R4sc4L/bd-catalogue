@@ -927,6 +927,45 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   #itemForm.disque-simple #formFieldPageOrder,
   #itemForm.disque-simple #formFieldFirstEdition{display:none}
 
+  /* Modules de fiche : forçages par catégorie (éditeur de fiches) */
+  /* Éditeur de fiche */
+  .fe-modal{max-width:1100px}
+  .fe-aide{font-size:13px;margin:0 0 12px}
+  .fe-note{font-size:13px;margin:0 0 12px;padding:8px 12px;border-radius:8px;background:rgba(200,144,74,.08);border:1px solid rgba(200,144,74,.3);color:var(--gold)}
+  .fe-colonnes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  @media (max-width:820px){ .fe-colonnes{grid-template-columns:1fr} }
+  .fe-col h4{margin:0 0 8px;font-size:13px;letter-spacing:.04em;color:var(--ink-soft)}
+  .fe-liste{min-height:70px;display:flex;flex-direction:column;gap:6px;padding:8px;border:1px dashed var(--border);border-radius:10px}
+  .fe-carte{display:flex;align-items:center;gap:8px;background:var(--bg-alt);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:14px;cursor:grab;user-select:none}
+  .fe-carte.off{opacity:.5}
+  .fe-carte.off{padding-top:3px;padding-bottom:3px}
+  .fe-carte.dragging{opacity:.25}
+  .fe-poignee{color:var(--ink-soft);font-size:15px;line-height:1}
+  .fe-nom{flex:1;min-width:0;line-height:1.2}
+  .fe-nom small{display:block;font-size:11px;color:var(--ink-soft);text-decoration:none}
+  .fe-regle{color:var(--gold);margin-left:5px;font-size:10px;vertical-align:middle}
+  .fe-fleches{display:flex;flex-direction:column}
+  .fe-fleches button{padding:0 5px;font-size:9px;line-height:1.4;color:var(--ink-soft);background:transparent;border:0;min-height:0}
+  .fe-fleches button:hover{color:var(--gold)}
+  .fe-oblig{font-size:12px;opacity:.6;width:34px;text-align:center}
+  .fe-inter{position:relative;display:inline-flex;margin:0;cursor:pointer}
+  .fe-inter input{position:absolute;opacity:0;width:1px;height:1px}
+  .fe-inter span{width:34px;height:19px;border-radius:10px;background:var(--border);position:relative;transition:background .15s}
+  .fe-inter span::after{content:'';position:absolute;left:2px;top:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .fe-inter input:checked + span{background:var(--gold)}
+  .fe-inter input:checked + span::after{left:17px}
+  .fe-inter input:focus-visible + span{outline:2px solid var(--gold);outline-offset:2px}
+  .fe-bandeau{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:9px 12px;border-radius:8px;background:rgba(200,144,74,.1);border:1px solid rgba(200,144,74,.35);font-size:13px;color:var(--gold)}
+  .fe-bandeau span{flex:1}
+  .cat-item .fe-btn{background:transparent;padding:2px 6px;font-size:17px;opacity:.7;line-height:1;border-radius:4px;color:var(--ink-soft)}
+  .cat-item .fe-btn:hover{color:var(--gold)}
+  .cat-item .fe-btn.regle{color:var(--gold);opacity:1}
+  .cat-picker-btn{position:relative}
+  .cat-picker-btn .cp-composer{position:absolute;top:3px;right:5px;font-size:12px;opacity:0;color:var(--ink-soft);padding:2px;border-radius:4px;transition:opacity .15s}
+  .cat-picker-btn:hover .cp-composer,.cat-picker-btn .cp-composer:focus-visible{opacity:.8}
+  .cat-picker-btn .cp-composer:hover{opacity:1;color:var(--gold)}
+  @media (hover:none){ .cat-picker-btn .cp-composer{opacity:.55} }
+  #itemForm .fm-force-off,#itemForm .fm-auto-off,#itemForm .fm-vide{display:none !important}
   #itemForm.xl-simple .form-tabs{display:none}
   #itemForm.xl-simple .form-tab-panel{display:block}
   #itemForm.xl-simple #formSection-caracteristiques,
@@ -2665,6 +2704,11 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       <button class="ghost" onclick="closeModal('itemModal')">✕</button>
     </div>
     <div class="modal-body">
+      <div class="fe-bandeau" id="feBandeauApercu" style="display:none">
+        <span data-en="Preview of the layout being composed — nothing is saved yet.">👁 Aperçu de la composition en cours — rien n'est encore enregistré.</span>
+        <button type="button" class="secondary" onclick="feReprendre()" data-en="↩ Back to the editor">↩ Revenir à l'éditeur</button>
+        <button type="button" onclick="feEnregistrer()" data-en="Save the layout">Enregistrer la composition</button>
+      </div>
       <form id="itemForm" onsubmit="saveItem(event)">
         <div id="bulkEditNote" style="display:none;background:rgba(200,144,74,0.08);border:1px solid rgba(200,144,74,0.3);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:14px;color:var(--gold);line-height:1.5">
           <span data-en="<strong>Bulk edit</strong> — Fill in only the fields you want to change. Empty fields and checkboxes left in the intermediate state will not be touched."><strong>Modification groupée</strong> — Remplissez uniquement les champs à modifier. Les champs vides et les cases en état <span style="display:inline-block;width:14px;height:14px;border:2px solid #999;border-radius:2px;vertical-align:middle;background:linear-gradient(135deg,#fff 40%,#aaa 40%,#aaa 60%,#fff 60%)"></span> intermédiaire ne seront pas touchés.</span>
@@ -3352,9 +3396,34 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
     </div>
     <div class="modal-footer">
       <button class="danger" id="itemDeleteBtn" onclick="deleteItem()" style="display:none" data-en="Delete">Supprimer</button>
+      <button class="ghost" id="feLienForm" type="button" onclick="ouvrirEditeurFiche(document.getElementById('itemCategory').value)" title="Choisir les modules de la fiche de cette catégorie" data-en-title="Choose the modules of this category's record" style="font-size:13px" data-en="⚙️ Compose this record">⚙️ Composer cette fiche</button>
       <div style="display:flex;gap:8px;margin-left:auto">
         <button class="secondary" onclick="closeModal('itemModal')" data-en="Cancel">Annuler</button>
         <button type="button" onclick="submitFormSafe('itemForm')" data-en="Save">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ÉDITEUR DE FICHE : composer la fiche d'une catégorie (modules) -->
+<div class="modal-backdrop" id="ficheEditeurModal">
+  <div class="modal fe-modal">
+    <div class="modal-header">
+      <h2><span data-en="Compose the record">Composer la fiche</span> · <span id="feCat"></span> <span class="muted" id="feColl" style="font-size:14px;font-weight:400"></span></h2>
+      <button class="ghost" onclick="fermerEditeurFiche()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="muted fe-aide" data-en="Show or hide modules, drag them (or use ▲▼) to change their order or tab. Your works are not modified: a hidden module keeps its information.">Affichez ou masquez les modules, glissez-les (ou ▲▼) pour changer leur ordre ou leur onglet. Vos œuvres ne sont pas modifiées : un module masqué garde ses informations.</p>
+      <p class="fe-note" id="fePageUnique" style="display:none" data-en="This record is displayed on a single page, without tabs: the three columns follow one another.">Cette fiche s'affiche sur une seule page, sans onglets : les trois colonnes se suivent.</p>
+      <div class="fe-colonnes" id="feColonnes"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="secondary" onclick="feRevenirDefaut()" data-en="↺ Default record">↺ Fiche par défaut</button>
+      <select id="feCopier" onchange="feCopierDepuis(this.value)" style="width:auto;max-width:220px"></select>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="secondary" onclick="feApercu()" data-en="👁 Preview">👁 Aperçu</button>
+        <button class="secondary" onclick="fermerEditeurFiche()" data-en="Cancel">Annuler</button>
+        <button onclick="feEnregistrer()" data-en="Save">Enregistrer</button>
       </div>
     </div>
   </div>
@@ -5223,6 +5292,8 @@ function adaptEphemereType(type){
   // Rappel de la famille à côté du type
   const hint = document.getElementById('ephFamilyHint');
   if(hint) hint.textContent = fam ? `${fam.icon} ${_modLabelEph(fam)}` : '';
+
+  appliquerConfigurationFiche();
 }
 // Table normalisée construite à la 1re utilisation (et non au chargement),
 // car _normCat est défini plus bas dans le script.
@@ -5356,6 +5427,573 @@ function applyArchetype(arch){
   if(sigSec && !arch.showEphemere) sigSec.style.display = '';
   _taAppliquer(arch);
   _majRolesLignes();
+  appliquerConfigurationFiche();
+}
+
+// ============================================================
+// MODULES DE FICHE — éditeur de fiches par catégorie
+// ------------------------------------------------------------
+// Le formulaire d'œuvre est découpé en modules : des blocs cohérents
+// (une section entière, ou quelques cases d'une section) que l'on
+// peut activer, désactiver et, à terme, ranger ailleurs.
+// Aucune enveloppe n'est ajoutée au HTML : chaque module désigne ses
+// blocs (par id ou par le champ qu'ils contiennent) et le moteur les
+// marque d'un attribut data-module. Les règles CSS et les sélecteurs
+// existants (« .form-grid > div:has(…) ») restent donc valables.
+//
+// Sans réglage, rien ne change : les types de fiche (applyArchetype,
+// adaptEphemereType) décident de ce qui est visible, comme avant. Un
+// réglage par catégorie ne fait que FORCER un module à s'afficher ou
+// à se masquer ; les modules non réglés suivent la règle automatique.
+// Les données ne sont jamais touchées : un module masqué garde ses
+// valeurs, et l'enregistrement lit tous les champs comme avant.
+// Spec : SPEC-editeur-fiches.md
+// ============================================================
+// `blocs` : '#id' = cet élément ; 'champ:itemX' = la case de la grille
+//   qui contient le champ itemX ; 'section:itemX' = la section qui le contient.
+const FICHE_MODULES = [
+  { id:'identite', label:'Identité', labelEn:'Identity', onglet:'infos', obligatoire:true,
+    blocs:['champ:itemTitle','champ:itemSubtitle','champ:itemCategory','#formFieldCatSec'] },
+  { id:'serie', label:'Série / cycle', labelEn:'Series', onglet:'infos',
+    blocs:['#formFieldUnivers','#formFieldSerie','#formFieldSerieNum'] },
+  { id:'rattachement', label:'Rattachement à un album', labelEn:'Attached to an album', onglet:'infos',
+    blocs:['#formSection-rattachement'] },
+  { id:'tirageArt', label:"Tirage d'art / affiche", labelEn:'Art print / poster', onglet:'infos',
+    blocs:['#formSection-tirageArt'] },
+  { id:'ephemere', label:'Éphémère', labelEn:'Ephemera', onglet:'infos',
+    blocs:['#formSection-ephemere'] },
+  { id:'disque', label:'Disque', labelEn:'Disc', onglet:'infos',
+    blocs:['#formSection-disque','#itemFieldGroupe'] },
+  { id:'film', label:'Film', labelEn:'Film', onglet:'infos',
+    blocs:['#formSection-video'] },
+  { id:'pins', label:"Pin's", labelEn:"Pin's", onglet:'infos',
+    blocs:['#formSection-pins'] },
+  { id:'auteurs', label:'Auteurs et contributeurs', labelEn:'Authors and contributors', onglet:'infos',
+    blocs:['#formSection-authors'] },
+  { id:'edition', label:'Édition', labelEn:'Edition', onglet:'infos',
+    blocs:['champ:itemPublisher','champ:itemCollection','champ:itemMonth','champ:itemYear','#formFieldLangue',
+           'champ:itemCountry','champ:itemIsbn','#formFieldBedetheque','#formFieldInfos','champ:itemEditionInfo','#formFieldFirstEdition'] },
+  { id:'format', label:'Format et papier', labelEn:'Format and paper', onglet:'infos',
+    blocs:['champ:itemPages','#formFieldFormat','#formFieldPaperQuality','#formFieldPageOrder'] },
+  { id:'etat', label:'État', labelEn:'Condition', onglet:'infos',
+    blocs:['champ:itemCondition','champ:itemEtatDetail'] },
+  { id:'serieLimitee', label:'Série limitée', labelEn:'Limited edition', onglet:'caract',
+    blocs:['champ:itemPrintRun','champ:itemCopyNumber','champ:itemTirageAnnotations'] },
+  { id:'signatures', label:'Signatures et dédicaces', labelEn:'Signatures and dedications', onglet:'caract',
+    blocs:['champ:itemSigned','champ:itemParaphe','champ:itemSignaturePlanche','#champTamponSec',
+           'champ:itemDedicaceTampon','champ:itemDedicaceSignature','champ:itemDedicaceDessin','champ:itemDedication'] },
+  { id:'visuels', label:'Visuels et diaporama', labelEn:'Images and slideshow', onglet:'caract',
+    blocs:['section:itemDropZone'] },
+  { id:'notes', label:'Résumé et mots-clés', labelEn:'Summary and keywords', onglet:'caract',
+    blocs:['section:itemNotes'] },
+  { id:'reliure', label:'Reliure et format', labelEn:'Binding and shape', onglet:'etat',
+    blocs:['groupe:itemFormatCarre','#formReliure'] },
+  { id:'finitions', label:'Couverture et finitions', labelEn:'Cover and finishes', onglet:'etat',
+    blocs:['#formCouverture','groupe:itemJaquette'] },
+  { id:'emboitage', label:'Emboîtage', labelEn:'Slipcase', onglet:'etat',
+    blocs:['#formEmboitageSection'] },
+  { id:'contenu', label:'Contenu additionnel', labelEn:'Additional content', onglet:'etat',
+    blocs:['#formSection-contenu'] },
+  { id:'objetsAssocies', label:'Objets associés', labelEn:'Related objects', onglet:'etat',
+    blocs:['#formSection-objets-associes'] },
+  { id:'acquisition', label:'Acquisition et valeur', labelEn:'Acquisition and value', onglet:'etat',
+    blocs:['champ:itemPurchasePrice','champ:itemCurrentValue','champ:itemAcquisitionDate','champ:itemAcquisitionSource'] },
+  { id:'localisation', label:'Localisation', labelEn:'Location', onglet:'etat',
+    blocs:['#formFieldLocation'] },
+  { id:'suivi', label:'Suivi personnel', labelEn:'Personal tracking', onglet:'etat',
+    blocs:['#formSection-suivi'] },
+];
+const FICHE_MODULE_PAR_ID = Object.fromEntries(FICHE_MODULES.map(m=>[m.id,m]));
+
+// Résout les blocs d'un module en éléments du formulaire (mémorisé).
+const _fmBlocsCache = {};
+function _fmBlocs(mod){
+  if(_fmBlocsCache[mod.id]) return _fmBlocsCache[mod.id];
+  const els = [];
+  for(const b of mod.blocs){
+    let el = null;
+    if(b[0]==='#') el = document.getElementById(b.slice(1));
+    else {
+      const [mode, id] = b.split(':');
+      const c = document.getElementById(id);
+      if(c) el = mode==='champ'   ? (c.closest('.cat-trad') || c.closest('.form-grid > *') || c)
+               : mode==='groupe'  ? c.closest('.char-group')
+               : mode==='section' ? c.closest('.form-section') : null;
+    }
+    if(el && !els.includes(el)) els.push(el);
+  }
+  if(els.length) _fmBlocsCache[mod.id] = els;
+  return els;
+}
+// Marque chaque bloc de son module (data-module) et pose, juste avant lui,
+// une ancre invisible (commentaire) : c'est sa place d'origine, où le moteur
+// le remet avant chaque nouvelle composition. Sans effet visuel.
+const _fmConteneurs = new Set();   // sections d'origine qui accueillent des blocs
+function _fmMarquer(){
+  for(const m of FICHE_MODULES) for(const el of _fmBlocs(m)){
+    if(!el.dataset.module) el.dataset.module = m.id;
+    if(!el._fmAncre && el.parentNode){
+      el._fmAncre = document.createComment('module:'+m.id);
+      el.parentNode.insertBefore(el._fmAncre, el);
+      el._fmGrille = el.parentElement.classList.contains('form-grid') ? el.parentElement.className : '';
+      const sec = el.parentElement.closest('.form-section');
+      if(sec) _fmConteneurs.add(sec);
+    }
+  }
+}
+
+// Visible = ni le bloc ni un de ses parents (jusqu'au formulaire) n'est
+// masqué ; l'onglet inactif ne compte pas.
+function _fmVisible(el){
+  for(let e=el; e && e.id!=='itemForm'; e=e.parentElement){
+    if(e.classList.contains('form-tab-panel')) continue;
+    if(getComputedStyle(e).display==='none') return false;
+  }
+  return true;
+}
+
+// Les trois onglets du formulaire (libellés lus sur les boutons d'onglet).
+const FM_ONGLETS = [
+  { id:'infos',  panel:'tab-infos',  fr:'Informations',      en:'Information' },
+  { id:'caract', panel:'tab-caract', fr:'Édition & contenu', en:'Edition & content' },
+  { id:'etat',   panel:'tab-etat',   fr:'Particularités',    en:'Special features' },
+];
+function _fmLibelleOnglet(o){
+  const b = document.querySelector(`.form-tab[data-tab="${o.panel}"]`);
+  return b ? b.textContent.trim() : T(o.fr, o.en);
+}
+
+// ── Réglages : meta « fiches » (en ligne : profiles.preferences) ──
+// { version:1, <collection>: { <catégorie>: {
+//     modules:     { <id>: true|false },          // forçages seulement
+//     disposition: { infos:[ids], caract:[ids], etat:[ids] }   // ordre et onglets
+// } } }
+// Un module non forcé suit le type de fiche ; sans disposition, l'ordre
+// et les onglets sont ceux d'origine.
+let _fichesConfig = { version:1 };
+async function chargerConfigFiches(){
+  try {
+    const r = await dbGet('meta', 'fiches');
+    _fichesConfig = (r && r.value && typeof r.value==='object') ? r.value : { version:1 };
+  } catch(e){ _fichesConfig = { version:1 }; }
+  return _fichesConfig;
+}
+async function sauverConfigFiches(){
+  await dbPut('meta', { key:'fiches', value:_fichesConfig });
+}
+function configFiche(coll, cat){
+  const c = _fichesConfig && _fichesConfig[coll];
+  return (c && cat && c[cat]) || null;
+}
+function _fmReglageVide(r){
+  return !r || (!Object.keys(r.modules||{}).length && !r.disposition);
+}
+
+// Aperçu depuis l'éditeur : un réglage non enregistré, pour une catégorie.
+let _fmApercu = null;          // { coll, cat, reglage }
+let _fmContexteForce = null;   // { coll, cat } : calcul des réglages par défaut
+function _fmReglage(coll, cat){
+  if(_fmApercu && _fmApercu.coll===coll && _fmApercu.cat===cat) return _fmApercu.reglage;
+  return configFiche(coll, cat);
+}
+
+// La fiche ouverte : sa collection et sa catégorie.
+function _fmContexte(){
+  if(_fmContexteForce) return _fmContexteForce;
+  const cat = document.getElementById('itemCategory')?.value || '';
+  let coll = 'bd';
+  try { coll = _collectionDeLaFiche(cat) || 'bd'; } catch(e){}
+  return { coll, cat };
+}
+
+// Rend au formulaire sa forme d'origine : blocs à leur place, sections
+// générées retirées, forçages levés.
+let _fmCompose = false;   // le formulaire a-t-il été recomposé ?
+function _fmRestaurer(){
+  const form = document.getElementById('itemForm');
+  form.querySelectorAll('[data-fm-force]').forEach(el=>{
+    // Forçage d'affichage : on ne rend l'ancienne valeur que si personne
+    // (type de fiche…) ne l'a réécrite entre-temps.
+    if(el.style.getPropertyPriority('display')==='important'){
+      el.style.removeProperty('display');
+      if(el._fmStyle) el.style.display = el._fmStyle;
+    }
+    delete el.dataset.fmForce;
+  });
+  form.querySelectorAll('.fm-force-off,.fm-auto-off,.fm-vide').forEach(el=>el.classList.remove('fm-force-off','fm-auto-off','fm-vide'));
+  for(const m of FICHE_MODULES) for(const b of _fmBlocs(m)){
+    if(b._fmAncre && b._fmAncre.parentNode && b._fmAncre.nextSibling !== b)
+      b._fmAncre.parentNode.insertBefore(b, b._fmAncre.nextSibling);
+  }
+  form.querySelectorAll('.fm-section-gen').forEach(s=>s.remove());
+}
+
+// Affiche un élément malgré le type de fiche (style en ligne prioritaire,
+// retiré à la restauration).
+function _fmForcerVisible(el){
+  if(getComputedStyle(el).display!=='none') return;
+  el._fmStyle = el.style.display;
+  const disp = el.classList.contains('checkbox-row') ? 'flex'
+             : el.classList.contains('form-grid') ? 'grid' : 'block';
+  el.style.setProperty('display', disp, 'important');
+  el.dataset.fmForce = '1';
+}
+
+// Range les modules dans leur onglet et leur ordre. Une section entière
+// se déplace telle quelle ; un module fait de quelques cases d'une section
+// reçoit sa propre section, titrée à son nom.
+function _fmDisposer(dispo){
+  for(const o of FM_ONGLETS){
+    const panel = document.getElementById(o.panel);
+    if(!panel) continue;
+    for(const id of (dispo[o.id]||[])){
+      const m = FICHE_MODULE_PAR_ID[id];
+      if(!m) continue;
+      const blocs = _fmBlocs(m);
+      const sec = blocs.find(b=>b.classList.contains('form-section'));
+      if(sec){ panel.appendChild(sec); continue; }
+      if(!blocs.length) continue;
+      const s = document.createElement('div');
+      s.className = 'form-section fm-section-gen';
+      s.dataset.fmSection = id;
+      const h = document.createElement('h3');
+      h.textContent = T(m.label, m.labelEn);
+      s.appendChild(h);
+      let grille = null;
+      for(const b of blocs){
+        if(b._fmGrille){
+          if(!grille){ grille = document.createElement('div'); grille.className = b._fmGrille; s.appendChild(grille); }
+          grille.appendChild(b);
+        } else s.appendChild(b);
+      }
+      panel.appendChild(s);
+    }
+  }
+}
+
+// Applique le réglage de la catégorie au formulaire. Appelée après les
+// règles automatiques (type de fiche, type d'éphémère), à chaque fois
+// qu'elles changent. Sans réglage : formulaire d'origine, intact.
+function appliquerConfigurationFiche(){
+  const form = document.getElementById('itemForm');
+  if(!form) return;
+  _fmMarquer();
+  const lien = document.getElementById('feLienForm');
+  if(lien) lien.style.display = _bulkEditIds ? 'none' : '';
+  const { coll, cat } = _fmContexte();
+  const reglage = _bulkEditIds ? null : _fmReglage(coll, cat);
+  if(_fmReglageVide(reglage)){
+    if(_fmCompose){ _fmRestaurer(); _fmCompose = false; }
+    return;
+  }
+  _fmRestaurer();
+  const forcages = reglage.modules || {};
+  // 1. État automatique, mesuré formulaire d'origine en place.
+  const tous = [];
+  for(const m of FICHE_MODULES) for(const b of _fmBlocs(m)) tous.push(b);
+  const cacheAvant = new Set(tous.filter(b=>!_fmVisible(b)));
+  // 2. Ordre et onglets.
+  if(reglage.disposition) _fmDisposer(reglage.disposition);
+  // 3. Forçages : masquer, ou afficher (avec les parents qui le cachaient).
+  for(const m of FICHE_MODULES){
+    const f = m.obligatoire ? undefined : forcages[m.id];
+    for(const b of _fmBlocs(m)){
+      if(f===false) b.classList.add('fm-force-off');
+      else if(f===true){
+        for(let e=b; e && e.id!=='itemForm'; e=e.parentElement){
+          if(e.classList.contains('form-tab-panel')) continue;
+          _fmForcerVisible(e);
+        }
+      }
+    }
+  }
+  // 4. Ce que le type de fiche cachait reste caché, même déplacé ou
+  //    voisin d'un module forcé (sauf s'il est lui-même forcé).
+  for(const b of cacheAvant){
+    if(forcages[b.dataset.module]===true) continue;
+    if(_fmVisible(b)) b.classList.add('fm-auto-off');
+  }
+  // 5. Sections restées sans module visible : masquées (titre orphelin).
+  for(const s of [..._fmConteneurs, ...form.querySelectorAll('.fm-section-gen')]){
+    const blocs = s.querySelectorAll('[data-module]');
+    if(![...blocs].some(_fmVisible)) s.classList.add('fm-vide');
+  }
+  _fmCompose = true;
+}
+
+// État automatique (sans réglage) des modules pour la fiche ouverte.
+function modulesParDefautFicheOuverte(){
+  const { coll, cat } = _fmContexte();
+  const ancien = _fmApercu;
+  _fmApercu = { coll, cat, reglage:{} };
+  appliquerConfigurationFiche();
+  const etat = {};
+  for(const m of FICHE_MODULES) etat[m.id] = _fmBlocs(m).some(_fmVisible);
+  _fmApercu = ancien;
+  appliquerConfigurationFiche();
+  return etat;
+}
+
+// État automatique d'une catégorie quelconque, calculé sur le formulaire
+// sans l'afficher. Si la fiche est ouverte, elle est remise dans son état.
+function _fmDefautsCategorie(coll, cat){
+  const modal = document.getElementById('itemModal');
+  const catEl = document.getElementById('itemCategory');
+  if(modal?.classList.contains('active') && catEl?.value===cat){
+    const r = modulesParDefautFicheOuverte();
+    return { etat:r, pageUnique:_fmPageUnique() };
+  }
+  const idEl = document.getElementById('itemId');
+  const sauveId = idEl.value;
+  const dia = document.getElementById('itemDiaporama');
+  const sauveDia = dia ? dia.checked : false;
+  let res;
+  try {
+    idEl.value = '';
+    _fmContexteForce = { coll, cat };
+    _fmApercu = { coll, cat, reglage:{} };
+    adaptFormToCategory(cat);
+    adaptEphemereType('');
+    const etat = {};
+    for(const m of FICHE_MODULES) etat[m.id] = _fmBlocs(m).some(_fmVisible);
+    res = { etat, pageUnique:_fmPageUnique() };
+  } finally {
+    _fmContexteForce = null; _fmApercu = null; idEl.value = sauveId;
+    // Fiche ouverte sur une autre catégorie : on lui rend sa forme.
+    if(modal?.classList.contains('active')){
+      adaptFormToCategory(catEl.value);
+      adaptEphemereType(document.getElementById('itemTypeDocument')?.value || '');
+    }
+    if(dia) dia.checked = sauveDia;
+  }
+  return res;
+}
+// Fiches affichées sur une seule page (sans onglets) : disque, film,
+// éphémère, affiche, ex-libris.
+function _fmPageUnique(){
+  const t = document.querySelector('#itemForm .form-tabs');
+  return !!t && getComputedStyle(t).display==='none';
+}
+
+// Un module contient-il des données sur la fiche ouverte ?
+function moduleContientDonnees(id){
+  const m = FICHE_MODULE_PAR_ID[id];
+  if(!m) return false;
+  for(const bloc of _fmBlocs(m)){
+    for(const c of bloc.querySelectorAll('input,select,textarea')){
+      const proprio = c.closest('[data-module]');
+      if(proprio && proprio.dataset.module !== id) continue;   // champ d'un module imbriqué
+      if(c.type==='checkbox' || c.type==='radio'){ if(c.checked) return true; }
+      else if(c.type==='file' || c.type==='button') continue;
+      else if(String(c.value||'').trim()) return true;
+    }
+  }
+  if(id==='auteurs') return !!document.querySelector('#itemAuthorsList .author-row');
+  if(id==='visuels') return !!document.querySelector('#itemImagePreview img');
+  return false;
+}
+
+// ============================================================
+// ÉDITEUR DE FICHE — « Composer la fiche » d'une catégorie
+// ------------------------------------------------------------
+// Trois colonnes = les trois onglets. Chaque module y est une carte :
+// interrupteur pour l'afficher ou le masquer, glisser-déposer (ou ▲▼)
+// pour changer son ordre et son onglet. Un point doré signale un réglage
+// qui s'écarte de la fiche par défaut de la catégorie.
+// ============================================================
+let _fe = null;   // { coll, cat, defauts, pageUnique, modules, ordre, ordreModifie }
+let _feDrag = null;
+
+function _feOrdreDefaut(){
+  const o = { infos:[], caract:[], etat:[] };
+  for(const m of FICHE_MODULES) o[m.onglet].push(m.id);
+  return o;
+}
+function _feCollPour(cat){
+  const catEl = document.getElementById('itemCategory');
+  if(document.getElementById('itemModal')?.classList.contains('active') && catEl?.value===cat) return _fmContexte().coll;
+  if(isAllCollection()){ try { return _collPourNouvelleFiche(cat) || 'bd'; } catch(e){ return 'bd'; } }
+  return _activeCollection;
+}
+
+function ouvrirEditeurFiche(cat, coll){
+  if(!cat){ toast(T('Choisissez d\'abord une catégorie','Choose a category first'),'error'); return; }
+  coll = coll || _feCollPour(cat);
+  const { etat, pageUnique } = _fmDefautsCategorie(coll, cat);
+  const r = configFiche(coll, cat) || {};
+  _fe = {
+    coll, cat, defauts:etat, pageUnique,
+    modules: { ...(r.modules||{}) },
+    ordre: r.disposition ? _feCompleterOrdre(r.disposition) : _feOrdreDefaut(),
+    ordreModifie: !!r.disposition,
+  };
+  _feAfficher();
+}
+// Un module ajouté depuis l'enregistrement de la disposition retrouve
+// son onglet par défaut.
+function _feCompleterOrdre(d){
+  const o = { infos:[...(d.infos||[])], caract:[...(d.caract||[])], etat:[...(d.etat||[])] };
+  const vus = new Set([...o.infos, ...o.caract, ...o.etat]);
+  for(const k of Object.keys(o)) o[k] = o[k].filter(id=>FICHE_MODULE_PAR_ID[id]);
+  for(const m of FICHE_MODULES) if(!vus.has(m.id)) o[m.onglet].push(m.id);
+  return o;
+}
+function _feAfficher(){
+  document.getElementById('feCat').textContent = _fe.cat;
+  const nomColl = (moduleById(_fe.coll)||{}).label || '';
+  document.getElementById('feColl').textContent = nomColl;
+  document.getElementById('fePageUnique').style.display = _fe.pageUnique ? '' : 'none';
+  // « Copier depuis » : les autres catégories de la collection
+  const sel = document.getElementById('feCopier');
+  const cats = (categoriesForCollection(_fe.coll)||[]).filter(c=>c!==_fe.cat);
+  const regles = new Set(Object.keys(_fichesConfig[_fe.coll]||{}));
+  sel.innerHTML = `<option value="">${T('Copier depuis…','Copy from…')}</option>` +
+    cats.map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}${regles.has(c)?' ●':''}</option>`).join('');
+  _feRendre();
+  openModal('ficheEditeurModal');
+}
+function _feActif(id){
+  const m = FICHE_MODULE_PAR_ID[id];
+  if(m.obligatoire) return true;
+  return _fe.modules[id]!==undefined ? _fe.modules[id] : !!_fe.defauts[id];
+}
+function _feCarte(id){
+  const m = FICHE_MODULE_PAR_ID[id];
+  const actif = _feActif(id);
+  const regle = _fe.modules[id]!==undefined;
+  const nom = escapeHTML(T(m.label, m.labelEn));
+  const etatTxt = m.obligatoire ? T('toujours affiché','always shown')
+    : (actif ? T('affiché','shown') : T('masqué','hidden')) + (regle ? T(' — réglé',' — set') : T(' — par défaut',' — default'));
+  return `<div class="fe-carte${actif?'':' off'}" draggable="true" data-id="${id}">
+    <span class="fe-poignee" aria-hidden="true">⠿</span>
+    <span class="fe-nom">${nom}${regle?`<span class="fe-regle" title="${T('Réglé pour cette catégorie','Set for this category')}">●</span>`:''}<small>${etatTxt}</small></span>
+    <span class="fe-fleches">
+      <button type="button" class="ghost" title="${T('Monter','Move up')}" aria-label="${T('Monter','Move up')} ${nom}" onclick="feDeplacer('${id}',-1)">▲</button>
+      <button type="button" class="ghost" title="${T('Descendre','Move down')}" aria-label="${T('Descendre','Move down')} ${nom}" onclick="feDeplacer('${id}',1)">▼</button>
+    </span>
+    ${m.obligatoire ? '<span class="fe-oblig" aria-hidden="true">🔒</span>'
+      : `<label class="fe-inter" title="${actif?T('Masquer','Hide'):T('Afficher','Show')}"><input type="checkbox" aria-label="${nom}" ${actif?'checked':''} onchange="feBasculer('${id}',this.checked)"><span></span></label>`}
+  </div>`;
+}
+function _feRendre(){
+  const cont = document.getElementById('feColonnes');
+  cont.innerHTML = FM_ONGLETS.map(o=>`
+    <div class="fe-col">
+      <h4>${escapeHTML(_fmLibelleOnglet(o))}</h4>
+      <div class="fe-liste" data-onglet="${o.id}">${_fe.ordre[o.id].map(_feCarte).join('')}</div>
+    </div>`).join('');
+  cont.querySelectorAll('.fe-carte').forEach(c=>{
+    c.addEventListener('dragstart', e=>{ _feDrag = c.dataset.id; c.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; try{ e.dataTransfer.setData('text/plain', c.dataset.id); }catch(_){} });
+    c.addEventListener('dragend', ()=>{ c.classList.remove('dragging'); if(_feDrag){ _feDrag=null; _feLireOrdre(); } });
+  });
+  cont.querySelectorAll('.fe-liste').forEach(l=>{
+    l.addEventListener('dragover', e=>{
+      if(!_feDrag) return;
+      e.preventDefault();
+      const el = cont.querySelector(`.fe-carte[data-id="${_feDrag}"]`);
+      const apres = [...l.querySelectorAll('.fe-carte:not(.dragging)')].find(c=>{
+        const r = c.getBoundingClientRect(); return e.clientY < r.top + r.height/2; });
+      if(apres) { if(apres.previousElementSibling!==el) l.insertBefore(el, apres); }
+      else if(l.lastElementChild!==el) l.appendChild(el);
+    });
+    l.addEventListener('drop', e=>{ e.preventDefault(); _feDrag=null; _feLireOrdre(); });
+  });
+}
+function _feLireOrdre(){
+  const o = {};
+  document.querySelectorAll('#feColonnes .fe-liste').forEach(l=>{
+    o[l.dataset.onglet] = [...l.querySelectorAll('.fe-carte')].map(c=>c.dataset.id);
+  });
+  if(JSON.stringify(o)!==JSON.stringify(_fe.ordre)){ _fe.ordre = o; _fe.ordreModifie = true; }
+  _feRendre();
+}
+// ▲▼ : dans la colonne ; au bord, passe à la colonne voisine.
+function feDeplacer(id, sens){
+  const cles = FM_ONGLETS.map(o=>o.id);
+  let k = cles.find(c=>_fe.ordre[c].includes(id));
+  let l = _fe.ordre[k], i = l.indexOf(id);
+  l.splice(i,1);
+  if(sens<0 && i===0){ const kk = cles[cles.indexOf(k)-1]; if(kk) _fe.ordre[kk].push(id); else l.unshift(id); }
+  else if(sens>0 && i===l.length){ const kk = cles[cles.indexOf(k)+1]; if(kk) _fe.ordre[kk].unshift(id); else l.push(id); }
+  else l.splice(i+sens, 0, id);
+  _fe.ordreModifie = true;
+  _feRendre();
+  document.querySelector(`#feColonnes .fe-carte[data-id="${id}"] .fe-fleches button:${sens<0?'first':'last'}-child`)?.focus();
+}
+function feBasculer(id, actif){
+  if(actif === !!_fe.defauts[id]) delete _fe.modules[id];
+  else _fe.modules[id] = actif;
+  _feRendre();
+  document.querySelector(`#feColonnes .fe-carte[data-id="${id}"] input`)?.focus();
+}
+function feRevenirDefaut(){
+  _fe.modules = {};
+  _fe.ordre = _feOrdreDefaut();
+  _fe.ordreModifie = false;
+  _feRendre();
+}
+// Copier : reproduire ce que l'autre catégorie AFFICHE (et non ses seuls
+// forçages), puisque les deux n'ont pas forcément la même fiche par défaut.
+function feCopierDepuis(autre){
+  document.getElementById('feCopier').value = '';
+  if(!autre) return;
+  const d = _fmDefautsCategorie(_fe.coll, autre).etat;
+  const r = configFiche(_fe.coll, autre) || {};
+  _fe.modules = {};
+  for(const m of FICHE_MODULES){
+    if(m.obligatoire) continue;
+    const voulu = (r.modules||{})[m.id]!==undefined ? r.modules[m.id] : !!d[m.id];
+    if(voulu !== !!_fe.defauts[m.id]) _fe.modules[m.id] = voulu;
+  }
+  _fe.ordre = r.disposition ? _feCompleterOrdre(r.disposition) : _feOrdreDefaut();
+  _fe.ordreModifie = !!r.disposition;
+  _feRendre();
+  toast(T(`Composition de « ${autre} » reprise — à enregistrer`, `Layout of "${autre}" copied — remember to save`));
+}
+function _feReglage(){
+  const r = {};
+  if(Object.keys(_fe.modules).length) r.modules = { ..._fe.modules };
+  if(_fe.ordreModifie && JSON.stringify(_fe.ordre)!==JSON.stringify(_feOrdreDefaut()))
+    r.disposition = JSON.parse(JSON.stringify(_fe.ordre));
+  return r;
+}
+async function feEnregistrer(){
+  const r = _feReglage();
+  const c = _fichesConfig[_fe.coll] = _fichesConfig[_fe.coll] || {};
+  if(_fmReglageVide(r)) delete c[_fe.cat]; else c[_fe.cat] = r;
+  if(!Object.keys(c).length) delete _fichesConfig[_fe.coll];
+  try { await sauverConfigFiches(); }
+  catch(e){ toast(T('Enregistrement impossible : ','Could not save: ')+(e.message||e),'error'); return; }
+  _feFinApercu();
+  closeModal('ficheEditeurModal');
+  appliquerConfigurationFiche();
+  if(document.getElementById('view-categories')?.classList.contains('active')) renderActiveCats();
+  toast(_fmReglageVide(r) ? T(`Fiche « ${_fe.cat} » : composition par défaut`, `"${_fe.cat}": default layout`)
+                          : T(`Fiche « ${_fe.cat} » composée`, `"${_fe.cat}" layout saved`));
+}
+function fermerEditeurFiche(){ closeModal('ficheEditeurModal'); }
+
+// Aperçu : la composition en cours appliquée à la fiche (celle déjà ouverte
+// sur cette catégorie, sinon une nouvelle fiche vierge). Rien n'est enregistré.
+function feApercu(){
+  _fmApercu = { coll:_fe.coll, cat:_fe.cat, reglage:_feReglage() };
+  closeModal('ficheEditeurModal');
+  const modal = document.getElementById('itemModal');
+  const catEl = document.getElementById('itemCategory');
+  if(modal.classList.contains('active') && catEl.value===_fe.cat){
+    appliquerConfigurationFiche();
+    switchFormTab('tab-infos');
+  } else openItemForm(null, { categorie:_fe.cat });
+  document.getElementById('feBandeauApercu').style.display = '';
+}
+function feReprendre(){
+  _feFinApercu();
+  _feAfficher();
+}
+function _feFinApercu(){
+  const b = document.getElementById('feBandeauApercu');
+  if(b) b.style.display = 'none';
+  if(_fmApercu){ _fmApercu = null; appliquerConfigurationFiche(); }
 }
 
 // ============================================================
@@ -9257,6 +9895,7 @@ function renderActiveCats(){
     div.innerHTML = `
       ${readOnly?'<span class="drag-handle" style="opacity:.25">🏷️</span>':`<span class="drag-handle" title="${T('Glisser pour réordonner','Drag to reorder')}">⠿</span>`}
       <span class="cat-name">${escapeHTML(cat)}</span>
+      ${readOnly?'':`<button class="fe-btn ghost${configFiche(_activeCollection,cat)?' regle':''}" data-cat="${escapeHTML(cat)}" title="${configFiche(_activeCollection,cat)?T('Composer la fiche (réglée)','Compose the record (customised)'):T('Composer la fiche','Compose the record')}" onclick="ouvrirEditeurFiche(this.dataset.cat)">⚙︎</button>`}
       ${readOnly?'':`<button class="remove-btn ghost" title="Supprimer" onclick="deactivateCategory(${idx})">✕</button>`}`;
     if(readOnly){ list.appendChild(div); return; }
     div.addEventListener("dragstart", e => { dragSrcIndex = idx; div.classList.add("dragging"); e.dataTransfer.effectAllowed="move"; });
@@ -9406,6 +10045,7 @@ function closeModal(id){
   if(_modalPrevFocus && document.contains(_modalPrevFocus)){ try{ _modalPrevFocus.focus(); }catch(e){} }
   _modalPrevFocus = null;
   if(id==='catPickerModal' && _tiroirAjout){ const _t=_tiroirAjout; _tiroirAjout=null; setTimeout(()=>openDrawerModal(_t), 0); }
+  if(id==='itemModal' && _fmApercu) _feFinApercu();
   if(id==='itemModal' && _tiroirRetour){ const _t=_tiroirRetour; _tiroirRetour=null; setTimeout(()=>openDrawerModal(_t), 0); }
   if(id==='itemModal' && _fbReturn){ const _r=_fbReturn; _fbReturn=null; const _focus=_r.itemId==='__NEW__'?_lastSavedItemId:_r.itemId; setTimeout(()=>openClasseurReader(_r.pileId, _focus), 0); }
 }
@@ -9502,6 +10142,7 @@ function openCategoryPicker(){
     return `<button class="cat-picker-btn${isPrio?" priority":""}${isExtra?" extra":""}" data-cat="${escapeHTML(cat)}" onclick="pickCategory(this.dataset.cat)">
       <span class="cat-icon">${icon}</span>
       <span>${escapeHTML(cat)}</span>
+      <span class="cp-composer" role="button" tabindex="0" title="${T('Composer la fiche','Compose the record')}" aria-label="${T('Composer la fiche','Compose the record')} ${escapeHTML(cat)}" onclick="event.stopPropagation();ouvrirEditeurFiche(this.parentElement.dataset.cat)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();ouvrirEditeurFiche(this.parentElement.dataset.cat)}">⚙︎</span>
     </button>`;
   };
   // Favoris d'abord (mis en avant), puis tout le reste par ordre alphabétique
@@ -24479,6 +25120,7 @@ async function _initApp(){
     await loadModuleCategories();
     await loadModulesEnabled();
     await chargerCompte();
+    await chargerConfigFiches();
     appliquerPreferencesCompte();
     majAvatarEntete();
     // La collection d'ouverture choisie dans la fiche prime sur la dernière
