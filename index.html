@@ -3085,9 +3085,10 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div><label data-en="Copy number">N° d'exemplaire</label><input type="text" id="itemCopyNumber" placeholder="ex: 42/500"></div>
             <div><label data-en="Print run annotations">Annotations de tirage</label><input type="text" id="itemTirageAnnotations" placeholder="ex: Numérotation au stylo, papier vélin…" data-en-ph="e.g. Pen numbering, vellum paper…"></div>
             <div class="checkbox-row"><input type="checkbox" id="itemSigned"><label for="itemSigned" style="margin:0" data-en="Signed">Signé</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="itemParaphe"><label for="itemParaphe" style="margin:0" title="Initiales ou petite signature abrégée de l'artiste, à la main" data-en-title="The artist's initials or short abbreviated signature, by hand" data-en="Initialled">Paraphé</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemSignaturePlanche"><label for="itemSignaturePlanche" style="margin:0" title="Signature intégrée au dessin imprimé, et non ajoutée à la main" data-en-title="Signature printed within the artwork, not added by hand" data-en="Signature in the artwork">Signature dans la planche</label></div>
-            <div class="checkbox-row" id="champTamponSec" style="visibility:hidden"><input type="checkbox" id="itemTamponSec"><label for="itemTamponSec" style="margin:0" title="Empreinte en relief, sans encre, de l'éditeur ou de l'atelier (aussi appelée cachet sec ou timbre sec)" data-en-title="Inkless relief mark of the publisher or workshop" data-en="Blind stamp">Tampon à sec (cachet sec)</label></div>
-            <div class="checkbox-row"><input type="checkbox" id="itemDedicaceTampon"><label for="itemDedicaceTampon" style="margin:0" data-en="Dedication (stamp)">Dédicace (tampon)</label></div>
+            <div class="checkbox-row" id="champTamponSec" style="display:none"><input type="checkbox" id="itemTamponSec"><label for="itemTamponSec" style="margin:0" title="Empreinte en relief, sans encre, de l'éditeur ou de l'atelier (aussi appelée cachet sec ou timbre sec)" data-en-title="Inkless relief mark of the publisher or workshop" data-en="Blind stamp">Tampon à sec (cachet sec)</label></div>
+            <div class="checkbox-row" style="grid-column:1"><input type="checkbox" id="itemDedicaceTampon"><label for="itemDedicaceTampon" style="margin:0" data-en="Dedication (stamp)">Dédicace (tampon)</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemDedicaceSignature"><label for="itemDedicaceSignature" style="margin:0" data-en="Dedication (signature)">Dédicace (signature)</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemDedicaceDessin"><label for="itemDedicaceDessin" style="margin:0" data-en="Dedication (drawing)">Dédicace (dessin)</label></div>
             <div class="span-3"><label data-en="Dedication / inscription details">Détail de la dédicace / mention</label><input type="text" id="itemDedication" placeholder="ex: Dessin original en noir, ex-libris numéroté…" data-en-ph="e.g. Original drawing in black, numbered ex-libris…"></div>
@@ -5218,7 +5219,7 @@ function adaptEphemereType(type){
   const cpChamp = document.getElementById('champCollePage');
   if(cpChamp) cpChamp.style.display = /^ex.?libris$/i.test(String(type||'').trim()) ? '' : 'none';
   const tsChamp = document.getElementById('champTamponSec');
-  if(tsChamp) tsChamp.style.visibility = (fam && fam.id === 'estampe') ? 'visible' : 'hidden';
+  if(tsChamp) tsChamp.style.display = (fam && fam.id === 'estampe') ? '' : 'none';
   // Rappel de la famille à côté du type
   const hint = document.getElementById('ephFamilyHint');
   if(hint) hint.textContent = fam ? `${fam.icon} ${_modLabelEph(fam)}` : '';
@@ -5339,8 +5340,9 @@ function applyArchetype(arch){
   // les estampes (ex-libris, sérigraphie…). La fiche Tirage d'art a son propre
   // « Cachet sec » : même donnée (cachetSec), pas de doublon à l'écran.
   const tsChamp = document.getElementById('champTamponSec');
-  // visibility (et non display) : la case garde sa place, l'alignement des deux lignes ne bouge pas.
-  if(tsChamp && arch.id !== 'ephemere') tsChamp.style.visibility = 'hidden';
+  // Seul sur sa ligne (Signé · Paraphé · Signature dans la planche remplissent la 1re) :
+  // le masquer ne décale rien, les dédicaces commencent toujours une nouvelle ligne.
+  if(tsChamp && arch.id !== 'ephemere') tsChamp.style.display = 'none';
   const cpChamp = document.getElementById('champCollePage');
   if(cpChamp && arch.id !== 'ephemere') cpChamp.style.display = 'none';
   const rattSec = document.getElementById('formSection-rattachement');
@@ -7884,7 +7886,7 @@ const SB = (() => {
     'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','embossageFroid','vignetteContrecollee','vignetteCuvette','rhodoid','bandeau','rubanMarquePage',
     'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
     'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite','emboitageEmbossageFroid',
-    'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche',
+    'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche','paraphe',
     // Les rapprochements automatiques qu'on a refusés : « non, ce n'est pas
     // la même édition ». Rangés ici, ils n'ont besoin d'aucune colonne SQL.
     'editionsEcartees'];
@@ -9783,6 +9785,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemDedicaceTampon").checked = !!it.dedicaceTampon;
     document.getElementById("itemTamponSec").checked = !!it.cachetSec;
     document.getElementById("itemSignaturePlanche").checked = !!it.signaturePlanche;
+    document.getElementById("itemParaphe").checked = !!it.paraphe;
     document.getElementById("itemExlibris").checked = !!it.exlibris;
     document.getElementById("itemExlibrisColle").checked = !!it.exlibrisColle;
     document.getElementById("itemExlibrisSigne").checked = !!it.exlibrisSigne;
@@ -10161,7 +10164,7 @@ async function _saveItemCore(e){
     const tagsRaw = document.getElementById("itemTags").value.trim();
     // Cases à cocher : appliquer seulement si non-indéterminées
     const cbIds = [
-      "itemLu","itemFirstEdition","itemSigned","itemDedicaceSignature","itemDedicaceDessin","itemDedicaceTampon","itemTamponSec",
+      "itemLu","itemFirstEdition","itemSigned","itemDedicaceSignature","itemDedicaceDessin","itemDedicaceTampon","itemTamponSec","itemParaphe",
       "itemExlibris","itemExlibrisColle","itemExlibrisSigne","itemExlibrisNumerote","itemTirageInclus","itemSerigraphie",
       "itemMarquePage","itemTimbre","itemCarnetCroquis","itemAutocollant","itemDecalcomanie","itemCartePostale",
       "itemPoster","itemSupplementRedactionnel",
@@ -10175,7 +10178,7 @@ async function _saveItemCore(e){
     const cbMap = { // id → clé objet
       itemLu:"lu", itemFirstEdition:"editionOriginale", itemSigned:"signe",
       itemDedicaceSignature:"dedicaceSignature", itemDedicaceDessin:"dedicaceDessin", itemDedicaceTampon:"dedicaceTampon", itemTamponSec:"cachetSec",
-      itemSignaturePlanche:"signaturePlanche",
+      itemSignaturePlanche:"signaturePlanche", itemParaphe:"paraphe",
       itemExlibris:"exlibris", itemExlibrisColle:"exlibrisColle", itemExlibrisSigne:"exlibrisSigne", itemExlibrisNumerote:"exlibrisNumerote",
       itemTirageInclus:"tirageInclus", itemSerigraphie:"serigraphie",
       itemMarquePage:"marquePage", itemTimbre:"timbre",
@@ -10306,6 +10309,7 @@ async function _saveItemCore(e){
     dedicaceDessin: document.getElementById("itemDedicaceDessin").checked,
     dedicaceTampon: document.getElementById("itemDedicaceTampon").checked,
     signaturePlanche: document.getElementById("itemSignaturePlanche").checked,
+    paraphe: document.getElementById("itemParaphe").checked,
     exlibris: document.getElementById("itemExlibris").checked,
     exlibrisColle: document.getElementById("itemExlibrisColle").checked,
     exlibrisSigne: document.getElementById("itemExlibrisSigne").checked,
@@ -17365,6 +17369,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
     (it.dedicaceSignature||it.dedicaceCheck) ? T('Dédicace (signature)','Dedication (signature)') : '',
     it.dedicaceDessin   ? T('Dédicace (dessin)','Dedication (drawing)') : '',
     it.dedicaceTampon   ? T('Dédicace (tampon)','Dedication (stamp)') : '',
+    it.paraphe          ? T('Paraphé','Initialled') : '',
     it.signaturePlanche ? T('Signature dans la planche','Signature in the artwork') : '',
     it.cachetSec        ? T('Tampon à sec','Blind stamp') : '',
   ].filter(Boolean).join(' · ');
@@ -17604,6 +17609,7 @@ function renderItemDetail(id, pushHistory=true){
       if(it.dedicaceTampon) _ded.push(_lang==='en'?'stamp':'tampon');
       // Signature imprimée dans le dessin : ligne à part, car elle n'est pas
       // manuscrite — la mêler aux dédicaces prêterait à confusion.
+      if(it.paraphe) rows.push({k:_lang==='en'?'Initialled':'Paraphé',p:true});
       if(it.signaturePlanche) rows.push({k:_lang==='en'?'Signature in the artwork':'Signature dans la planche',p:true});
       if(_ded.length){
         _ded[0] = _ded[0].charAt(0).toUpperCase() + _ded[0].slice(1);
@@ -18198,7 +18204,7 @@ function checkAutoBackup(){
 function exportCSV(type){
   let rows, filename;
   if(type==="items"){
-    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","tradition","isbn","bedethequeId","bedethequeUrl","nbPages","tirage","numeroExemplaire","format","etat","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","signaturePlanche","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
+    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","tradition","isbn","bedethequeId","bedethequeUrl","nbPages","tirage","numeroExemplaire","format","etat","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","signaturePlanche","paraphe","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
     rows = [headers];
     cache.items.forEach(i=>{
       const authors = (i.auteurs||[]).map(a=>{const r=a.roles&&a.roles.length?a.roles:(a.role?[a.role]:[]);return `${authorDisplay(authorById(a.auteurId))||""}${r.length?" ("+r.join(", ")+")":""}`;}).join("; ");
@@ -18210,6 +18216,7 @@ function exportCSV(type){
         if(h==="dedicaceDessin") return i.dedicaceDessin?"oui":"non";
         if(h==="dedicaceTampon") return i.dedicaceTampon?"oui":"non";
         if(h==="signaturePlanche") return i.signaturePlanche?"oui":"non";
+        if(h==="paraphe") return i.paraphe?"oui":"non";
         if(h==="emboitageCarton") return i.emboitageCarton?"oui":"non";
         if(h==="emboitageToile") return i.emboitageToile?"oui":"non";
         if(h==="emboitagePlexiglas") return i.emboitagePlexiglas?"oui":"non";
@@ -18402,6 +18409,7 @@ async function importCSV(e, type){
           dedicaceDessin: /^(oui|true|1)$/i.test(obj.dedicaceDessin||""),
     dedicaceTampon: /^(oui|true|1)$/i.test(obj.dedicaceTampon||""),
     signaturePlanche: /^(oui|true|1)$/i.test(obj.signaturePlanche||""),
+    paraphe: /^(oui|true|1)$/i.test(obj.paraphe||""),
           dedicace: obj.dedicace||"",
           emboitageCarton: /^(oui|true|1)$/i.test(obj.emboitageCarton||""),
           emboitageToile: /^(oui|true|1)$/i.test(obj.emboitageToile||""),
