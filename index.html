@@ -21830,6 +21830,7 @@ function renderMeubleFront(container, m){
       <button class="secondary" onclick="openBackToPlan()">← Plan</button>
       <h3 style="margin:0">🗄️ ${escapeHTML(m.name)}</h3>
       <button class="ghost" title="Modifier le meuble" onclick="editMeuble('${m.id}')">✏️</button>
+      <button class="secondary" style="margin-left:auto" title="${T('Liste de toutes les étagères du meuble, dans l\'ordre, à imprimer (fichier texte)','List of all the shelves of this bookcase, in order, to print (text file)')}" onclick="exporterRangementMeuble('${m.id}')">🖨︎ ${T('Liste du rangement','Shelving list')}</button>
     </div>
     <div class="meuble-nav-wrap">
       ${prevM?`<button class="meuble-nav-btn" onclick="openMeuble('${prevM.id}')" title="← ${escapeHTML(prevM.name)} ${T(`(flèche gauche)`,`(left arrow)`)}">‹</button>`:'<span class="meuble-nav-spacer"></span>'}
@@ -22714,6 +22715,7 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
 
   const headerBtns = isUnclassed ? "" : `
     <div class="shelf-actions">
+      <button class="ghost" title="${T(`Liste de cette étagère à imprimer (fichier texte)`,`List of this shelf to print (text file)`)}" onclick="exporterRangementEtagere('${shelf.id}')">🖨︎</button>
       <button class="ghost" title="${T(`Ranger l'étagère selon une méthode (cycle, chronologie, alphabétique…)`,`Sort the shelf by a method (series, date, alphabetical…)`)}" onclick="openRangementPanel('${shelf.id}')">⇅</button>
       <button class="ghost" title="${T(`Déplacer tout le contenu vers une étagère — y compris dans un autre meuble`,`Move all contents to a shelf — including in another bookcase`)}" onclick="openMoveShelfPicker(event,'${shelf.id}')">🚚</button>
       ${idx>0?`<button class="ghost" title="Monter" onclick="moveLibraryShelf('${shelf.id}',-1)">▲</button>`:`<button class="ghost" disabled style="opacity:.25;pointer-events:none">▲</button>`}
@@ -22833,6 +22835,133 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
       ${drawersHTML}${contentHTML}
     </div>
   </div>`;
+}
+
+// ============================================================
+// LISTE DE RANGEMENT À IMPRIMER (.txt) — une étagère ou tout un meuble
+// ------------------------------------------------------------
+// L'ordre est celui que montre la Bibliothèque (ordre enregistré de
+// l'étagère, piles comprises), numéroté, avec une case à cocher au stylo.
+// Étagères dans l'ordre de la façade : colonnes de gauche à droite, puis
+// de haut en bas — avec le même « Étage N » que l'écran.
+// ============================================================
+function _lrSlug(s){
+  return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'rangement';
+}
+function _lrTitre(it){ return (it.titre||'?') + (it.tome ? ` T${it.tome}` : ''); }
+function _lrDateJour(){ return new Date().toLocaleDateString(_lang==='en' ? 'en-GB' : 'fr-FR'); }
+function _lrDateFichier(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function _lrPluriel(n){ return `${n} ${libUnit(n)}`; }
+// Contenu ordonné d'une étagère : [{b:album} | {p:pile, livres:[…]}]
+function _lrContenuEtagere(shelf, byShelf){
+  const books = byShelf[shelf.name] || [];
+  const piles = libraryPiles.filter(p=>p.localisation===shelf.name);
+  const bookMap = new Map(books.map(b=>[String(b.id), b]));
+  const pileMap = new Map(piles.map(p=>['pile:'+p.id, p]));
+  const ordre = [];
+  (shelf.itemOrder||[]).map(String).forEach(k=>{
+    if(bookMap.has(k)){ ordre.push({b:bookMap.get(k)}); bookMap.delete(k); }
+    else if(pileMap.has(k)){ ordre.push({p:pileMap.get(k)}); pileMap.delete(k); }
+  });
+  bookMap.forEach(b=>ordre.push({b}));
+  pileMap.forEach(p=>ordre.push({p}));
+  ordre.forEach(e=>{ if(e.p) e.livres = getPileBooks(e.p); });
+  return ordre;
+}
+function _lrNbAlbums(contenu){ return contenu.reduce((s,e)=>s + (e.b ? 1 : e.livres.length), 0); }
+// Bloc texte d'une étagère
+function _lrBlocEtagere(shelf, contenu, libelle){
+  const L = [];
+  const n = _lrNbAlbums(contenu);
+  L.push(`${libelle} — ${_lrPluriel(n)}`);
+  L.push('-'.repeat(56));
+  const r = shelf.regleRangement;
+  if(_rgActive(r)) L.push(_rgNomLong(r));
+  try {
+    const att = _rgActive(r) ? _rgEtat(shelf, r).plan.steps.length : 0;
+    if(att) L.push(T(`⚠ ${att} déplacement(s) en attente : la liste suit l'ordre actuel, pas encore l'ordre cible.`,
+                     `⚠ ${att} move(s) pending: the list follows the current order, not yet the target order.`));
+  } catch(e){}
+  if(!contenu.length) L.push(T('(étagère vide)','(empty shelf)'));
+  contenu.forEach((e,i)=>{
+    const pos = i + 1;
+    if(e.b){ L.push(`☐  ${pos}. ${_lrTitre(e.b)}`); return; }
+    const genre = e.p.kind==='classeur' ? T('Classeur','Binder') : T('Pile','Stack');
+    L.push(`☐  ${pos}. [${genre} « ${e.p.name} » — ${_lrPluriel(e.livres.length)}]`);
+    e.livres.forEach((b,j)=>L.push(`      ☐  ${pos}.${j+1}. ${_lrTitre(b)}`));
+  });
+  return L.join('\n');
+}
+// Étagères d'un meuble dans l'ordre de la façade, avec leur libellé « Étage N »
+function _lrEtageresDuMeuble(m){
+  const cols = Math.max(1, m.cols||1);
+  const out = [];
+  for(let c=0;c<cols;c++){
+    const col = libraryShelves.filter(s=>s.meubleId===m.id && (s.col||0)===c).sort((a,b)=>(a.row||0)-(b.row||0));
+    col.forEach((s,i)=>{
+      const etage = col.length - i;
+      let lib = `${T('ÉTAGE','FLOOR')} ${etage}`;
+      if(cols>1) lib += ` · ${T('colonne','column')} ${c+1}`;
+      if(s.name) lib += ` · « ${s.name} »`;
+      out.push({ shelf:s, libelle:lib });
+    });
+  }
+  return out;
+}
+function _lrEntete(meuble, detail){
+  return [
+    T('MA COLLECTION — LISTE DE RANGEMENT','MY COLLECTION — SHELVING LIST'),
+    `${T('Meuble','Bookcase')} : ${meuble ? meuble.name : '—'}`,
+    `${T('Éditée le','Printed on')} ${_lrDateJour()}${detail ? ' · '+detail : ''}`,
+    T('Cochez chaque album une fois vérifié à sa place.','Tick each item once checked in its place.'),
+    '='.repeat(56), ''
+  ].join('\n');
+}
+function _lrTelecharger(nom, texte){
+  const blob = new Blob(['﻿' + texte + '\n'], { type:'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nom;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+function exporterRangementEtagere(shelfId){
+  const s = libraryShelves.find(x=>x.id===shelfId);
+  if(!s) return;
+  const m = libraryFurniture.find(x=>x.id===s.meubleId);
+  const { byShelf } = _bucketItemsByShelf();
+  const info = m ? _lrEtageresDuMeuble(m).find(x=>x.shelf.id===s.id) : null;
+  const libelle = info ? info.libelle : (s.name || T('Étagère','Shelf'));
+  const contenu = _lrContenuEtagere(s, byShelf);
+  const texte = _lrEntete(m, '') + _lrBlocEtagere(s, contenu, libelle);
+  _lrTelecharger(`rangement-${_lrSlug(m ? m.name : '')}-${_lrSlug(s.name || libelle)}-${_lrDateFichier()}.txt`, texte);
+  toast(T(`Liste de l'étagère téléchargée (${_lrPluriel(_lrNbAlbums(contenu))})`, `Shelf list downloaded (${_lrPluriel(_lrNbAlbums(contenu))})`));
+}
+function exporterRangementMeuble(meubleId){
+  const m = libraryFurniture.find(x=>x.id===meubleId);
+  if(!m) return;
+  const { byShelf } = _bucketItemsByShelf();
+  const etageres = _lrEtageresDuMeuble(m).map(e=>({ ...e, contenu:_lrContenuEtagere(e.shelf, byShelf) }));
+  // Tiroirs du meuble : pas d'ordre de rangement, liste alphabétique.
+  const tiroirs = [];
+  (m.drawers||[]).forEach(d=>(d.names||[]).forEach(nom=>{
+    if(!nom) return;
+    const livres = cache.items.filter(i=>itemInActiveLibrary(i) && (i.localisation||'').trim()===nom)
+      .sort((a,b)=>_lrTitre(a).localeCompare(_lrTitre(b),'fr'));
+    if(livres.length) tiroirs.push({ nom, livres });
+  }));
+  const total = etageres.reduce((s,e)=>s+_lrNbAlbums(e.contenu),0) + tiroirs.reduce((s,t)=>s+t.livres.length,0);
+  const blocs = etageres.map(e=>_lrBlocEtagere(e.shelf, e.contenu, e.libelle));
+  tiroirs.forEach(t=>{
+    blocs.push([`${T('TIROIR','DRAWER')} « ${t.nom} » — ${_lrPluriel(t.livres.length)}`, '-'.repeat(56),
+                ...t.livres.map((b,i)=>`☐  ${i+1}. ${_lrTitre(b)}`)].join('\n'));
+  });
+  const detail = `${etageres.length} ${etageres.length>1 ? T('étagères','shelves') : T('étagère','shelf')} · ${_lrPluriel(total)}`;
+  const texte = _lrEntete(m, detail) + (blocs.join('\n\n\n') || T('(meuble vide)','(empty bookcase)'));
+  _lrTelecharger(`rangement-${_lrSlug(m.name)}-${_lrDateFichier()}.txt`, texte);
+  toast(T(`Liste du meuble téléchargée (${_lrPluriel(total)})`, `Bookcase list downloaded (${_lrPluriel(total)})`));
 }
 
 async function addLibraryShelf(){
