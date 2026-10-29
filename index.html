@@ -212,7 +212,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   .grid.grid-sm .card-sub{font-size:11px}
   .grid.grid-sm .card-meta{font-size:10px}
   .grid.grid-sm .badge-eo,.grid.grid-sm .badge-signed{font-size:9px;padding:1px 4px}
-  .grid.grid-sm .card-meta .tag{font-size:9px;padding:2px 4px;line-height:1.3;align-self:center;white-space:normal;width:fit-content;min-width:0;border-radius:4px;flex:none;max-width:65%}
+  .grid.grid-sm .card-meta .tag{font-size:9px;padding:2px 4px;line-height:1.3;align-self:center;border-radius:4px}
   .grid.grid-sm .card-edit-btn{width:26px;height:26px;font-size:12px}
   .card-select-cb{position:absolute;top:6px;right:6px;z-index:3;width:18px;height:18px;cursor:pointer;accent-color:var(--accent);display:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
   .bulk-mode .card-select-cb{display:block}
@@ -272,6 +272,12 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   .card-title{font-weight:600;font-size:14px;margin:0 0 4px;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .card-sub{font-size:12px;color:var(--ink-soft);margin:0 0 6px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
   .card-meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-soft);margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
+  /* Badges de catégorie : le contour suit le texte (une seule ligne) ; s'ils ne
+     tiennent pas, ils passent à la ligne suivante, et un nom trop long pour la
+     carte se termine par « … » (nom complet au survol). L'année reste à droite. */
+  .card-meta:not(.card-meta-auteur){flex-wrap:wrap;justify-content:flex-start;gap:5px 6px}
+  .card-meta:not(.card-meta-auteur) > :last-child{margin-left:auto}
+  .card-meta .tag{white-space:nowrap;max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
   /* Fiche auteur : le compteur est calé à gauche et s'arrête avant le bouton
      « Modifier » (32 px + 8 px de marge, 44 px en tactile) qui flotte à droite. */
   .card-meta-auteur{justify-content:flex-start;padding-right:44px}
@@ -929,9 +935,9 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 
   /* Modules de fiche : forçages par catégorie (éditeur de fiches) */
   /* Fenêtre « Ranger » : liste à imprimer */
-  .rg-liste{display:grid;grid-template-columns:auto auto auto;gap:8px 10px;align-items:center;justify-content:start}
+  .rg-liste{display:grid;grid-template-columns:auto auto;gap:8px 10px;align-items:center;justify-content:start}
   .rg-liste-l{font-size:13px;color:var(--ink-soft)}
-  @media (max-width:560px){ .rg-liste{grid-template-columns:1fr 1fr} .rg-liste-l{grid-column:1/-1} }
+  @media (max-width:560px){ .rg-liste{grid-template-columns:1fr} }
   /* Éditeur de fiche */
   .fe-modal{max-width:1100px}
   .fe-aide{font-size:13px;margin:0 0 12px}
@@ -3103,6 +3109,15 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div><label data-en="Condition">État</label><select id="itemCondition"><option value="">—</option><option>Neuf</option><option>Très bon</option><option>Bon</option><option>Moyen</option><option>Mauvais</option></select></div>
             <div class="span-2"><label data-en="Condition details">Précisions sur l'état</label><input type="text" id="itemEtatDetail" list="dl-etat-detail" autocomplete="off" placeholder="ex: dos légèrement insolé, coin inférieur frotté, papier jauni…" data-en-ph="e.g. slightly sunned spine, rubbed corner, tanned paper…">
               <datalist id="dl-etat-detail"></datalist></div>
+            <!-- Comics : grade de l'échelle américaine (CGC/CBCS), note sur 10 et classification d'âge -->
+            <div class="span-3" id="champsComics" style="display:none">
+              <div class="form-grid three" style="margin:0">
+                <div><label for="itemGradeUS" data-en="US grade">Grade (échelle US)</label><select id="itemGradeUS" onchange="_gradeVersNote()"></select></div>
+                <div><label for="itemGradeNote" data-en="Grade out of 10">Note sur 10</label><input type="number" id="itemGradeNote" min="0.5" max="10" step="0.1" inputmode="decimal" placeholder="ex: 9.4" oninput="_noteVersGrade()"></div>
+                <div><label for="itemRatingComics" title="Classification d'âge imprimée sur la couverture" data-en-title="Age rating printed on the cover" data-en="Rating">Rating</label><input type="text" id="itemRatingComics" list="dl-rating-comics" autocomplete="off" placeholder="ex: RATED T+">
+                  <datalist id="dl-rating-comics"><option value="ALL AGES"><option value="RATED A"><option value="RATED T"><option value="RATED T+"><option value="PARENTAL ADVISORY"><option value="EXPLICIT CONTENT"><option value="MARVEL MAX"><option value="E (Everyone)"><option value="T (Teen)"><option value="T+ (Teen Plus)"><option value="M (Mature)"><option value="MATURE READERS"><option value="AGES 13+"><option value="AGES 17+"><option value="AGES 18+"></datalist></div>
+              </div>
+            </div>
           </div>
         </div>
         <!-- ── PIN'S SECTION (hidden by default) ── -->
@@ -5480,7 +5495,7 @@ const FICHE_MODULES = [
   { id:'format', label:'Format et papier', labelEn:'Format and paper', onglet:'infos',
     blocs:['champ:itemPages','#formFieldFormat','#formFieldPaperQuality','#formFieldPageOrder'] },
   { id:'etat', label:'État', labelEn:'Condition', onglet:'infos',
-    blocs:['champ:itemCondition','champ:itemEtatDetail'] },
+    blocs:['champ:itemCondition','champ:itemEtatDetail','#champsComics'] },
   { id:'serieLimitee', label:'Série limitée', labelEn:'Limited edition', onglet:'caract',
     blocs:['champ:itemPrintRun','champ:itemCopyNumber','champ:itemTirageAnnotations'] },
   { id:'signatures', label:'Signatures et dédicaces', labelEn:'Signatures and dedications', onglet:'caract',
@@ -6166,7 +6181,55 @@ function _majEtatDetail(arch){
     .map(v=>`<option>${escapeHTML(v)}</option>`).join('');
 }
 
+// ============================================================
+// COMICS — échelle de grade américaine (CGC / CBCS / Overstreet)
+// Le grade (NM, VF…) et sa note sur 10 sont liés : choisir l'un remplit
+// l'autre. Une note hors barème (ex. 9.3) reprend le grade immédiatement
+// inférieur. Le « rating » est la classification d'âge de l'éditeur.
+// ============================================================
+const GRADES_US = [
+  ['GM',10.0,'Gem Mint'],['MT',9.9,'Mint'],['NM/M',9.8,'Near Mint/Mint'],['NM+',9.6,'Near Mint+'],
+  ['NM',9.4,'Near Mint'],['NM-',9.2,'Near Mint-'],['VF/NM',9.0,'Very Fine/Near Mint'],['VF+',8.5,'Very Fine+'],
+  ['VF',8.0,'Very Fine'],['VF-',7.5,'Very Fine-'],['FN/VF',7.0,'Fine/Very Fine'],['FN+',6.5,'Fine+'],
+  ['FN',6.0,'Fine'],['FN-',5.5,'Fine-'],['VG/FN',5.0,'Very Good/Fine'],['VG+',4.5,'Very Good+'],
+  ['VG',4.0,'Very Good'],['VG-',3.5,'Very Good-'],['G/VG',3.0,'Good/Very Good'],['G+',2.5,'Good+'],
+  ['G',2.0,'Good'],['G-',1.8,'Good-'],['FR/G',1.5,'Fair/Good'],['FR',1.0,'Fair'],['PR',0.5,'Poor'],
+];
+function _estComics(cat){ return /comic/i.test(String(cat||'')); }
+function _majChampsComics(cat){
+  const bloc = document.getElementById('champsComics');
+  if(!bloc) return;
+  const sel = document.getElementById('itemGradeUS');
+  if(sel && !sel.options.length){
+    sel.innerHTML = '<option value="">—</option>' + GRADES_US.map(([a,n,nom])=>
+      `<option value="${escapeHTML(a)}">${escapeHTML(a)} — ${escapeHTML(nom)} (${n.toFixed(1)})</option>`).join('');
+  }
+  bloc.style.display = _estComics(cat) ? '' : 'none';
+}
+function _gradeVersNote(){
+  const g = GRADES_US.find(x=>x[0]===document.getElementById('itemGradeUS').value);
+  document.getElementById('itemGradeNote').value = g ? g[1].toFixed(1) : '';
+}
+function _noteVersGrade(){
+  const v = parseFloat(String(document.getElementById('itemGradeNote').value).replace(',','.'));
+  const sel = document.getElementById('itemGradeUS');
+  if(!isFinite(v)){ sel.value = ''; return; }
+  const g = GRADES_US.find(x=>x[1] <= v + 1e-9);
+  sel.value = g ? g[0] : '';
+}
+function _gradeDetailHTML(it){
+  const out = [];
+  if(it.gradeUS || it.gradeNote){
+    const g = GRADES_US.find(x=>x[0]===it.gradeUS);
+    const note = it.gradeNote || (g ? g[1].toFixed(1) : '');
+    out.push(`<dt>${T('Grade (US)','Grade (US)')}</dt><dd>${g ? `<b>${escapeHTML(g[0])}</b> — ${escapeHTML(g[2])}` : ''}${note ? `${g?' · ':''}${escapeHTML(String(note))}/10` : ''}</dd>`);
+  }
+  if(it.ratingComics) out.push(`<dt>Rating</dt><dd>${escapeHTML(it.ratingComics)}</dd>`);
+  return out.join('');
+}
+
 function adaptFormToCategory(cat){
+  _majChampsComics(cat);
   const coll = _collectionDeLaFiche(cat);
   const arch = coll === 'dvd' ? _archetypeDansCollection('dvd', cat)
              : ((!cat && _archetypeParDefautCollection()) || archetypeForCategory(cat));
@@ -8529,6 +8592,7 @@ const SB = (() => {
     'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
     'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite','emboitageEmbossageFroid',
     'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche','paraphe',
+    'gradeUS','gradeNote','ratingComics',
     // Les rapprochements automatiques qu'on a refusés : « non, ce n'est pas
     // la même édition ». Rangés ici, ils n'ont besoin d'aucune colonne SQL.
     'editionsEcartees'];
@@ -10422,6 +10486,9 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemPageOrder").value = it.pageOrder||"";
     document.getElementById("itemCondition").value = it.etat||"";
     document.getElementById("itemEtatDetail").value = it.etatDetail||"";
+    document.getElementById("itemGradeUS").value = it.gradeUS||"";
+    document.getElementById("itemGradeNote").value = it.gradeNote||"";
+    document.getElementById("itemRatingComics").value = it.ratingComics||"";
     document.getElementById("itemFirstEdition").checked = !!it.editionOriginale;
     document.getElementById("itemEditionInfo").value = it.editionInfo||"";
     document.getElementById("itemSigned").checked = !!it.signe;
@@ -10787,6 +10854,9 @@ async function _saveItemCore(e){
       format:             document.getElementById("itemFormat").value.trim(),
       etat:               document.getElementById("itemCondition").value,
       etatDetail:         document.getElementById("itemEtatDetail").value.trim(),
+      gradeUS:            document.getElementById("itemGradeUS").value,
+      gradeNote:          document.getElementById("itemGradeNote").value.trim(),
+      ratingComics:       document.getElementById("itemRatingComics").value.trim(),
       editionInfo:        document.getElementById("itemEditionInfo").value.trim(),
       jaquetteEtat:       document.getElementById("itemJaquetteEtat").value.trim(),
       dedicace:           document.getElementById("itemDedication").value.trim(),
@@ -10947,6 +11017,9 @@ async function _saveItemCore(e){
     pageOrder: parseInt(document.getElementById("itemPageOrder").value)||null,
     etat: document.getElementById("itemCondition").value,
     etatDetail: document.getElementById("itemEtatDetail").value.trim(),
+    gradeUS: document.getElementById("itemGradeUS").value,
+    gradeNote: document.getElementById("itemGradeNote").value.trim(),
+    ratingComics: document.getElementById("itemRatingComics").value.trim(),
     editionOriginale: document.getElementById("itemFirstEdition").checked,
     editionInfo: document.getElementById("itemEditionInfo").value.trim(),
     signe: document.getElementById("itemSigned").checked,
@@ -16108,8 +16181,8 @@ function cardItemHTML(i, compact=false){
       }
       <div class="card-meta">
         ${isAllCollection()?(()=>{const m=moduleById(i.collectionType||'bd');return `<span class="tag" title="${escapeHTML(m.label)}" style="background:${m.accent}22;border-color:${m.accent}66;color:var(--ink)">${iconeColl(m)} ${escapeHTML(m.label)}</span>`;})():""}
-        <span class="tag cat">${escapeHTML(i.categorie||"—")}</span>
-        ${(i.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}
+        <span class="tag cat" title="${escapeHTML(i.categorie||"")}">${escapeHTML(i.categorie||"—")}</span>
+        ${(i.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec" title="${escapeHTML(c)}">${escapeHTML(c)}</span>`).join("")}
         ${(()=>{const d=_drapeauxItem(i);return d.flags?`<span title="${escapeHTML(d.titre)}" style="font-size:16px;line-height:1">${d.flags}</span>`:""})()}
         ${(i.objetsAssocies||[]).length?`<span title="${T(`Objets associés :`,`Related objects:`)} ${escapeHTML([...new Set((i.objetsAssocies||[]).map(o=>moduleById(o.type).label))].join(', '))}" style="font-size:13px;line-height:1;opacity:.85">🔗${[...new Set((i.objetsAssocies||[]).map(o=>moduleById(o.type).icon))].join('')}</span>`:""}
         ${(()=>{const d=dateAffichee(i);return `<span${d.titre?` title="${escapeHTML(d.titre)}"`:''}>${escapeHTML(d.texte)}</span>`;})()}
@@ -18183,6 +18256,7 @@ function renderItemDetail(id, pushHistory=true){
     ${_taDetailHTML(it)}
     ${it.paperQuality?`<dt>${_lang==='en'?'Paper':'Papier'}</dt><dd>${escapeHTML(it.paperQuality)}</dd>`:""}
     ${it.editionInfo?`<dt>${t('detail.edition_label')}</dt><dd>${escapeHTML(it.editionInfo)}</dd>`:""}
+    ${_gradeDetailHTML(it)}
     ${(it.etat||it.etatDetail)?`<dt>${t('detail.condition_label')}</dt><dd>${escapeHTML(it.etat||'')}${it.etatDetail?`${it.etat?' — ':''}<span class="muted">${escapeHTML(it.etatDetail)}</span>`:''}</dd>`:""}
     ${it.prixAchat?`<dt>${t('detail.price_buy_label')}</dt><dd>${it.prixAchat.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:"currency",currency:"EUR"})}</dd>`:""}
     ${it.cote?`<dt>${t('detail.price_curr_label')}</dt><dd>${it.cote.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:"currency",currency:"EUR"})}</dd>`:""}
@@ -18849,7 +18923,7 @@ function checkAutoBackup(){
 function exportCSV(type){
   let rows, filename;
   if(type==="items"){
-    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","tradition","isbn","bedethequeId","bedethequeUrl","nbPages","tirage","numeroExemplaire","format","etat","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","signaturePlanche","paraphe","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
+    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","tradition","isbn","bedethequeId","bedethequeUrl","nbPages","tirage","numeroExemplaire","format","etat","gradeUS","gradeNote","ratingComics","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","signaturePlanche","paraphe","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
     rows = [headers];
     cache.items.forEach(i=>{
       const authors = (i.auteurs||[]).map(a=>{const r=a.roles&&a.roles.length?a.roles:(a.role?[a.role]:[]);return `${authorDisplay(authorById(a.auteurId))||""}${r.length?" ("+r.join(", ")+")":""}`;}).join("; ");
@@ -19047,6 +19121,9 @@ async function importCSV(e, type){
           numeroExemplaire: obj.numeroExemplaire||"",
           format: obj.format||"",
           etat: obj.etat||"",
+          gradeUS: obj.gradeUS||"",
+          gradeNote: obj.gradeNote||"",
+          ratingComics: obj.ratingComics||"",
           editionOriginale: /^(oui|true|1|eo)$/i.test(obj.editionOriginale||""),
           editionInfo: obj.editionInfo||"",
           signe: /^(oui|true|1)$/i.test(obj.signe||""),
@@ -22531,10 +22608,8 @@ function _rgSectionListe(shelf){
     <div class="rg-liste">
       <span class="rg-liste-l">${T('Cette étagère','This shelf')}</span>
       <button type="button" class="secondary" onclick="imprimerRangementEtagere('${id}')">🖨︎ ${T('Imprimer / PDF','Print / PDF')}</button>
-      <button type="button" class="secondary" onclick="exporterRangementEtagere('${id}')">📄︎ ${T('Texte','Text')}</button>
       ${m ? `<span class="rg-liste-l">${T('Tout le meuble','Whole bookcase')} « ${escapeHTML(m.name)} »</span>
-      <button type="button" class="secondary" onclick="imprimerRangementMeuble('${escapeHTML(m.id)}')">🖨︎ ${T('Imprimer / PDF','Print / PDF')}</button>
-      <button type="button" class="secondary" onclick="exporterRangementMeuble('${escapeHTML(m.id)}')">📄︎ ${T('Texte','Text')}</button>` : ''}
+      <button type="button" class="secondary" onclick="imprimerRangementMeuble('${escapeHTML(m.id)}')">🖨︎ ${T('Imprimer / PDF','Print / PDF')}</button>` : ''}
     </div>
     <p class="rg-note">${T("La liste suit l'ordre enregistré de l'étagère et la méthode appliquée — une méthode choisie ci-dessus mais pas encore appliquée n'y figure pas.","The list follows the shelf's saved order and applied method — a method chosen above but not yet applied is not included.")}</p>
   </div>`;
@@ -22861,10 +22936,9 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
 // ============================================================
 // LISTE DE RANGEMENT À IMPRIMER — une étagère ou tout un meuble
 // ------------------------------------------------------------
-// Deux sorties, mêmes données :
-//  · PDF : une page mise en forme, ouverte dans la fenêtre d'impression
-//    du navigateur (« Imprimer » ou « Enregistrer au format PDF ») ;
-//  · texte : un .txt avec tableaux tracés en caractères de cadre.
+// Une page mise en forme (tableau N° · Titre · Catégorie · Année), ouverte
+// dans la fenêtre d'impression du navigateur : « Imprimer » ou « Enregistrer
+// au format PDF ». Boutons dans la fenêtre « Ranger » d'une étagère.
 // L'ordre est celui que montre la Bibliothèque (ordre enregistré de
 // l'étagère, piles comprises). Étagères dans l'ordre de la façade :
 // colonnes de gauche à droite, puis de haut en bas, « Étage N » comme à l'écran.
@@ -22970,45 +23044,6 @@ function _lrDocMeuble(meubleId){
            nomFichier:`rangement-${_lrSlug(m.name)}-${_lrDateFichier()}` };
 }
 
-// ── Sortie texte : tableaux en caractères de cadre (police à chasse fixe :
-//    TextEdit affiche le texte brut en Menlo par défaut).
-function _lrCouper(s, n){ s = String(s||'').normalize('NFC'); return s.length>n ? s.slice(0,n-1)+'…' : s; }
-function _lrTableauTexte(lignes){
-  const cols = ['pos','titre','cat','an'];
-  const ent = { pos:T('N°','No.'), titre:T('Titre','Title'), cat:T('Catégorie','Category'), an:T('Année','Year') };
-  const L = lignes.map(l=>({ pos:'[ ] '+l.pos, titre:_lrCouper((l.sous?'  › ':'')+l.titre,46), cat:_lrCouper(l.cat,20), an:l.an }));
-  const w = {};
-  cols.forEach(k=>{ w[k] = Math.max(ent[k].length, ...L.map(l=>l[k].length)); });
-  const trait = (g,m,d) => g + cols.map(k=>'─'.repeat(w[k]+2)).join(m) + d;
-  const ligne = r => '│' + cols.map(k=>' ' + (k==='an' ? r[k].padStart(w[k]) : r[k].padEnd(w[k])) + ' ').join('│') + '│';
-  return [trait('┌','┬','┐'), ligne(ent), trait('├','┼','┤'), ...L.map(ligne), trait('└','┴','┘')].join('\n');
-}
-function _lrTexte(doc){
-  const out = [
-    T('MA COLLECTION — LISTE DE RANGEMENT','MY COLLECTION — SHELVING LIST'),
-    `${T('Meuble','Bookcase')} : ${doc.meuble}`,
-    `${T('Éditée le','Printed on')} ${_lrDateJour()}${doc.detail ? ' · '+doc.detail : ''}`,
-    T('Cochez chaque case [ ] une fois l\'album vérifié à sa place.','Tick each [ ] box once the item is checked in its place.'),
-    '='.repeat(56), ''
-  ].join('\n');
-  const blocs = doc.blocs.map(b=>[
-    b.titre, '-'.repeat(56),
-    `${T('Méthode de classement','Sorting method')} : ${b.methode}`,
-    ...(b.alerte ? ['⚠ '+b.alerte] : []),
-    b.lignes.length ? _lrTableauTexte(b.lignes) : (b.vide||'')
-  ].join('\n'));
-  return out + (blocs.join('\n\n\n') || T('(meuble vide)','(empty bookcase)'));
-}
-function _lrTelecharger(nom, texte){
-  const blob = new Blob(['﻿' + texte + '\n'], { type:'text/plain;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = nom;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
-}
-
 // ── Sortie PDF : page d'impression (A4 portrait), vrai tableau.
 function _lrHTML(doc){
   const e = escapeHTML;
@@ -23081,16 +23116,7 @@ function _lrImprimer(doc){
 // ── Points d'entrée (boutons de la Bibliothèque)
 function imprimerRangementEtagere(shelfId){ const d=_lrDocEtagere(shelfId); if(d) _lrImprimer(d); }
 function imprimerRangementMeuble(meubleId){ const d=_lrDocMeuble(meubleId); if(d) _lrImprimer(d); }
-function exporterRangementEtagere(shelfId){
-  const d = _lrDocEtagere(shelfId); if(!d) return;
-  _lrTelecharger(d.nomFichier+'.txt', _lrTexte(d));
-  toast(T(`Liste de l'étagère téléchargée (${_lrPluriel(d.total)})`, `Shelf list downloaded (${_lrPluriel(d.total)})`));
-}
-function exporterRangementMeuble(meubleId){
-  const d = _lrDocMeuble(meubleId); if(!d) return;
-  _lrTelecharger(d.nomFichier+'.txt', _lrTexte(d));
-  toast(T(`Liste du meuble téléchargée (${_lrPluriel(d.total)})`, `Bookcase list downloaded (${_lrPluriel(d.total)})`));
-}
+
 
 async function addLibraryShelf(){
   if(_currentMeubleId == null){ toast(T("Ouvre d'abord un meuble pour y ajouter une étagère.","Open a bookcase first to add a shelf to it."), "error"); return; }
