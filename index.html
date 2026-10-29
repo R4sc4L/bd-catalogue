@@ -22850,6 +22850,9 @@ function _lrSlug(s){
     .replace(/[^a-z0-9]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'rangement';
 }
 function _lrTitre(it){ return (it.titre||'?') + (it.tome ? ` T${it.tome}` : ''); }
+// Ligne d'album : titre + catégorie + année d'édition, pour distinguer deux éditions d'un même
+// titre (album, intégrale, tirage de tête…).
+function _lrLigne(it){ return _lrTitre(it) + (it.categorie ? `  ·  ${it.categorie}` : '') + (it.anneeEdition ? `  ·  ${it.anneeEdition}` : ''); }
 function _lrDateJour(){ return new Date().toLocaleDateString(_lang==='en' ? 'en-GB' : 'fr-FR'); }
 function _lrDateFichier(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function _lrPluriel(n){ return `${n} ${libUnit(n)}`; }
@@ -22877,7 +22880,9 @@ function _lrBlocEtagere(shelf, contenu, libelle){
   L.push(`${libelle} — ${_lrPluriel(n)}`);
   L.push('-'.repeat(56));
   const r = shelf.regleRangement;
-  if(_rgActive(r)) L.push(_rgNomLong(r));
+  L.push(`${T('Méthode de classement','Sorting method')} : ` + (_rgActive(r)
+    ? `${_rgNomCourt(r)} — ${T('par ','by ')}${_rgNomLong(r).replace(/^Rangé par |^Sorted by /,'')}`
+    : T('Manuel (ordre choisi par glisser-déposer)','Manual (order set by drag and drop)')));
   try {
     const att = _rgActive(r) ? _rgEtat(shelf, r).plan.steps.length : 0;
     if(att) L.push(T(`⚠ ${att} déplacement(s) en attente : la liste suit l'ordre actuel, pas encore l'ordre cible.`,
@@ -22886,10 +22891,10 @@ function _lrBlocEtagere(shelf, contenu, libelle){
   if(!contenu.length) L.push(T('(étagère vide)','(empty shelf)'));
   contenu.forEach((e,i)=>{
     const pos = i + 1;
-    if(e.b){ L.push(`☐  ${pos}. ${_lrTitre(e.b)}`); return; }
+    if(e.b){ L.push(`☐  ${pos}. ${_lrLigne(e.b)}`); return; }
     const genre = e.p.kind==='classeur' ? T('Classeur','Binder') : T('Pile','Stack');
     L.push(`☐  ${pos}. [${genre} « ${e.p.name} » — ${_lrPluriel(e.livres.length)}]`);
-    e.livres.forEach((b,j)=>L.push(`      ☐  ${pos}.${j+1}. ${_lrTitre(b)}`));
+    e.livres.forEach((b,j)=>L.push(`      ☐  ${pos}.${j+1}. ${_lrLigne(b)}`));
   });
   return L.join('\n');
 }
@@ -22956,7 +22961,8 @@ function exporterRangementMeuble(meubleId){
   const blocs = etageres.map(e=>_lrBlocEtagere(e.shelf, e.contenu, e.libelle));
   tiroirs.forEach(t=>{
     blocs.push([`${T('TIROIR','DRAWER')} « ${t.nom} » — ${_lrPluriel(t.livres.length)}`, '-'.repeat(56),
-                ...t.livres.map((b,i)=>`☐  ${i+1}. ${_lrTitre(b)}`)].join('\n'));
+                T('Méthode de classement : alphabétique (tiroir)','Sorting method: alphabetical (drawer)'),
+                ...t.livres.map((b,i)=>`☐  ${i+1}. ${_lrLigne(b)}`)].join('\n'));
   });
   const detail = `${etageres.length} ${etageres.length>1 ? T('étagères','shelves') : T('étagère','shelf')} · ${_lrPluriel(total)}`;
   const texte = _lrEntete(m, detail) + (blocs.join('\n\n\n') || T('(meuble vide)','(empty bookcase)'));
