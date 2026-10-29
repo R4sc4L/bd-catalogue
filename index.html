@@ -928,6 +928,10 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   #itemForm.disque-simple #formFieldFirstEdition{display:none}
 
   /* Modules de fiche : forçages par catégorie (éditeur de fiches) */
+  /* Fenêtre « Ranger » : liste à imprimer */
+  .rg-liste{display:grid;grid-template-columns:auto auto auto;gap:8px 10px;align-items:center;justify-content:start}
+  .rg-liste-l{font-size:13px;color:var(--ink-soft)}
+  @media (max-width:560px){ .rg-liste{grid-template-columns:1fr 1fr} .rg-liste-l{grid-column:1/-1} }
   /* Éditeur de fiche */
   .fe-modal{max-width:1100px}
   .fe-aide{font-size:13px;margin:0 0 12px}
@@ -21830,8 +21834,6 @@ function renderMeubleFront(container, m){
       <button class="secondary" onclick="openBackToPlan()">← Plan</button>
       <h3 style="margin:0">🗄️ ${escapeHTML(m.name)}</h3>
       <button class="ghost" title="Modifier le meuble" onclick="editMeuble('${m.id}')">✏️</button>
-      <button class="secondary" style="margin-left:auto" title="${T('Imprimer la liste de toutes les étagères du meuble, dans l\'ordre (ou l\'enregistrer en PDF)','Print the list of all the shelves of this bookcase, in order (or save it as PDF)')}" onclick="imprimerRangementMeuble('${m.id}')">🖨︎ ${T('Imprimer / PDF','Print / PDF')}</button>
-      <button class="secondary" title="${T('Télécharger la même liste en fichier texte','Download the same list as a text file')}" onclick="exporterRangementMeuble('${m.id}')">📄︎ ${T('Texte','Text')}</button>
     </div>
     <div class="meuble-nav-wrap">
       ${prevM?`<button class="meuble-nav-btn" onclick="openMeuble('${prevM.id}')" title="← ${escapeHTML(prevM.name)} ${T(`(flèche gauche)`,`(left arrow)`)}">‹</button>`:'<span class="meuble-nav-spacer"></span>'}
@@ -22519,6 +22521,24 @@ function _rgDraftRule(shelf){
   const r = shelf.regleRangement || {};
   return {preset:_rgDraft.preset, cles:_rgDraft.cles, cycles:!!_rgDraft.cycles, epingles:r.epingles||{debut:[],fin:[]}};
 }
+// Liste de rangement à imprimer (PDF) ou à télécharger (texte) : cette
+// étagère, ou tout le meuble qui la porte. Elle suit l'ordre et la méthode
+// enregistrés, pas un brouillon non appliqué.
+function _rgSectionListe(shelf){
+  const m = libraryFurniture.find(x=>x.id===shelf.meubleId);
+  const id = escapeHTML(shelf.id);
+  return `<div class="rg-sec"><p class="rg-t">${T('Liste de rangement à imprimer','Shelving list to print')}</p>
+    <div class="rg-liste">
+      <span class="rg-liste-l">${T('Cette étagère','This shelf')}</span>
+      <button type="button" class="secondary" onclick="imprimerRangementEtagere('${id}')">🖨︎ ${T('Imprimer / PDF','Print / PDF')}</button>
+      <button type="button" class="secondary" onclick="exporterRangementEtagere('${id}')">📄︎ ${T('Texte','Text')}</button>
+      ${m ? `<span class="rg-liste-l">${T('Tout le meuble','Whole bookcase')} « ${escapeHTML(m.name)} »</span>
+      <button type="button" class="secondary" onclick="imprimerRangementMeuble('${escapeHTML(m.id)}')">🖨︎ ${T('Imprimer / PDF','Print / PDF')}</button>
+      <button type="button" class="secondary" onclick="exporterRangementMeuble('${escapeHTML(m.id)}')">📄︎ ${T('Texte','Text')}</button>` : ''}
+    </div>
+    <p class="rg-note">${T("La liste suit l'ordre enregistré de l'étagère et la méthode appliquée — une méthode choisie ci-dessus mais pas encore appliquée n'y figure pas.","The list follows the shelf's saved order and applied method — a method chosen above but not yet applied is not included.")}</p>
+  </div>`;
+}
 function _rgRenderPanel(){
   const shelf = libraryShelves.find(s=>s.id===_rgShelfId); if(!shelf) return;
   const rule = _rgDraftRule(shelf);
@@ -22561,6 +22581,7 @@ function _rgRenderPanel(){
       <div class="rg-preview"><span>${T('Avant','Before')}</span><div class="rg-mini">${_rgMiniHTML(cur,moving)}</div>
       <span>${T('Après','After')}</span><div class="rg-mini">${_rgMiniHTML(tgt,moving)}</div></div></div>
     <div class="rg-sec"><p class="rg-t">${T('Plan de reclassement','Re-sorting plan')}</p>${planHTML}</div>
+    ${_rgSectionListe(shelf)}
     <div class="rg-actions">
       <button class="secondary" type="button" onclick="closeModal('rangementModal')">${T('Annuler','Cancel')}</button>
       ${actif&&plan.steps.length?`<button class="secondary" type="button" data-rg-act="plus-tard">${memeRegle?T('Enregistrer, finir plus tard','Save, finish later'):T('Appliquer, ranger plus tard','Apply, sort later')}</button>`:''}
@@ -22716,8 +22737,6 @@ function buildShelfHTML(shelf, books, idx, total, isUnclassed, floorNum, availW)
 
   const headerBtns = isUnclassed ? "" : `
     <div class="shelf-actions">
-      <button class="ghost" title="${T(`Imprimer la liste de cette étagère (ou l'enregistrer en PDF)`,`Print this shelf's list (or save it as PDF)`)}" onclick="imprimerRangementEtagere('${shelf.id}')">🖨︎</button>
-      <button class="ghost" title="${T(`Télécharger la liste de cette étagère (fichier texte)`,`Download this shelf's list (text file)`)}" onclick="exporterRangementEtagere('${shelf.id}')">📄︎</button>
       <button class="ghost" title="${T(`Ranger l'étagère selon une méthode (cycle, chronologie, alphabétique…)`,`Sort the shelf by a method (series, date, alphabetical…)`)}" onclick="openRangementPanel('${shelf.id}')">⇅</button>
       <button class="ghost" title="${T(`Déplacer tout le contenu vers une étagère — y compris dans un autre meuble`,`Move all contents to a shelf — including in another bookcase`)}" onclick="openMoveShelfPicker(event,'${shelf.id}')">🚚</button>
       ${idx>0?`<button class="ghost" title="Monter" onclick="moveLibraryShelf('${shelf.id}',-1)">▲</button>`:`<button class="ghost" disabled style="opacity:.25;pointer-events:none">▲</button>`}
