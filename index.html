@@ -3263,30 +3263,13 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               <div class="checkbox-row"><input type="checkbox" id="itemALaSuisse"><label for="itemALaSuisse" style="margin:0" title="Couverture fixée au seul dernier plat, dos nu : le livre s'ouvre à plat" data-en-title="Cover attached to the back board only, exposed spine: lies flat when open" data-en="Swiss binding">À la Suisse</label></div>
             </div>
           </div>
-          <!-- Couverture : type + finition -->
+          <!-- Couverture : type -->
           <div id="formCouverture" class="char-group">
             <label data-en="Cover">Couverture</label>
             <div class="char-row">
               <div class="checkbox-row"><input type="checkbox" id="itemCouvertureCartonnee"><label for="itemCouvertureCartonnee" style="margin:0" data-en="Hardcover">Cartonnée</label></div>
               <div class="checkbox-row"><input type="checkbox" id="itemCouvertureSouple"><label for="itemCouvertureSouple" style="margin:0" data-en="Softcover">Souple</label></div>
               <div class="checkbox-row"><input type="checkbox" id="itemRabats"><label for="itemRabats" style="margin:0" data-en="Softcover with flaps">Souple avec rabats</label></div>
-            </div>
-            <div id="formFinitionCouverture" class="char-sub">
-              <div class="aide-titre">
-                <label style="font-size:12px;color:var(--ink-soft)" data-en="Finish">Finition</label>
-                <button type="button" class="aide-btn" onclick="ouvrirLexiqueFinitions()" title="Lexique des finitions illustré" data-en-title="Illustrated finish glossary" aria-label="Lexique des finitions">?</button>
-              </div>
-              <div class="char-row">
-                <div class="checkbox-row"><input type="checkbox" id="itemDosToile"><label for="itemDosToile" style="margin:0" data-en="Cloth spine">Dos toilé</label></div>
-                <div class="checkbox-row"><input type="checkbox" id="itemPleineToile"><label for="itemPleineToile" style="margin:0" data-en="Full cloth">Pleine toile</label></div>
-                <div class="checkbox-row"><input type="checkbox" id="itemVernisSelectif"><label for="itemVernisSelectif" style="margin:0" data-en="Spot varnish">Vernis sélectif</label></div>
-                <div class="checkbox-row"><input type="checkbox" id="itemCuirImitation"><label for="itemCuirImitation" style="margin:0" data-en="Leather or imitation">Cuir ou imitation</label></div>
-                <div class="checkbox-row"><input type="checkbox" id="itemMarquageChaud"><label for="itemMarquageChaud" style="margin:0" data-en="Hot foil stamping (Gold/Silver)">Marquage à chaud (Or/Argent)</label></div>
-                <div class="checkbox-row"><input type="checkbox" id="itemEmbossageFroid"><label for="itemEmbossageFroid" style="margin:0" title="Relief obtenu par pression, sans encre ni feuille métallique" data-en-title="Relief pressed into the board, without ink or foil" data-en="Blind embossing">Embossage à froid</label></div>
-                <div class="checkbox-row"><input type="checkbox" id="itemVignetteContrecollee" onchange="if(!this.checked) document.getElementById('itemVignetteCuvette').checked=false"><label for="itemVignetteContrecollee" style="margin:0" title="Illustration imprimée à part et collée sur le premier plat" data-en-title="Illustration printed separately and glued onto the front board" data-en="Tipped-on plate">Vignette contrecollée</label>
-                  <input type="checkbox" id="itemVignetteCuvette" style="margin-left:8px" onchange="if(this.checked) document.getElementById('itemVignetteContrecollee').checked=true"><label for="itemVignetteCuvette" style="margin:0;font-size:12px;color:var(--ink-soft)" title="Logée dans un creux pressé dans le carton, elle affleure à la surface" data-en-title="Set into a pressed recess in the board, flush with the surface" data-en="in a sunken panel">en cuvette</label></div>
-                <div class="checkbox-row"><input type="checkbox" id="itemRhodoid"><label for="itemRhodoid" style="margin:0" title="Film plastique transparent protégeant la couverture" data-en-title="Clear plastic film protecting the cover" data-en="Rhodoid (clear cover)">Rhodoïd</label></div>
-              </div>
             </div>
           </div>
           <!-- Bandeau, Ruban marque-page, Jaquette -->
@@ -3299,6 +3282,24 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <label for="itemJaquette" style="margin:0;white-space:nowrap;flex-shrink:0" data-en="Dust jacket">Jaquette</label>
                 <input type="text" id="itemJaquetteEtat" placeholder="ex: Très bon état, légères usures aux coins…" data-en-ph="e.g. Very good condition, slight wear at corners…" style="flex:1">
               </div>
+            </div>
+          </div>
+          <!-- Finitions (de la couverture) : module à part dans l'éditeur de fiche -->
+          <div id="formFinitionCouverture" class="char-group">
+            <div class="aide-titre">
+              <label data-en="Finishes">Finitions</label>
+              <button type="button" class="aide-btn" onclick="ouvrirLexiqueFinitions()" title="Lexique des finitions illustré" data-en-title="Illustrated finish glossary" aria-label="Lexique des finitions">?</button>
+            </div>
+            <div class="char-row">
+              <div class="checkbox-row"><input type="checkbox" id="itemDosToile"><label for="itemDosToile" style="margin:0" data-en="Cloth spine">Dos toilé</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemPleineToile"><label for="itemPleineToile" style="margin:0" data-en="Full cloth">Pleine toile</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemVernisSelectif"><label for="itemVernisSelectif" style="margin:0" data-en="Spot varnish">Vernis sélectif</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemCuirImitation"><label for="itemCuirImitation" style="margin:0" data-en="Leather or imitation">Cuir ou imitation</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemMarquageChaud"><label for="itemMarquageChaud" style="margin:0" data-en="Hot foil stamping (Gold/Silver)">Marquage à chaud (Or/Argent)</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemEmbossageFroid"><label for="itemEmbossageFroid" style="margin:0" title="Relief obtenu par pression, sans encre ni feuille métallique" data-en-title="Relief pressed into the board, without ink or foil" data-en="Blind embossing">Embossage à froid</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemVignetteContrecollee" onchange="if(!this.checked) document.getElementById('itemVignetteCuvette').checked=false"><label for="itemVignetteContrecollee" style="margin:0" title="Illustration imprimée à part et collée sur le premier plat" data-en-title="Illustration printed separately and glued onto the front board" data-en="Tipped-on plate">Vignette contrecollée</label>
+                <input type="checkbox" id="itemVignetteCuvette" style="margin-left:8px" onchange="if(this.checked) document.getElementById('itemVignetteContrecollee').checked=true"><label for="itemVignetteCuvette" style="margin:0;font-size:12px;color:var(--ink-soft)" title="Logée dans un creux pressé dans le carton, elle affleure à la surface" data-en-title="Set into a pressed recess in the board, flush with the surface" data-en="in a sunken panel">en cuvette</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="itemRhodoid"><label for="itemRhodoid" style="margin:0" title="Film plastique transparent protégeant la couverture" data-en-title="Clear plastic film protecting the cover" data-en="Rhodoid (clear cover)">Rhodoïd</label></div>
             </div>
           </div>
           <!-- Démarcation discrète : caractéristiques propres aux tirages de tête & portfolios -->
@@ -4912,6 +4913,7 @@ const _ARCH_FIELDS = {
   pages:      { id:'itemPages',             mode:'parent' },
   reliure:    { id:'formReliure',           mode:'self'   },
   couverture: { id:'formCouverture',        mode:'self'   },
+  finitionsCouverture: { id:'formFinitionCouverture', mode:'self' },
   emboitage:  { id:'formEmboitageSection',  mode:'self'   },
   contenu:    { id:'formSection-contenu',   mode:'self'   },
   // Formats de reliure propres à l'édition asiatique / américaine : hors sujet
@@ -5359,6 +5361,9 @@ const _ARCH_AUTH_TITLES    = ['Artistes','Artists','Auteurs et contributeurs','A
 function applyArchetype(arch){
   const showVal = v => v ? '' : 'none';
   const hidden = new Set(arch.hidden || []);
+  // Les finitions étaient imbriquées dans « Couverture » : un type qui masque
+  // la couverture masque aussi ses finitions.
+  if(hidden.has('couverture')) hidden.add('finitionsCouverture');
   for(const [key,desc] of Object.entries(_ARCH_FIELDS)){
     const el = document.getElementById(desc.id);
     if(!el) continue;
@@ -5505,10 +5510,10 @@ const FICHE_MODULES = [
     blocs:['section:itemDropZone'] },
   { id:'notes', label:'Résumé et mots-clés', labelEn:'Summary and keywords', onglet:'caract',
     blocs:['section:itemNotes'] },
-  { id:'reliure', label:'Reliure et format', labelEn:'Binding and shape', onglet:'etat',
-    blocs:['groupe:itemFormatCarre','#formReliure'] },
-  { id:'finitions', label:'Couverture et finitions', labelEn:'Cover and finishes', onglet:'etat',
-    blocs:['#formCouverture','groupe:itemJaquette'] },
+  { id:'reliure', label:'Format, reliure et couverture', labelEn:'Format, binding and cover', onglet:'etat',
+    blocs:['groupe:itemFormatCarre','#formReliure','#formCouverture','groupe:itemJaquette'] },
+  { id:'finitions', label:'Finitions', labelEn:'Finishes', onglet:'etat',
+    blocs:['#formFinitionCouverture'] },
   { id:'emboitage', label:'Emboîtage', labelEn:'Slipcase', onglet:'etat',
     blocs:['#formEmboitageSection'] },
   { id:'contenu', label:'Contenu additionnel', labelEn:'Additional content', onglet:'etat',
