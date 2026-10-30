@@ -5739,6 +5739,9 @@ function appliquerConfigurationFiche(){
   }
   // 5. Sections restées sans module visible : masquées (titre orphelin).
   for(const s of [..._fmConteneurs, ...form.querySelectorAll('.fm-section-gen')]){
+    // Une section qui est elle-même un module (ex. « Auteurs », qui abrite le
+    // champ Groupe du module Disque) se gère comme module, pas comme contenant.
+    if(s.dataset.module) continue;
     const blocs = s.querySelectorAll('[data-module]');
     if(![...blocs].some(_fmVisible)) s.classList.add('fm-vide');
   }
