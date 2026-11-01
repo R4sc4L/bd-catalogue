@@ -728,6 +728,16 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   /* ── Lexique des reliures (bouton « ? » + fenêtre illustrée) ── */
   .aide-titre{display:flex;align-items:center;gap:8px}
   .aide-titre > label{margin:0}
+  .aide-titre-champ{margin-bottom:4px;min-height:16px}
+  .aide-btn.aide-mini{width:16px;height:16px;min-width:16px;font-size:10px}
+  .aide-btn[hidden]{display:none}
+  svg .lx-bc{fill:#111}
+  svg .lx-etiq{fill:#fff;stroke:#999;stroke-width:.4}
+  svg .lx-chif{fill:#111;font-size:6px;font-family:ui-monospace,Menlo,monospace}
+  svg .lx-couv-txt{fill:var(--ink);font:700 15px "Orbitron","Nunito",sans-serif;opacity:.75}
+  svg .lx-couv-prix{fill:var(--ink);font:700 11px "Nunito",sans-serif;opacity:.75}
+  svg .lx-embleme{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2}
+  svg .lx-etoile{fill:var(--accent)}
   .aide-btn{width:20px;height:20px;min-width:20px;padding:0;border-radius:50%;background:transparent;color:var(--accent);border:1px solid var(--border-warm);font-size:12px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center}
   .aide-btn:hover,.aide-btn:focus-visible{background:var(--accent-soft);border-color:var(--accent)}
   .lx-intro{color:var(--ink-soft);font-size:14px;margin:0 0 18px}
@@ -1038,6 +1048,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   .bdt-ref{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:6px;align-items:stretch}
   .bdt-ref input{min-width:0}
   .bdt-aide{font-size:12px;color:var(--ink-soft);margin-top:4px;min-height:1em}
+  .upc-aide{font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.35}
   /* Catégorie et tradition dans la même case : la tradition se range à côté. */
   .cat-trad{display:flex;gap:8px;align-items:flex-end;min-width:0}
   .cat-trad-cat{flex:3;min-width:0}
@@ -2143,6 +2154,49 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   .rg-pins{display:contents}
   .rg-pins button[aria-pressed="true"]{border-color:var(--accent);color:var(--gold)}
   @media(max-width:560px){.rg-crit{grid-template-columns:22px 1fr}.rg-crit select[data-rg-f="s"]{grid-column:2}}
+
+  /* ── Vendre : annonce depuis la fiche + publication eBay ── */
+  .vente-modal{max-width:980px}
+  .vente-bar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-bottom:16px}
+  .vente-tabs{display:flex;flex-wrap:wrap;gap:6px}
+  .vente-tabs button{padding:6px 14px}
+  .vente-tabs button.on{background:var(--accent);color:var(--bg,#111);border-color:var(--accent)}
+  .vente-bar label{display:flex;align-items:center;gap:6px;margin:0;font-size:13px;color:var(--ink-soft)}
+  .vente-bar select{width:auto}
+  .vente-cpt{font-weight:400;font-size:12px;color:var(--ink-soft);margin-left:6px}
+  .vente-cpt.over{color:var(--danger);font-weight:700}
+  .vente-modal textarea#venteDesc{min-height:280px;line-height:1.45;font-size:14px}
+  .vente-section{margin-top:22px;padding-top:16px;border-top:1px solid var(--border)}
+  .vente-section>h3{margin:0 0 10px;font-size:15px}
+  .vente-photos{display:flex;flex-wrap:wrap;gap:10px}
+  .vente-photo{position:relative;width:84px;height:112px;border:2px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer;background:var(--bg-alt)}
+  .vente-photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .vente-photo.on{border-color:var(--accent)}
+  .vente-photo .ordre{position:absolute;top:3px;left:3px;min-width:20px;height:20px;border-radius:10px;background:var(--accent);color:var(--bg,#111);font-size:12px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 5px}
+  .vente-photo.on .ordre{display:flex}
+  .vente-statut{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-alt);font-size:13px}
+  .vente-statut .pt{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:var(--ink-soft)}
+  .vente-statut .pt.ok{background:#4c9f6a}
+  .vente-statut .pt.ko{background:var(--danger)}
+  .vente-env{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:10px;border:1px solid var(--border)}
+  .vente-env.prod{background:var(--danger);color:#fff;border-color:var(--danger)}
+  .vente-sugg{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+  .vente-sugg label{display:flex;gap:8px;align-items:flex-start;margin:0;padding:6px 8px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px}
+  .vente-sugg label.on{border-color:var(--accent);background:var(--accent-soft)}
+  .vente-sugg input{width:auto;margin-top:3px}
+  .vente-sugg .chemin{color:var(--ink-soft);font-size:12px}
+  .vente-msg{margin-top:14px;padding:12px 14px;border-radius:var(--radius);border:1px solid var(--border);font-size:13.5px;line-height:1.5;white-space:pre-line}
+  .vente-msg.ok{border-color:#4c9f6a;background:rgba(76,159,106,.12)}
+  .vente-msg.ko{border-color:var(--danger);background:rgba(217,119,106,.12)}
+  .vente-msg.info{background:var(--bg-alt)}
+  .vente-etapes{margin:0;padding-left:18px}
+  .vente-etapes li.fait{color:var(--ink-soft)}
+  .vente-carte{border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;background:var(--bg-alt)}
+  .vente-carte>h3{margin:0 0 10px;font-size:15px}
+  .vente-carte .muted{font-size:12.5px}
+  .vente-carte code,.vente-modal code{font-size:12.5px;background:var(--bg-panel);padding:1px 6px;border-radius:4px;border:1px solid var(--border);word-break:break-all}
+  .vente-ligne{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  @media (max-width:700px){.vente-modal .form-grid{grid-template-columns:1fr}.vente-modal .form-grid .span-2{grid-column:auto}}
 </style>
 </head>
 <body>
@@ -3083,11 +3137,13 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               </div>
             </div>
             <div><label data-en="Country of publication">Pays d'édition</label><input type="text" id="itemCountry" list="dl-countries" onchange="_proposerTradition()"></div>
-            <div><label data-en="ISBN / Reference">ISBN / Référence</label>
+            <div><div class="aide-titre aide-titre-champ"><label data-en="ISBN / Reference">ISBN / Référence</label><button type="button" class="aide-btn aide-mini" id="itemUpcLexique" hidden onclick="ouvrirLexiqueCodesComics()" title="Lexique des codes-barres de comics" data-en-title="Comic book barcode glossary" aria-label="Lexique des codes-barres de comics">?</button></div>
               <div class="author-pick">
                 <input type="text" id="itemIsbn" oninput="_majLienFiche()">
                 <a class="lien-ext" id="itemIsbnLien" href="#" target="_blank" rel="noopener noreferrer" hidden onclick="_avantOuvertureLienFiche(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></a>
+                <a class="lien-ext" id="itemIsbnGoogle" href="#" target="_blank" rel="noopener noreferrer" hidden title="Chercher ce code sur Google" data-en-title="Search this code on Google"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></a>
               </div>
+              <div class="upc-aide" id="itemUpcAide" hidden></div>
             </div>
             <div class="span-2" id="formFieldBedetheque"><label><span data-en="Bédéthèque reference">Référence Bédéthèque</span><a class="bdt-installer" id="bdtInstaller" href="#" onclick="event.preventDefault();toast(T('Glissez ce bouton dans la barre de favoris de votre navigateur, puis cliquez dessus sur une fiche Bédéthèque.','Drag this button to your browser’s bookmarks bar, then click it on a Bédéthèque page.'))" title="Glissez-moi dans la barre de favoris" data-en="⇪ Bédéthèque button">⇪ Bouton Bédéthèque</a></label>
               <div class="bdt-ref">
@@ -3116,6 +3172,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <div><label for="itemGradeNote" data-en="Grade out of 10">Note sur 10</label><input type="number" id="itemGradeNote" min="0.5" max="10" step="0.1" inputmode="decimal" placeholder="ex: 9.4" oninput="_noteVersGrade()"></div>
                 <div><label for="itemRatingComics" title="Classification d'âge imprimée sur la couverture" data-en-title="Age rating printed on the cover" data-en="Rating">Rating</label><input type="text" id="itemRatingComics" list="dl-rating-comics" autocomplete="off" placeholder="ex: RATED T+">
                   <datalist id="dl-rating-comics"><option value="ALL AGES"><option value="RATED A"><option value="RATED T"><option value="RATED T+"><option value="PARENTAL ADVISORY"><option value="EXPLICIT CONTENT"><option value="MARVEL MAX"><option value="E (Everyone)"><option value="T (Teen)"><option value="T+ (Teen Plus)"><option value="M (Mature)"><option value="MATURE READERS"><option value="AGES 13+"><option value="AGES 17+"><option value="AGES 18+"></datalist></div>
+                <div><div class="aide-titre aide-titre-champ"><label for="itemDistributionComics" title="Direct : vendu en comic shop · Newsstand : vendu en kiosque (souvent plus rare pour les années 1980-90)" data-en-title="Direct: sold in comic shops · Newsstand: sold at newsstands (often scarcer for the 1980s-90s)" data-en="Distribution">Distribution</label><button type="button" class="aide-btn aide-mini" onclick="ouvrirLexiqueCodesComics()" title="Lexique des codes-barres de comics" data-en-title="Comic book barcode glossary" aria-label="Lexique des codes-barres de comics">?</button></div><select id="itemDistributionComics"><option value="">—</option><option value="Direct" data-en="Direct (comic shop)">Direct (comic shop)</option><option value="Newsstand" data-en="Newsstand">Newsstand (kiosque)</option></select></div>
               </div>
             </div>
           </div>
@@ -3445,6 +3502,33 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <button class="secondary" onclick="fermerEditeurFiche()" data-en="Cancel">Annuler</button>
         <button onclick="feEnregistrer()" data-en="Save">Enregistrer</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- VENDRE : annonce générée depuis la fiche, copie ou publication eBay -->
+<div class="modal-backdrop" id="venteModal">
+  <div class="modal vente-modal">
+    <div class="modal-header">
+      <h2 id="venteTitreModal">🏷 Vendre</h2>
+      <button class="ghost" onclick="closeModal('venteModal')" aria-label="Fermer">✕</button>
+    </div>
+    <div class="modal-body" id="venteBody"></div>
+    <div class="modal-footer" id="venteFooter"></div>
+  </div>
+</div>
+
+<!-- RÉGLAGES eBAY : liaison avec le proxy local, identifiants, connexion, compte vendeur -->
+<div class="modal-backdrop" id="ebayModal">
+  <div class="modal vente-modal">
+    <div class="modal-header">
+      <h2>⚙ <span data-en="eBay settings">Réglages eBay</span></h2>
+      <button class="ghost" onclick="closeModal('ebayModal')" aria-label="Fermer">✕</button>
+    </div>
+    <div class="modal-body" id="ebayBody"></div>
+    <div class="modal-footer">
+      <span class="muted" style="font-size:12.5px" data-en="Your eBay keys stay in the local proxy, never in this page.">Tes clés eBay restent dans le proxy local, jamais dans cette page.</span>
+      <button onclick="closeModal('ebayModal')" data-en="Close">Fermer</button>
     </div>
   </div>
 </div>
@@ -6203,6 +6287,81 @@ const GRADES_US = [
   ['VG',4.0,'Very Good'],['VG-',3.5,'Very Good-'],['G/VG',3.0,'Good/Very Good'],['G+',2.5,'Good+'],
   ['G',2.0,'Good'],['G-',1.8,'Good-'],['FR/G',1.5,'Fair/Good'],['FR',1.0,'Fair'],['PR',0.5,'Poor'],
 ];
+// ── Code-barres des fascicules US : UPC (12 chiffres) + complément.
+// Complément à 5 chiffres (fascicules récents) : 3 pour le n°, 1 pour la
+// couverture (1 = principale, 2, 3… = variantes), 1 pour l'impression.
+// Complément à 2 chiffres : ancien code kiosque, le n° seul.
+function decoderCodeComics(v){
+  const brut = String(v||'').trim();
+  const d = brut.replace(/[^0-9]/g,'');
+  if(!d) return null;
+  if((d.length===13 && /^97[89]/.test(d)) || (d.length===10 || (d.length===9 && /x$/i.test(brut)))) return { type:'isbn' };
+  if([12,14,17].includes(d.length)){
+    const base = d.slice(0,12), sup = d.slice(12);
+    let s = 0; for(let i=0;i<11;i++) s += (+base[i]) * (i%2===0 ? 3 : 1);
+    const r = { type:'upc', base, sup, cleOk: (10 - s%10)%10 === +base[11] };
+    if(sup.length===5){ r.numero = parseInt(sup.slice(0,3),10); r.couverture = +sup[3]; r.impression = +sup[4]; }
+    else if(sup.length===2) r.numero = parseInt(sup,10);
+    return r;
+  }
+  if(d.length===13) return { type:'ean' };
+  return { type:'inconnu' };
+}
+function _upcDescription(r){
+  if(!r || r.type!=='upc') return '';
+  const p = [];
+  if(!r.cleOk) p.push(T('⚠ clé de contrôle incorrecte : vérifiez les 12 chiffres','⚠ wrong check digit: check the 12 digits'));
+  if(r.sup.length===5){
+    p.push(`${T('n°','#')} ${r.numero}`);
+    p.push(r.couverture===1 ? T('couverture principale (A)','main cover (A)')
+         : r.couverture>1 ? T(`couverture variante ${String.fromCharCode(64+r.couverture)}`,`variant cover ${String.fromCharCode(64+r.couverture)}`)
+         : T('couverture non précisée','cover not specified'));
+    p.push(r.impression===1 ? T('1re impression','1st printing')
+         : r.impression>1 ? T(`${r.impression}e impression`,`printing ${r.impression}`) : '');
+  } else if(r.sup.length===2){
+    p.push(`${T('n°','#')} ${r.numero}`, T('ancien code kiosque (complément à 2 chiffres)','old newsstand code (2-digit add-on)'));
+  } else {
+    p.push(T('sans complément : ajoutez les 5 petits chiffres à droite du code-barres (n°, couverture, impression)',
+             'no add-on: add the 5 small digits to the right of the barcode (issue, cover, printing)'));
+  }
+  return 'UPC · ' + p.filter(Boolean).join(' · ');
+}
+function _upcDeLaFiche(it){
+  if(!_estComics(it.categorie)) return null;
+  const r = decoderCodeComics(it.isbn);
+  return r && r.type==='upc' ? r : null;
+}
+function _majUpcAide(){
+  const aide = document.getElementById('itemUpcAide');
+  if(!aide) return;
+  const cat = document.getElementById('itemCategory')?.value || '';
+  const r = _estComics(cat) ? decoderCodeComics(document.getElementById('itemIsbn')?.value) : null;
+  let txt = '';
+  if(r && r.type==='upc') txt = _upcDescription(r);
+  else if(r && r.type==='isbn') txt = T('ISBN (recueil ou roman graphique)','ISBN (collected edition or graphic novel)');
+  else if(r && r.type==='ean') txt = T('EAN à 13 chiffres','13-digit EAN');
+  aide.textContent = txt;
+  aide.hidden = !txt;
+}
+// Fiche Comics : le champ « ISBN / Référence » devient « UPC / ISBN ».
+// Appelée après applyArchetype, qui rend le libellé d'origine ailleurs.
+function _majChampIsbnComics(cat){
+  const inp = document.getElementById('itemIsbn');
+  if(!inp) return;
+  const lbl = (inp.closest('.form-grid > div') || inp.parentElement).querySelector('label');
+  if(inp.dataset.phOrig === undefined) inp.dataset.phOrig = inp.getAttribute('placeholder') || '';
+  const aideBtn = document.getElementById('itemUpcLexique');
+  if(aideBtn) aideBtn.hidden = !_estComics(cat);
+  if(_estComics(cat)){
+    if(lbl){ lbl.textContent = 'UPC / ISBN'; lbl.setAttribute('data-en','UPC / ISBN');
+      lbl.title = T('Fascicule : UPC avec ses 5 petits chiffres · Recueil : ISBN','Single issue: UPC with its 5-digit add-on · Collected edition: ISBN'); }
+    inp.placeholder = T('ex : 75960620043000111 (UPC + complément) ou ISBN','e.g. 75960620043000111 (UPC + add-on) or ISBN');
+  } else {
+    if(lbl) lbl.removeAttribute('title');
+    inp.placeholder = inp.dataset.phOrig;
+  }
+  _majUpcAide();
+}
 function _estComics(cat){ return /comic/i.test(String(cat||'')); }
 function _majChampsComics(cat){
   const bloc = document.getElementById('champsComics');
@@ -6233,6 +6392,7 @@ function _gradeDetailHTML(it){
     out.push(`<dt>${T('Grade (US)','Grade (US)')}</dt><dd>${g ? `<b>${escapeHTML(g[0])}</b> — ${escapeHTML(g[2])}` : ''}${note ? `${g?' · ':''}${escapeHTML(String(note))}/10` : ''}</dd>`);
   }
   if(it.ratingComics) out.push(`<dt>Rating</dt><dd>${escapeHTML(it.ratingComics)}</dd>`);
+  if(it.distributionComics) out.push(`<dt>Distribution</dt><dd>${escapeHTML(it.distributionComics==='Newsstand' ? T('Newsstand (kiosque)','Newsstand') : T('Direct (comic shop)','Direct (comic shop)'))}</dd>`);
   return out.join('');
 }
 
@@ -6248,6 +6408,7 @@ function adaptFormToCategory(cat){
   if(luLbl){ luLbl.textContent = T(t.fait.fr, t.fait.en); luLbl.setAttribute('data-en', t.fait.en); }
   const dtLbl = document.querySelector('#formFieldDateLecture label');
   if(dtLbl){ dtLbl.textContent = T(t.date.fr, t.date.en); dtLbl.setAttribute('data-en', t.date.en); }
+  _majChampIsbnComics(cat);
 }
 
 function adaptAuthorFormToCollection(){
@@ -6735,6 +6896,156 @@ function ouvrirLexiqueReliures(){
       <div class="lx-grille">${cartes}</div>
     </div></div>`;
   openModal('lexiqueReliuresModal');
+  bd.scrollTop = 0;
+}
+// ── Lexique des codes-barres de comics ───────────────────────────────────
+// Même maquette que les lexiques des reliures et des finitions. Les codes
+// sont de vrais codes-barres (UPC-A, EAN-13, compléments EAN-2 et EAN-5),
+// tracés à partir de leurs chiffres ; les numéros d'exemple sont fictifs.
+const _BC_L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+const _bcR = d => _BC_L[d].replace(/./g, c => c==='0' ? '1' : '0');
+const _bcG = d => _bcR(d).split('').reverse().join('');
+function _bcUPCA(d){
+  let m = '101';
+  for(let i=0;i<6;i++) m += _BC_L[+d[i]];
+  m += '01010';
+  for(let i=6;i<12;i++) m += _bcR(+d[i]);
+  return m + '101';
+}
+function _bcEAN13(d){
+  const par = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLG','LGLGLL','LGLGGL','LGGLGL'][+d[0]];
+  let m = '101';
+  for(let i=1;i<7;i++) m += par[i-1]==='L' ? _BC_L[+d[i]] : _bcG(+d[i]);
+  m += '01010';
+  for(let i=7;i<13;i++) m += _bcR(+d[i]);
+  return m + '101';
+}
+function _bcComplement(s){
+  let par;
+  if(s.length===2) par = ['LL','LG','GL','GG'][parseInt(s,10) % 4];
+  else {
+    const c = (3*(+s[0] + +s[2] + +s[4]) + 9*(+s[1] + +s[3])) % 10;
+    par = ['GGLLL','GLGLL','GLLGL','GLLLG','LGGLL','LLGGL','LLLGG','LGLGL','LGLLG','LLGLG'][c];
+  }
+  let m = '1011';
+  s.split('').forEach((ch,i)=>{ if(i) m += '01'; m += par[i]==='L' ? _BC_L[+ch] : _bcG(+ch); });
+  return m;
+}
+function _bcCle(d11){ let s=0; for(let i=0;i<d11.length;i++) s += (+d11[i]) * ((d11.length===11 ? i%2===0 : i%2===1) ? 3 : 1); return d11 + ((10 - s%10) % 10); }
+function _bcBarres(mod, x, y, h, w, longs){
+  let out = '', i = 0;
+  while(i < mod.length){
+    if(mod[i]!=='1'){ i++; continue; }
+    const lg = !!(longs && longs.has(i));
+    let j = i;
+    while(j < mod.length && mod[j]==='1' && !!(longs && longs.has(j))===lg) j++;
+    out += `<rect x="${(x+i*w).toFixed(2)}" y="${y}" width="${((j-i)*w).toFixed(2)}" height="${lg ? h+5 : h}"/>`;
+    i = j;
+  }
+  return `<g class="lx-bc">${out}</g>`;
+}
+// Code complet sur son étiquette blanche. o = { upc | ean13, complement }.
+// Renvoie le SVG et des fonctions de position (module → x) pour les repères.
+function _bcCode(o, x, y, w=1.2, h=34){
+  const princ = o.ean13 ? _bcEAN13(o.ean13) : _bcUPCA(o.upc);
+  const comp = o.complement ? _bcComplement(o.complement) : '';
+  const ecart = 9, xa = x + (95+ecart)*w;
+  const haut = comp ? 11 : 5;
+  let s = `<rect class="lx-etiq" x="${x-9*w}" y="${y-haut}" width="${(95+(comp?ecart+comp.length:0)+16)*w}" height="${h+haut+15}" rx="1.5"/>`;
+  s += _bcBarres(princ, x, y, h, w, new Set([0,1,2,45,46,47,48,49,92,93,94]));
+  if(comp) s += _bcBarres(comp, xa, y+5, h, w);
+  const t = (tx,ty,txt,anc='middle') => `<text class="lx-chif" x="${tx.toFixed(1)}" y="${ty}" text-anchor="${anc}">${txt}</text>`;
+  const ty = y + h + 7, code = o.ean13 || o.upc;
+  if(o.ean13) s += t(x-2*w,ty,code[0],'end') + t(x+24*w,ty,code.slice(1,7)) + t(x+71*w,ty,code.slice(7));
+  else s += t(x-2*w,ty,code[0],'end') + t(x+27.5*w,ty,code.slice(1,6)) + t(x+67.5*w,ty,code.slice(6,11)) + t(x+97*w,ty,code[11],'start');
+  if(comp) s += t(xa + comp.length*w/2, y+2, o.complement.split('').join(' '));
+  return { svg:s, x:m=>x+m*w, xa:m=>xa+m*w, bas:y+h+9, haut:y-haut };
+}
+// Coin inférieur d'une couverture de fascicule, avec prix et numéro.
+function _bcCouv(numero='#1', prix='$3.99'){
+  return `<rect class="lx-cov-t lx-f" x="6" y="6" width="248" height="160" rx="3"/>`
+       + `<path class="lx-cov-h" d="M6 120 Q90 96 254 128 V163 Q254 166 251 166 H9 Q6 166 6 163Z" opacity=".55"/>`
+       + `<text class="lx-couv-txt" x="16" y="26">${numero}</text><text class="lx-couv-prix" x="246" y="24" text-anchor="end">${prix}</text>`;
+}
+const _BC_UPC = _bcCle('75960620043');   // numéro fictif, clé calculée
+function _lxcEntrees(){
+  const c5 = _bcCode({upc:_BC_UPC, complement:'00121'}, 30, 90, 1.1, 34);
+  const c2 = _bcCode({upc:_BC_UPC, complement:'07'}, 30, 90, 1.1, 34);
+  const nw = _bcCode({upc:_BC_UPC, complement:'00111'}, 30, 90, 1.1, 34);
+  const isbn = _bcCode({ean13:_bcCle('978000000000'), complement:'51999'}, 30, 90, 1.1, 34);
+  // Variantes : trois compléments côte à côte
+  const v = (s, x, lib) => {
+    const m = _bcComplement(s), w = 1.4, y = 64, h = 34;
+    return `<rect class="lx-etiq" x="${x-6}" y="${y-12}" width="${m.length*w+12}" height="${h+20}" rx="1.5"/>`
+      + _bcBarres(m, x, y, h, w) + `<text class="lx-chif" x="${(x+m.length*w/2).toFixed(1)}" y="${y-3}" text-anchor="middle">${s.split('').join(' ')}</text>`
+      + `<text class="lx-txt" x="${(x+m.length*w/2).toFixed(1)}" y="${y+h+22}" text-anchor="middle">${lib}</text>`;
+  };
+  return [
+    { nom:T(`UPC + complément à 5 chiffres`,`UPC + 5-digit add-on`),
+      def:T(`Le code des fascicules d'aujourd'hui. Les 12 chiffres de l'UPC désignent la série ; le petit code à droite précise l'exemplaire : 3 chiffres pour le n°, 1 pour la couverture, 1 pour l'impression.`,
+            `The code of today's single issues. The 12 UPC digits identify the series; the small code on the right identifies the copy: 3 digits for the issue, 1 for the cover, 1 for the printing.`),
+      repere:T(`fascicules Marvel, DC, Image… Notez les 17 chiffres dans « UPC / ISBN ».`,`Marvel, DC, Image… single issues. Enter all 17 digits in "UPC / ISBN".`),
+      dessin: _bcCouv() + c5.svg + _lxRep(c5.xa(17), c5.haut, 122, 48, T(`n° 001`,`issue 001`), 'end') + _lxRep(c5.xa(34.5), c5.haut, 192, 60, T(`couverture B`,`cover B`), 'end') + _lxRep(c5.xa(43.5), c5.haut, 244, 42, T(`1re impression`,`1st printing`), 'end')
+              + _lxRep(c5.x(47), c5.bas, 120, 158, T(`UPC : la série`,`UPC: the series`)) },
+    { nom:T(`Complément à 2 chiffres`,`2-digit add-on`),
+      def:T(`Sur les fascicules plus anciens vendus en kiosque, le complément ne compte que 2 chiffres : le n° du mois ou du fascicule, sans indication de couverture ni d'impression.`,
+            `On older newsstand issues the add-on has only 2 digits: the month or issue number, with no cover or printing information.`),
+      repere:T(`éditions kiosque des décennies passées.`,`newsstand editions of past decades.`),
+      dessin: _bcCouv('#7','60¢') + c2.svg + _lxRep(c2.xa(10), c2.haut, 200, 50, T(`n° 07`,`issue 07`)) + _lxRep(c2.x(47), c2.bas, 120, 158, T(`UPC : la série`,`UPC: the series`)) },
+    { nom:T(`Édition Direct`,`Direct edition`),
+      def:T(`Exemplaire distribué aux comic shops (« marché direct »), sans retour des invendus. Dans les années 1980-90, le code-barres y est souvent remplacé par une illustration, ou accompagné de la mention « Direct Edition ».`,
+            `Copy distributed to comic shops (the "direct market"), with no returns of unsold copies. In the 1980s-90s the barcode is often replaced by a picture, or comes with a "Direct Edition" mention.`),
+      repere:T(`la grande majorité des fascicules depuis les années 1980.`,`the vast majority of single issues since the 1980s.`),
+      dessin: _bcCouv('#12','$1.75') + `<rect class="lx-etiq" x="22" y="64" width="78" height="62" rx="1.5"/><circle class="lx-embleme" cx="61" cy="90" r="18"/><path class="lx-etoile" d="M61 76 l4.1 8.4 9.3 1.3-6.7 6.5 1.6 9.2-8.3-4.4-8.3 4.4 1.6-9.2-6.7-6.5 9.3-1.3z"/><text class="lx-chif" x="61" y="120" text-anchor="middle">DIRECT EDITION</text>`
+              + _lxRep(100, 80, 150, 54, T(`à la place du code`,`instead of the code`)) },
+    { nom:T(`Édition Newsstand`,`Newsstand edition`),
+      def:T(`Exemplaire vendu en kiosque ou en grande surface, avec retour ou destruction des invendus. Le code-barres est complet, lisible en caisse. Pour les années 1980-2000, ces exemplaires, tirés en moins grand nombre, sont souvent recherchés.`,
+            `Copy sold at newsstands or supermarkets, with unsold copies returned or destroyed. The barcode is complete and scannable. For the 1980s-2000s these copies, printed in smaller numbers, are often sought after.`),
+      repere:T(`indiquez-le dans « Distribution ».`,`set it in "Distribution".`),
+      dessin: _bcCouv('#300','$1.25') + nw.svg + _lxRep(nw.x(47), nw.bas, 120, 158, T(`code-barres complet`,`full barcode`)) },
+    { nom:T(`Variante et réimpression`,`Variant and reprint`),
+      def:T(`Un même n° peut exister en plusieurs couvertures (variantes) et en plusieurs tirages (réimpressions). L'UPC ne change pas : seuls les 4ᵉ et 5ᵉ chiffres du complément les distinguent.`,
+            `The same issue may exist with several covers (variants) and in several printings (reprints). The UPC does not change: only the 4th and 5th add-on digits tell them apart.`),
+      repere:T(`notez toujours le complément en entier.`,`always record the full add-on.`),
+      dessin: v('00111', 22, T(`couv. A · 1re impr.`,`cover A · 1st ptg`)) + v('00121', 105, T(`couv. B (variante)`,`cover B (variant)`)) + v('00112', 188, T(`2e impression`,`2nd printing`)) },
+    { nom:T(`ISBN (recueil)`,`ISBN (collected edition)`),
+      def:T(`Les recueils (trade paperback, hardcover, roman graphique) sont des livres : ils portent un ISBN à 13 chiffres, en code EAN commençant par 978 ou 979. Le complément y donne le prix conseillé : 5 pour le dollar américain, puis le prix (51999 = 19,99 $).`,
+            `Collected editions (trade paperback, hardcover, graphic novel) are books: they carry a 13-digit ISBN as an EAN code starting with 978 or 979. The add-on gives the list price: 5 for US dollars, then the price (51999 = $19.99).`),
+      repere:T(`TPB, omnibus, intégrales. Saisissez les 13 chiffres de l'ISBN.`,`TPBs, omnibuses. Enter the 13 ISBN digits.`),
+      dessin: _bcCouv('TPB','$19.99') + isbn.svg + _lxRep(isbn.x(47), isbn.bas, 120, 158, T(`ISBN 978…`,`ISBN 978…`)) + _lxRep(isbn.xa(24), isbn.haut, 244, 50, T(`prix : 5 = $, 19,99`,`price: 5 = $, 19.99`), 'end') },
+  ];
+}
+function ouvrirLexiqueCodesComics(){
+  let bd = document.getElementById('lexiqueCodesComicsModal');
+  if(!bd){ bd = document.createElement('div'); bd.className='modal-backdrop'; bd.id='lexiqueCodesComicsModal'; document.body.appendChild(bd); }
+  const svg = (inner, l=260) => `<svg viewBox="0 0 ${l} 172" aria-hidden="true" focusable="false">${inner}</svg>`;
+  const a = _bcCode({upc:_BC_UPC, complement:'00121'}, 44, 66, 1.4, 40);
+  const anatomie = a.svg
+    + _lxRep(a.x(27.5), a.bas, 52, 152, T(`code éditeur`,`publisher code`))
+    + _lxRep(a.x(67.5), a.bas, 128, 164, T(`code de la série`,`series code`))
+    + _lxRep(a.x(98), a.bas, 196, 150, T(`clé de contrôle`,`check digit`))
+    + _lxRep(a.xa(17), a.haut, 150, 26, T(`n° 001`,`issue 001`), 'end')
+    + _lxRep(a.xa(34.5), a.haut, 212, 14, T(`couverture : 2 = B`,`cover: 2 = B`), 'end')
+    + _lxRep(a.xa(43.5), a.haut, 290, 30, T(`impression : 1re`,`printing: 1st`), 'end');
+  const termes = [
+    [T(`UPC`,`UPC`), T(`code-barres à 12 chiffres des produits vendus aux États-Unis ; pour un comics, il désigne la série.`,`12-digit barcode of products sold in the US; for a comic book it identifies the series.`)],
+    [T(`Complément`,`Add-on`), T(`le petit code à droite : 5 chiffres (n°, couverture, impression), ou 2 sur les anciens fascicules.`,`the small code on the right: 5 digits (issue, cover, printing), or 2 on older issues.`)],
+    [T(`Clé de contrôle`,`Check digit`), T(`le dernier chiffre de l'UPC, calculé à partir des 11 autres : il trahit une faute de saisie.`,`the last UPC digit, computed from the other 11: it reveals a typing error.`)],
+    [T(`Direct`,`Direct`), T(`exemplaire vendu en comic shop.`,`copy sold in comic shops.`)],
+    [T(`Newsstand`,`Newsstand`), T(`exemplaire vendu en kiosque.`,`copy sold at newsstands.`)],
+    [T(`ISBN`,`ISBN`), T(`le numéro des livres : recueils et romans graphiques.`,`the book number: collected editions and graphic novels.`)],
+  ].map(([t,d])=>`<dt>${t}</dt><dd>${d}</dd>`).join('');
+  const cartes = _lxcEntrees().map(e=>`<article class="lx-carte">${svg(e.dessin)}<h3>${e.nom}</h3><p>${e.def}</p><p class="lx-repere"><b>${T(`Repère :`,`Typically:`)}</b> ${e.repere}</p></article>`).join('');
+  bd.innerHTML = `<div class="modal">
+    <div class="modal-header"><h2>${T(`Lexique des codes-barres de comics`,`Comic book barcode glossary`)}</h2>
+      <button type="button" class="ghost" onclick="closeModal('lexiqueCodesComicsModal')" aria-label="${T(`Fermer`,`Close`)}">✕</button></div>
+    <div class="modal-body">
+      <p class="lx-intro">${T(`Comment lire le code-barres d'un comics américain. Saisissez dans « UPC / ISBN » le code complet, complément compris : l'app en déduit le n°, la couverture et l'impression. Les numéros des croquis sont fictifs.`,
+                              `How to read the barcode of an American comic book. Enter the full code, add-on included, in "UPC / ISBN": the app works out the issue, cover and printing. The numbers in the sketches are made up.`)}</p>
+      <section class="lx-anatomie">${svg(anatomie, 300)}<div><h3>${T(`Les parties du code`,`Parts of the code`)}</h3><dl>${termes}</dl></div></section>
+      <div class="lx-grille">${cartes}</div>
+    </div></div>`;
+  openModal('lexiqueCodesComicsModal');
   bd.scrollTop = 0;
 }
 // ── Lexique des finitions ───────────────────────────────────────────────
@@ -8600,7 +8911,7 @@ const SB = (() => {
     'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
     'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite','emboitageEmbossageFroid',
     'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche','paraphe',
-    'gradeUS','gradeNote','ratingComics',
+    'gradeUS','gradeNote','ratingComics','distributionComics',
     // Les rapprochements automatiques qu'on a refusés : « non, ce n'est pas
     // la même édition ». Rangés ici, ils n'ont besoin d'aucune colonne SQL.
     'editionsEcartees'];
@@ -10484,6 +10795,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemBdtUrl").value = it.bedethequeUrl||"";
     document.getElementById("itemBdtId").value = it.bedethequeId||"";
     document.getElementById("itemIsbn").value = it.isbn||"";
+    _majUpcAide();
     _majLienFiche();
     document.getElementById("itemPages").value = it.nbPages||"";
     document.getElementById("itemPrintRun").value = it.tirage||"";
@@ -10497,6 +10809,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemGradeUS").value = it.gradeUS||"";
     document.getElementById("itemGradeNote").value = it.gradeNote||"";
     document.getElementById("itemRatingComics").value = it.ratingComics||"";
+    document.getElementById("itemDistributionComics").value = it.distributionComics||"";
     document.getElementById("itemFirstEdition").checked = !!it.editionOriginale;
     document.getElementById("itemEditionInfo").value = it.editionInfo||"";
     document.getElementById("itemSigned").checked = !!it.signe;
@@ -10865,6 +11178,7 @@ async function _saveItemCore(e){
       gradeUS:            document.getElementById("itemGradeUS").value,
       gradeNote:          document.getElementById("itemGradeNote").value.trim(),
       ratingComics:       document.getElementById("itemRatingComics").value.trim(),
+      distributionComics: document.getElementById("itemDistributionComics").value,
       editionInfo:        document.getElementById("itemEditionInfo").value.trim(),
       jaquetteEtat:       document.getElementById("itemJaquetteEtat").value.trim(),
       dedicace:           document.getElementById("itemDedication").value.trim(),
@@ -11028,6 +11342,7 @@ async function _saveItemCore(e){
     gradeUS: document.getElementById("itemGradeUS").value,
     gradeNote: document.getElementById("itemGradeNote").value.trim(),
     ratingComics: document.getElementById("itemRatingComics").value.trim(),
+    distributionComics: document.getElementById("itemDistributionComics").value,
     editionOriginale: document.getElementById("itemFirstEdition").checked,
     editionInfo: document.getElementById("itemEditionInfo").value.trim(),
     signe: document.getElementById("itemSigned").checked,
@@ -11305,18 +11620,34 @@ function _renvoiExterne(isbn, disque, collection){
                   titre:T('Copier l’ISBN et ouvrir la recherche Bédéthèque',
                           'Copy the ISBN and open the Bédéthèque search') } : null;
 }
+// Recherche Google du code (ISBN, UPC, EAN, référence) : utile quand
+// Bédéthèque ou Discogs ne connaissent pas l'édition. Simple lien : rien
+// n'est envoyé à Google tant qu'on ne clique pas.
+function lienGoogleCode(v){
+  const brut = String(v||'').trim();
+  if(!brut) return '';
+  const compact = brut.replace(/[\s.-]/g,'');
+  const q = /^[0-9Xx]{8,}$/.test(compact) ? compact : `"${brut}"`;
+  return 'https://www.google.com/search?q=' + encodeURIComponent(q);
+}
 function _renvoiFicheHTML(it, isDisque){
   const r = _renvoiExterne(it.isbn, isDisque, it.collectionType);
-  if(!r) return '';
-  return ` <a class="lien-fiche" href="${r.url}" target="_blank" rel="noopener noreferrer"`
+  let h = '';
+  if(r) h += ` <a class="lien-fiche" href="${r.url}" target="_blank" rel="noopener noreferrer"`
        + (r.copier ? ` data-copier="${escapeHTML(r.copier)}" onclick="_avantOuvertureLienFiche(this)"` : '')
        + ` title="${escapeHTML(r.titre)}">${r.nom} ↗</a>`;
+  const g = lienGoogleCode(it.isbn);
+  if(g) h += ` <a class="lien-fiche" href="${escapeHTML(g)}" target="_blank" rel="noopener noreferrer" title="${T('Chercher ce code sur Google','Search this code on Google')}">Google ↗</a>`;
+  return h;
 }
 function _majLienFiche(){
   _majBedetheque();
+  _majUpcAide();
   const a = document.getElementById('itemIsbnLien');
   const champ = document.getElementById('itemIsbn');
   if(!a || !champ) return;
+  const g = document.getElementById('itemIsbnGoogle');
+  if(g){ const u = lienGoogleCode(champ.value); g.hidden = !u; if(u) g.href = u; }
   const cat = document.getElementById('itemCategory')?.value || '';
   const r = _renvoiExterne(champ.value, !!archetypeForCategory(cat).showDisque, _collPourNouvelleFiche(cat));
   a.hidden = !r;
@@ -18130,6 +18461,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
         ${it.tags&&it.tags.length?`<div style="margin-top:8px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
           ${GUEST?'':`<button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>`}
+          ${GUEST?'':`<button class="secondary" onclick="ouvrirVente('${it.id}')" title="${T('Rédiger une annonce depuis cette fiche','Write a listing from this record')}">🏷 ${T('Vendre','Sell')}</button>`}
           ${diapoActif?`<button onclick="pcOpenLightbox(0)">▶ ${_lang==='en'?'Slideshow':'Diaporama'} (${imgs.length})</button>`:''}
           ${hasDiaporama&&imgs.length&&imagesLocked?`<button onclick="requireAdultPin(()=>renderItemDetail('${it.id}',false))">🔒 ${_lang==='en'?'Unlock images':'Déverrouiller les images'}</button>`:''}
           ${_fbBackBtnHTML(it.id)}
@@ -18256,7 +18588,7 @@ function renderItemDetail(id, pushHistory=true){
     ${it.anneeEdition?`<dt>${t('detail.release_label')}</dt><dd>${it.moisEdition?t('month.'+it.moisEdition)+" ":""}${it.anneeEdition}</dd>`:""}
     ${itemLangues(it).length?`<dt>${t('detail.lang_label')}</dt><dd>${itemLangues(it).map(l=>{const f=languageFlag(l);return (f?f+' ':'')+escapeHTML(l)}).join(', ')}</dd>`:""}
     ${it.paysEdition?`<dt>${t('detail.country_label')}</dt><dd>${escapeHTML(it.paysEdition)}</dd>`:""}
-    ${it.isbn?`<dt>${isDisque?T('Code-barres','Barcode'):t('detail.isbn_label')}</dt><dd>${escapeHTML(it.isbn)}${_renvoiFicheHTML(it, isDisque)}</dd>`:""}
+    ${it.isbn?`<dt>${isDisque?T('Code-barres','Barcode'):(_upcDeLaFiche(it)?'UPC':t('detail.isbn_label'))}</dt><dd>${escapeHTML(it.isbn)}${_upcDeLaFiche(it)?`<div class="muted" style="font-size:12px">${escapeHTML(_upcDescription(_upcDeLaFiche(it)))}</div>`:''}${_renvoiFicheHTML(it, isDisque)}</dd>`:""}
     ${(!isDisque && (it.bedethequeId||it.bedethequeUrl))?(()=>{const _l=bdtLien(it.bedethequeUrl,it.bedethequeId);return `<dt>Bédéthèque</dt><dd>${it.bedethequeId?`${T('Identifiant','Identifier')} ${escapeHTML(it.bedethequeId)}`:''}${_l?`<a class="lien-fiche" href="${escapeHTML(_l)}" target="_blank" rel="noopener noreferrer" title="${T('Ouvrir la fiche sur Bédéthèque','Open the page on Bédéthèque')}">${T('Voir la fiche','Open page')} ↗</a>`:''}</dd>`;})():""}
     ${it.nbPages?`<dt>${isPortfolio?t('detail.planches_label'):t('detail.pages_label')}</dt><dd>${it.nbPages}${isPortfolio?" pl.":" p."}</dd>`:""}
     ${it.tirage?`<dt>${t('detail.print_label')}</dt><dd>${escapeHTML(it.tirage)}${it.numeroExemplaire?` · ${_lang==='en'?'copy':'exemplaire'} ${escapeHTML(it.numeroExemplaire)}`:""}</dd>`:""}
@@ -18313,6 +18645,7 @@ function renderItemDetail(id, pushHistory=true){
         ${it.tags&&it.tags.length?`<div style="margin-top:12px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
           ${GUEST?'':`<button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>`}
+          ${GUEST?'':`<button class="secondary" onclick="ouvrirVente('${it.id}')" title="${T('Rédiger une annonce depuis cette fiche','Write a listing from this record')}">🏷 ${T('Vendre','Sell')}</button>`}
           ${_fbBackBtnHTML(it.id)}
           ${hasDiaporama&&imgs.length>1&&!imagesLocked?`<button onclick="pcOpenLightbox(0)">▶ ${_lang==='en'?'Slideshow':'Diaporama'} (${imgs.length})</button>`:""}
           ${hasDiaporama&&imgs.length&&imagesLocked?`<button onclick="requireAdultPin(()=>renderItemDetail('${it.id}',false))">🔒 ${_lang==='en'?'Unlock images':'Déverrouiller les images'}</button>`:""}
@@ -18931,7 +19264,7 @@ function checkAutoBackup(){
 function exportCSV(type){
   let rows, filename;
   if(type==="items"){
-    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","tradition","isbn","bedethequeId","bedethequeUrl","nbPages","tirage","numeroExemplaire","format","etat","gradeUS","gradeNote","ratingComics","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","signaturePlanche","paraphe","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
+    const headers = ["id","titre","sousTitre","categorie","serie","numeroSerie","auteurs","editeur","collection","moisEdition","anneeEdition","langue","paysEdition","tradition","isbn","bedethequeId","bedethequeUrl","nbPages","tirage","numeroExemplaire","format","etat","gradeUS","gradeNote","ratingComics","distributionComics","editionOriginale","editionInfo","signe","dedicaceSignature","dedicaceDessin","dedicaceTampon","signaturePlanche","paraphe","dedicace","emboitageCarton","emboitageToile","emboitagePlexiglas","dosToile","broche","relie","prixAchat","cote","dateAcquisition","lieuAcquisition","localisation","tags","notes"];
     rows = [headers];
     cache.items.forEach(i=>{
       const authors = (i.auteurs||[]).map(a=>{const r=a.roles&&a.roles.length?a.roles:(a.role?[a.role]:[]);return `${authorDisplay(authorById(a.auteurId))||""}${r.length?" ("+r.join(", ")+")":""}`;}).join("; ");
@@ -19132,6 +19465,7 @@ async function importCSV(e, type){
           gradeUS: obj.gradeUS||"",
           gradeNote: obj.gradeNote||"",
           ratingComics: obj.ratingComics||"",
+          distributionComics: obj.distributionComics||"",
           editionOriginale: /^(oui|true|1|eo)$/i.test(obj.editionOriginale||""),
           editionInfo: obj.editionInfo||"",
           signe: /^(oui|true|1)$/i.test(obj.signe||""),
@@ -25597,6 +25931,876 @@ async function _detecterPageInvite(){
   } catch(e){ /* page absente, ou consultation hors serveur : on n'affiche rien */ }
 }
 function entrerEnInvite(){ location.href = GUEST_PAGE_URL; }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  VENDRE — rédiger l'annonce depuis la fiche, la copier, ou la publier sur eBay
+//
+//  La publication eBay passe par un petit proxy local (ebay-proxy.py) : eBay
+//  refuse les appels directs depuis une page web, et le Cert ID (clé secrète)
+//  ne doit jamais vivre dans le navigateur. Cette page ne connaît que l'adresse
+//  du proxy et un jeton de liaison ; les identifiants eBay restent côté proxy.
+// ═══════════════════════════════════════════════════════════════════════════
+const VENTE_PREFS_KEY = 'ma_vente_prefs';   // réglages de ce navigateur (jamais exportés, jamais en base)
+const VENTE_REG_KEY   = 'ma_vente_ebay';    // annonces publiées depuis ce navigateur : {idŒuvre: {...}}
+const VENTE_PROXY_DEFAUT = 'http://127.0.0.1:8787';
+
+const EBAY_CONDITIONS = [
+  ['NEW',             'Neuf',          'New'],
+  ['LIKE_NEW',        'Comme neuf',    'Like new'],
+  ['USED_VERY_GOOD',  'Très bon état', 'Very good'],
+  ['USED_GOOD',       'Bon état',      'Good'],
+  ['USED_ACCEPTABLE', 'État correct',  'Acceptable'],
+];
+const EBAY_ETAT_VERS_CODE = { 'Neuf':'NEW', 'Très bon':'USED_VERY_GOOD', 'Bon':'USED_GOOD', 'Moyen':'USED_ACCEPTABLE', 'Mauvais':'USED_ACCEPTABLE' };
+const EBAY_ETAT_EN = { 'Neuf':'New', 'Très bon':'Very good', 'Bon':'Good', 'Moyen':'Fair', 'Mauvais':'Poor' };
+const EBAY_SITES  = { EBAY_FR:'ebay.fr', EBAY_BE:'ebay.be', EBAY_DE:'ebay.de', EBAY_IT:'ebay.it', EBAY_ES:'ebay.es', EBAY_NL:'ebay.nl', EBAY_GB:'ebay.co.uk', EBAY_US:'ebay.com' };
+const EBAY_PLACES = [['EBAY_FR','France'],['EBAY_BE','Belgique / Belgium'],['EBAY_DE','Allemagne / Germany'],['EBAY_IT','Italie / Italy'],
+                     ['EBAY_ES','Espagne / Spain'],['EBAY_NL','Pays-Bas / Netherlands'],['EBAY_GB','Royaume-Uni / UK'],['EBAY_US','États-Unis / USA']];
+
+// Plateformes : seule la longueur du titre d'eBay (80) et de Leboncoin (50) est une règle connue ; le reste est libre.
+const VENTE_PLATEFORMES = {
+  ebay:      { nom:()=> 'eBay',                          titreMax:80,   html:true  },
+  leboncoin: { nom:()=> 'Leboncoin',                     titreMax:50,   html:false },
+  vinted:    { nom:()=> 'Vinted',                        titreMax:null, html:false },
+  texte:     { nom:()=> T('Texte brut','Plain text'),    titreMax:null, html:false },
+};
+
+// Cases à cocher de la fiche → mots d'annonce (fr, en)
+const VENTE_RELIURE = [
+  ['relie','Relié','Hardcover'],['broche','Broché','Paperback'],['couvertureCartonnee','Couverture cartonnée','Boards cover'],
+  ['couvertureSouple','Couverture souple','Softcover'],['dosToile','Dos toilé','Cloth spine'],['pleineToile','Pleine toile','Full cloth'],
+  ['cousu','Cousu','Sewn'],['dosAgrafe','Dos agrafé','Stapled'],['dosSpiral','Dos spirale','Spiral-bound'],['dosCarreColle','Dos carré collé','Perfect-bound'],
+  ['bradel','Reliure bradel','Bradel binding'],['anneaux','Anneaux','Ring binding'],['rabats','Rabats','Flaps'],['jaquette','Jaquette','Dust jacket'],
+  ['rhodoid','Rhodoïd','Acetate jacket'],['bandeau','Bandeau','Belly band'],['rubanMarquePage','Ruban marque-page','Ribbon bookmark'],
+  ['vernisSelectif','Vernis sélectif','Spot varnish'],['marquageChaud','Marquage à chaud','Hot-foil stamping'],['embossageFroid','Embossage à froid','Blind embossing'],
+  ['emboitageFourreau','Fourreau','Slipcase'],['emboitageCoffret','Coffret','Box set'],['emboitageChemise','Chemise','Folder case'],
+  ['formatCarre','Format carré','Square format'],['formatFrancaise','Format à la française','Portrait format'],['formatItalienne','Format à l’italienne','Landscape format'],
+  ['formatManga','Format manga','Manga format'],['formatComics','Format comics','Comics format'],
+];
+const VENTE_CONTENUS = [
+  ['exlibris','Ex-libris','Bookplate (ex-libris)'],['exlibrisSigne','Ex-libris signé','Signed bookplate'],['exlibrisNumerote','Ex-libris numéroté','Numbered bookplate'],
+  ['tirageInclus','Tirage inclus','Print included'],['serigraphie','Sérigraphie','Screen print'],['marquePage','Marque-page','Bookmark'],['timbre','Timbre','Stamp'],
+  ['carnetCroquis','Carnet de croquis','Sketchbook'],['autocollant','Autocollant','Sticker'],['decalcomanie','Décalcomanie','Transfer'],['cartePostale','Carte postale','Postcard'],
+  ['poster','Poster','Poster'],['supplementRedactionnel','Supplément rédactionnel','Editorial supplement'],
+];
+const VENTE_SIGNATURES = [
+  ['signe','Signé par l’auteur','Signed by the author'],['dedicaceSignature','Dédicace avec signature','Inscribed and signed'],
+  ['dedicaceDessin','Dédicace dessinée','Inscribed with a drawing'],['dedicaceTampon','Tampon de dédicace','Dedication stamp'],
+  ['paraphe','Paraphe','Initialled'],['signaturePlanche','Signature sur la planche','Signed on the plate'],
+];
+
+let _vente = null;                 // état de la fenêtre « Vendre » ouverte
+let _ebay  = { status:null, err:'' }; // dernier état connu du proxy
+
+// ── Préférences et registre (localStorage, toujours sous try/catch) ──
+function _venteGet(){ try{ return JSON.parse(localStorage.getItem(VENTE_PREFS_KEY)||'{}') || {}; }catch(e){ return {}; } }
+function _venteSet(p){ try{ localStorage.setItem(VENTE_PREFS_KEY, JSON.stringify(p)); }catch(e){} }
+function _ventePatch(o){ const p=Object.assign(_venteGet(), o); _venteSet(p); return p; }
+function _venteReg(){ try{ return JSON.parse(localStorage.getItem(VENTE_REG_KEY)||'{}') || {}; }catch(e){ return {}; } }
+function _venteRegSet(id, v){ try{ const r=_venteReg(); r[id]=v; localStorage.setItem(VENTE_REG_KEY, JSON.stringify(r)); }catch(e){} }
+const _vNorm = s => (s||'').toString().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+const _vEl = id => document.getElementById(id);
+// Chaîne JS littérale sûre à l'intérieur d'un attribut HTML (onclick="…")
+const _vJs = s => JSON.stringify(String(s)).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
+// ── Dialogue avec le proxy ──
+async function ebayProxy(path, opts){
+  opts = opts || {};
+  const p = _venteGet();
+  const base = (p.proxyUrl || VENTE_PROXY_DEFAUT).replace(/\/+$/,'');
+  const headers = { 'X-Proxy-Token': p.proxyToken || '' };
+  let body;
+  if(opts.raw){ headers['Content-Type'] = opts.raw.type || 'image/jpeg'; headers['X-Filename'] = encodeURIComponent(opts.name||'image'); body = opts.raw; }
+  else if(opts.json !== undefined){ headers['Content-Type'] = 'application/json'; body = JSON.stringify(opts.json); }
+  let r;
+  try{ r = await fetch(base + path, { method: opts.method || 'GET', headers, body }); }
+  catch(e){
+    throw new Error(T('Le proxy eBay ne répond pas. Lance-le sur ton ordinateur (python3 ebay-proxy.py), vérifie son adresse dans Réglages eBay, puis réessaie.',
+                      'The eBay proxy is not responding. Start it on your computer (python3 ebay-proxy.py), check its address in eBay settings, then try again.'));
+  }
+  let data = {};
+  try{ data = await r.json(); }catch(e){}
+  if(!r.ok) throw new Error(data.error || ('HTTP '+r.status));
+  return data;
+}
+// Appel d'une API eBay relayé par le proxy. Renvoie {status, ok, data, location}.
+function ebayCall(method, path, o){ o = o || {}; return ebayProxy('/call', { method:'POST', json:{ method, path, query:o.query, body:o.body, auth:o.auth } }); }
+function ebayErreurs(r){
+  const d = (r && r.data) || {};
+  const liste = (d.errors || []).map(e => (e.longMessage || e.message || '').trim()).filter(Boolean);
+  if(liste.length) return [...new Set(liste)].join('\n');
+  if(d.error_description || d.error) return d.error_description || d.error;
+  if(d.raw) return String(d.raw).slice(0,300);
+  return 'HTTP ' + (r && r.status);
+}
+function ebayArbre(){ return (_ebay.status && _ebay.status.categoryTree) || '71'; }
+function ebayMarche(){ return (_ebay.status && _ebay.status.marketplace) || 'EBAY_FR'; }
+function ebayLienAnnonce(listingId){
+  const sandbox = _ebay.status && _ebay.status.env === 'sandbox';
+  const site = EBAY_SITES[ebayMarche()] || 'ebay.fr';
+  return sandbox ? 'https://www.sandbox.ebay.com/itm/' + listingId : 'https://www.' + site + '/itm/' + listingId;
+}
+
+// ═════════════════════════ Rédaction de l'annonce ═════════════════════════
+function _venteAuteurs(it){
+  return (it.auteurs||[]).map(a=>{
+    const au = authorById(a.auteurId); if(!au) return null;
+    const roles = (a.roles && a.roles.length) ? a.roles : (a.role ? [a.role] : []);
+    return { nom: authorDisplay(au), roles };
+  }).filter(Boolean);
+}
+function _venteGroupe(it){ try{ const g = groupeDeItem(it); return (g && g.nom) || it.disqueGroupe || ''; }catch(e){ return it.disqueGroupe || ''; } }
+function _venteIsbnValide(s){
+  const c = (s||'').replace(/[\s-]/g,'');
+  if(/^\d{13}$/.test(c)){ let t=0; for(let i=0;i<12;i++) t += (+c[i]) * (i%2?3:1); return (10 - t%10)%10 === +c[12]; }
+  if(/^\d{9}[\dXx]$/.test(c)){ let t=0; for(let i=0;i<9;i++) t += (+c[i])*(10-i); t += (c[9].toUpperCase()==='X'?10:+c[9]); return t%11===0; }
+  return false;
+}
+
+// Titre : on retire les éléments les moins utiles jusqu'à tenir dans la limite.
+function venteTitre(it, lang, max){
+  const fr = lang !== 'en';
+  const arch = archetypeForItem(it).id;
+  const v = x => (x===undefined||x===null) ? '' : String(x).trim();
+  const titre = v(it.titre);
+  const disque = arch==='disque', film = arch==='video';
+  let base = titre;
+  if(!disque && !film && v(it.serie)){
+    const sNum = v(it.numeroSerie) ? ' T' + v(it.numeroSerie) : '';
+    if(_vNorm(titre).includes(_vNorm(it.serie))) base = titre + sNum;
+    else base = v(it.serie) + sNum + (titre ? ' - ' + titre : '');
+  }
+  const auteurs = disque ? [_venteGroupe(it)].filter(Boolean) : _venteAuteurs(it).map(a=>a.nom);
+  const flags = [];
+  if(it.editionOriginale) flags.push(fr ? 'EO' : '1st ed.');
+  if(it.dedicaceSignature || it.dedicaceDessin || it.dedicaceTampon) flags.push(fr ? 'Dédicace' : 'Inscribed');
+  else if(it.signe) flags.push(fr ? 'Signé' : 'Signed');
+  if(disque && v(it.disqueSupport)) flags.push(v(it.disqueSupport));
+  if(film && v(it.videoEdition)) flags.push(v(it.videoEdition));
+  const edit = [v(it.editeur), it.anneeEdition||''].filter(Boolean).join(' ');
+  const parts = [ {t:base, p:0}, {t:auteurs.slice(0,2).join(', '), p:1}, {t:flags.join(' '), p:2}, {t:edit, p:3} ].filter(x=>x.t);
+  const join = () => parts.map(x=>x.t).join(' - ');
+  if(max){
+    while(join().length > max && parts.length > 1){
+      let k = 0; parts.forEach((x,i)=>{ if(x.p >= parts[k].p) k = i; });
+      parts.splice(k,1);
+    }
+    if(join().length > max) return join().slice(0, max-1).trimEnd() + '…';
+  }
+  return join();
+}
+
+// Description en texte simple : lisible telle quelle, convertie en HTML pour eBay.
+function venteDescription(it, lang){
+  const fr = lang !== 'en';
+  const L = (a,b) => fr ? a : b;
+  const v = x => (x===undefined||x===null) ? '' : String(x).trim();
+  const arch = archetypeForItem(it).id;
+  const disque = arch==='disque', film = arch==='video';
+  const auteurs = _venteAuteurs(it);
+  const lignes = [];
+  const add = (lab, val) => { val = v(val); if(val) lignes.push('• ' + lab + ' : ' + val); };
+  const mois = it.moisEdition ? (['','janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][it.moisEdition]||'') : '';
+  const moisEn = it.moisEdition ? (['','January','February','March','April','May','June','July','August','September','October','November','December'][it.moisEdition]||'') : '';
+  const parution = [fr ? mois : moisEn, it.anneeEdition||''].filter(Boolean).join(' ');
+
+  if(disque){
+    add(L('Artiste / groupe','Artist / band'), _venteGroupe(it));
+    add(L('Support','Format'), it.disqueSupport);
+    add(L('Label','Label'), it.editeur);
+    add(L('Parution','Released'), parution);
+    add(L('Parution originale','Original release'), it.disqueDateOrigine);
+    add(L('Pays','Country'), it.disquePays || it.paysEdition);
+    add(L('Genre','Genre'), [it.disqueGenre, it.disqueStyle].filter(Boolean).join(' / '));
+    add(L('Pressage','Pressing'), it.disquePressage);
+    add(L('Remasterisé','Remastered'), it.disqueRemaster ? L('oui','yes') : '');
+    add(L('Référence catalogue','Catalogue no.'), it.disqueRef);
+    add(L('Code-barres','Barcode'), it.isbn);
+    add(L('Boîtier','Case'), it.disqueBoitier);
+    add(L('Livret','Booklet'), it.disqueLivret ? (it.disqueLivretPages ? it.disqueLivretPages+' p.' : L('oui','yes')) : '');
+  } else if(film){
+    add(L('Titre original','Original title'), it.videoTitreOriginal);
+    add(L('Année du film','Film year'), it.videoAnneeFilm);
+    add(L('Édition','Edition'), it.videoEdition);
+    add(L('Éditeur vidéo','Video publisher'), it.editeur);
+    add(L('Parution','Released'), parution);
+    add(L('Zone','Region'), it.videoZone);
+    add(L("Format d'image",'Picture format'), it.videoFormatImage);
+    add(L('Langues audio','Audio languages'), it.videoLangues);
+    add(L('Sous-titres','Subtitles'), it.videoSousTitres);
+    add(L('Durée','Running time'), it.videoDuree);
+    add(L('Conditionnement','Packaging'), it.videoBoitier);
+    add(L('Bonus','Extras'), it.videoBonus);
+    add(L('Code-barres','Barcode'), it.isbn);
+  } else {
+    if(v(it.serie)) add(L('Série','Series'), v(it.serie) + (v(it.numeroSerie) ? (fr ? ' — tome ' : ' — vol. ') + v(it.numeroSerie) : ''));
+    add(L('Sous-titre','Subtitle'), it.sousTitre);
+    if(auteurs.length) add(L('Auteurs','Authors'), auteurs.map(a=>a.nom + (a.roles.length ? ' (' + a.roles.join(', ') + ')' : '')).join(' ; '));
+    add(L('Éditeur','Publisher'), v(it.editeur) + (v(it.collection) ? ' — ' + v(it.collection) : ''));
+    add(L('Parution','Published'), parution);
+    add(L('Langue','Language'), itemLangues(it).join(', '));
+    add(L("Pays d'édition",'Country of publication'), it.paysEdition);
+    add(L('ISBN','ISBN'), it.isbn);
+    add(L('Pages','Pages'), it.nbPages);
+    add(L('Format','Size'), it.format);
+    if(it.editionOriginale) add(L('Édition','Edition'), L('Édition originale','First edition'));
+    add(L("Précisions d'édition",'Edition notes'), it.editionInfo);
+    add(L('Tirage','Print run'), v(it.tirage) + (v(it.numeroExemplaire) ? (fr ? ' — exemplaire n° ' : ' — copy no. ') + v(it.numeroExemplaire) : ''));
+    const rel = VENTE_RELIURE.filter(([k]) => it[k]).map(([,a,b]) => L(a,b));
+    add(L('Reliure et finitions','Binding and finish'), rel.join(', '));
+    add(L('Papier','Paper'), it.paperQuality);
+    const cont = VENTE_CONTENUS.filter(([k]) => it[k]).map(([,a,b]) => L(a,b));
+    if(it.objet) cont.push(v(it.objetDesc) ? v(it.objetDesc) : L('Objet associé','Associated object'));
+    add(L('Joint à cet exemplaire','Included with this copy'), cont.join(', '));
+    if(it.gradeUS || it.gradeNote) add(L('Grade (échelle US)','Grade (US scale)'), [it.gradeUS, it.gradeNote ? it.gradeNote + '/10' : ''].filter(Boolean).join(' — '));
+  }
+  const sign = VENTE_SIGNATURES.filter(([k]) => it[k]).map(([,a,b]) => L(a,b));
+  add(L('Signature / dédicace','Signature / inscription'), sign.join(', '));
+
+  const entete = [];
+  const auteurTxt = disque ? _venteGroupe(it) : auteurs.map(a=>a.nom).slice(0,3).join(', ');
+  entete.push(v(it.titre) + (v(it.sousTitre) && !disque && !film ? ' — ' + v(it.sousTitre) : ''));
+  const sous = [auteurTxt, [v(it.editeur), it.anneeEdition||''].filter(Boolean).join(', ')].filter(Boolean).join(' — ');
+  if(sous) entete.push(sous);
+
+  const etatMot = it.etat ? (fr ? it.etat : (EBAY_ETAT_EN[it.etat] || it.etat)) : '';
+  const etat = [etatMot, v(it.etatDetail)].filter(Boolean).join(' — ');
+  const outro = v(_venteGet().outro);
+  const out = [];
+  out.push(entete.join('\n'));
+  if(lignes.length) out.push(L('CARACTÉRISTIQUES','DETAILS') + '\n' + lignes.join('\n'));
+  if(etat) out.push(L('ÉTAT','CONDITION') + '\n' + etat);
+  if(outro) out.push(outro);
+  return out.join('\n\n');
+}
+
+// Texte simple → HTML accepté par eBay (paragraphes, titres en gras, listes).
+function venteVersHtml(txt){
+  const esc = escapeHTML;
+  const lignes = (txt||'').replace(/\r/g,'').split('\n');
+  let html = '', ul = false, para = [];
+  const fermerPara = () => { if(para.length){ html += '<p>' + para.map(esc).join('<br>') + '</p>'; para = []; } };
+  const fermerUl = () => { if(ul){ html += '</ul>'; ul = false; } };
+  for(const l of lignes){
+    if(/^\s*[•\-]\s+/.test(l)){ fermerPara(); if(!ul){ html += '<ul>'; ul = true; } html += '<li>' + esc(l.replace(/^\s*[•\-]\s+/,'')) + '</li>'; continue; }
+    fermerUl();
+    if(!l.trim()){ fermerPara(); continue; }
+    if(/^[A-ZÀ-ÖØ-Þ0-9 '’\/&\-]{4,}$/.test(l.trim()) && /[A-ZÀ-ÖØ-Þ]/.test(l)){ fermerPara(); html += '<p><b>' + esc(l.trim()) + '</b></p>'; continue; }
+    para.push(l);
+  }
+  fermerPara(); fermerUl();
+  return html;
+}
+
+// ═════════════════════════ Fenêtre « Vendre » ═════════════════════════
+function ouvrirVente(id){
+  const it = cache.items.find(i => i.id === id);
+  if(!it) return;
+  const p = _venteGet();
+  const imgs = it.images || [];
+  const verrou = (it.imagesAdultes || it.contenuAdulte) && !_adultUnlocked;
+  const prixRef = it.cote || it.prixAchat || '';
+  _vente = {
+    id, plat: VENTE_PLATEFORMES[p.plat] ? p.plat : 'ebay', lang: p.lang === 'en' ? 'en' : 'fr',
+    edite:false, verrou,
+    photos: verrou ? [] : imgs.slice(0, 12).map((_,i)=>i),
+    prix: prixRef ? Number(prixRef).toFixed(2) : '',
+    cond: EBAY_ETAT_VERS_CODE[it.etat] || 'USED_GOOD',
+    condDesc: (it.etatDetail||'').slice(0,1000),
+    cat: null, catSugg: [], aspectDefs: [], aspectVals: {}, busy:false, res:null, etapes:[],
+  };
+  const cat = (p.catMap || {})[_venteCleCat(it)];
+  if(cat) _vente.cat = cat;
+  venteGenerer();
+  venteRendu();
+  openModal('venteModal');
+  if(_vente.plat === 'ebay') venteEbayInit();
+}
+function _venteCleCat(it){ return (it.categorie || '') + '|' + archetypeForItem(it).id; }
+function venteItem(){ return _vente ? cache.items.find(i => i.id === _vente.id) : null; }
+
+function venteGenerer(){
+  const it = venteItem(); if(!it) return;
+  const pf = VENTE_PLATEFORMES[_vente.plat];
+  _vente.titre = venteTitre(it, _vente.lang, pf.titreMax);
+  _vente.desc  = venteDescription(it, _vente.lang);
+  _vente.edite = false;
+}
+function venteRegenerer(){
+  if(_vente.edite && !confirm(T('Réécrire titre et description ? Tes modifications seront perdues.','Rewrite title and description? Your edits will be lost.'))) return;
+  venteGenerer();
+  _vEl('venteTitre').value = _vente.titre;
+  _vEl('venteDesc').value = _vente.desc;
+  venteCompteur();
+}
+function venteChangerPlateforme(k){
+  if(!VENTE_PLATEFORMES[k] || k === _vente.plat) return;
+  _vente.plat = k; _ventePatch({ plat:k });
+  if(!_vente.edite) venteGenerer();
+  else { const it = venteItem(); const m = VENTE_PLATEFORMES[k].titreMax; if(m) _vente.titre = venteTitre(it, _vente.lang, m); }
+  venteRendu();
+  if(k === 'ebay') venteEbayInit();
+}
+function venteChangerLangue(l){
+  const ancienne = _vente.lang;
+  l = l === 'en' ? 'en' : 'fr';
+  if(_vente.edite && !confirm(T('Réécrire titre et description dans cette langue ? Tes modifications seront perdues.','Rewrite title and description in this language? Your edits will be lost.'))){
+    _vEl('venteLang').value = ancienne; return;
+  }
+  _vente.lang = l; _ventePatch({ lang:l });
+  venteGenerer(); venteRendu();
+}
+function venteSaisie(){
+  _vente.edite = true;
+  _vente.titre = _vEl('venteTitre').value;
+  _vente.desc  = _vEl('venteDesc').value;
+  venteCompteur();
+}
+function venteCompteur(){
+  const pf = VENTE_PLATEFORMES[_vente.plat], el = _vEl('venteCpt'); if(!el) return;
+  const n = (_vEl('venteTitre').value || '').length;
+  if(pf.titreMax){ el.textContent = n + ' / ' + pf.titreMax; el.classList.toggle('over', n > pf.titreMax); }
+  else { el.textContent = n + ' ' + T('caractères','characters'); el.classList.remove('over'); }
+}
+
+function venteRendu(){
+  const it = venteItem(); if(!it) return;
+  const p = _venteGet(), pf = VENTE_PLATEFORMES[_vente.plat], ebay = _vente.plat === 'ebay';
+  _vEl('venteTitreModal').textContent = '🏷 ' + T('Vendre','Sell') + ' — ' + (it.titre || '');
+  const reg = _venteReg()[it.id];
+  const deja = reg ? `<div class="vente-msg info" style="margin:0 0 14px">${T('Déjà publiée sur eBay le','Already listed on eBay on')} ${escapeHTML(new Date(reg.date).toLocaleDateString(_lang==='en'?'en-GB':'fr-FR'))}
+      (${escapeHTML(reg.env === 'sandbox' ? 'sandbox' : 'production')}) — <a href="${escapeHTML(_safeUrl(reg.url))}" target="_blank" rel="noopener">${T("voir l'annonce","view the listing")}</a></div>` : '';
+  _vEl('venteBody').innerHTML = `
+    <div class="vente-bar">
+      <div class="vente-tabs">${Object.keys(VENTE_PLATEFORMES).map(k =>
+        `<button type="button" class="secondary${k===_vente.plat?' on':''}" onclick="venteChangerPlateforme('${k}')">${escapeHTML(VENTE_PLATEFORMES[k].nom())}</button>`).join('')}</div>
+      <label>${T("Langue de l'annonce",'Listing language')}
+        <select id="venteLang" onchange="venteChangerLangue(this.value)"><option value="fr"${_vente.lang==='fr'?' selected':''}>Français</option><option value="en"${_vente.lang==='en'?' selected':''}>English</option></select></label>
+      <button type="button" class="secondary" onclick="venteRegenerer()">↻ ${T('Rédiger de nouveau','Rewrite')}</button>
+    </div>
+    ${deja}
+    <div class="form-grid">
+      <div class="span-2"><label for="venteTitre">${T('Titre','Title')}<span class="vente-cpt" id="venteCpt"></span></label>
+        <input type="text" id="venteTitre" value="${escapeHTML(_vente.titre)}" oninput="venteSaisie()" autocomplete="off"></div>
+      <div class="span-2"><label for="venteDesc">${T('Description','Description')}</label>
+        <textarea id="venteDesc" oninput="venteSaisie()" spellcheck="true">${escapeHTML(_vente.desc)}</textarea></div>
+      <div><label for="ventePrix">${T('Prix demandé (€)','Asking price (€)')}</label>
+        <input type="text" id="ventePrix" inputmode="decimal" value="${escapeHTML(_vente.prix)}" oninput="_vente.prix=this.value" placeholder="${T('ex : 12,50','e.g. 12.50')}">
+        <div class="muted" style="font-size:12px;margin-top:4px">${it.cote ? T('Repris de la cote de la fiche.','Taken from the record’s current value.') : (it.prixAchat ? T("Repris du prix d'achat : à ajuster.",'Taken from the purchase price: adjust it.') : '')}</div></div>
+      ${ebay ? `<div><label for="venteCond">${T("État (catégories eBay)",'Condition (eBay)')}</label>
+        <select id="venteCond" onchange="_vente.cond=this.value">${EBAY_CONDITIONS.map(([c,a,b]) =>
+          `<option value="${c}"${c===_vente.cond?' selected':''}>${escapeHTML(T(a,b))}</option>`).join('')}</select></div>
+      <div class="span-2"><label for="venteCondDesc">${T("Précisions sur l'état (visibles par l'acheteur)",'Condition notes (shown to the buyer)')}</label>
+        <input type="text" id="venteCondDesc" maxlength="1000" value="${escapeHTML(_vente.condDesc)}" oninput="_vente.condDesc=this.value"></div>` : ''}
+    </div>
+    ${ebay ? `<div class="vente-section"><h3>${T('Photos','Photos')} <span class="muted" style="font-weight:400" id="ventePhotosN"></span></h3><div class="vente-photos" id="ventePhotos"></div></div>
+      <div class="vente-section" id="venteEbay"></div>` : ''}`;
+  _vEl('venteFooter').innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="secondary" onclick="venteCopier('titre')">📋 ${T('Copier le titre','Copy title')}</button>
+      <button type="button" class="secondary" onclick="venteCopier('desc')">📋 ${T('Copier la description','Copy description')}</button>
+      <button type="button" class="secondary" onclick="venteCopier('tout')">📋 ${T("Tout copier","Copy all")}</button>
+    </div>
+    <button type="button" onclick="closeModal('venteModal')">${T('Fermer','Close')}</button>`;
+  venteCompteur();
+  if(ebay){ ventePhotosRendu(); venteEbayRendu(); }
+}
+
+async function venteCopier(quoi){
+  const titre = _vEl('venteTitre').value, desc = _vEl('venteDesc').value;
+  const txt = quoi === 'titre' ? titre : quoi === 'desc' ? desc : titre + '\n\n' + desc;
+  let ok = false;
+  try{ await navigator.clipboard.writeText(txt); ok = true; }catch(e){}
+  if(!ok){
+    try{ const ta = document.createElement('textarea'); ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); ta.remove(); }catch(e){}
+  }
+  toast(ok ? T('Copié dans le presse-papiers.','Copied to the clipboard.') : T('Copie impossible : sélectionne le texte à la main.','Copy failed: select the text by hand.'), ok ? 'success' : 'error');
+}
+
+// ── Photos ──
+function ventePhotosRendu(){
+  const it = venteItem(), box = _vEl('ventePhotos'); if(!box) return;
+  const imgs = it.images || [];
+  if(_vente.verrou){ box.innerHTML = `<span class="muted">🔒 ${T("Images verrouillées (contenu réservé aux adultes) : déverrouille-les d'abord sur la fiche.",'Images locked (adult content): unlock them on the record first.')}</span>`; return; }
+  if(!imgs.length){ box.innerHTML = `<span class="muted">${T("Cette fiche n'a pas de photo : eBay en exige au moins une.",'This record has no photo: eBay requires at least one.')}</span>`; return; }
+  box.innerHTML = imgs.map((s,i) => {
+    const rang = _vente.photos.indexOf(i);
+    return `<div class="vente-photo${rang>=0?' on':''}" onclick="ventePhotoBasculer(${i})" title="${T('Cliquer pour inclure / retirer','Click to include / remove')}">
+      <img src="${_safeUrl(s)}" alt="" loading="lazy" draggable="false"><span class="ordre">${rang>=0?rang+1:''}</span></div>`;
+  }).join('');
+  const n = _vEl('ventePhotosN'); if(n) n.textContent = '(' + _vente.photos.length + ' / 12 — ' + T('la première sert de photo principale','the first one is the main photo') + ')';
+}
+function ventePhotoBasculer(i){
+  const k = _vente.photos.indexOf(i);
+  if(k >= 0) _vente.photos.splice(k,1);
+  else if(_vente.photos.length >= 12) { toast(T('12 photos au maximum.','12 photos maximum.'), 'error'); return; }
+  else _vente.photos.push(i);
+  ventePhotosRendu();
+}
+
+// ═════════════════════════ Section eBay de la fenêtre Vendre ═════════════════════════
+async function venteEbayInit(){
+  try{ _ebay.status = await ebayProxy('/status'); _ebay.err = ''; }
+  catch(e){ _ebay.status = null; _ebay.err = e.message; }
+  if(!_vente || _vente.plat !== 'ebay') return;
+  venteEbayRendu();
+  const st = _ebay.status;
+  if(st && st.connected){
+    const p = _venteGet(), cle = st.env + '|' + st.marketplace;
+    if(p.compteCle !== cle) await ebayChargerCompte(true);
+    if(_vente && _vente.cat && !_vente.aspectDefs.length) await venteChargerAspects();
+  }
+}
+
+function venteEbayRendu(){
+  const box = _vEl('venteEbay'); if(!box || !_vente) return;
+  const st = _ebay.status, p = _venteGet(), it = venteItem();
+  const envTxt = st ? (st.env === 'production' ? 'production' : 'sandbox') : '';
+  const statut = !st
+    ? `<span class="pt ko"></span><span>${escapeHTML(_ebay.err || T('Proxy eBay injoignable.','eBay proxy unreachable.'))}</span>`
+    : (st.connected
+        ? `<span class="pt ok"></span><span>${T('Connecté à eBay','Connected to eBay')}</span><span class="vente-env${envTxt==='production'?' prod':''}">${envTxt}</span><span class="muted">${escapeHTML(st.marketplace)}</span>`
+        : `<span class="pt ko"></span><span>${T("Proxy joint, mais pas encore connecté à un compte eBay.",'Proxy reached, but not connected to an eBay account yet.')}</span>`);
+  let html = `<h3>${T('Publication sur eBay','Publish on eBay')}</h3>
+    <div class="vente-statut">${statut}<button type="button" class="secondary" style="margin-left:auto;padding:4px 12px" onclick="ouvrirReglagesEbay()">⚙ ${T('Réglages eBay','eBay settings')}</button></div>`;
+  if(st && st.connected){
+    const cat = _vente.cat;
+    html += `<div class="form-grid" style="margin-top:14px">
+      <div class="span-2"><label for="venteCatQ">${T('Catégorie eBay','eBay category')} ${cat ? `<span class="vente-cpt" style="color:var(--accent)">✓ ${escapeHTML(cat.name)} (${escapeHTML(cat.id)})</span>` : ''}</label>
+        <div style="display:flex;gap:8px"><input type="text" id="venteCatQ" value="${escapeHTML(_vente.catQ !== undefined ? _vente.catQ : (it.categorie || ''))}"
+          placeholder="${T('ex : bande dessinée, comics, CD, DVD…','e.g. comic book, CD, DVD…')}" onkeydown="if(event.key==='Enter'){event.preventDefault();venteChercherCat()}">
+          <button type="button" class="secondary" style="white-space:nowrap" onclick="venteChercherCat()">🔍 ${T('Chercher','Search')}</button></div>
+        <div class="vente-sugg" id="venteSugg">${(_vente.catSugg||[]).map(s =>
+          `<label class="${cat&&cat.id===s.id?'on':''}"><input type="radio" name="venteCat" onchange="venteChoisirCat('${escapeHTML(s.id)}')" ${cat&&cat.id===s.id?'checked':''}>
+            <span><b>${escapeHTML(s.name)}</b><br><span class="chemin">${escapeHTML(s.chemin)}</span></span></label>`).join('')}</div></div>
+    </div>
+    <div id="venteAspects"></div>
+    <div class="form-grid" style="margin-top:14px">
+      ${[['f','fulfillment',T("Politique d'expédition",'Shipping policy')],['p','payment',T('Politique de paiement','Payment policy')],['r','ret',T('Politique de retour','Return policy')]].map(([k,cle,lab]) => {
+        const liste = (p.policies||{})[cle] || [], sel = (p.sel||{})[k] || '';
+        return `<div><label>${lab}</label><select onchange="venteChoisir('${k}',this.value)">${liste.length ? '' : `<option value="">${T('— à charger dans les réglages —','— load them in the settings —')}</option>`}
+          ${liste.map(x => `<option value="${escapeHTML(x.id)}"${x.id===sel?' selected':''}>${escapeHTML(x.name)}</option>`).join('')}</select></div>`; }).join('')}
+      <div><label>${T("Lieu d'expédition",'Item location')}</label><select onchange="venteChoisir('loc',this.value)">${(p.locations||[]).length ? '' : `<option value="">${T('— à créer dans les réglages —','— create one in the settings —')}</option>`}
+        ${(p.locations||[]).map(x => `<option value="${escapeHTML(x.key)}"${x.key===(p.sel||{}).loc?' selected':''}>${escapeHTML(x.name)}</option>`).join('')}</select></div>
+    </div>
+    <div class="vente-ligne"><button type="button" id="ventePublier" onclick="ventePublier()" ${_vente.busy?'disabled':''}>🚀 ${T('Publier sur eBay','Publish on eBay')}</button>
+      <span class="muted" style="font-size:12.5px">${envTxt==='production' ? T('Mode production : l’annonce sera réellement en ligne.','Production mode: the listing will really go live.') : T('Mode sandbox : annonce d’essai, sans effet réel.','Sandbox mode: test listing, no real effect.')}</span></div>`;
+  }
+  html += `<div id="venteRes">${venteResHtml()}</div>`;
+  box.innerHTML = html;
+  venteAspectsRendu();
+}
+function venteChoisir(k, val){ const p = _venteGet(); p.sel = Object.assign({}, p.sel, { [k]: val }); _venteSet(p); }
+
+function venteResHtml(){
+  const r = _vente && _vente.res; if(!r) return '';
+  const ko = r.type === 'ko', n = (_vente.etapes||[]).length;
+  const etapes = n ? `<ul class="vente-etapes" style="list-style:none;padding-left:2px">${_vente.etapes.map((e,i)=>`<li class="${e.ok?'fait':''}">${e.ok?'✓':(ko&&i===n-1?'✗':'…')} ${escapeHTML(e.txt)}</li>`).join('')}</ul>` : '';
+  if(r.type === 'ok') return `<div class="vente-msg ok">✅ ${T('Annonce publiée sur eBay.','Listing published on eBay.')}<br><a href="${escapeHTML(_safeUrl(r.url))}" target="_blank" rel="noopener">${escapeHTML(r.url)}</a>${r.warn ? '<br><br>⚠ ' + escapeHTML(r.warn) : ''}</div>`;
+  if(r.type === 'ko') return `<div class="vente-msg ko">❌ ${escapeHTML(r.titre)}${r.detail ? '\n' + escapeHTML(r.detail) : ''}</div>${etapes}`;
+  return `<div class="vente-msg info">${escapeHTML(r.titre)}</div>${etapes}`;
+}
+function venteRes(o){ _vente.res = o; const el = _vEl('venteRes'); if(el) el.innerHTML = venteResHtml(); }
+function venteEtape(txt){ _vente.etapes.forEach(e=>e.ok=true); _vente.etapes.push({ txt, ok:false }); venteRes({ type:'info', titre:T('Publication en cours…','Publishing…') }); }
+
+// ── Catégorie et caractéristiques ──
+async function venteChercherCat(){
+  const q = (_vEl('venteCatQ').value || '').trim(); if(!q) return;
+  _vente.catQ = q;
+  const sugg = _vEl('venteSugg'); if(sugg) sugg.innerHTML = `<span class="muted">${T('Recherche…','Searching…')}</span>`;
+  try{
+    const r = await ebayCall('GET', '/commerce/taxonomy/v1/category_tree/' + ebayArbre() + '/get_category_suggestions', { query:{ q }, auth:'app' });
+    if(!r.ok) throw new Error(ebayErreurs(r));
+    _vente.catSugg = ((r.data||{}).categorySuggestions || []).slice(0,8).map(s => ({
+      id: String(s.category.categoryId), name: s.category.categoryName,
+      chemin: (s.categoryTreeNodeAncestors||[]).slice().reverse().map(a=>a.categoryName).concat([s.category.categoryName]).join(' › ') }));
+    if(!_vente.catSugg.length) toast(T('Aucune catégorie trouvée : essaie un autre mot.','No category found: try another word.'), 'error');
+  }catch(e){ toast(e.message, 'error'); _vente.catSugg = []; }
+  venteEbayRendu();
+}
+async function venteChoisirCat(id){
+  const s = (_vente.catSugg||[]).find(x => x.id === id); if(!s) return;
+  _vente.cat = { id:s.id, name:s.name };
+  const it = venteItem(), p = _venteGet();
+  p.catMap = Object.assign({}, p.catMap, { [_venteCleCat(it)]: _vente.cat }); _venteSet(p);
+  _vente.aspectDefs = []; _vente.aspectVals = {};
+  venteEbayRendu();
+  await venteChargerAspects();
+}
+async function venteChargerAspects(){
+  if(!_vente || !_vente.cat) return;
+  const box = _vEl('venteAspects'); if(box) box.innerHTML = `<span class="muted">${T('Chargement des caractéristiques…','Loading item specifics…')}</span>`;
+  try{
+    const r = await ebayCall('GET', '/commerce/taxonomy/v1/category_tree/' + ebayArbre() + '/get_item_aspects_for_category', { query:{ category_id:_vente.cat.id }, auth:'app' });
+    if(!r.ok) throw new Error(ebayErreurs(r));
+    const it = venteItem();
+    _vente.aspectDefs = ((r.data||{}).aspects || []).map(a => {
+      const c = a.aspectConstraint || {};
+      return { name:a.localizedAspectName, required:c.aspectRequired === true, multi:c.itemToAspectCardinality === 'MULTI',
+               fermee:c.aspectMode === 'SELECTION_ONLY', values:(a.aspectValues||[]).map(x=>x.localizedValue) };
+    });
+    _vente.aspectVals = {};
+    _vente.aspectDefs.forEach(d => { const pre = venteAspectPrerempli(d, it); if(pre) _vente.aspectVals[d.name] = pre; });
+  }catch(e){ _vente.aspectDefs = []; toast(e.message, 'error'); }
+  venteAspectsRendu();
+}
+// Valeur proposée pour une caractéristique d'après la fiche (jamais inventée : vide si rien ne correspond).
+function venteAspectPrerempli(d, it){
+  const n = _vNorm(d.name), v = x => (x===undefined||x===null) ? '' : String(x).trim();
+  let val = '';
+  if(/^(auteur|auteurs|author|authors|ecrivain|writer)$/.test(n)) val = _venteAuteurs(it).map(a=>a.nom).join(d.multi ? '; ' : ', ');
+  else if(/^(artiste|artist|groupe|band)$/.test(n)) val = _venteGroupe(it) || _venteAuteurs(it).map(a=>a.nom).join(', ');
+  else if(/^(titre|title|book title|titre du livre)$/.test(n)) val = v(it.titre);
+  else if(/^(editeur|publisher|maison d edition|label)$/.test(n)) val = v(it.editeur);
+  else if(/^(langue|language|langue du livre)$/.test(n)) val = itemLangues(it)[0] || '';
+  else if(/^isbn/.test(n) || /^(ean|upc)$/.test(n)) val = v(it.isbn).replace(/[\s-]/g,'');
+  else if(/(annee de publication|publication year|year published|annee d edition|annee de parution|release year)/.test(n)) val = v(it.anneeEdition);
+  else if(/^(serie|series|collection)$/.test(n)) val = v(it.serie);
+  else if(/^(pays|country|pays d edition|country of origin)$/.test(n)) val = v(it.paysEdition);
+  else if(/^(format|type de reliure|binding|reliure)$/.test(n)){
+    val = it.relie || it.couvertureCartonnee ? 'Relié' : (it.broche || it.couvertureSouple ? 'Broché' : '');
+    if(val && d.fermee && !d.values.some(x => _vNorm(x) === _vNorm(val))) {
+      const en = val === 'Relié' ? 'Hardcover' : 'Paperback';
+      val = d.values.find(x => _vNorm(x) === _vNorm(en)) || '';
+    }
+  }
+  if(!val) return '';
+  if(d.fermee){
+    const hit = d.values.find(x => _vNorm(x) === _vNorm(val.split(';')[0].split(',')[0]));
+    return hit || '';
+  }
+  return val;
+}
+function venteAspectsRendu(){
+  const box = _vEl('venteAspects'); if(!box || !_vente) return;
+  const defs = (_vente.aspectDefs||[]).filter(d => d.required || _vente.aspectVals[d.name]);
+  if(!defs.length){ box.innerHTML = _vente.cat && !_vente.aspectDefs.length ? '' : ''; return; }
+  box.innerHTML = `<div class="vente-section" style="margin-top:14px;padding-top:12px"><h3>${T('Caractéristiques demandées par la catégorie','Item specifics required by the category')}</h3>
+    <div class="form-grid">${defs.map((d,i) => {
+      const cur = _vente.aspectVals[d.name] || '';
+      const champ = d.fermee && d.values.length && d.values.length <= 400 && !d.multi
+        ? `<select onchange="_vente.aspectVals[${_vJs(d.name)}]=this.value"><option value="">—</option>${d.values.map(x => `<option${x===cur?' selected':''}>${escapeHTML(x)}</option>`).join('')}</select>`
+        : `<input type="text" value="${escapeHTML(cur)}" ${d.values.length ? `list="venteAsp${i}"` : ''} oninput="_vente.aspectVals[${_vJs(d.name)}]=this.value" placeholder="${d.multi ? T('plusieurs valeurs : sépare par ;','several values: separate with ;') : ''}">
+           ${d.values.length ? `<datalist id="venteAsp${i}">${d.values.slice(0,300).map(x=>`<option value="${escapeHTML(x)}">`).join('')}</datalist>` : ''}`;
+      return `<div><label>${escapeHTML(d.name)}${d.required ? ' <span style="color:var(--danger)">*</span>' : ''}</label>${champ}</div>`; }).join('')}</div></div>`;
+}
+
+// ── Publication ──
+function venteSku(id){ return 'MC' + String(id).replace(/[^A-Za-z0-9]/g,'').slice(0,40); }
+async function venteImageBlob(src){
+  const r = await fetch(src);
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  let b = await r.blob();
+  if(!/^image\/(jpeg|png|webp|gif)$/.test(b.type) || b.size > 12*1024*1024) b = await venteVersJpeg(b, b.size > 12*1024*1024 ? 2000 : 3000);
+  return b;
+}
+async function venteVersJpeg(blob, maxCote){
+  const bmp = await createImageBitmap(blob);
+  const k = Math.min(1, maxCote / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width*k); c.height = Math.round(bmp.height*k);
+  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(bmp, 0, 0, c.width, c.height);
+  return await new Promise((ok,ko) => c.toBlob(b => b ? ok(b) : ko(new Error('conversion JPEG impossible')), 'image/jpeg', 0.92));
+}
+async function venteTeleverserPhoto(src, nom){
+  try{
+    const blob = await venteImageBlob(src);
+    const r = await ebayProxy('/upload-image', { method:'POST', raw:blob, name:nom });
+    if(r.ok && r.data && r.data.imageUrl) return r.data.imageUrl;
+    throw new Error(ebayErreurs(r));
+  }catch(e){
+    // Repli : eBay va chercher lui-même la photo si son adresse est publique.
+    if(/^https:\/\//i.test(src)){
+      const r = await ebayCall('POST', '/commerce/media/v1_beta/image/create_image_from_url', { body:{ imageUrl:src } });
+      if(r.ok && r.data && r.data.imageUrl) return r.data.imageUrl;
+    }
+    throw e;
+  }
+}
+
+async function ventePublier(){
+  if(!_vente || _vente.busy) return;
+  const it = venteItem(), st = _ebay.status, p = _venteGet();
+  const titre = _vEl('venteTitre').value.trim(), desc = _vEl('venteDesc').value.trim();
+  const prix = Number(String(_vente.prix).replace(',','.').replace(/\s/g,''));
+  const manque = [];
+  if(!titre) manque.push(T('le titre','the title'));
+  else if(titre.length > 80) manque.push(T('un titre de 80 caractères au plus (il en a ' + titre.length + ')','a title of 80 characters or fewer (it has ' + titre.length + ')'));
+  if(!desc) manque.push(T('la description','the description'));
+  if(!(prix > 0)) manque.push(T('un prix','a price'));
+  if(!_vente.photos.length) manque.push(T('au moins une photo','at least one photo'));
+  if(!_vente.cat) manque.push(T('la catégorie eBay','the eBay category'));
+  const sel = p.sel || {};
+  if(!sel.f) manque.push(T("la politique d'expédition",'the shipping policy'));
+  if(!sel.p) manque.push(T('la politique de paiement','the payment policy'));
+  if(!sel.r) manque.push(T('la politique de retour','the return policy'));
+  if(!sel.loc) manque.push(T("le lieu d'expédition",'the item location'));
+  const aspManq = (_vente.aspectDefs||[]).filter(d => d.required && !String(_vente.aspectVals[d.name]||'').trim()).map(d => d.name);
+  if(aspManq.length) manque.push(T('les caractéristiques : ','the item specifics: ') + aspManq.join(', '));
+  if(manque.length){ venteRes({ type:'ko', titre:T('Il manque avant de publier :','Missing before publishing:'), detail:'• ' + manque.join('\n• ') }); return; }
+  const prod = st && st.env === 'production';
+  if(prod && !confirm(T('Tu es en PRODUCTION : cette annonce sera réellement mise en ligne sur eBay (« ' + titre + ' », ' + prix.toFixed(2) + ' €). Continuer ?',
+                        'You are in PRODUCTION: this listing will really go live on eBay ("' + titre + '", €' + prix.toFixed(2) + '). Continue?'))) return;
+
+  _vente.busy = true; _vente.etapes = []; _vente.res = null;
+  const btn = _vEl('ventePublier'); if(btn) btn.disabled = true;
+  const sku = venteSku(it.id);
+  const echec = (titreErr, r) => { venteRes({ type:'ko', titre:titreErr, detail: typeof r === 'string' ? r : ebayErreurs(r) }); };
+  try{
+    // 1. Photos → hébergement eBay
+    const urls = [];
+    const imgs = it.images || [];
+    for(let k = 0; k < _vente.photos.length; k++){
+      venteEtape(T('Envoi de la photo ','Uploading photo ') + (k+1) + ' / ' + _vente.photos.length);
+      urls.push(await venteTeleverserPhoto(imgs[_vente.photos[k]], 'photo-' + (k+1)));
+    }
+    // 2. Article d'inventaire
+    venteEtape(T("Création de l'article","Creating the inventory item"));
+    const aspects = {};
+    (_vente.aspectDefs||[]).forEach(d => {
+      const val = String(_vente.aspectVals[d.name]||'').trim(); if(!val) return;
+      aspects[d.name] = (d.multi ? val.split(/\s*;\s*/) : [val]).filter(Boolean);
+    });
+    const produit = { title: titre, description: venteVersHtml(desc), imageUrls: urls };
+    if(Object.keys(aspects).length) produit.aspects = aspects;
+    if(_venteIsbnValide(it.isbn)) produit.isbn = [String(it.isbn).replace(/[\s-]/g,'')];
+    const art = { availability:{ shipToLocationAvailability:{ quantity:1 } }, condition:_vente.cond, product:produit };
+    if(_vente.condDesc.trim()) art.conditionDescription = _vente.condDesc.trim().slice(0,1000);
+    let r = await ebayCall('PUT', '/sell/inventory/v1/inventory_item/' + sku, { body:art });
+    if(!r.ok) return echec(T("eBay a refusé l'article :","eBay rejected the item:"), r);
+    // 3. Offre (nouvelle, ou reprise d'un brouillon laissé par un essai précédent)
+    venteEtape(T("Préparation de l'offre","Preparing the offer"));
+    const offre = { sku, marketplaceId: st.marketplace, format:'FIXED_PRICE', availableQuantity:1, categoryId:_vente.cat.id,
+      listingDescription: venteVersHtml(desc),
+      listingPolicies:{ fulfillmentPolicyId:sel.f, paymentPolicyId:sel.p, returnPolicyId:sel.r },
+      pricingSummary:{ price:{ currency:'EUR', value:prix.toFixed(2) } }, merchantLocationKey: sel.loc };
+    r = await ebayCall('GET', '/sell/inventory/v1/offer', { query:{ sku } });
+    let offerId = '';
+    if(r.ok){
+      const existantes = (r.data||{}).offers || [];
+      const pub = existantes.find(o => o.status === 'PUBLISHED');
+      if(pub){
+        const lid = pub.listing && pub.listing.listingId;
+        venteRes({ type:'ko', titre:T('Cette œuvre est déjà en vente sur eBay.','This item is already listed on eBay.'),
+          detail: (lid ? ebayLienAnnonce(lid) + '\n' : '') + T("Termine ou retire l'annonce dans eBay avant de la remettre en vente.","End or remove the listing on eBay before listing it again.") });
+        return;
+      }
+      if(existantes[0]) offerId = existantes[0].offerId;
+    } else if(r.status !== 404) return echec(T("Lecture des offres impossible :","Could not read the offers:"), r);
+    if(offerId){
+      r = await ebayCall('PUT', '/sell/inventory/v1/offer/' + offerId, { body:offre });
+      if(!r.ok) return echec(T("eBay a refusé l'offre :","eBay rejected the offer:"), r);
+    } else {
+      r = await ebayCall('POST', '/sell/inventory/v1/offer', { body:offre });
+      if(!r.ok || !(r.data||{}).offerId) return echec(T("eBay a refusé l'offre :","eBay rejected the offer:"), r);
+      offerId = r.data.offerId;
+    }
+    // 4. Mise en ligne
+    venteEtape(T("Mise en ligne","Going live"));
+    r = await ebayCall('POST', '/sell/inventory/v1/offer/' + offerId + '/publish');
+    if(!r.ok || !(r.data||{}).listingId) return echec(T("eBay n'a pas publié l'annonce :","eBay did not publish the listing:"), r);
+    const lid = r.data.listingId, url = ebayLienAnnonce(lid);
+    _venteRegSet(it.id, { listingId:lid, offerId, sku, env:st.env, url, date:new Date().toISOString() });
+    const avert = ((r.data||{}).warnings || []).map(w => w.message).filter(Boolean).join(' ; ');
+    _vente.etapes.forEach(e => e.ok = true);
+    venteRes({ type:'ok', url, warn:avert });
+    toast(T('Annonce publiée sur eBay.','Listing published on eBay.'));
+  }catch(e){
+    echec(T('Publication interrompue :','Publishing interrupted:'), e.message);
+  }finally{
+    if(_vente){ _vente.busy = false; const b = _vEl('ventePublier'); if(b) b.disabled = false; }
+  }
+}
+
+// ═════════════════════════ Réglages eBay ═════════════════════════
+function ouvrirReglagesEbay(){
+  openModal('ebayModal');
+  ebayReglagesRendu();
+  ebayReglagesStatut();
+}
+async function ebayReglagesStatut(){
+  try{ _ebay.status = await ebayProxy('/status'); _ebay.err = ''; }catch(e){ _ebay.status = null; _ebay.err = e.message; }
+  ebayReglagesRendu();
+}
+function _ebayUrlRetour(){ return /^https?:/.test(location.protocol) ? location.origin + location.pathname : 'https://r4sc4l.github.io/bd-catalogue/'; }
+function ebayReglagesRendu(){
+  const box = _vEl('ebayBody'); if(!box) return;
+  const p = _venteGet(), st = _ebay.status;
+  const retour = (function(){ try{ return localStorage.getItem('ma_vente_retour') || ''; }catch(e){ return ''; } })();
+  const lieux = p.locations || [];
+  const pol = p.policies || {}, sel = p.sel || {};
+  const liaison = st ? `<span class="vente-statut" style="display:inline-flex;padding:4px 10px"><span class="pt ok"></span>${T('Proxy joint','Proxy reached')} · v${escapeHTML(st.version)}</span>`
+                     : `<span class="vente-statut" style="display:inline-flex;padding:4px 10px"><span class="pt ko"></span>${escapeHTML(_ebay.err || T('Pas encore testé.','Not tested yet.'))}</span>`;
+  box.innerHTML = `
+    <div class="vente-carte"><h3>1 · ${T('Lancer le proxy sur ton ordinateur','Start the proxy on your computer')}</h3>
+      <p class="muted" style="margin:0 0 8px">${T("Dans le Terminal, depuis le dossier de la webapp :","In Terminal, from the web app folder:")} <code>python3 ebay-proxy.py</code>.
+        ${T("Il affiche une adresse et un jeton : colle-les ci-dessous.","It prints an address and a token: paste them below.")}</p>
+      <div class="form-grid"><div><label>${T('Adresse du proxy','Proxy address')}</label><input type="text" id="ebPxUrl" value="${escapeHTML(p.proxyUrl||VENTE_PROXY_DEFAUT)}" autocomplete="off"></div>
+        <div><label>${T('Jeton du proxy','Proxy token')}</label><input type="password" id="ebPxTok" value="${escapeHTML(p.proxyToken||'')}" autocomplete="off"></div></div>
+      <div class="vente-ligne"><button type="button" onclick="ebayTesterProxy()">${T('Tester la liaison','Test the link')}</button>${liaison}</div></div>
+
+    <div class="vente-carte"><h3>2 · ${T('Identifiants eBay','eBay credentials')}</h3>
+      <p class="muted" style="margin:0 0 8px">${T('Sur','On')} <a href="https://developer.ebay.com/my/keys" target="_blank" rel="noopener">developer.ebay.com/my/keys</a> ${T(": crée un jeu de clés (commence par Sandbox) et recopie App ID, Cert ID et ton RuName.","create a keyset (start with Sandbox) and copy the App ID, Cert ID and your RuName.")}
+        ${T("Ils sont envoyés au proxy local et n'y restent que dans","They are sent to the local proxy and kept only in")} <code>~/.ma-collection/ebay.json</code>.</p>
+      <div class="form-grid">
+        <div><label>${T('Environnement','Environment')}</label><select id="ebEnv"><option value="sandbox"${(st&&st.env==='sandbox')||!st?' selected':''}>Sandbox — ${T('essais, sans effet réel','tests, no real effect')}</option><option value="production"${st&&st.env==='production'?' selected':''}>Production — ${T('annonces réelles','real listings')}</option></select></div>
+        <div><label>${T('Place de marché','Marketplace')}</label><select id="ebMk">${EBAY_PLACES.map(([c,n]) => `<option value="${c}"${(st?st.marketplace:'EBAY_FR')===c?' selected':''}>${escapeHTML(n)}</option>`).join('')}</select></div>
+        <div><label>App ID (Client ID)</label><input type="text" id="ebCid" autocomplete="off" placeholder="${st&&st.hasClientId?'…'+escapeHTML(st.clientIdTail)+' ('+T('déjà enregistré','already saved')+')':''}"></div>
+        <div><label>Cert ID (Client Secret)</label><input type="password" id="ebSec" autocomplete="new-password" placeholder="${st&&st.hasSecret?'•••••• ('+T('déjà enregistré','already saved')+')':''}"></div>
+        <div class="span-2"><label>RuName</label><input type="text" id="ebRu" autocomplete="off" placeholder="${st&&st.ruName?escapeHTML(st.ruName):''}"></div>
+      </div>
+      <p class="muted" style="margin:8px 0 0">${T("Dans la configuration du RuName, mets comme « Auth accepted URL » :","In the RuName settings, use as the “Auth accepted URL”:")} <code>${escapeHTML(_ebayUrlRetour())}</code>.
+        ${T("Les champs laissés vides gardent leur valeur actuelle.","Empty fields keep their current value.")}</p>
+      <div class="vente-ligne"><button type="button" onclick="ebayEnregistrerConfig()">${T('Enregistrer dans le proxy','Save to the proxy')}</button></div></div>
+
+    <div class="vente-carte"><h3>3 · ${T('Connexion à ton compte eBay','Connect your eBay account')}</h3>
+      <div class="vente-ligne" style="margin-top:0"><button type="button" class="secondary" onclick="ebayConnecter()">🔑 ${T('Se connecter à eBay','Sign in to eBay')}</button>
+        ${st&&st.connected ? `<span class="vente-statut" style="display:inline-flex;padding:4px 10px"><span class="pt ok"></span>${T('Connecté','Connected')}</span><button type="button" class="secondary" onclick="ebayDeconnecter()">${T('Déconnecter','Disconnect')}</button>` : ''}</div>
+      <p class="muted" style="margin:10px 0 6px">${T("eBay t'envoie ensuite vers la page « Auth accepted URL » avec un code dans l'adresse. Colle ici l'adresse complète de cette page (ou le code seul).","eBay then sends you to the “Auth accepted URL” page with a code in the address. Paste the full address of that page here (or just the code).")}</p>
+      <textarea id="ebCode" rows="2" style="min-height:56px" placeholder="https://…?code=v%5E1.1…">${escapeHTML(retour)}</textarea>
+      <div class="vente-ligne"><button type="button" onclick="ebayValiderCode()">${T('Valider le code','Validate the code')}</button></div></div>
+
+    <div class="vente-carte"><h3>4 · ${T('Ton compte vendeur','Your seller account')}</h3>
+      <p class="muted" style="margin:0 0 8px">${T("Les politiques (expédition, paiement, retour) se créent dans eBay (Seller Hub → Compte → Politiques commerciales). Le lieu d'expédition peut être créé ici.","Business policies (shipping, payment, returns) are created in eBay (Seller Hub → Account → Business policies). The item location can be created here.")}</p>
+      <div class="vente-ligne" style="margin-top:0"><button type="button" onclick="ebayChargerCompte()" ${st&&st.connected?'':'disabled'}>↻ ${T('Charger mes politiques et lieux','Load my policies and locations')}</button>
+        <button type="button" class="secondary" onclick="ebayActiverPolitiques()" ${st&&st.connected?'':'disabled'}>${T('Activer les politiques commerciales','Enable business policies')}</button></div>
+      <div class="form-grid" style="margin-top:12px">
+        ${[['f','fulfillment',T("Expédition",'Shipping')],['p','payment',T('Paiement','Payment')],['r','ret',T('Retour','Returns')]].map(([k,cle,lab]) => {
+          const l = pol[cle] || [];
+          return `<div><label>${lab}</label><select onchange="venteChoisir('${k}',this.value)">${l.length?'':`<option value="">—</option>`}${l.map(x => `<option value="${escapeHTML(x.id)}"${x.id===sel[k]?' selected':''}>${escapeHTML(x.name)}</option>`).join('')}</select></div>`; }).join('')}
+        <div><label>${T("Lieu d'expédition",'Item location')}</label><select onchange="venteChoisir('loc',this.value)">${lieux.length?'':`<option value="">—</option>`}${lieux.map(x => `<option value="${escapeHTML(x.key)}"${x.key===sel.loc?' selected':''}>${escapeHTML(x.name)}</option>`).join('')}</select></div>
+      </div>
+      <div class="form-grid three" style="margin-top:12px">
+        <div><label>${T('Code postal','Postal code')}</label><input type="text" id="ebLocCp" autocomplete="off"></div>
+        <div><label>${T('Ville','City')}</label><input type="text" id="ebLocVille" autocomplete="off"></div>
+        <div><label>${T('Pays (code)','Country (code)')}</label><input type="text" id="ebLocPays" value="FR" maxlength="2" autocomplete="off"></div>
+      </div>
+      <div class="vente-ligne"><button type="button" class="secondary" onclick="ebayCreerLieu()" ${st&&st.connected?'':'disabled'}>${T("Créer ce lieu d'expédition",'Create this item location')}</button></div></div>
+
+    <div class="vente-carte"><h3>5 · ${T('Phrase de fin des annonces','Closing line of the listings')}</h3>
+      <textarea id="ebOutro" rows="2" style="min-height:56px" oninput="_ventePatch({outro:this.value})" placeholder="${T('ex : Envoi soigné sous protection. Plus de photos sur demande.','e.g. Carefully packed. More photos on request.')}">${escapeHTML(p.outro||'')}</textarea></div>
+    <div id="ebMsg"></div>`;
+}
+function ebayMsg(type, txt){ const el = _vEl('ebMsg'); if(el) el.innerHTML = `<div class="vente-msg ${type}">${escapeHTML(txt)}</div>`; }
+function _ebayLierChamps(){
+  _ventePatch({ proxyUrl:(_vEl('ebPxUrl').value||'').trim() || VENTE_PROXY_DEFAUT, proxyToken:(_vEl('ebPxTok').value||'').trim() });
+}
+async function ebayTesterProxy(){
+  _ebayLierChamps();
+  try{
+    await ebayProxy('/ping');
+    _ebay.status = await ebayProxy('/status'); _ebay.err = '';
+    ebayReglagesRendu(); ebayMsg('ok', T('Liaison établie avec le proxy.','Link with the proxy established.'));
+  }catch(e){ _ebay.status = null; _ebay.err = e.message; ebayReglagesRendu(); ebayMsg('ko', e.message); }
+}
+async function ebayEnregistrerConfig(){
+  _ebayLierChamps();
+  const o = { env:_vEl('ebEnv').value, marketplace:_vEl('ebMk').value };
+  [['clientId','ebCid'],['clientSecret','ebSec'],['ruName','ebRu']].forEach(([k,id]) => { const v = (_vEl(id).value||'').trim(); if(v) o[k] = v; });
+  try{
+    _ebay.status = await ebayProxy('/config', { method:'POST', json:o }); _ebay.err = '';
+    ebayReglagesRendu();
+    ebayMsg('ok', T('Identifiants enregistrés dans le proxy.','Credentials saved in the proxy.') + (_ebay.status.connected ? '' : ' ' + T('Étape suivante : « Se connecter à eBay ».','Next: “Sign in to eBay”.')));
+  }catch(e){ ebayMsg('ko', e.message); }
+}
+async function ebayConnecter(){
+  _ebayLierChamps();
+  try{
+    const r = await ebayProxy('/auth-url');
+    window.open(r.url, '_blank', 'noopener');
+    ebayMsg('info', T("La page de connexion eBay s'est ouverte. Connecte-toi, accepte, puis colle ci-dessous l'adresse de la page où eBay te renvoie.","The eBay sign-in page opened. Sign in, accept, then paste below the address of the page eBay sends you back to."));
+  }catch(e){ ebayMsg('ko', e.message); }
+}
+async function ebayValiderCode(){
+  const c = (_vEl('ebCode').value||'').trim();
+  if(!c){ ebayMsg('ko', T("Colle d'abord l'adresse de retour (ou le code).",'Paste the return address (or the code) first.')); return; }
+  _ebayLierChamps();
+  try{
+    _ebay.status = await ebayProxy('/auth-code', { method:'POST', json:{ code:c } });
+    try{ localStorage.removeItem('ma_vente_retour'); }catch(e){}
+    ebayReglagesRendu(); ebayMsg('ok', T('Connecté à eBay. Charge maintenant tes politiques et ton lieu.','Connected to eBay. Now load your policies and location.'));
+    ebayChargerCompte(true);
+  }catch(e){ ebayMsg('ko', e.message); }
+}
+async function ebayDeconnecter(){
+  try{ _ebay.status = await ebayProxy('/disconnect', { method:'POST', json:{} }); ebayReglagesRendu(); ebayMsg('info', T('Déconnecté.','Disconnected.')); }
+  catch(e){ ebayMsg('ko', e.message); }
+}
+async function ebayChargerCompte(silencieux){
+  const mk = ebayMarche();
+  try{
+    const [f,pa,re,lo] = await Promise.all([
+      ebayCall('GET','/sell/account/v1/fulfillment_policy',{ query:{ marketplace_id:mk } }),
+      ebayCall('GET','/sell/account/v1/payment_policy',{ query:{ marketplace_id:mk } }),
+      ebayCall('GET','/sell/account/v1/return_policy',{ query:{ marketplace_id:mk } }),
+      ebayCall('GET','/sell/inventory/v1/location'),
+    ]);
+    const bad = [f,pa,re].find(x => !x.ok);
+    if(bad) throw new Error(ebayErreurs(bad));
+    const prefs = _venteGet();
+    const pol = {
+      fulfillment:(f.data.fulfillmentPolicies||[]).map(x=>({ id:x.fulfillmentPolicyId, name:x.name })),
+      payment:(pa.data.paymentPolicies||[]).map(x=>({ id:x.paymentPolicyId, name:x.name })),
+      ret:(re.data.returnPolicies||[]).map(x=>({ id:x.returnPolicyId, name:x.name })),
+    };
+    const lieux = lo.ok ? ((lo.data||{}).locations||[]).map(x=>({ key:x.merchantLocationKey, name:x.name || x.merchantLocationKey })) : [];
+    const sel = Object.assign({}, prefs.sel);
+    [['f','fulfillment'],['p','payment'],['r','ret']].forEach(([k,c]) => { if(!pol[c].some(x=>x.id===sel[k])) sel[k] = pol[c][0] ? pol[c][0].id : ''; });
+    if(!lieux.some(x=>x.key===sel.loc)) sel.loc = lieux[0] ? lieux[0].key : '';
+    _venteSet(Object.assign(prefs, { policies:pol, locations:lieux, sel, compteCle:(_ebay.status ? _ebay.status.env + '|' + _ebay.status.marketplace : '') }));
+    if(_vEl('ebayBody') && document.getElementById('ebayModal').classList.contains('active')){
+      ebayReglagesRendu();
+      const manque = [];
+      if(!pol.fulfillment.length) manque.push(T("politique d'expédition","shipping policy"));
+      if(!pol.payment.length) manque.push(T('politique de paiement','payment policy'));
+      if(!pol.ret.length) manque.push(T('politique de retour','return policy'));
+      if(!lieux.length) manque.push(T("lieu d'expédition","item location"));
+      ebayMsg(manque.length ? 'info' : 'ok', manque.length ? T('Compte chargé. À créer : ','Account loaded. To create: ') + manque.join(', ') + '.' : T('Politiques et lieu chargés.','Policies and location loaded.'));
+    }
+    if(_vente && _vente.plat === 'ebay') venteEbayRendu();
+  }catch(e){ const ouvert = document.getElementById('ebayModal').classList.contains('active'); if(ouvert) ebayMsg('ko', e.message); else if(!silencieux) toast(e.message, 'error'); }
+}
+async function ebayActiverPolitiques(){
+  try{
+    const r = await ebayCall('POST','/sell/account/v1/program/opt_in',{ body:{ programType:'SELLING_POLICY_MANAGEMENT' } });
+    if(!r.ok) throw new Error(ebayErreurs(r));
+    ebayMsg('ok', T("Politiques commerciales activées. Crée-les dans Seller Hub puis recharge.","Business policies enabled. Create them in Seller Hub, then reload."));
+  }catch(e){ ebayMsg('ko', e.message); }
+}
+async function ebayCreerLieu(){
+  const cp = (_vEl('ebLocCp').value||'').trim(), ville = (_vEl('ebLocVille').value||'').trim(), pays = (_vEl('ebLocPays').value||'FR').trim().toUpperCase();
+  if(!cp || !pays){ ebayMsg('ko', T('Renseigne au moins le code postal et le pays.','Enter at least the postal code and the country.')); return; }
+  const cle = 'MCLIEU' + Date.now().toString(36).toUpperCase();
+  try{
+    const r = await ebayCall('POST','/sell/inventory/v1/location/' + cle,{ body:{
+      name: 'Ma Collection — ' + (ville || cp), merchantLocationStatus:'ENABLED', locationTypes:['WAREHOUSE'],
+      location:{ address: Object.assign({ postalCode:cp, country:pays }, ville ? { city:ville } : {}) } } });
+    if(!r.ok) throw new Error(ebayErreurs(r));
+    await ebayChargerCompte(true);
+    ebayMsg('ok', T("Lieu d'expédition créé.","Item location created."));
+  }catch(e){ ebayMsg('ko', e.message); }
+}
+
+// Retour d'eBay : l'« Auth accepted URL » ramène sur la webapp avec ?code=…&state=mc-… dans l'adresse.
+// On met l'adresse de côté (le code ne sert qu'une fois) et on propose de finir la connexion.
+(function(){
+  try{
+    const q = new URLSearchParams(location.search);
+    if(q.get('code') && /^mc-/.test(q.get('state')||'')){
+      localStorage.setItem('ma_vente_retour', location.href);
+      history.replaceState(null, '', location.pathname + location.hash);
+      let essais = 0;
+      const guet = setInterval(() => {
+        const aw = document.getElementById('app-wrapper');
+        if(++essais > 90) return clearInterval(guet);
+        if(aw && aw.style.display !== 'none' && typeof openModal === 'function'){
+          clearInterval(guet);
+          toast(T('Retour d’eBay détecté : finalise la connexion.','Returned from eBay: finish connecting.'));
+          ouvrirReglagesEbay();
+        }
+      }, 1000);
+    }
+  }catch(e){}
+})();
 
 // ── Démarrage : thème + vérification session ──
 // Demander au navigateur de conserver le stockage (évite la purge auto d'IndexedDB).
