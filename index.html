@@ -2842,6 +2842,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <h3><span id="taIcone">🖼️</span> <span id="taTitre">Tirage d'art</span></h3>
           <div class="form-grid">
             <div data-ta="affiche"><label data-en="Poster type">Type d'affiche</label><select id="itemTaType"></select></div>
+            <div data-ta="affiche"><label data-en="Distribution (intended audience)">Diffusion (destination de l'affiche)</label><select id="itemTaDiffusion"></select></div>
             <div data-ta="affiche"><label data-en="Event / commissioner">Événement / commanditaire</label><input type="text" id="itemTaCommanditaire" placeholder="ex: Festival d'Angoulême 1985" data-en-ph="e.g. Angoulême festival 1985"></div>
             <div><div class="aide-titre" style="margin-bottom:4px"><label for="itemTaTechnique" data-en="Printing technique">Technique d'impression</label><button type="button" class="aide-btn" onclick="ouvrirLexiqueImpressions(_taArchId())" title="Lexique des procédés d'impression illustré" data-en-title="Illustrated printing process glossary" aria-label="Lexique des procédés d'impression">?</button></div>
               <select id="itemTaTechnique" onchange="_taSync()"></select>
@@ -6129,6 +6130,13 @@ const TA_AFFICHE_TYPES = [
   ['Festival','Festival'],['Librairie / dédicace','Bookshop / signing'],['Exposition','Exhibition'],
   ['Salon / événement','Fair / event'],['Promotionnelle (éditeur)','Promotional (publisher)'],['Cinéma','Film'],
   ['Publicitaire / commerciale','Advertising / commercial'],['Autre','Other']];
+const TA_AFFICHE_DIFFUSION = [
+  ['Édition collectionneur (tirage limité)','Collector edition (limited run)'],
+  ['Vendue au public (commerce)','Sold to the public (retail)'],
+  ['Promotionnelle gratuite (hors commerce)','Free promotional (not for sale)'],
+  ['Réservée (presse, libraires, invités)','Restricted (press, booksellers, guests)'],
+  ['Souvenir d’événement / exposition','Event / exhibition souvenir'],
+  ['Réédition / reproduction','Reissue / reproduction']];
 const TA_EPREUVES = [
   ['Numérotée','Numbered'],["EA — épreuve d'artiste",'AP — artist\'s proof'],['HC — hors commerce','HC — hors commerce'],
   ['BAT — bon à tirer','BAT — printer\'s proof'],["Épreuve d'essai",'Trial proof'],['Non justifiée','Not numbered']];
@@ -6194,6 +6202,7 @@ function _taFill(it){
   _taSetTechnique(it.technique || '');
   const set = (id, v) => { const el = document.getElementById(id); if(!el) return; if(el.type==='checkbox') el.checked = !!v; else el.value = v ?? ''; };
   document.getElementById('itemTaType').innerHTML = _taOpts(TA_AFFICHE_TYPES, it.afficheType||'');
+  document.getElementById('itemTaDiffusion').innerHTML = _taOpts(TA_AFFICHE_DIFFUSION, it.afficheDiffusion||'');
   document.getElementById('itemTaEpreuve').innerHTML = _taOpts(TA_EPREUVES, it.typeEpreuve||'');
   if(_taArch) document.getElementById('itemTaConditionnement').innerHTML = _taOpts(TA_CONDITIONNEMENTS[_taArch], it.conditionnement||'');
   set('itemTaCommanditaire', it.commanditaire); set('itemTaAppellation', it.appellationEditeur);
@@ -6206,6 +6215,7 @@ function _taCollecter(){
   const est = _taArch === 'estampe';
   return {
     afficheType:        est ? '' : v('itemTaType'),
+    afficheDiffusion:   est ? '' : v('itemTaDiffusion'),
     commanditaire:      est ? '' : v('itemTaCommanditaire'),
     appellationEditeur: v('itemTaAppellation'),
     imprimeur:          v('itemTaImprimeur'),
@@ -8921,7 +8931,7 @@ const SB = (() => {
     // Éphémères — synchronisés dans le JSONB « contenus » (aucune colonne SQL à créer)
     'typeDocument','technique','evenement','dateEvenement','lieuEvenement','hote',
     // Affiches et tirages d'art — même sac JSONB, aucune colonne SQL à créer
-    'afficheType','commanditaire','appellationEditeur','imprimeur','dimImage','typeEpreuve','cachetSec','certificat','conditionnement',
+    'afficheType','afficheDiffusion','commanditaire','appellationEditeur','imprimeur','dimImage','typeEpreuve','cachetSec','certificat','conditionnement',
     'publication','dateParution','rubrique','pagination','sourceUrl','albumSource','albumSourceId','exlibrisImageIdx',
     'etendue','etendueUnite','ephPages','ephFeuillets','ephVolets','ephVolantes',
     'ephCahiers','ephVolants','ephVolantsRectoSeul','ephVolantsEncartes',
@@ -18325,6 +18335,7 @@ function _taDetailHTML(it){
     + (it.appellationEditeur ? ` <span class="muted" style="font-size:12.5px">— ${T('vendu comme','sold as')} « ${E(it.appellationEditeur)} »</span>` : '') : '';
   const extras = [it.cachetSec ? T('cachet sec','blind stamp') : '', it.certificat ? T("certificat d'authenticité",'certificate of authenticity') : ''].filter(Boolean).join(' · ');
   return L(T("Type d'affiche",'Poster type'), tr(TA_AFFICHE_TYPES, it.afficheType))
+    + L(T('Diffusion','Distribution'), tr(TA_AFFICHE_DIFFUSION, it.afficheDiffusion))
     + L(T('Événement','Event'), E(it.commanditaire))
     + L(T("Technique d'impression",'Printing technique'), tech)
     + L(T('Atelier / imprimeur','Workshop / printer'), E(it.imprimeur))
@@ -26656,7 +26667,7 @@ function ebayReglagesRendu(){
       <div class="vente-ligne" style="margin-top:0"><button type="button" class="secondary" onclick="ebayConnecter()">🔑 ${T('Se connecter à eBay','Sign in to eBay')}</button>
         ${st&&st.connected ? `<span class="vente-statut" style="display:inline-flex;padding:4px 10px"><span class="pt ok"></span>${T('Connecté','Connected')}</span><button type="button" class="secondary" onclick="ebayDeconnecter()">${T('Déconnecter','Disconnect')}</button>` : ''}</div>
       <p class="muted" style="margin:10px 0 6px">${T("eBay t'envoie ensuite vers la page « Auth accepted URL » avec un code dans l'adresse. Colle ici l'adresse complète de cette page (ou le code seul).","eBay then sends you to the “Auth accepted URL” page with a code in the address. Paste the full address of that page here (or just the code).")}</p>
-      <textarea id="ebCode" rows="2" style="min-height:56px" placeholder="https://…?code=v%5E1.1…">${escapeHTML(retour)}</textarea>
+      <textarea id="ebCode" name="x-ebCode" autocomplete="nope" data-lpignore="true" data-form-type="other" spellcheck="false" rows="2" style="min-height:56px" placeholder="https://…?code=v%5E1.1…">${escapeHTML(retour)}</textarea>
       <div class="vente-ligne"><button type="button" onclick="ebayValiderCode()">${T('Valider le code','Validate the code')}</button></div></div>
 
     <div class="vente-carte"><h3>4 · ${T('Ton compte vendeur','Your seller account')}</h3>
@@ -26670,9 +26681,9 @@ function ebayReglagesRendu(){
         <div><label>${T("Lieu d'expédition",'Item location')}</label><select onchange="venteChoisir('loc',this.value)">${lieux.length?'':`<option value="">—</option>`}${lieux.map(x => `<option value="${escapeHTML(x.key)}"${x.key===sel.loc?' selected':''}>${escapeHTML(x.name)}</option>`).join('')}</select></div>
       </div>
       <div class="form-grid three" style="margin-top:12px">
-        <div><label>${T('Code postal','Postal code')}</label><input type="text" id="ebLocCp" autocomplete="off"></div>
-        <div><label>${T('Ville','City')}</label><input type="text" id="ebLocVille" autocomplete="off"></div>
-        <div><label>${T('Pays (code)','Country (code)')}</label><input type="text" id="ebLocPays" value="FR" maxlength="2" autocomplete="off"></div>
+        <div><label>${T('Code postal','Postal code')}</label><input type="text" id="ebLocCp" autocomplete="nope" name="x-ebLocCp" data-lpignore="true" data-form-type="other"></div>
+        <div><label>${T('Ville','City')}</label><input type="text" id="ebLocVille" autocomplete="nope" name="x-ebLocVille" data-lpignore="true" data-form-type="other"></div>
+        <div><label>${T('Pays (code)','Country (code)')}</label><input type="text" id="ebLocPays" value="FR" maxlength="2" autocomplete="nope" name="x-ebLocPays" data-lpignore="true" data-form-type="other"></div>
       </div>
       <div class="vente-ligne"><button type="button" class="secondary" onclick="ebayCreerLieu()" ${st&&st.connected?'':'disabled'}>${T("Créer ce lieu d'expédition",'Create this item location')}</button></div></div>
 
