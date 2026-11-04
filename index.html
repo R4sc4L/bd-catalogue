@@ -18472,9 +18472,9 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
         ${it.tags&&it.tags.length?`<div style="margin-top:8px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
           ${GUEST?'':`<button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>`}
-          ${GUEST?'':`<button class="secondary" onclick="ouvrirVente('${it.id}')" title="${T('Rédiger une annonce depuis cette fiche','Write a listing from this record')}">🏷 ${T('Vendre','Sell')}</button>`}
           ${diapoActif?`<button onclick="pcOpenLightbox(0)">▶ ${_lang==='en'?'Slideshow':'Diaporama'} (${imgs.length})</button>`:''}
           ${hasDiaporama&&imgs.length&&imagesLocked?`<button onclick="requireAdultPin(()=>renderItemDetail('${it.id}',false))">🔒 ${_lang==='en'?'Unlock images':'Déverrouiller les images'}</button>`:''}
+          ${GUEST?'':`<button class="secondary" onclick="ouvrirVente('${it.id}')" title="${T('Rédiger une annonce depuis cette fiche','Write a listing from this record')}">🏷 ${T('Vendre','Sell')}</button>`}
           ${_fbBackBtnHTML(it.id)}
         </div>
       </div>
@@ -18656,11 +18656,11 @@ function renderItemDetail(id, pushHistory=true){
         ${it.tags&&it.tags.length?`<div style="margin-top:12px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
           ${GUEST?'':`<button onclick="openItemForm('${it.id}')">${t('btn.modify')}</button>`}
-          ${GUEST?'':`<button class="secondary" onclick="ouvrirVente('${it.id}')" title="${T('Rédiger une annonce depuis cette fiche','Write a listing from this record')}">🏷 ${T('Vendre','Sell')}</button>`}
           ${_fbBackBtnHTML(it.id)}
           ${hasDiaporama&&imgs.length>1&&!imagesLocked?`<button onclick="pcOpenLightbox(0)">▶ ${_lang==='en'?'Slideshow':'Diaporama'} (${imgs.length})</button>`:""}
           ${hasDiaporama&&imgs.length&&imagesLocked?`<button onclick="requireAdultPin(()=>renderItemDetail('${it.id}',false))">🔒 ${_lang==='en'?'Unlock images':'Déverrouiller les images'}</button>`:""}
           ${anyAdultProtected&&_adultUnlocked?`<button class="secondary" style="font-size:12px;padding:4px 10px" onclick="lockAdultContent()">🔒 ${_lang==='en'?'Lock again':'Reverrouiller'}</button>`:""}
+          ${GUEST?'':`<button class="secondary" onclick="ouvrirVente('${it.id}')" title="${T('Rédiger une annonce depuis cette fiche','Write a listing from this record')}">🏷 ${T('Vendre','Sell')}</button>`}
         </div>
       </div>
     </div>`;
