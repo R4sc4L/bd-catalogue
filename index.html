@@ -1950,6 +1950,17 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   }
   .coll-option:active:not(.soon){background:var(--accent-soft)}
   .coll-option.active{background:rgba(200,144,74,.12);color:var(--gold)}
+  .coll-quota{font-size:11px;font-weight:600;letter-spacing:.02em;margin-left:8px;padding:2px 8px;border-radius:10px;border:1px solid var(--border);color:var(--ink-soft);vertical-align:middle;white-space:nowrap}
+  .coll-quota.proche{color:var(--gold);border-color:var(--gold)}
+  .coll-quota.plein{color:#fff;background:var(--danger);border-color:var(--danger)}
+  .coll-badge{margin-left:auto;flex:none;font-size:11.5px;font-weight:600;color:var(--ink-soft);white-space:nowrap}
+  .coll-foot{padding:9px 12px;font-size:12.5px;color:var(--ink-soft);border-top:1px solid var(--border);margin-top:6px;cursor:pointer}
+  .coll-foot:hover{color:var(--gold)}
+  .droits-choix{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:14px}
+  .droits-choix button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:14px;height:auto}
+  .droits-choix button .ico{font-size:24px}
+  .droits-choix button small{color:var(--ink-soft);font-weight:400;white-space:normal}
+  .droits-choix button.on{border-color:var(--accent);background:var(--accent-soft)}
   .coll-option.soon{opacity:.4;cursor:default}
   .coll-option .coll-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0}
   .coll-option .coll-info{flex:1}
@@ -2397,7 +2408,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
 <header>
   <h1><span id="collectionIcon" aria-hidden="true">📚</span>
     <button type="button" id="collectionWord" class="collection-switcher" aria-haspopup="menu" aria-expanded="false" aria-label="Changer de collection" onclick="toggleCollectionPicker(event)" title="Changer de collection" data-en-title="Switch collection">
-      <span id="collectionLabel">BD</span><span class="caret" aria-hidden="true">▾</span>
+      <span id="collectionLabel">BD</span><span id="collectionQuota" class="coll-quota" style="display:none"></span><span class="caret" aria-hidden="true">▾</span>
     </button>
   </h1>
   <div id="collectionPicker" class="collection-picker" role="menu" aria-label="Collections"></div>
@@ -3504,6 +3515,18 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <button onclick="feEnregistrer()" data-en="Save">Enregistrer</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- DROITS : choix de la collection de départ, limite atteinte -->
+<div class="modal-backdrop" id="droitsModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <h2 id="droitsTitre">—</h2>
+      <button class="ghost" onclick="closeModal('droitsModal')" aria-label="Fermer">✕</button>
+    </div>
+    <div class="modal-body" id="droitsBody"></div>
+    <div class="modal-footer" id="droitsFooter"></div>
   </div>
 </div>
 
@@ -4716,8 +4739,8 @@ function buildCollectionPicker(){
         <div class="coll-label">${_modLabel(c)}</div>
         <div class="coll-desc">${_modDesc(c)}</div>
       </span>
-      ${c.soon?`<span class="soon-badge">${T('Bientôt','Coming soon')}</span>`:''}
-    </div>`).join('');
+      ${c.soon?`<span class="soon-badge">${T('Bientôt','Coming soon')}</span>`:_quotaBadgeHTML(c.id)}
+    </div>`).join('') + _pickerPiedHTML();
 }
 
 function toggleCollectionPicker(e){
@@ -4897,6 +4920,7 @@ function switchCollection(id, opts){
   const changement = _activeCollection !== id;
   _activeCollection = id;
   localStorage.setItem('bdapp_collection', id);
+  try{ majBadgeQuota(); }catch(_){}
   const ct = _collInfo(id);
   document.getElementById('collectionLabel').textContent = _modLabel(ct);
   // L'icône de l'en-tête suit la collection, comme dans le menu déroulant.
@@ -8912,6 +8936,56 @@ const SB_URL_DEFAULT = "https://vnoavfxnvnerrlzgurgu.supabase.co";
 const SB_KEY_DEFAULT = "sb_publishable_Vj5sBIlQcp08Viq3zrSAhg_BvuvParo";
 const SB_CFG_KEY = "sb_cloud_config";
 
+// ── Cache des liens d'images (économie de transfert Supabase) ──
+// Avant : chaque ouverture de la webapp redemandait des liens signés NEUFS, donc des adresses
+// différentes à chaque session : le navigateur ne reconnaissait jamais ses images en cache et les
+// retéléchargeait toutes (Supabase facture ce transfert sortant). Maintenant : un lien signé est
+// conservé tant qu'il reste plus d'un jour de validité ; la même adresse revient d'une session à
+// l'autre, le cache du navigateur sert l'image, et au-delà de sa durée de fraîcheur il ne fait
+// qu'une vérification légère (réponse « 304 », presque sans octets).
+// Le cache est vidé à la déconnexion. Une image réécrite (retouche, recadrage) est oubliée ici
+// pour que son nouveau lien casse le cache du navigateur.
+const URL_CACHE_CLE = 'ma_urls_signees_v1';
+const URL_CACHE_MARGE_MS = 24*3600*1000;
+let _urlCache = null;
+let _urlCacheTimer = null;
+function _urlCacheCharger(uid){
+  if(_urlCache && _urlCache.uid === uid) return _urlCache;
+  let map = {};
+  try {
+    const raw = localStorage.getItem(URL_CACHE_CLE);
+    if(raw){ const o = JSON.parse(raw); if(o && o.uid === uid && o.map && typeof o.map === 'object') map = o.map; }
+  } catch(_){}
+  _urlCache = { uid, map };
+  return _urlCache;
+}
+function _urlCacheValide(uid, chemin){
+  const x = _urlCacheCharger(uid).map[chemin];
+  return (x && typeof x.u === 'string' && x.e - Date.now() > URL_CACHE_MARGE_MS) ? x.u : null;
+}
+function _urlCacheEcrireDiffere(){
+  clearTimeout(_urlCacheTimer);
+  _urlCacheTimer = setTimeout(()=>{
+    if(!_urlCache) return;
+    const now = Date.now();
+    for(const k of Object.keys(_urlCache.map)){ if(_urlCache.map[k].e <= now) delete _urlCache.map[k]; }
+    try { localStorage.setItem(URL_CACHE_CLE, JSON.stringify({uid:_urlCache.uid, map:_urlCache.map})); }
+    catch(_){ try{ localStorage.removeItem(URL_CACHE_CLE); }catch(__){} }   // quota plein : on s'en passe
+  }, 800);
+}
+function _urlCachePoser(uid, chemin, url, dureeMs){
+  _urlCacheCharger(uid).map[chemin] = { u:url, e:Date.now()+dureeMs };
+  _urlCacheEcrireDiffere();
+}
+function _urlCacheOublier(uid, chemin){
+  const c = _urlCacheCharger(uid);
+  if(c.map[chemin]){ delete c.map[chemin]; _urlCacheEcrireDiffere(); }
+}
+function _urlCacheVider(){
+  _urlCache = null; clearTimeout(_urlCacheTimer);
+  try{ localStorage.removeItem(URL_CACHE_CLE); }catch(_){}
+}
+
 const SB = (() => {
 
   // ── Constantes de mapping (identiques à l'outil de migration) ────
@@ -9020,7 +9094,7 @@ const SB = (() => {
   function _erreurPassagere(e){
     const m = String((e && e.message) || e).toLowerCase();
     if(_decalageHorloge(e)) return true;      // testé AVANT la règle ci-dessous, qui bloque sur « jwt »
-    if(/jwt|unauthorized|forbidden|non connect|not signed in|invalid api key|row-level security|permission/.test(m)) return false;
+    if(/jwt|unauthorized|forbidden|non connect|not signed in|invalid api key|row-level security|permission|limite atteinte/.test(m)) return false;
     return true;
   }
   // Rejoue une lecture jusqu'à 3 fois. Les lectures sont idempotentes : réessayer est sans
@@ -9097,6 +9171,7 @@ const SB = (() => {
     const full = path+'.'+ext;
     const {error} = await client.storage.from('images').upload(full, blob, {upsert:true, contentType:blob.type});
     if(error) fail(error, 'upload image');
+    _urlCacheOublier(uid, full);   // contenu réécrit : l'ancien lien (et son cache) ne doit plus servir
     return full;
   }
   async function uploadExternal(path, url){
@@ -9110,7 +9185,9 @@ const SB = (() => {
   }
   async function signPaths(paths){
     const map = {};
-    const list = [...new Set(paths.filter(Boolean))];
+    const tous = [...new Set(paths.filter(Boolean))];
+    const list = [];
+    for(const ch of tous){ const u = _urlCacheValide(uid, ch); if(u) map[ch] = u; else list.push(ch); }
     for(let i=0;i<list.length;i+=100){
       const part = list.slice(i,i+100);
       const data = await _reessayer(async ()=>{
@@ -9118,7 +9195,7 @@ const SB = (() => {
         if(error) fail(error, T('URLs signées','signed URLs'));
         return data;
       }, T('URLs signées','signed URLs'));
-      data.forEach((d,j)=>{ if(d.signedUrl) map[part[j]] = d.signedUrl; });
+      data.forEach((d,j)=>{ if(d.signedUrl){ map[part[j]] = d.signedUrl; _urlCachePoser(uid, part[j], d.signedUrl, SIGN_TTL*1000); } });
     }
     return map;
   }
@@ -9695,7 +9772,7 @@ const SB = (() => {
       if(!data.session) throw new Error(T('Compte créé — confirme ton email puis connecte-toi.','Account created — confirm your email, then sign in.'));
       uid = data.session.user.id; courriel = data.session.user.email || '';
     },
-    async signOut(){ if(client) await client.auth.signOut(); },
+    async signOut(){ _urlCacheVider(); if(client) await client.auth.signOut(); },
     // L'adresse de la session ouverte (elle revenait toujours vide).
     userEmail(){ return courriel; },
     // Mon compte (SPEC comptes, étape 2). Le mot de passe actuel est revérifié
@@ -9761,6 +9838,20 @@ const SB = (() => {
       if(!uid){ const {data} = await client.auth.getSession();
         if(!data.session) throw new Error(T('non connecté','not signed in')); uid = data.session.user.id; courriel = data.session.user.email || ''; }
       await loadAll();
+    },
+    // Droits d'accès et quotas (SPEC comptes, étape 6) : fonctions SQL de droits-quotas-supabase.sql
+    async rpc(nom, args){
+      ensureClient();
+      const {data, error} = await client.rpc(nom, args||{});
+      if(error) fail(error, nom);
+      return data;
+    },
+    async choisirDepart(slug){
+      ensureClient();
+      await ensureColl(slug);    // la collection doit exister côté base avant d'être choisie
+      const {data, error} = await client.rpc('choisir_collection_depart', {p_slug: slug});
+      if(error) fail(error, 'choisir_collection_depart');
+      return data;
     },
     makeFakeDb,
   };
@@ -9941,6 +10032,7 @@ async function reloadCache(){
   cache.authors = await dbAll("authors");
   const wr = await dbGet("meta","wishlist");
   cache.wishlist = wr?.value || [];
+  try{ majBadgeQuota(); }catch(_){}
 }
 
 // --------- Helpers ---------
@@ -10958,6 +11050,7 @@ function openItemForm(id=null, opts={}){
     const diaEl = document.getElementById("itemDiaporama");
     diaEl.checked = it.diaporama !== undefined ? !!it.diaporama : it.categorie === 'Portfolio';
     delete diaEl.dataset.userSet; // réinitialiser le flag de modification manuelle
+    if(it.diaporama !== undefined) diaEl.dataset.userSet = '1'; // choix déjà enregistré : l'archétype ne doit pas l'écraser
     if(document.getElementById("itemPinsSerie"))document.getElementById("itemPinsSerie").value=it.serie||"";
   } else {
     // New item — optionally pre-fill one or several authors
@@ -25645,6 +25738,7 @@ async function _initApp(){
     await loadEntityColl();     // avant toute lecture de la bibliothèque ou des souhaits
     await loadGroupes();        // fiches de groupe : lues avant le premier rendu des artistes
     await reloadCache();
+    chargerDroits().catch(()=>{});   // quotas : sans effet tant que droits-quotas-supabase.sql n'est pas exécuté
     // Migration : corriger les catégories mal capitalisées
     const catFixes = {"livre illustré":"Livre illustré"};
     const toFix = cache.items.filter(i=>catFixes[i.categorie]);
@@ -26812,6 +26906,107 @@ async function ebayCreerLieu(){
     }
   }catch(e){}
 })();
+
+// ── Droits d'accès et quotas (SPEC comptes, étape 6) ──
+// L'interface ne fait qu'AFFICHER : la limite est appliquée par la base (déclencheur SQL).
+// Sans le script droits-quotas-supabase.sql, mes_droits() n'existe pas : DROITS reste null
+// et rien ne change.
+let DROITS = null;
+async function chargerDroits(){
+  if(!CLOUD || GUEST) return;
+  try { DROITS = await SB.rpc('mes_droits'); }
+  catch(e){ DROITS = null; console.info('[Droits] indisponibles :', e && e.message); }
+  majBadgeQuota();
+  if(DROITS && DROITS.formule === 'gratuit' && !DROITS.depart) ouvrirChoixDepart();
+}
+// Compteur d'une collection : { used, limite, mode } ou null si illimitée / inconnue.
+function _quotaInfo(slug){
+  if(!DROITS || DROITS.formule !== 'gratuit' || slug === ALL_COLL) return null;   // « Mes Collections » : vue d'ensemble, pas de compteur
+  const ligne = (DROITS.collections||[]).find(c=>c.slug===slug);
+  const q = DROITS.quotas || {depart:100, essai:10};
+  let mode, limite;
+  if(ligne){ mode = ligne.mode; limite = ligne.limite; }
+  else { mode = (DROITS.depart === slug) ? 'depart' : 'essai'; limite = (mode === 'depart') ? q.depart : q.essai; }
+  if(limite == null) return null;               // illimitée (collection débloquée)
+  const used = (cache.items||[]).filter(i=>(i.collectionType||'bd') === slug).length;
+  return { used, limite, mode };
+}
+function majBadgeQuota(){
+  const el = document.getElementById('collectionQuota');
+  if(!el) return;
+  const qi = _quotaInfo(_activeCollection);
+  if(!qi){ el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.textContent = (qi.mode === 'essai' ? '🔒 ' : '') + qi.used + ' / ' + qi.limite;
+  el.title = qi.mode === 'essai'
+    ? T('Collection verrouillée : œuvres d’essai','Locked collection: trial works')
+    : T('Œuvres de cette collection (formule gratuite)','Works in this collection (free plan)');
+  el.classList.toggle('plein', qi.used >= qi.limite);
+  el.classList.toggle('proche', qi.used < qi.limite && qi.used >= qi.limite * 0.9);
+}
+function _quotaBadgeHTML(slug){
+  const qi = _quotaInfo(slug);
+  if(!qi) return '';
+  return `<span class="coll-badge">${qi.mode==='essai'?'🔒 ':''}${qi.used} / ${qi.limite}</span>`;
+}
+function _pickerPiedHTML(){
+  if(!DROITS || DROITS.formule !== 'gratuit') return '';
+  const peutChanger = DROITS.depart && DROITS.depart_modifiable;
+  return peutChanger
+    ? `<div class="coll-foot" role="menuitem" tabindex="0" onclick="ouvrirChoixDepart()">${T('Changer ma collection de départ','Change my starting collection')}</div>`
+    : '';
+}
+function ouvrirChoixDepart(){
+  if(!DROITS) return;
+  const q = DROITS.quotas || {depart:100, essai:10};
+  const prets = MODULES.filter(m=>m.status === 'ready');
+  document.getElementById('droitsTitre').textContent = DROITS.depart
+    ? T('Changer ma collection de départ','Change my starting collection')
+    : T('Choisis ta collection de départ','Choose your starting collection');
+  document.getElementById('droitsBody').innerHTML = `
+    <p>${T(`Ta collection de départ accueille jusqu’à <b>${q.depart} œuvres</b> gratuitement. Les autres collections sont verrouillées : <b>${q.essai} œuvres d’essai</b> chacune, à débloquer ensuite.`,
+           `Your starting collection holds up to <b>${q.depart} works</b> for free. The other collections are locked: <b>${q.essai} trial works</b> each, to unlock later.`)}</p>
+    <p class="muted" style="font-size:13px">${T('Tu pourras changer ce choix une seule fois, dans les 30 jours. Aucune œuvre n’est jamais supprimée.',
+           'You can change this choice once, within 30 days. No work is ever deleted.')}</p>
+    <div class="droits-choix">${prets.map(m=>`
+      <button type="button" class="secondary${DROITS.depart===m.id?' on':''}" onclick="choisirDepart('${m.id}')">
+        <span class="ico">${iconeColl(m)}</span><b>${_modLabel(m)}</b><small>${_modDesc(m)}</small>
+      </button>`).join('')}</div>`;
+  document.getElementById('droitsFooter').innerHTML =
+    `<button type="button" class="ghost" onclick="closeModal('droitsModal')">${DROITS.depart?T('Fermer','Close'):T('Plus tard','Later')}</button>`;
+  openModal('droitsModal');
+}
+async function choisirDepart(slug){
+  try {
+    DROITS = await SB.choisirDepart(slug);
+    closeModal('droitsModal');
+    majBadgeQuota();
+    if(_activeCollection !== slug) switchCollection(slug);
+    toast(T('Collection de départ enregistrée','Starting collection saved'));
+  } catch(e){
+    toast(String((e && e.message) || e).replace(/^choisir_collection_depart\s*:\s*/,''), 'error');
+  }
+}
+function _estErreurQuota(e){ return /limite atteinte/i.test(String((e && e.message) || e || '')); }
+function ouvrirLimiteAtteinte(){
+  const qi = _quotaInfo(_activeCollection);
+  const lim = qi ? qi.limite : null;
+  document.getElementById('droitsTitre').textContent = T('Limite atteinte','Limit reached');
+  document.getElementById('droitsBody').innerHTML = `
+    <p>${lim
+      ? T(`Cette collection est limitée à <b>${lim} œuvres</b> en formule gratuite.`, `This collection is limited to <b>${lim} works</b> on the free plan.`)
+      : T('Cette collection a atteint sa limite en formule gratuite.','This collection has reached its limit on the free plan.')}</p>
+    <p class="muted" style="font-size:13px">${T('Tes œuvres sont intactes : tu peux les consulter, les modifier et les exporter. Seul l’ajout de nouvelles œuvres est suspendu.',
+      'Your works are intact: you can view, edit and export them. Only adding new works is paused.')}</p>`;
+  document.getElementById('droitsFooter').innerHTML =
+    `<button type="button" disabled style="opacity:.55;cursor:not-allowed" title="${T('Bientôt disponible','Coming soon')}">${T('Débloquer — bientôt disponible','Unlock — coming soon')}</button>
+     <button type="button" onclick="closeModal('droitsModal')">${T('Fermer','Close')}</button>`;
+  openModal('droitsModal');
+}
+// Toute écriture refusée par le quota (formulaire, import, duplication…) aboutit ici.
+window.addEventListener('unhandledrejection', ev=>{
+  if(_estErreurQuota(ev.reason)){ ev.preventDefault(); ouvrirLimiteAtteinte(); }
+});
 
 // ── Démarrage : thème + vérification session ──
 // Demander au navigateur de conserver le stockage (évite la purge auto d'IndexedDB).
