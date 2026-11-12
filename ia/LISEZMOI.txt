@@ -1,0 +1,37 @@
+Option IA de la « Sélection d'objet » — fichiers servis par l'application
+==========================================================================
+
+Ce dossier est publié avec la webapp (publier-webapp.sh le recopie dans le
+dépôt). Rien n'est chargé depuis un site tiers : tout part d'ici.
+
+Déjà en place
+-------------
+  transformers.min.js                 Transformers.js 3.8.1 (Apache-2.0, Hugging Face)
+  ort-wasm-simd-threaded.jsep.js      moteur ONNX Runtime Web (MIT, Microsoft)
+  ort-wasm-simd-threaded.jsep.wasm    (le .mjs d'origine renommé en .js pour être
+                                       servi correctement par « python3 -m http.server »)
+
+À télécharger une fois (modèle SlimSAM, Apache-2.0)
+---------------------------------------------------
+Page du modèle : https://huggingface.co/Xenova/slimsam-77-uniform/tree/main
+
+Ranger exactement ainsi (noms et dossiers compris) :
+
+  ia/modeles/slimsam-77-uniform/config.json
+  ia/modeles/slimsam-77-uniform/preprocessor_config.json
+  ia/modeles/slimsam-77-uniform/onnx/vision_encoder_quantized.onnx
+  ia/modeles/slimsam-77-uniform/onnx/prompt_encoder_mask_decoder_quantized.onnx
+
+Liens directs :
+  https://huggingface.co/Xenova/slimsam-77-uniform/resolve/main/config.json
+  https://huggingface.co/Xenova/slimsam-77-uniform/resolve/main/preprocessor_config.json
+  https://huggingface.co/Xenova/slimsam-77-uniform/resolve/main/onnx/vision_encoder_quantized.onnx
+  https://huggingface.co/Xenova/slimsam-77-uniform/resolve/main/onnx/prompt_encoder_mask_decoder_quantized.onnx
+
+Fonctionnement
+--------------
+- L'IA ne marche que sur une page servie : la version en ligne, ou l'app en
+  local via « python3 -m http.server 8000 ». Ouverte comme simple fichier,
+  l'outil reste sur le détourage classique.
+- Premier usage : le navigateur télécharge ces fichiers (une quarantaine de
+  Mo au total), puis les garde en cache.

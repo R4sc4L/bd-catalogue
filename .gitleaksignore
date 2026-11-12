@@ -1,0 +1,5 @@
+# Fausses alertes de gitleaks à ignorer (copié en .gitleaksignore dans le dépôt par publier-webapp.sh).
+# Format : fichier:règle:ligne. N'y mettre que des faux positifs vérifiés, jamais une vraie clé.
+
+# ia/transformers.min.js : bibliothèque tierce minifiée (Transformers.js) ; « unk_token » n'est pas une clé.
+ia/transformers.min.js:generic-api-key:1

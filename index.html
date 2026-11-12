@@ -352,6 +352,19 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   /* La pipette : lecture RVB sous le curseur, et sur le panneau */
   #editImgOverlay .ei-scene{position:relative}
   #editImgOverlay #eiCanvas.pipette{cursor:cell}
+  /* Outils de sélection : cadre, ellipse, baguette magique */
+  #editImgOverlay .ei-bar button.ei-ico .ico.ei-trait{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  #editImgOverlay .ei-baguette{display:none;width:100%;max-width:300px;flex-direction:column;gap:8px;
+    padding:10px 12px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.03)}
+  #editImgOverlay .ei-baguette.ei-on{display:flex}
+  #editImgOverlay .ei-baguette .ei-bag-boutons{display:flex;gap:6px;flex-wrap:wrap}
+  #editImgOverlay .ei-baguette .ei-bag-boutons button{padding:4px 10px;font-size:12px}
+  #editImgOverlay .ei-baguette button.ei-actif{box-shadow:0 0 0 2px var(--gold) inset;color:var(--gold)}
+  #editImgOverlay .ei-ia-etat{font-size:11.5px;color:#a89f8c;line-height:1.4;min-height:0}
+  #editImgOverlay .ei-ia-etat:empty{display:none}
+  #editImgOverlay .ei-ia-etat.ei-erreur{color:#e89a8a}
+  /* Le résultat d'une ellipse ou d'une baguette est détouré : un damier montre la transparence */
+  #editImgOverlay .ei-side canvas#eiPreview.ei-transparent{background:repeating-conic-gradient(#2c2a3a 0 25%,#1b1a25 0 50%) 0 0/16px 16px}
   #editImgOverlay .ei-lecture{position:absolute;pointer-events:none;display:none;align-items:center;gap:7px;
     background:rgba(12,12,18,.92);border:1px solid rgba(255,255,255,.14);border-radius:6px;padding:5px 8px;
     font-size:12px;font-variant-numeric:tabular-nums;color:#efe7d8;white-space:nowrap;z-index:3;transform:translate(14px,14px)}
@@ -996,6 +1009,8 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   /* Acquisition : ne garder que la localisation */
   #itemForm.xl-simple #formSection-acquisition .form-grid > div:has(#itemPurchasePrice),
   #itemForm.xl-simple #formSection-acquisition .form-grid > div:has(#itemCurrentValue),
+  #itemForm.xl-simple #formSection-acquisition .form-grid > div:has(#itemCoteSource),
+  #itemForm.xl-simple #formSection-acquisition .form-grid > div:has(#itemCoteDate),
   #itemForm.xl-simple #formSection-acquisition .form-grid > div:has(#itemAcquisitionDate),
   #itemForm.xl-simple #formSection-acquisition .form-grid > div:has(#itemAcquisitionSource){display:none}
   /* Fiche ex-libris : Localisation pleine largeur.
@@ -1924,6 +1939,36 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   #loginScreen .login-btn{width:100%;padding:11px;font-size:15px;font-weight:700;margin-top:4px}
   #loginScreen .login-error{color:#e74c3c;font-size:13px;text-align:center;min-height:20px;margin-bottom:8px}
   #loginScreen .login-hint{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:14px}
+  /* Inscription sur invitation (SPEC comptes, étape 5) */
+  #loginScreen{overflow-y:auto;justify-content:flex-start}
+  #loginScreen .login-card{margin:auto}
+  #loginScreen .login-note{font-size:12px;margin:-8px 0 12px;min-height:16px;color:var(--ink-soft)}
+  #loginScreen .login-note.ok{color:#6fbf7e}
+  #loginScreen .login-note.ko{color:#e74c3c}
+  #loginScreen .login-case{display:flex;gap:9px;align-items:flex-start;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;color:var(--ink);margin:2px 0 12px;line-height:1.45;cursor:pointer}
+  #loginScreen .login-case input{width:auto;margin:2px 0 0;padding:0;flex:none}
+  #loginScreen .login-case a{color:var(--accent)}
+  #loginScreen .login-cgu{font-size:12px;color:var(--ink-soft);background:var(--surface-tint);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:-4px 0 12px;line-height:1.55;max-height:200px;overflow:auto}
+  #loginScreen .login-cgu p{margin:0 0 6px}
+  #loginScreen .login-texte{font-size:14px;line-height:1.6;text-align:center;margin:0 0 6px}
+  #loginScreen .login-texte.petit{font-size:12px;color:var(--ink-soft);margin-bottom:16px}
+  #loginScreen .login-lien{color:var(--accent);font-weight:600}
+  #loginScreen input[readonly]{opacity:.75}
+  /* Mon compte → Invitations */
+  .inv-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:14px}
+  .inv-table th{background:none;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--border)}
+  .inv-table td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.45}
+  .inv-table small{color:var(--ink-soft);font-size:11px}
+  .inv-code{font-family:ui-monospace,Menlo,monospace;letter-spacing:.04em;white-space:nowrap}
+  .inv-actions{white-space:nowrap;text-align:right}
+  .inv-actions button{padding:3px 7px;font-size:13px}
+  .inv-etat{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;border:1px solid var(--border-warm);color:var(--gold)}
+  .inv-etat.ok{color:#6fbf7e;border-color:rgba(111,191,126,.45)}
+  .inv-etat.ko{color:var(--ink-soft);border-color:var(--border)}
+  .inv-nouvelle{margin-top:14px;padding:12px 14px;border:1px solid var(--border-warm);border-radius:var(--radius);background:var(--accent-soft)}
+  .inv-nouvelle-titre{font-weight:600;margin-bottom:8px}
+  .inv-lien input{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  @media(max-width:560px){ .inv-table .inv-code{display:none} }
   #app-wrapper{display:none}
   /* Toolbar + version */
   #app-version{color:var(--ink-soft)!important;opacity:.4}
@@ -2352,6 +2397,10 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       <p style="text-align:center;margin-top:14px;font-size:13px">
         <a href="#" onclick="event.preventDefault();showForgotPanel()" style="color:var(--ink-soft)" data-en="Forgot password?">Mot de passe oublié ?</a>
       </p>
+      <p id="loginInscriptionLien" style="display:none;text-align:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-soft)">
+        <span data-en="Got an invitation?">Vous avez une invitation ?</span>
+        <a href="#" class="login-lien" onclick="event.preventDefault();afficherInscription()" data-en="Create an account">Créer un compte</a>
+      </p>
     </div>
     <div id="setupFields" style="display:none">
       <p style="font-size:13px;color:var(--ink-soft);margin-bottom:16px;text-align:center" data-en="First time — create your account.">Première connexion — créez votre compte.</p>
@@ -2377,6 +2426,54 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
       <p style="text-align:center;margin-top:12px;font-size:13px">
         <a href="#" onclick="event.preventDefault();showLoginPanel()" style="color:var(--ink-soft)" data-en="← Back to sign in">← Retour à la connexion</a>
       </p>
+    </div>
+    <!-- Inscription sur invitation (version en ligne) — SPEC comptes, étape 5 -->
+    <div id="inscriptionFields" style="display:none">
+      <label for="insCode" data-en="Invitation code">Code d’invitation</label>
+      <input type="text" id="insCode" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" oninput="_insCodeSaisi()" style="text-transform:uppercase;letter-spacing:2px;text-align:center">
+      <div class="login-note" id="insCodeEtat" aria-live="polite"></div>
+      <label for="insCourriel" data-en="Email address">Adresse e-mail</label>
+      <input type="email" id="insCourriel" placeholder="votre@email.com" data-en-ph="your@email.com" autocomplete="email">
+      <label for="insMdp" data-en="Password (10 characters min.)">Mot de passe (10 caractères min.)</label>
+      <input type="password" id="insMdp" autocomplete="new-password" minlength="10">
+      <label for="insMdp2" data-en="Confirm password">Confirmer le mot de passe</label>
+      <input type="password" id="insMdp2" autocomplete="new-password" minlength="10">
+      <label class="login-case" for="insCgu"><input type="checkbox" id="insCgu" onchange="document.getElementById('inscriptionError').textContent=''">
+        <span><span data-en="I accept the">J’accepte les</span> <a href="#" onclick="event.preventDefault();event.stopPropagation();_basculerConditions()" data-en="terms of the test version">conditions de la version de test</a></span></label>
+      <div class="login-cgu" id="insCguTexte" hidden></div>
+      <div class="login-error" id="inscriptionError"></div>
+      <button class="login-btn" id="insBtn" onclick="soumettreInscription()" data-en="Create my account">Créer mon compte</button>
+      <p style="text-align:center;margin-top:12px;font-size:13px">
+        <a href="#" onclick="event.preventDefault();showLoginPanel()" style="color:var(--ink-soft)" data-en="← Back to sign in">← Retour à la connexion</a>
+      </p>
+    </div>
+    <div id="attenteFields" style="display:none">
+      <div style="font-size:40px;text-align:center;margin-bottom:8px" aria-hidden="true">✉️</div>
+      <p class="login-texte" id="attenteTexte"></p>
+      <p class="login-texte petit" data-en="Nothing received? Check your spam folder; the link is only valid for a short time.">Rien reçu ? Regardez dans les courriers indésirables ; le lien n’est valable que peu de temps.</p>
+      <button class="login-btn secondary" id="attenteRenvoyer" onclick="renvoyerEmailCompte()" data-en="Resend the email">Renvoyer l’e-mail</button>
+      <div class="login-error" id="attenteError" style="margin-top:10px"></div>
+      <p style="text-align:center;margin-top:6px;font-size:13px">
+        <a href="#" onclick="event.preventDefault();showLoginPanel()" style="color:var(--ink-soft)" data-en="← Back to sign in">← Retour à la connexion</a>
+      </p>
+    </div>
+    <div id="oubliFields" style="display:none">
+      <p class="login-texte petit" data-en="Enter your account’s address: you will receive a link to choose a new password.">Indiquez l’adresse de votre compte : vous recevrez un lien pour choisir un nouveau mot de passe.</p>
+      <label for="oubliCourriel" data-en="Email address">Adresse e-mail</label>
+      <input type="email" id="oubliCourriel" placeholder="votre@email.com" data-en-ph="your@email.com" autocomplete="email">
+      <div class="login-error" id="oubliError"></div>
+      <button class="login-btn" id="oubliBtn" onclick="envoyerLienReinitialisation()" data-en="Send the link">Envoyer le lien</button>
+      <p style="text-align:center;margin-top:12px;font-size:13px">
+        <a href="#" onclick="event.preventDefault();showLoginPanel()" style="color:var(--ink-soft)" data-en="← Back to sign in">← Retour à la connexion</a>
+      </p>
+    </div>
+    <div id="nouveauMdpFields" style="display:none">
+      <label for="nouveauMdp" data-en="New password (10 characters min.)">Nouveau mot de passe (10 caractères min.)</label>
+      <input type="password" id="nouveauMdp" autocomplete="new-password" minlength="10">
+      <label for="nouveauMdp2" data-en="Confirm">Confirmer</label>
+      <input type="password" id="nouveauMdp2" autocomplete="new-password" minlength="10">
+      <div class="login-error" id="nouveauMdpError"></div>
+      <button class="login-btn" id="nouveauMdpBtn" onclick="enregistrerNouveauMdp()" data-en="Save and continue">Enregistrer et continuer</button>
     </div>
     <!-- Accès invité, hors des panneaux connexion / création / mot de passe oublié :
          il doit rester visible quel que soit le panneau affiché. N'apparaît que si une
@@ -3341,15 +3438,19 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               <div class="checkbox-row"><input type="checkbox" id="itemRabats"><label for="itemRabats" style="margin:0" data-en="Softcover with flaps">Souple avec rabats</label></div>
             </div>
           </div>
-          <!-- Bandeau, Ruban marque-page, Jaquette -->
+          <!-- Bandeau, Ruban marque-page, Jaquette. Le bandeau rejoint « Finition » de l'emboîtage
+               quand la fiche affiche l'emboîtage (voir applyArchetype) ; ruban et jaquette sont
+               masqués pour les portfolios (feuilles libres). -->
           <div class="char-group">
-            <div class="char-row" style="align-items:center">
+            <div class="char-row" id="formBandeauRow" style="align-items:center">
               <div class="checkbox-row"><input type="checkbox" id="itemBandeau"><label for="itemBandeau" style="margin:0" data-en="Band">Bandeau</label></div>
+              <div class="char-row" id="formRubanJaquette" style="align-items:center;flex:1;min-width:200px">
               <div class="checkbox-row"><input type="checkbox" id="itemRubanMarquePage"><label for="itemRubanMarquePage" style="margin:0" data-en="Ribbon bookmark">Ruban marque-page</label></div>
               <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px">
                 <input type="checkbox" id="itemJaquette" style="flex-shrink:0;width:auto">
                 <label for="itemJaquette" style="margin:0;white-space:nowrap;flex-shrink:0" data-en="Dust jacket">Jaquette</label>
                 <input type="text" id="itemJaquetteEtat" placeholder="ex: Très bon état, légères usures aux coins…" data-en-ph="e.g. Very good condition, slight wear at corners…" style="flex:1">
+              </div>
               </div>
             </div>
           </div>
@@ -3381,6 +3482,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                 <div class="checkbox-row"><input type="checkbox" id="itemEmboitageFourreau"><label for="itemEmboitageFourreau" style="margin:0" data-en="Slipcover">Étui</label></div>
                 <div class="checkbox-row"><input type="checkbox" id="itemEmboitageCoffret"><label for="itemEmboitageCoffret" style="margin:0" data-en="Box set">Coffret</label></div>
                 <div class="checkbox-row"><input type="checkbox" id="itemEmboitageChemise"><label for="itemEmboitageChemise" style="margin:0" data-en="Folder">Chemise</label></div>
+                <div class="checkbox-row"><input type="checkbox" id="itemEmboitageEnveloppe"><label for="itemEmboitageEnveloppe" style="margin:0" data-en="Envelope">Enveloppe</label></div>
                 <div style="display:flex;align-items:center;gap:8px;margin-left:8px">
                   <label for="itemEmboitageQualite" style="margin:0;font-size:12px;color:var(--ink-soft);white-space:nowrap" data-en="Slipcase condition">Qualité de l'emboîtage</label>
                   <select id="itemEmboitageQualite" style="min-width:150px">
@@ -3399,9 +3501,16 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
                   <div class="checkbox-row"><input type="checkbox" id="itemFinitionCarton"><label for="itemFinitionCarton" style="margin:0" data-en="Cardboard">Carton</label></div>
                   <div class="checkbox-row"><input type="checkbox" id="itemEmboitagePleineToile"><label for="itemEmboitagePleineToile" style="margin:0" data-en="Full cloth">Pleine toile</label></div>
                   <div class="checkbox-row"><input type="checkbox" id="itemFinitionBristol"><label for="itemFinitionBristol" style="margin:0" data-en="Bristol board">Bristol</label></div>
-                  <div class="checkbox-row"><input type="checkbox" id="itemFinitionDecoupeLaser"><label for="itemFinitionDecoupeLaser" style="margin:0" data-en="Laser cut">Découpe laser</label></div>
                   <div class="checkbox-row"><input type="checkbox" id="itemFinitionPlexiglas"><label for="itemFinitionPlexiglas" style="margin:0">Plexiglas</label></div>
+                  <div class="checkbox-row"><input type="checkbox" id="itemEmboitageTyvek"><label for="itemEmboitageTyvek" style="margin:0" title="Non-tissé synthétique, léger et indéchirable" data-en-title="Lightweight, tear-resistant synthetic nonwoven">Tyvek</label></div>
+                </div>
+              </div>
+              <div class="char-sub">
+                <label style="font-size:12px;color:var(--ink-soft)" data-en="Finish">Finition</label>
+                <div class="char-row" id="formEmboitageFinitionRow">
+                  <div class="checkbox-row"><input type="checkbox" id="itemEmboitageMarquageChaud"><label for="itemEmboitageMarquageChaud" style="margin:0" data-en="Hot foil stamping">Marquage à chaud</label></div>
                   <div class="checkbox-row"><input type="checkbox" id="itemEmboitageEmbossageFroid"><label for="itemEmboitageEmbossageFroid" style="margin:0" title="Relief obtenu par pression, sans encre ni feuille métallique" data-en-title="Relief pressed into the board, without ink or foil" data-en="Blind embossing">Embossage à froid</label></div>
+                  <div class="checkbox-row"><input type="checkbox" id="itemFinitionDecoupeLaser"><label for="itemFinitionDecoupeLaser" style="margin:0" data-en="Laser cut">Découpe laser</label></div>
                 </div>
               </div>
             </div>
@@ -3448,9 +3557,11 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <h3 id="formSection-acquisition-title" data-en="Acquisition and value">Acquisition et valeur</h3>
           <div class="form-grid three">
             <div><label data-en="Purchase price (€)">Prix d'achat (€)</label><input type="number" id="itemPurchasePrice" step="0.01" min="0"></div>
-            <div><label data-en="Current value (€)">Cote actuelle (€)</label><input type="number" id="itemCurrentValue" step="0.01" min="0"></div>
             <div><label data-en="Acquisition date">Date d'acquisition</label><input type="date" id="itemAcquisitionDate"></div>
-            <div class="span-2"><label data-en="Place / Source of acquisition">Lieu / Source d'acquisition</label><input type="text" id="itemAcquisitionSource" placeholder="Librairie, salon, ami..." data-en-ph="Bookshop, fair, friend..."></div>
+            <div><label data-en="Place / Source of acquisition">Lieu / Source d'acquisition</label><input type="text" id="itemAcquisitionSource" placeholder="Librairie, salon, ami..." data-en-ph="Bookshop, fair, friend..."></div>
+            <div><label data-en="Current value (€)">Cote actuelle (€)</label><input type="number" id="itemCurrentValue" step="0.01" min="0"></div>
+            <div><label data-en="Value source">Source de la cote</label><input type="text" id="itemCoteSource" list="dl-cote-sources" placeholder="ex: BDM 2025-2026, Drouot…" data-en-ph="e.g. BDM 2025-2026, auction…"></div>
+            <div><label data-en="Value date">Date de la cote</label><input type="date" id="itemCoteDate"></div>
             <div id="formFieldLocation"><label data-en="Location in your collection">Localisation dans votre collection</label>
               <div style="display:flex;gap:8px;align-items:center">
                 <input type="text" id="itemLocation" placeholder="ex: Étagère 1 — ou nom d'une pile" data-en-ph="e.g. Shelf 1 — or a pile name" list="dl-locations" style="flex:1" oninput="_bulkClearLocation=false">
@@ -3621,6 +3732,21 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               <input type="password" id="cpMdpConfirm" autocomplete="new-password" minlength="10"></div>
           </div>
           <div class="cp-actions"><button type="button" class="secondary" onclick="changerMotDePasseCompte()" data-en="Change password">Changer le mot de passe</button></div>
+        </div>
+        <div class="form-section" id="cpInvitations" style="display:none">
+          <h3 data-en="Invitations">Invitations</h3>
+          <p class="muted" style="font-size:12px;margin:-4px 0 12px" data-en="Accounts are created by invitation only. Each code works once; you can reserve it for one address.">Les comptes se créent uniquement sur invitation. Chaque code ne sert qu’une fois ; vous pouvez le réserver à une adresse.</p>
+          <div class="form-grid">
+            <div><label for="invNote" data-en="For whom (note)">Pour qui (mémo)</label>
+              <input type="text" id="invNote" maxlength="120" placeholder="Marc, club BD" data-en-ph="Marc, comics club"></div>
+            <div><label for="invCourriel" data-en="Reserved for (optional)">Réservée à l’adresse (facultatif)</label>
+              <input type="email" id="invCourriel" maxlength="254" placeholder="marc@exemple.fr" data-en-ph="marc@example.com"></div>
+            <div><label for="invJours" data-en="Valid for">Valable</label>
+              <select id="invJours"><option value="7" data-en="7 days">7 jours</option><option value="30" selected data-en="30 days">30 jours</option><option value="90" data-en="90 days">90 jours</option></select></div>
+          </div>
+          <div class="cp-actions"><button type="button" class="secondary" id="invCreerBtn" onclick="creerInvitationCompte()" data-en="✉️ Create an invitation">✉️ Créer une invitation</button></div>
+          <div class="inv-nouvelle" id="invNouvelle" hidden></div>
+          <div id="invListe"></div>
         </div>
         <div class="form-section" id="cpDonnees">
           <h3 data-en="My data">Mes données</h3>
@@ -4258,6 +4384,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
   <option value="Canson"></option>
 </datalist>
 <datalist id="dl-locations"></datalist>
+<datalist id="dl-cote-sources"><option value="BDM 2025-2026"><option value="Enchères (Drouot / Interencheres)"><option value="Catawiki"><option value="eBay (vendu)"><option value="Libraire spécialisé"><option value="Estimation personnelle"></datalist>
 <datalist id="dl-languages">
   <option>Français</option><option>Anglais</option><option>Néerlandais</option><option>Italien</option><option>Espagnol</option><option>Allemand</option><option>Japonais</option><option>Portugais</option>
 </datalist>
@@ -5024,6 +5151,8 @@ const _ARCH_FIELDS = {
   couverture: { id:'formCouverture',        mode:'self'   },
   finitionsCouverture: { id:'formFinitionCouverture', mode:'self' },
   emboitage:  { id:'formEmboitageSection',  mode:'self'   },
+  // Ruban marque-page et jaquette : propres aux livres reliés.
+  rubanJaquette: { id:'formRubanJaquette', mode:'self' },
   contenu:    { id:'formSection-contenu',   mode:'self'   },
   // Formats de reliure propres à l'édition asiatique / américaine : hors sujet
   // pour un portfolio (feuilles libres).
@@ -5038,14 +5167,15 @@ const FICHE_ARCHETYPES = {
     id:'standard', label:'Ouvrage / Album', labelEn:'Book / Album', icon:'📚',
     hidden:['univers','emboitage'],
   },
-  // Portfolio / recueil de planches : ni série, ni ISBN, ni reliure ;
+  // Portfolio / recueil de planches : ni série, ni reliure (l'ISBN reste :
+  // beaucoup de portfolios en ont un) ;
   // « planches » au lieu de « pages », emboîtage et diaporama activés.
   // Le « Contenu additionnel » reste, lui, bien présent : un portfolio est
   // souvent livré avec un ex-libris, une sérigraphie, un tirage signé ou un
   // poster — c'est même souvent ce qui en fait le prix.
   portfolio: {
     id:'portfolio', label:'Portfolio / Recueil de planches', labelEn:'Portfolio / Plate set', icon:'📁',
-    hidden:['serie','serieNum','collection','mois','isbn','reliure','couverture','formatManga','formatComics'],
+    hidden:['serie','serieNum','collection','mois','reliure','couverture','formatManga','formatComics','rubanJaquette'],
     pagesLabel:{ fr:'Nombre de planches', en:'Number of plates' },
     autoDiaporama:true,
   },
@@ -5479,6 +5609,23 @@ function applyArchetype(arch){
     const target = desc.mode==='parent' ? (el.parentElement || el) : el;
     target.style.display = showVal(!hidden.has(key));
   }
+  // Localisation : en tête de « Suivi personnel », sauf sur les fiches simplifiées
+  // (ex-libris, affiche) où la section Suivi est absente ou réduite : elle y reste
+  // dans « Acquisition », seule section affichée pour cet usage.
+  const _loc = document.getElementById('formFieldLocation');
+  const _locSimple = arch.formClass==='xl-simple' || arch.formClass==='ta-simple';
+  const _locDest = document.querySelector(_locSimple ? '#formSection-acquisition .form-grid' : '#formSection-suivi .form-grid');
+  if(_loc && _locDest && _loc.parentElement !== _locDest){
+    if(_locSimple) _locDest.appendChild(_loc); else _locDest.prepend(_loc);
+  }
+  if(_loc) _loc.classList.toggle('span-3', !_locSimple);
+  // Bandeau : dans « Finition » de l'emboîtage quand celui-ci est affiché,
+  // sinon avec les accessoires du livre. Même case, même champ : on la déplace.
+  const _bandeau = document.getElementById('itemBandeau')?.closest('.checkbox-row');
+  const _bDest = document.getElementById(hidden.has('emboitage') ? 'formBandeauRow' : 'formEmboitageFinitionRow');
+  if(_bandeau && _bDest && _bandeau.parentElement !== _bDest){
+    if(_bDest.id==='formBandeauRow') _bDest.prepend(_bandeau); else _bDest.appendChild(_bandeau);
+  }
   // Classe de formulaire (ex. fiche simplifiée ex-libris) — on retire d'abord
   // toutes les classes d'archétype connues avant d'appliquer la bonne.
   const itemForm = document.getElementById('itemForm');
@@ -5630,7 +5777,7 @@ const FICHE_MODULES = [
   { id:'objetsAssocies', label:'Objets associés', labelEn:'Related objects', onglet:'etat',
     blocs:['#formSection-objets-associes'] },
   { id:'acquisition', label:'Acquisition et valeur', labelEn:'Acquisition and value', onglet:'etat',
-    blocs:['champ:itemPurchasePrice','champ:itemCurrentValue','champ:itemAcquisitionDate','champ:itemAcquisitionSource'] },
+    blocs:['champ:itemPurchasePrice','champ:itemCurrentValue','champ:itemCoteSource','champ:itemCoteDate','champ:itemAcquisitionDate','champ:itemAcquisitionSource'] },
   { id:'localisation', label:'Localisation', labelEn:'Location', onglet:'etat',
     blocs:['#formFieldLocation'] },
   { id:'suivi', label:'Suivi personnel', labelEn:'Personal tracking', onglet:'etat',
@@ -7965,6 +8112,7 @@ function _cpMajSectionsCompte(){
   ['cpMdpActuel','cpMdpNouveau','cpMdpConfirm'].forEach(id=>{
     const e = document.getElementById(id); if(e) e.value = ''; });
   const b = document.getElementById('cpDonneesBilan'); if(b) b.textContent = _bilanDonneesCompte();
+  _cpMajInvitations();
 }
 function _bilanDonneesCompte(){
   const tout = cache.items || [];
@@ -8886,6 +9034,22 @@ const CLOUD = /(^|\.)github\.io$/i.test(location.hostname) || /[?&#]cloud\b/i.te
 // ni accès à la base : rien ne peut y être écrit, même en manipulant la page. Les
 // données sensibles ne sont pas masquées, elles sont absentes du fichier.
 const GUEST = !!window.__GUEST__;
+// Liens qui ramènent sur la page (SPEC comptes, étape 5) : confirmation d'inscription,
+// mot de passe oublié, changement d'adresse (#access_token…&type=…), lien expiré (#error…),
+// invitation (?invitation=CODE). Lu une fois au chargement ; traité par _traiterLienAuth().
+const _LIEN_AUTH = (()=>{
+  try{
+    const h = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    const q = new URLSearchParams(location.search);
+    const r = {};
+    if(h.get('access_token')) r.type = h.get('type') || 'signup';
+    const err = h.get('error_code') || h.get('error') || q.get('error_code') || q.get('error');
+    if(err){ r.erreur = err; r.message = h.get('error_description') || q.get('error_description') || ''; }
+    if(!r.type && !r.erreur && h.get('message')) r.info = h.get('message');
+    if(q.get('invitation')) r.invitation = q.get('invitation');
+    return (r.type || r.erreur || r.info || r.invitation) ? r : null;
+  }catch(e){ return null; }
+})();
 let _sbLibPromise = null;
 // Chargement de la librairie Supabase depuis le CDN.
 // Point important : la promesse n'est mémorisée QUE si elle aboutit. Mémoriser un échec
@@ -8933,7 +9097,7 @@ function ensureSupabaseLib(){
   return _sbLibPromise;
 }
 const SB_URL_DEFAULT = "https://vnoavfxnvnerrlzgurgu.supabase.co";
-const SB_KEY_DEFAULT = "sb_publishable_Vj5sBIlQcp08Viq3zrSAhg_BvuvParo";
+const SB_KEY_DEFAULT = "sb_publishable_Vj5sBIlQcp08Viq3zrSAhg_BvuvParo";  // gitleaks:allow — clé publique (publishable) : faite pour être dans la page, la protection vient de la RLS
 const SB_CFG_KEY = "sb_cloud_config";
 
 // ── Cache des liens d'images (économie de transfert Supabase) ──
@@ -8992,9 +9156,9 @@ const SB = (() => {
   const CARACT_KEYS = ['broche','relie','relieTranchefile','dosAgrafe','dosSpiral','couvertureSouple','couvertureCartonnee',
     'rabats','aLaSuisse','bradel','cousu','dosCarreColle','anneaux','formatCarre','formatFrancaise','formatItalienne','formatManga','formatComics',
     'dosToile','pleineToile','vernisSelectif','cuirImitation','marquageChaud','embossageFroid','vignetteContrecollee','vignetteCuvette','rhodoid','bandeau','rubanMarquePage',
-    'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise',
-    'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageQualite','emboitageEmbossageFroid',
-    'paperQuality','pageOrder','informations','etatDetail','dedicaceTampon','signaturePlanche','paraphe',
+    'jaquette','jaquetteEtat','emboitageFourreau','emboitageCoffret','emboitageChemise','emboitageEnveloppe',
+    'emboitagePleineToile','finitionCarton','finitionBristol','finitionDecoupeLaser','finitionPlexiglas','emboitageTyvek','emboitageMarquageChaud','emboitageQualite','emboitageEmbossageFroid',
+    'paperQuality','pageOrder','informations','coteSource','coteDate','etatDetail','dedicaceTampon','signaturePlanche','paraphe',
     'gradeUS','gradeNote','ratingComics','distributionComics',
     // Les rapprochements automatiques qu'on a refusés : « non, ce n'est pas
     // la même édition ». Rangés ici, ils n'ont besoin d'aucune colonne SQL.
@@ -9159,6 +9323,9 @@ const SB = (() => {
         c.getContext('2d').drawImage(img,0,0,w,h);
         c.toBlob(b=>{
           if(b && b.type==='image/webp') resolve({blob:b, ext:'webp'});
+          // Sans WebP (anciens Safari), un visuel détouré reste en PNG : le JPEG
+          // remplirait de noir ce qui doit rester transparent.
+          else if(/^data:image\/png/i.test(dataUrl)) c.toBlob(b2=> b2 ? resolve({blob:b2, ext:'png'}) : reject(new Error('encodage image impossible')), 'image/png');
           else c.toBlob(b2=> b2 ? resolve({blob:b2, ext:'jpg'}) : reject(new Error('encodage image impossible')), 'image/jpeg', .85);
         },'image/webp', .85);
       };
@@ -9772,6 +9939,49 @@ const SB = (() => {
       if(!data.session) throw new Error(T('Compte créé — confirme ton email puis connecte-toi.','Account created — confirm your email, then sign in.'));
       uid = data.session.user.id; courriel = data.session.user.email || '';
     },
+    // ── Inscription sur invitation (SPEC comptes, étape 5) ──
+    // Le code et la version des conditions partent dans les métadonnées : le hook SQL
+    // « Before User Created » les contrôle, le déclencheur consomme l'invitation.
+    async inscrire(email, password, code, version){
+      ensureClient();
+      const {data, error} = await client.auth.signUp({ email, password, options:{
+        emailRedirectTo: _urlRetourAuth(),
+        data: { code_invitation: code, cgu_version: version } } });
+      if(error) throw error;
+      if(data && data.session){ uid = data.session.user.id; courriel = data.session.user.email || ''; return { session: data.session }; }
+      // Adresse déjà inscrite : Supabase répond sans erreur mais sans identité.
+      const deja = !!(data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0);
+      return { session: null, dejaInscrit: deja };
+    },
+    async renvoyerConfirmation(email){
+      ensureClient();
+      const {error} = await client.auth.resend({ type:'signup', email, options:{ emailRedirectTo: _urlRetourAuth() } });
+      if(error) throw error;
+    },
+    async demanderReinitialisation(email){
+      ensureClient();
+      const {error} = await client.auth.resetPasswordForEmail(email, { redirectTo: _urlRetourAuth() });
+      if(error) throw error;
+    },
+    async nouveauMotDePasse(motDePasse){
+      ensureClient();
+      const {error} = await client.auth.updateUser({ password: motDePasse });
+      if(error) throw error;
+    },
+    async verifierInvitation(code){
+      ensureClient();
+      const {data, error} = await client.rpc('verifier_invitation', { p_code: code });
+      if(error) throw error;
+      return data;
+    },
+    // Session ouverte par un lien reçu par e-mail : supabase-js la lit dans l'adresse à la création du client.
+    async sessionDepuisLien(){
+      ensureClient();
+      const {data, error} = await client.auth.getSession();
+      if(error) throw error;
+      if(data && data.session){ uid = data.session.user.id; courriel = data.session.user.email || ''; return data.session; }
+      return null;
+    },
     async signOut(){ _urlCacheVider(); if(client) await client.auth.signOut(); },
     // L'adresse de la session ouverte (elle revenait toujours vide).
     userEmail(){ return courriel; },
@@ -9886,7 +10096,11 @@ async function submitLogin__cloud(){
     await SB.signIn(user, pass);
     showApp();
   }catch(e){
-    err.textContent = e.message==='Invalid login credentials' ? T('Identifiant ou mot de passe incorrect.','Incorrect username or password.') : e.message;
+    if(/email not confirmed/i.test(e.message||'')){
+      err.innerHTML = escapeHTML(_messageAuth(e)) + ' <a href="#" class="login-lien" onclick="event.preventDefault();_afficherAttente(\'confirmation\', document.getElementById(\'loginUser\').value.trim().toLowerCase(), 0)">' + escapeHTML(T('Renvoyer le lien','Resend the link')) + '</a>';
+    } else {
+      err.textContent = e.message==='Invalid login credentials' ? T('Identifiant ou mot de passe incorrect.','Incorrect username or password.') : _messageAuth(e);
+    }
     document.getElementById('loginPass').value='';
   }
   btn.disabled = false;
@@ -9939,20 +10153,393 @@ function showLoginScreen__cloud(){
   const aw = document.getElementById('app-wrapper');
   if(ls) ls.style.display='flex';
   if(aw) aw.style.display='none';
-  document.getElementById('loginFields').style.display='none';
-  document.getElementById('setupFields').style.display='none';
-  document.getElementById('forgotFields').style.display='none';
-  document.getElementById('loginFields').style.display='block';
-  document.getElementById('loginSubtitle').textContent=T('Connectez-vous à votre collection en ligne','Sign in to your online collection');
+  _panneauConnexion('loginFields', T('Connectez-vous à votre collection en ligne','Sign in to your online collection'));
   const _cfgArea = document.getElementById('sbCfgArea');
   if(_cfgArea) _cfgArea.style.display = SB.getCfg() ? 'none' : 'block';
   setTimeout(()=>document.getElementById('loginUser')?.focus(),100);
 }
 
 
+/* ── Inscription sur invitation, confirmation, mot de passe oublié (SPEC comptes, étape 5) ──
+   La règle d'admission est appliquée par Supabase (hook « Before User Created » et
+   déclencheur de inscriptions-invitations-supabase.sql) : la page ne fait que guider. */
+const CONDITIONS_VERSION = 'test-2026-11';
+// Adresse de contact citée dans les conditions. Vide : « la personne qui vous a invité ».
+const CONTACT_CONDITIONS = '';
+const _PANNEAUX_CONNEXION = ['loginFields','setupFields','forgotFields','inscriptionFields','attenteFields','oubliFields','nouveauMdpFields'];
+const _ERREURS_CONNEXION = ['loginError','setupError','forgotError','inscriptionError','attenteError','oubliError','nouveauMdpError'];
+
+// Adresse de retour des liens envoyés par e-mail : la page elle-même, sans index.html
+// (doit figurer dans Authentication → URL Configuration → Redirect URLs).
+function _urlApplication(){ return location.origin + location.pathname.replace(/index\.html$/i, ''); }
+function _urlRetourAuth(){ return _urlApplication() + (/[?&]cloud\b/i.test(location.search) ? '?cloud' : ''); }
+
+function _panneauConnexion(id, sousTitre){
+  _PANNEAUX_CONNEXION.forEach(p=>{ const e = document.getElementById(p); if(e) e.style.display = (p === id) ? 'block' : 'none'; });
+  _ERREURS_CONNEXION.forEach(p=>{ const e = document.getElementById(p); if(e) e.textContent = ''; });
+  const lien = document.getElementById('loginInscriptionLien');
+  if(lien) lien.style.display = CLOUD ? '' : 'none';
+  if(sousTitre) document.getElementById('loginSubtitle').textContent = sousTitre;
+}
+function _erreurChamp(err, id, msg){ err.textContent = msg; document.getElementById(id)?.focus(); }
+const _courrielValide = c => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c);
+function _normCode(c){ return String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function _formatCode(c){ const n = _normCode(c); return n.length === 12 ? n.replace(/(.{4})(.{4})(.{4})/, '$1-$2-$3') : n; }
+function _dateCourte(x){
+  try{ return new Date(x).toLocaleDateString(T('fr-FR','en-GB'), {day:'numeric', month:'short', year:'numeric'}); }catch(e){ return ''; }
+}
+
+// Messages de Supabase Auth rendus lisibles. Ceux du hook d'inscription arrivent déjà en français.
+function _messageAuth(e){
+  const m = String((e && (e.message || e.msg)) || e || '');
+  const k = m + ' ' + ((e && e.code) || '');
+  if(/already (been )?registered|user_already_exists/i.test(k)) return T('Cette adresse a déjà un compte : connectez-vous, ou utilisez « Mot de passe oublié ? ».','This address already has an account: sign in, or use “Forgot password?”.');
+  if(/signups? not allowed|signup_disabled/i.test(k)) return T('Les inscriptions sont fermées pour le moment.','Sign-ups are closed for now.');
+  if(/email not confirmed|email_not_confirmed/i.test(k)) return T('Adresse pas encore confirmée : ouvrez le lien reçu par e-mail.','Address not confirmed yet: open the link you received by email.');
+  if(/rate limit|over_email_send_rate_limit|only request this/i.test(k)) return T('Trop de demandes d’e-mails : réessayez un peu plus tard.','Too many email requests: try again a little later.');
+  if(/sending .*email|email address not authorized/i.test(k)) return T('L’e-mail n’a pas pu partir : l’envoi n’est pas encore configuré côté serveur.','The email could not be sent: sending is not set up on the server yet.');
+  if(/weak_password|pwned|password should/i.test(k)) return T('Mot de passe refusé : choisissez-en un plus long ou moins courant.','Password rejected: choose a longer or less common one.');
+  if(/same_password|should be different/i.test(k)) return T('Choisissez un mot de passe différent de l’ancien.','Choose a password different from the old one.');
+  if(/database error saving new user/i.test(k)) return T('Inscription refusée : l’invitation vient peut-être de servir. Vérifiez votre code.','Sign-up refused: the invitation may have just been used. Check your code.');
+  if(/unable to validate email|invalid format|email_address_invalid/i.test(k)) return T('Adresse e-mail non valable.','Invalid email address.');
+  if(/failed to fetch|network/i.test(k)) return T('Connexion au serveur impossible : vérifiez votre accès à Internet.','Cannot reach the server: check your Internet connection.');
+  return m || T('Erreur inattendue.','Unexpected error.');
+}
+
+// ── Créer un compte ──────────────────────────────────────────────────────────
+function afficherInscription(code){
+  _panneauConnexion('inscriptionFields', T('Créer votre compte','Create your account'));
+  const champ = document.getElementById('insCode');
+  if(code) champ.value = _formatCode(code);
+  _insDernier = '';
+  _insCodeSaisi(true);
+  setTimeout(()=>(_normCode(champ.value).length === 12 ? document.getElementById('insCourriel') : champ)?.focus(), 80);
+}
+let _insMinuteur = null, _insDernier = '';
+function _insCodeSaisi(immediat){
+  const champ = document.getElementById('insCode');
+  const n = _normCode(champ.value).slice(0, 12);
+  const f = n.replace(/(.{4})(?=.)/g, '$1-');
+  if(champ.value !== f) champ.value = f;
+  const etat = document.getElementById('insCodeEtat');
+  clearTimeout(_insMinuteur);
+  if(n.length < 12){ etat.textContent = ''; etat.className = 'login-note'; _insReserve(null); _insDernier = ''; return; }
+  if(n === _insDernier) return;
+  _insMinuteur = setTimeout(async ()=>{
+    _insDernier = n;
+    etat.className = 'login-note'; etat.textContent = T('Vérification…','Checking…');
+    try{
+      const r = await SB.verifierInvitation(n);
+      if(_normCode(champ.value) !== n) return;
+      if(r && r.valide){
+        etat.className = 'login-note ok';
+        etat.textContent = r.email_reserve
+          ? T(`✓ Invitation valable, réservée à ${r.email_reserve}`, `✓ Valid invitation, reserved for ${r.email_reserve}`)
+          : T('✓ Invitation valable','✓ Valid invitation');
+        _insReserve(r.email_reserve || null);
+      } else {
+        etat.className = 'login-note ko';
+        etat.textContent = (r && r.message) || T('Invitation non valable.','Invalid invitation.');
+        _insReserve(null);
+      }
+    }catch(e){ etat.className = 'login-note'; etat.textContent = ''; _insDernier = ''; }   // vérification indisponible : le serveur tranchera à l'inscription
+  }, immediat ? 0 : 350);
+}
+function _insReserve(email){
+  const c = document.getElementById('insCourriel');
+  if(email){ c.value = email; c.readOnly = true; }
+  else if(c.readOnly){ c.readOnly = false; c.value = ''; }
+}
+function _basculerConditions(){
+  const b = document.getElementById('insCguTexte');
+  if(!b.innerHTML) b.innerHTML = _texteConditions();
+  b.hidden = !b.hidden;
+}
+function _texteConditions(){
+  const contact = CONTACT_CONDITIONS
+    ? escapeHTML(CONTACT_CONDITIONS)
+    : T('la personne qui vous a invité','the person who invited you');
+  return T(
+   `<p><b>Version de test (${CONDITIONS_VERSION}).</b> Ma Collection est un service personnel proposé gratuitement à des testeurs invités, sans garantie de disponibilité ; il peut évoluer ou s’arrêter, vous en seriez prévenu par e-mail.</p>
+    <p><b>Vos données</b> : votre adresse e-mail et ce que vous saisissez (collections, images). Elles sont hébergées par Supabase, sur des serveurs situés dans l’Union européenne ; la page est servie par GitHub Pages. Elles servent uniquement à faire fonctionner le service : ni publicité, ni revente, ni mesure d’audience.</p>
+    <p><b>Vos droits</b> : dans « Mon compte », vous pouvez exporter toutes vos données et supprimer votre compte à tout moment ; la suppression efface tout. Pour toute question : ${contact}.</p>`,
+   `<p><b>Test version (${CONDITIONS_VERSION}).</b> Ma Collection is a personal service offered free of charge to invited testers, with no availability guarantee; it may change or stop, and you would be told by email.</p>
+    <p><b>Your data</b>: your email address and what you enter (collections, images). It is hosted by Supabase on servers in the European Union; the page is served by GitHub Pages. It is used only to run the service: no advertising, no resale, no audience tracking.</p>
+    <p><b>Your rights</b>: in “My account” you can export all your data and delete your account at any time; deletion erases everything. Questions: ${contact}.</p>`);
+}
+async function soumettreInscription(){
+  const v = id => (document.getElementById(id)?.value || '');
+  const code = _normCode(v('insCode')), courriel = v('insCourriel').trim().toLowerCase();
+  const mdp = v('insMdp'), mdp2 = v('insMdp2');
+  const err = document.getElementById('inscriptionError');
+  err.textContent = '';
+  if(code.length !== 12) return _erreurChamp(err, 'insCode', T('Saisissez le code d’invitation reçu (12 caractères).','Enter the invitation code you received (12 characters).'));
+  if(!_courrielValide(courriel)) return _erreurChamp(err, 'insCourriel', T('Entrez une adresse e-mail valide.','Enter a valid email address.'));
+  if(mdp.length < 10) return _erreurChamp(err, 'insMdp', T('Le mot de passe doit contenir au moins 10 caractères.','The password must contain at least 10 characters.'));
+  if(mdp !== mdp2) return _erreurChamp(err, 'insMdp2', T('Les mots de passe ne correspondent pas.','Passwords do not match.'));
+  if(!document.getElementById('insCgu').checked) return _erreurChamp(err, 'insCgu', T('Acceptez les conditions pour créer votre compte.','Accept the terms to create your account.'));
+  const btn = document.getElementById('insBtn'); btn.disabled = true;
+  try{
+    const r = await SB.inscrire(courriel, mdp, code, CONDITIONS_VERSION);
+    if(r.session){ showApp(); toast(T('Compte créé — bienvenue !','Account created — welcome!')); return; }
+    if(r.dejaInscrit){ err.textContent = _messageAuth({message:'already registered'}); return; }
+    ['insMdp','insMdp2'].forEach(id=>{ document.getElementById(id).value = ''; });
+    _afficherAttente('confirmation', courriel);
+  }catch(e){ err.textContent = _messageAuth(e); }
+  finally{ btn.disabled = false; }
+}
+
+// ── E-mail envoyé : confirmation d'inscription ou lien de réinitialisation ──
+let _attente = { mode:'', courriel:'' }, _minuteurRenvoi = null;
+function _afficherAttente(mode, courriel, delai){
+  _attente = { mode, courriel };
+  _panneauConnexion('attenteFields', mode === 'confirmation' ? T('Plus qu’une étape','One last step') : T('Mot de passe oublié','Forgot password'));
+  const c = '<b>' + escapeHTML(courriel) + '</b>';
+  document.getElementById('attenteTexte').innerHTML = mode === 'confirmation'
+    ? T(`Un lien de confirmation a été envoyé à ${c}. Ouvrez-le pour activer votre compte.`, `A confirmation link was sent to ${c}. Open it to activate your account.`)
+    : T(`Si un compte existe pour ${c}, un lien pour choisir un nouveau mot de passe vient d’être envoyé.`, `If an account exists for ${c}, a link to choose a new password has just been sent.`);
+  _delaiRenvoi(delai ?? 60);
+}
+function _delaiRenvoi(s){
+  const b = document.getElementById('attenteRenvoyer');
+  clearInterval(_minuteurRenvoi);
+  const maj = ()=>{
+    b.disabled = s > 0;
+    b.textContent = s > 0 ? T(`Renvoyer l’e-mail (${s} s)`, `Resend the email (${s} s)`) : T('Renvoyer l’e-mail','Resend the email');
+  };
+  maj();
+  if(s > 0) _minuteurRenvoi = setInterval(()=>{ s--; maj(); if(s <= 0) clearInterval(_minuteurRenvoi); }, 1000);
+}
+async function renvoyerEmailCompte(){
+  const err = document.getElementById('attenteError'); err.textContent = '';
+  const b = document.getElementById('attenteRenvoyer'); b.disabled = true;
+  try{
+    if(_attente.mode === 'confirmation') await SB.renvoyerConfirmation(_attente.courriel);
+    else await SB.demanderReinitialisation(_attente.courriel);
+    toast(T('E-mail renvoyé ✓','Email sent again ✓'));
+    _delaiRenvoi(60);
+  }catch(e){ err.textContent = _messageAuth(e); b.disabled = false; }
+}
+
+// ── Mot de passe oublié : lien par e-mail ────────────────────────────────────
 function showForgotPanel__cloud(){
-  document.getElementById('loginError').textContent =
-    T('Réinitialisation : Supabase → Authentication → Users → ton compte → Reset password.','Reset: Supabase → Authentication → Users → your account → Reset password.');
+  _panneauConnexion('oubliFields', T('Mot de passe oublié','Forgot password'));
+  const c = document.getElementById('oubliCourriel');
+  c.value = (document.getElementById('loginUser')?.value || '').trim();
+  setTimeout(()=>c.focus(), 60);
+}
+async function envoyerLienReinitialisation(){
+  const courriel = (document.getElementById('oubliCourriel').value || '').trim().toLowerCase();
+  const err = document.getElementById('oubliError'); err.textContent = '';
+  if(!_courrielValide(courriel)) return _erreurChamp(err, 'oubliCourriel', T('Entrez une adresse e-mail valide.','Enter a valid email address.'));
+  const btn = document.getElementById('oubliBtn'); btn.disabled = true;
+  try{ await SB.demanderReinitialisation(courriel); _afficherAttente('reinitialisation', courriel); }
+  catch(e){ err.textContent = _messageAuth(e); }
+  finally{ btn.disabled = false; }
+}
+async function enregistrerNouveauMdp(){
+  const a = document.getElementById('nouveauMdp').value, b = document.getElementById('nouveauMdp2').value;
+  const err = document.getElementById('nouveauMdpError'); err.textContent = '';
+  if(a.length < 10) return _erreurChamp(err, 'nouveauMdp', T('Le mot de passe doit contenir au moins 10 caractères.','The password must contain at least 10 characters.'));
+  if(a !== b) return _erreurChamp(err, 'nouveauMdp2', T('Les mots de passe ne correspondent pas.','Passwords do not match.'));
+  const btn = document.getElementById('nouveauMdpBtn'); btn.disabled = true;
+  try{
+    await SB.nouveauMotDePasse(a);
+    ['nouveauMdp','nouveauMdp2'].forEach(id=>{ document.getElementById(id).value = ''; });
+    showApp();
+    toast(T('Mot de passe enregistré ✓','Password saved ✓'));
+  }catch(e){ err.textContent = _messageAuth(e); }
+  finally{ btn.disabled = false; }
+}
+
+// ── Retour sur la page par un lien (au chargement) ──────────────────────────
+async function _traiterLienAuth(){
+  const L = _LIEN_AUTH;
+  const nettoyer = ()=>{
+    try{
+      const u = new URL(location.href);
+      ['invitation','error','error_code','error_description'].forEach(k=>u.searchParams.delete(k));
+      history.replaceState(null, '', u.pathname + u.search);
+    }catch(e){}
+  };
+  if(L.erreur){
+    nettoyer(); showLoginScreen();
+    document.getElementById('loginError').textContent = /expired|otp_expired|access_denied/i.test(L.erreur + ' ' + (L.message || ''))
+      ? T('Ce lien a expiré ou a déjà servi. Connectez-vous, ou demandez un nouveau lien (« Mot de passe oublié ? »).','This link has expired or was already used. Sign in, or ask for a new link (“Forgot password?”).')
+      : T('Lien non valable : ','Invalid link: ') + (L.message || L.erreur);
+    return true;
+  }
+  if(L.type){
+    let session = null;
+    try{ session = await SB.sessionDepuisLien(); }catch(e){ console.error('[Auth] lien de retour', e); }
+    if(!session){
+      showLoginScreen();
+      document.getElementById('loginError').textContent = T('Ce lien n’a pas pu ouvrir de session : connectez-vous.','This link could not open a session: please sign in.');
+      return true;
+    }
+    if(L.type === 'recovery' || L.type === 'invite'){
+      showLoginScreen();
+      _panneauConnexion('nouveauMdpFields', L.type === 'invite'
+        ? T('Bienvenue — choisissez votre mot de passe','Welcome — choose your password')
+        : T('Choisissez un nouveau mot de passe','Choose a new password'));
+      setTimeout(()=>document.getElementById('nouveauMdp')?.focus(), 80);
+      return true;
+    }
+    showApp();
+    const msg = { signup: T('Adresse confirmée — bienvenue !','Address confirmed — welcome!'),
+                  email_change: T('Adresse e-mail modifiée ✓','Email address changed ✓') }[L.type];
+    if(msg) setTimeout(()=>toast(msg), 600);
+    return true;
+  }
+  if(L.info){
+    // Changement d'adresse sécurisé : le premier lien est accepté, l'autre reste à ouvrir.
+    history.replaceState(null, '', location.pathname + location.search);
+    setTimeout(()=>toast(T('Lien accepté : ouvrez aussi celui envoyé à l’autre adresse.','Link accepted: also open the one sent to the other address.')), 600);
+    return false;
+  }
+  if(L.invitation){ nettoyer(); showLoginScreen(); afficherInscription(L.invitation); return true; }
+  return false;
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const entree = (ids, fn)=>ids.forEach(id=>document.getElementById(id)?.addEventListener('keydown', e=>{ if(e.key === 'Enter') fn(); }));
+  entree(['insCode','insCourriel','insMdp','insMdp2'], soumettreInscription);
+  entree(['oubliCourriel'], envoyerLienReinitialisation);
+  entree(['nouveauMdp','nouveauMdp2'], enregistrerNouveauMdp);
+  // Dans « Mon compte », Entrée crée l'invitation au lieu d'enregistrer le formulaire du compte.
+  ['invNote','invCourriel'].forEach(id=>document.getElementById(id)?.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); creerInvitationCompte(); } }));
+});
+
+// ── Mon compte → Invitations (administrateur) ────────────────────────────────
+let _invCache = [];
+async function _cpMajInvitations(){
+  const s = document.getElementById('cpInvitations');
+  if(!s) return;
+  s.style.display = 'none';
+  if(!CLOUD || GUEST) return;
+  let admin = false;
+  try{ admin = await SB.rpc('est_admin'); }catch(e){ return; }      // script SQL pas encore exécuté
+  if(!admin) return;
+  s.style.display = '';
+  document.getElementById('invNouvelle').hidden = true;
+  await _invRafraichir();
+}
+async function _invRafraichir(){
+  const box = document.getElementById('invListe');
+  try{ _invCache = (await SB.rpc('lister_invitations')) || []; box.innerHTML = _invListeHTML(_invCache); }
+  catch(e){ box.innerHTML = `<p class="muted" style="font-size:12px">${escapeHTML(_sansPrefixeRpc(e))}</p>`; }
+}
+function _sansPrefixeRpc(e){ return String((e && e.message) || e).replace(/^[a-z_]+\s*:\s*/, ''); }
+function _lienInvitation(code){
+  const base = _urlRetourAuth();
+  return base + (base.includes('?') ? '&' : '?') + 'invitation=' + _formatCode(code);
+}
+function _invListeHTML(l){
+  if(!l.length) return `<p class="muted" style="font-size:12px;margin-top:12px">${T('Aucune invitation pour l’instant.','No invitations yet.')}</p>`;
+  const lignes = l.map(i=>{
+    const qui = escapeHTML(i.note || i.email || '—') + (i.note && i.email ? `<br><small>${escapeHTML(i.email)}</small>` : '');
+    let etat;
+    if(i.etat === 'utilisee'){
+      etat = `<span class="inv-etat ok">${T('Inscrit','Signed up')}</span> <small>${_dateCourte(i.utilisee_le)}</small><br><small>`
+        + (i.inscrit ? escapeHTML(i.inscrit) + (i.confirme ? '' : ' · ' + T('adresse non confirmée','address not confirmed')) : T('compte supprimé depuis','account since deleted'))
+        + '</small>';
+    } else if(i.etat === 'active'){
+      etat = `<span class="inv-etat">${T('En attente','Pending')}</span><br><small>${T('jusqu’au','until')} ${_dateCourte(i.expire_le)}</small>`;
+    } else if(i.etat === 'expiree'){
+      etat = `<span class="inv-etat ko">${T('Expirée','Expired')}</span> <small>${_dateCourte(i.expire_le)}</small>`;
+    } else {
+      etat = `<span class="inv-etat ko">${T('Annulée','Cancelled')}</span> <small>${_dateCourte(i.revoquee_le)}</small>`;
+    }
+    const actions = i.etat !== 'active' ? '' :
+      `<button type="button" class="ghost" title="${escapeHTML(T('Copier le lien','Copy the link'))}" onclick="copierLienInvitation('${i.code}')">📋</button>`
+      + `<button type="button" class="ghost" title="${escapeHTML(T('Envoyer par e-mail','Send by email'))}" onclick="envoyerInvitationCourriel('${i.code}')">✉️</button>`
+      + `<button type="button" class="ghost" title="${escapeHTML(T('Annuler l’invitation','Cancel the invitation'))}" onclick="annulerInvitationCompte('${i.code}')">✕</button>`;
+    return `<tr><td>${qui}</td><td class="inv-code">${_formatCode(i.code)}</td><td>${etat}</td><td class="inv-actions">${actions}</td></tr>`;
+  }).join('');
+  return `<table class="inv-table"><thead><tr><th>${T('Pour','For')}</th><th class="inv-code">${T('Code','Code')}</th><th>${T('État','Status')}</th><th></th></tr></thead><tbody>${lignes}</tbody></table>`;
+}
+async function creerInvitationCompte(){
+  const note = document.getElementById('invNote').value.trim();
+  const email = document.getElementById('invCourriel').value.trim().toLowerCase();
+  const jours = +document.getElementById('invJours').value || 30;
+  if(email && !_courrielValide(email)) return toast(T('Adresse e-mail non valable.','Invalid email address.'), 'error');
+  const btn = document.getElementById('invCreerBtn'); btn.disabled = true;
+  try{
+    const r = await SB.rpc('creer_invitation', { p_email: email || null, p_note: note || null, p_jours: jours });
+    _invCache = [{ code:r.code, email:r.email, note, expire_le:r.expire_le, etat:'active' }, ..._invCache];
+    document.getElementById('invNote').value = '';
+    document.getElementById('invCourriel').value = '';
+    const box = document.getElementById('invNouvelle');
+    box.innerHTML = `
+      <div class="inv-nouvelle-titre">✓ ${T('Invitation créée','Invitation created')}${note ? ' — ' + escapeHTML(note) : ''}</div>
+      <div class="inv-lien"><input type="text" readonly value="${escapeHTML(_lienInvitation(r.code))}" onclick="this.select()" aria-label="${escapeHTML(T('Lien d’invitation','Invitation link'))}"></div>
+      <div class="cp-actions">
+        <button type="button" class="secondary" onclick="copierLienInvitation('${r.code}')">📋 ${T('Copier le lien','Copy the link')}</button>
+        <button type="button" class="secondary" onclick="envoyerInvitationCourriel('${r.code}')">✉️ ${T('Envoyer par e-mail','Send by email')}</button>
+        ${navigator.share ? `<button type="button" class="secondary" onclick="partagerInvitation('${r.code}')">↗ ${T('Partager','Share')}</button>` : ''}
+      </div>
+      <p class="muted" style="font-size:12px;margin:8px 0 0">${T(
+        `Code ${_formatCode(r.code)}, valable jusqu’au ${_dateCourte(r.expire_le)}${r.email ? ', réservé à ' + escapeHTML(r.email) : ''}. Il ne sert qu’une fois.`,
+        `Code ${_formatCode(r.code)}, valid until ${_dateCourte(r.expire_le)}${r.email ? ', reserved for ' + escapeHTML(r.email) : ''}. It works once.`)}</p>`;
+    box.hidden = false;
+    await _invRafraichir();
+  }catch(e){ toast(_sansPrefixeRpc(e), 'error'); }
+  finally{ btn.disabled = false; }
+}
+function _messageInvitation(code){
+  const i = _invCache.find(x=>x.code === code) || {};
+  const jusqu = i.expire_le ? _dateCourte(i.expire_le) : '';
+  const nom = (document.getElementById('cpNom')?.value || '').trim();
+  return {
+    a: i.email || '',
+    sujet: T('Invitation à Ma Collection','Invitation to Ma Collection'),
+    corps: T(
+`Bonjour,
+
+Je vous invite à essayer Ma Collection, l’application avec laquelle je range ma collection.
+
+Pour créer votre compte, ouvrez ce lien :
+${_lienInvitation(code)}
+
+Code d’invitation : ${_formatCode(code)}${jusqu ? ` (valable jusqu’au ${jusqu})` : ''}. Il ne sert qu’une fois.
+
+C’est une version de test : dites-moi ce qui vous plaît et ce qui coince.
+${nom ? '\n' + nom : ''}`,
+`Hello,
+
+I’d like to invite you to try Ma Collection, the app I use to catalogue my collection.
+
+To create your account, open this link:
+${_lienInvitation(code)}
+
+Invitation code: ${_formatCode(code)}${jusqu ? ` (valid until ${jusqu})` : ''}. It works once.
+
+This is a test version: tell me what you like and what gets in the way.
+${nom ? '\n' + nom : ''}`)
+  };
+}
+async function copierLienInvitation(code){
+  const lien = _lienInvitation(code);
+  try{ await navigator.clipboard.writeText(lien); toast(T('Lien copié ✓','Link copied ✓')); }
+  catch(e){ window.prompt(T('Copiez le lien :','Copy the link:'), lien); }
+}
+function envoyerInvitationCourriel(code){
+  const m = _messageInvitation(code);
+  location.href = 'mailto:' + encodeURIComponent(m.a) + '?subject=' + encodeURIComponent(m.sujet) + '&body=' + encodeURIComponent(m.corps);
+}
+async function partagerInvitation(code){
+  const m = _messageInvitation(code);
+  try{ await navigator.share({ title: m.sujet, text: m.corps }); }catch(e){ /* partage annulé */ }
+}
+async function annulerInvitationCompte(code){
+  if(!confirm(T(`Annuler l’invitation ${_formatCode(code)} ? Son lien ne fonctionnera plus.`, `Cancel invitation ${_formatCode(code)}? Its link will stop working.`))) return;
+  try{
+    await SB.rpc('annuler_invitation', { p_code: code });
+    toast(T('Invitation annulée','Invitation cancelled'));
+    document.getElementById('invNouvelle').hidden = true;
+    await _invRafraichir();
+  }catch(e){ toast(_sansPrefixeRpc(e), 'error'); }
 }
 
 async function openDB(){
@@ -10039,6 +10626,8 @@ async function reloadCache(){
 const uuid = ()=> (crypto.randomUUID ? crypto.randomUUID() :
   "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c=="x"?r:(r&0x3|0x8);return v.toString(16)}));
 
+// Date de cote : « 2026-03-14 » → « 14/03/2026 » (ou format anglais).
+function _dateCote(d){ if(!d || !/^\d{4}-\d{2}-\d{2}/.test(d)) return d||''; const [y,m,j]=d.slice(0,10).split('-'); return _lang==='en' ? `${y}-${m}-${j}` : `${j}/${m}/${y}`; }
 function escapeHTML(s){ return (s??"").toString().replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
 // Assainit une URL destinée à un attribut src d'image.
@@ -10942,10 +11531,13 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemEmboitageFourreau").checked = !!it.emboitageFourreau;
     document.getElementById("itemEmboitageCoffret").checked = !!it.emboitageCoffret;
     document.getElementById("itemEmboitageChemise").checked = !!it.emboitageChemise;
+    document.getElementById("itemEmboitageEnveloppe").checked = !!it.emboitageEnveloppe;
     document.getElementById("itemFinitionCarton").checked = !!it.finitionCarton;
     document.getElementById("itemFinitionBristol").checked = !!it.finitionBristol;
     document.getElementById("itemFinitionDecoupeLaser").checked = !!it.finitionDecoupeLaser;
     document.getElementById("itemFinitionPlexiglas").checked = !!it.finitionPlexiglas;
+    document.getElementById("itemEmboitageTyvek").checked = !!it.emboitageTyvek;
+    document.getElementById("itemEmboitageMarquageChaud").checked = !!it.emboitageMarquageChaud;
     document.getElementById("itemEmboitagePleineToile").checked = !!it.emboitagePleineToile;
     document.getElementById("itemEmboitageEmbossageFroid").checked = !!it.emboitageEmbossageFroid;
     document.getElementById("itemEmboitageQualite").value = it.emboitageQualite||"";
@@ -10982,6 +11574,8 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemJaquetteEtat").value = it.jaquetteEtat||"";
     document.getElementById("itemPurchasePrice").value = it.prixAchat||"";
     document.getElementById("itemCurrentValue").value = it.cote||"";
+    document.getElementById("itemCoteSource").value = it.coteSource||"";
+    document.getElementById("itemCoteDate").value = it.coteDate||"";
     document.getElementById("itemAcquisitionDate").value = it.dateAcquisition||"";
     document.getElementById("itemAcquisitionSource").value = it.lieuAcquisition||"";
     document.getElementById("itemLocation").value = it.localisation||"";
@@ -11287,6 +11881,7 @@ async function _saveItemCore(e){
       dedicace:           document.getElementById("itemDedication").value.trim(),
       objetDesc:          document.getElementById("itemObjetDesc").value.trim(),
       lieuAcquisition:    document.getElementById("itemAcquisitionSource").value.trim(),
+      coteSource:         document.getElementById("itemCoteSource").value.trim(),
       localisation:       document.getElementById("itemLocation").value.trim(),
       notes:              document.getElementById("itemNotes").value.trim(),
       informations:       document.getElementById("itemInfos").value.trim(),
@@ -11300,6 +11895,7 @@ async function _saveItemCore(e){
     };
     const dateFields = {
       dateAcquisition: document.getElementById("itemAcquisitionDate").value,
+      coteDate:        document.getElementById("itemCoteDate").value,
     };
     const tagsRaw = document.getElementById("itemTags").value.trim();
     // Cases à cocher : appliquer seulement si non-indéterminées
@@ -11308,7 +11904,7 @@ async function _saveItemCore(e){
       "itemExlibris","itemExlibrisColle","itemExlibrisSigne","itemExlibrisNumerote","itemTirageInclus","itemSerigraphie",
       "itemMarquePage","itemTimbre","itemCarnetCroquis","itemAutocollant","itemDecalcomanie","itemCartePostale",
       "itemPoster","itemSupplementRedactionnel",
-      "itemObjet","itemEmboitageFourreau","itemEmboitageCoffret","itemEmboitageChemise",
+      "itemObjet","itemEmboitageFourreau","itemEmboitageCoffret","itemEmboitageChemise","itemEmboitageEnveloppe","itemEmboitageTyvek","itemEmboitageMarquageChaud",
       "itemBroche","itemRelie","itemRelieTranchefile","itemDosAgrafe","itemDosSpiral","itemCouvertureSouple","itemCouvertureCartonnee",
       "itemRabats","itemALaSuisse","itemBradel","itemCousu","itemDosCarreColle","itemAnneaux",
       "itemFormatCarre","itemFormatFrancaise","itemFormatItalienne","itemFormatManga","itemFormatComics",
@@ -11325,7 +11921,7 @@ async function _saveItemCore(e){
       itemCarnetCroquis:"carnetCroquis", itemAutocollant:"autocollant", itemDecalcomanie:"decalcomanie", itemCartePostale:"cartePostale",
       itemPoster:"poster", itemSupplementRedactionnel:"supplementRedactionnel",
       itemObjet:"objet",
-      itemEmboitageFourreau:"emboitageFourreau", itemEmboitageCoffret:"emboitageCoffret", itemEmboitageChemise:"emboitageChemise",
+      itemEmboitageFourreau:"emboitageFourreau", itemEmboitageCoffret:"emboitageCoffret", itemEmboitageChemise:"emboitageChemise", itemEmboitageEnveloppe:"emboitageEnveloppe", itemEmboitageTyvek:"emboitageTyvek", itemEmboitageMarquageChaud:"emboitageMarquageChaud",
       itemBroche:"broche", itemRelie:"relie", itemRelieTranchefile:"relieTranchefile", itemDosAgrafe:"dosAgrafe", itemDosSpiral:"dosSpiral", itemCouvertureSouple:"couvertureSouple", itemCouvertureCartonnee:"couvertureCartonnee",
       itemRabats:"rabats", itemALaSuisse:"aLaSuisse",
       itemBradel:"bradel", itemCousu:"cousu", itemDosCarreColle:"dosCarreColle", itemAnneaux:"anneaux",
@@ -11475,10 +12071,13 @@ async function _saveItemCore(e){
     emboitageFourreau: document.getElementById("itemEmboitageFourreau").checked,
     emboitageCoffret: document.getElementById("itemEmboitageCoffret").checked,
     emboitageChemise: document.getElementById("itemEmboitageChemise").checked,
+    emboitageEnveloppe: document.getElementById("itemEmboitageEnveloppe").checked,
     finitionCarton: document.getElementById("itemFinitionCarton").checked,
     finitionBristol: document.getElementById("itemFinitionBristol").checked,
     finitionDecoupeLaser: document.getElementById("itemFinitionDecoupeLaser").checked,
     finitionPlexiglas: document.getElementById("itemFinitionPlexiglas").checked,
+    emboitageTyvek: document.getElementById("itemEmboitageTyvek").checked,
+    emboitageMarquageChaud: document.getElementById("itemEmboitageMarquageChaud").checked,
     emboitagePleineToile: document.getElementById("itemEmboitagePleineToile").checked,
     emboitageQualite: document.getElementById("itemEmboitageQualite").value,
     broche: document.getElementById("itemBroche").checked,
@@ -11516,6 +12115,8 @@ async function _saveItemCore(e){
     tirageAnnotations: document.getElementById("itemTirageAnnotations").value.trim(),
     prixAchat: parseFloat(document.getElementById("itemPurchasePrice").value)||0,
     cote: parseFloat(document.getElementById("itemCurrentValue").value)||0,
+    coteSource: document.getElementById("itemCoteSource").value.trim(),
+    coteDate: document.getElementById("itemCoteDate").value,
     dateAcquisition: document.getElementById("itemAcquisitionDate").value,
     lieuAcquisition: document.getElementById("itemAcquisitionSource").value.trim(),
     localisation: document.getElementById("itemLocation").value.trim(),
@@ -13458,6 +14059,16 @@ function _eiRecette(st){
     balance: st.balance ? { gains: st.balance.gains.map(g=>+g.toFixed(4)),
                             point: [...st.balance.point] } : null,
     reglages: { ...st.reglages },
+    // Ellipse et baguette seulement quand elles ont servi : une recette de
+    // cadre garde sa forme d'avant, lisible par les versions précédentes.
+    ...(st.outil === 'ellipse' && st.ellipse ? { outil:'ellipse',
+      ellipse:{ cx:arr(st.ellipse.cx), cy:arr(st.ellipse.cy), rx:arr(st.ellipse.rx), ry:arr(st.ellipse.ry), a:+st.ellipse.a.toFixed(4) } } : {}),
+    ...(st.outil === 'baguette' ? { outil:'baguette',
+      baguette:{ ops: st.bag.ops.map(o=>({ x:Math.round(o.x), y:Math.round(o.y), tol:o.tol, m:o.m })), inverse: st.bag.inverse, quart: st.bag.quart } } : {}),
+    ...(st.outil === 'objet' && st.obj.rect ? { outil:'objet',
+      objet:{ rect:{ x0:Math.round(st.obj.rect.x0), y0:Math.round(st.obj.rect.y0), x1:Math.round(st.obj.rect.x1), y1:Math.round(st.obj.rect.y1) },
+              traits: st.obj.traits.map(t=>({ m:t.m, r:arr(t.r), pts:t.pts.map(([x,y])=>[Math.round(x), Math.round(y)]) })),
+              quart: st.obj.quart, ...(st.obj.ia ? { ia:true } : {}) } } : {}),
   };
 }
 // …et la relecture, prudente : une recette venue d'ailleurs ne doit pas
@@ -13478,7 +14089,28 @@ function _eiRecetteLue(r, L, H){
     const v = Number(r.reglages[c]);
     if(Number.isFinite(v)) g[c] = Math.max(-180, Math.min(180, Math.round(v)));
   });
-  return (q || b || !_eiReglagesNeutres(g)) ? { quad:q, balance:b, reglages:g } : null;
+  const outil = ['cadre','ellipse','baguette','objet'].includes(r.outil) ? r.outil : 'cadre';
+  const ob = r.objet, fini = v => Number.isFinite(v);
+  const objet = ob && ob.rect && ['x0','y0','x1','y1'].every(k=>fini(ob.rect[k])) ? {
+    rect:{ x0:Math.max(0, Math.min(L, ob.rect.x0)), y0:Math.max(0, Math.min(H, ob.rect.y0)), x1:Math.max(0, Math.min(L, ob.rect.x1)), y1:Math.max(0, Math.min(H, ob.rect.y1)) },
+    traits: (Array.isArray(ob.traits) ? ob.traits : []).slice(0, 60)
+      .filter(t=>t && ['+','-'].includes(t.m) && fini(t.r) && t.r > 0 && Array.isArray(t.pts))
+      .map(t=>({ m:t.m, r:Math.min(400, t.r), pts:t.pts.slice(0, 600).filter(p=>Array.isArray(p) && fini(p[0]) && fini(p[1])).map(([x,y])=>[x,y]) }))
+      .filter(t=>t.pts.length),
+    quart: ((Math.round(Number(ob.quart))||0) % 4 + 4) % 4, ia: ob.ia === true } : null;
+  const el = r.ellipse;
+  const ellipse = el && ['cx','cy','rx','ry','a'].every(k=>Number.isFinite(el[k])) && el.rx > 0 && el.ry > 0
+    ? { cx:Math.max(0, Math.min(L, el.cx)), cy:Math.max(0, Math.min(H, el.cy)), rx:Math.min(L*2, el.rx), ry:Math.min(H*2, el.ry), a:el.a } : null;
+  const bg = r.baguette;
+  const ops = bg && Array.isArray(bg.ops) ? bg.ops.slice(0, 60).filter(o=>o && Number.isFinite(o.x) && Number.isFinite(o.y)
+      && Number.isFinite(o.tol) && ['=','+','-'].includes(o.m))
+      .map(o=>({ x:Math.max(0, Math.min(L-1, Math.round(o.x))), y:Math.max(0, Math.min(H-1, Math.round(o.y))),
+                 tol:Math.max(0, Math.min(255, Math.round(o.tol))), m:o.m })) : [];
+  const baguette = ops.length ? { ops, inverse:!!bg.inverse, quart:((Math.round(Number(bg.quart))||0) % 4 + 4) % 4 } : null;
+  return (q || b || !_eiReglagesNeutres(g) || ellipse || baguette || objet)
+    ? { quad:q, balance:b, reglages:g,
+        outil: (outil==='ellipse' && !ellipse) || (outil==='baguette' && !baguette) || (outil==='objet' && !objet) ? 'cadre' : outil,
+        ellipse, baguette, objet } : null;
 }
 
 // opts : { titre, sousTitre, detecter, recette, boutons:[{id, libelle, principal}], onFin(id, dataURL, recette) }
@@ -13516,6 +14148,26 @@ async function ouvrirEditeurImage(src, opts){
         <div class="ei-lbl">${T('Résultat','Result')}</div>
         <div class="ei-rvb" id="eiRVB"><span class="ei-nuancier" style="background:#000"></span><span>${T('Pipette : survolez l’image','Eyedropper: hover the image')}</span></div>
         <div class="ei-balance" id="eiBalance"><span></span><button type="button" class="secondary" onclick="_eiBalanceRetirer()">${T('Retirer','Remove')}</button></div>
+        <div class="ei-baguette" id="eiObjet">
+          <div class="ei-bag-boutons">
+            <button type="button" class="secondary ei-actif" id="eiObjMode-cadre" onclick="_eiObjMode('cadre')" title="${T('Tracer un cadre autour du sujet','Draw a box around the subject')}">▭ ${T('Encadrer','Box')}</button>
+            <button type="button" class="secondary" id="eiObjMode-plus" onclick="_eiObjMode('+')" title="${T('Peindre ce qui appartient au sujet. Maj+clic : trait droit depuis le dernier point.','Paint what belongs to the subject. Shift+click: straight line from the last point.')}">＋ ${T('Ajouter','Add')}</button>
+            <button type="button" class="secondary" id="eiObjMode-moins" onclick="_eiObjMode('-')" title="${T('Peindre ce qui n’en fait pas partie (ou Alt+glisser)','Paint what does not belong to it (or Alt+drag)')}">− ${T('Retirer','Remove')}</button>
+          </div>
+          <label class="ei-reg"><span>${T('Pinceau','Brush')}</span><input type="range" id="eiObjTaille" min="4" max="80" step="1" value="18" oninput="_eiObjTaille(this.value)"><output id="eiObjTailleVal">18</output></label>
+          <div class="ei-bag-boutons">
+            <button type="button" class="secondary" id="eiObjIA" onclick="_eiObjIABasculer()" title="${T('Détourer avec un modèle d’IA (Segment Anything), exécuté dans le navigateur. Plus précis sur les dessins au trait et les fonds chargés. Premier usage : chargement du modèle (une quarantaine de Mo), ensuite gardé en cache.','Cut out with an AI model (Segment Anything) running in the browser. More accurate on line art and busy backgrounds. First use loads the model (about 40 MB), then it is cached.')}">✨ ${T('Affiner avec l’IA','Refine with AI')}</button>
+            <button type="button" class="secondary" onclick="_eiObjEffacer()">${T('Tout effacer','Clear')}</button>
+          </div>
+          <div class="ei-ia-etat" id="eiObjIAEtat"></div>
+        </div>
+        <div class="ei-baguette" id="eiBaguette">
+          <label class="ei-reg"><span>${T('Tolérance','Tolerance')}</span><input type="range" id="eiBagTol" min="0" max="128" step="1" value="32" oninput="_eiBagTolerance(this.value)"><output id="eiBagTolVal">32</output></label>
+          <div class="ei-bag-boutons">
+            <button type="button" class="secondary" id="eiBagInv" onclick="_eiBagInverser()">${T('Inverser','Invert')}</button>
+            <button type="button" class="secondary" onclick="_eiBagEffacer()">${T('Tout effacer','Clear')}</button>
+          </div>
+        </div>
         <div class="ei-reglages" id="eiReglages">
           <div class="ei-reg-tete">
             <span class="ei-lbl">${T('Réglages','Adjustments')}</span>
@@ -13527,13 +14179,19 @@ async function ouvrirEditeurImage(src, opts){
           ${_eiCurseurHTML('teinte', T('Teinte','Hue'),            180)}
           ${_eiCurseurHTML('sat',    T('Saturation','Saturation'), 100)}
         </div>
-        <div class="ei-conseils">${T(
+        <div class="ei-conseils" id="eiConseils">${T(
           'Posez les quatre coins sur ceux de la couverture, ou faites glisser un côté pour déplacer ses deux coins à la fois. Le cadre peut rester droit pour un simple recadrage ; incliné, il redresse la perspective. Un double-clic dans l’image valide.',
           'Put the four corners on those of the cover, or drag a side to move both its corners at once. Keep the frame straight for a plain crop; tilt it to fix perspective. Double-click the image to confirm.')}</div>
       </div>
     </div>
     <div class="ei-bar">
       <div class="ei-zone ei-gauche">
+        <div class="ei-grp"><span class="ei-grp-lbl">${T('Sélection','Selection')}</span>
+          <button type="button" class="secondary ei-ico ei-actif" id="eiOutil-cadre" aria-label="${T('Cadre','Frame')}" title="${T('Cadre à quatre coins : recadrage et perspective. Faites glisser l’intérieur pour le déplacer, la poignée ↻ pour le faire pivoter (Maj : par pas de 15°).','Four-corner frame: crop and perspective. Drag inside to move it, the ↻ handle to rotate it (Shift: 15° steps).')}" onclick="_eiOutil('cadre')"><svg class="ico ei-trait" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="1"/></svg></button>
+          <button type="button" class="secondary ei-ico" id="eiOutil-ellipse" aria-label="${T('Ellipse','Ellipse')}" title="${T('Sélection elliptique : médaillon, pin’s, ex-libris rond. L’extérieur devient transparent. Maj sur une poignée : cercle parfait.','Elliptical selection: medallion, pin, round bookplate. The outside becomes transparent. Shift on a handle: perfect circle.')}" onclick="_eiOutil('ellipse')"><svg class="ico ei-trait" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="8.5" ry="6.5"/></svg></button>
+          <button type="button" class="secondary ei-ico" id="eiOutil-baguette" aria-label="${T('Baguette magique','Magic wand')}" title="${T('Baguette magique : sélectionne une zone de couleur proche. Maj+clic ajoute, Alt (⌥)+clic retire. L’extérieur devient transparent.','Magic wand: selects an area of similar colour. Shift+click adds, Alt (⌥)+click removes. The outside becomes transparent.')}" onclick="_eiOutil('baguette')"><svg class="ico ei-trait" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 15 9"/><path d="M15 3v2.5M15 12.5V15M9 9h2.5M18.5 9H21M10.8 4.8l1.6 1.6M17.6 11.6l1.6 1.6M19.2 4.8l-1.6 1.6"/></svg></button>
+          <button type="button" class="secondary ei-ico" id="eiOutil-objet" aria-label="${T('Sélection d’objet','Object selection')}" title="${T('Sélection d’objet : encadrez le sujet, il est détouré automatiquement. Corrigez au pinceau ; Alt (⌥) retire, Maj+clic trace un trait droit depuis le dernier point. L’extérieur devient transparent.','Object selection: draw a box around the subject and it is cut out automatically. Fix it with the brush; Alt (⌥) removes, Shift+click draws a straight line from the last point. The outside becomes transparent.')}" onclick="_eiOutil('objet')"><svg class="ico ei-trait" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 2.4"/><circle cx="12" cy="9.2" r="2.6"/><path d="M7.4 18c.7-3 2.4-4.6 4.6-4.6s3.9 1.6 4.6 4.6"/></svg></button>
+        </div>
         <div class="ei-grp"><span class="ei-grp-lbl">${T('Cadre','Frame')}</span>
           <button type="button" class="secondary" onclick="_eiCadre('entier')">${T('Image entière','Whole image')}</button>
           <button type="button" class="secondary" onclick="_eiCadre('portrait')">${T('Portrait 2:3','Portrait 2:3')}</button>
@@ -13569,6 +14227,9 @@ async function ouvrirEditeurImage(src, opts){
                // la balance de série que dans ce cas-là.
                balanceDeSerie: !recette && !!heritee,
                quad:null, canvas:ov.querySelector('#eiCanvas'), echelle:1,
+               outil:'cadre', ellipse:null,
+               bag:{ tol:32, ops:[], inverse:false, quart:0, masque:null, version:0 },
+               obj:{ rect:null, traits:[], quart:0, masque:null, boite:null, version:0, mode:'cadre', taille:18, ia:false },
                reglages: recette ? { ...recette.reglages } : { ...EI_REGLAGES_ZERO },
                boutons, onFin: opts.onFin || (()=>{}), occupe:false };
   // Un fichier importé est en général déjà cadré : on part de l'image entière,
@@ -13576,6 +14237,19 @@ async function ouvrirEditeurImage(src, opts){
   // à un clic pour une photo de téléphone.
   _eiCadre('entier', true);
   if(recette && recette.quad) _eiState.quad = recette.quad.map(pt=>[...pt]);
+  if(recette && recette.ellipse) _eiState.ellipse = { ...recette.ellipse };
+  if(recette && recette.baguette){
+    const b = _eiState.bag;
+    b.ops = recette.baguette.ops.map(o=>({ ...o })); b.inverse = recette.baguette.inverse; b.quart = recette.baguette.quart;
+    if(b.ops.length) b.tol = b.ops[b.ops.length-1].tol;
+  }
+  if(recette && recette.objet){
+    const o = _eiState.obj, r = recette.objet;
+    o.rect = { ...r.rect }; o.traits = r.traits.map(t=>({ m:t.m, r:t.r, pts:t.pts.map(p=>[...p]) })); o.quart = r.quart;
+    o.mode = '+';                                   // le cadre est posé : on reprend au pinceau
+    o.ia = !!r.ia;
+  }
+  _eiOutil(recette && recette.outil || 'cadre', true);
   _eiBalanceAfficher();      // une correction héritée doit se voir, pas seulement s'appliquer
   _eiReglagesAfficher();
   if(recette) toast(T('Retouche retrouvée — cadre, balance et réglages sont ceux de la dernière fois.',
@@ -13631,6 +14305,8 @@ function _eiCadre(mode, silencieux){
     const m = Math.round(Math.min(L, H) * 0.03);
     st.quad = [[m,m],[L-m,m],[L-m,H-m],[m,H-m]];
   }
+  // En mode ellipse, les mêmes boutons posent l'ellipse inscrite dans ce cadre.
+  if(st.outil === 'ellipse') st.ellipse = _eiEllipseDuQuad(st.quad);
   if(!silencieux) _eiDessiner();
 }
 
@@ -13645,6 +14321,7 @@ function _eiDetecter(automatique){
     return false;
   }
   st.quad = q;
+  if(st.outil !== 'cadre') _eiOutil('cadre', true);
   _eiDessiner();
   toast(T('Contour détecté — vérifiez les poignées, puis validez.',
           'Outline detected — check the handles, then confirm.'));
@@ -13655,8 +14332,18 @@ function _eiDetecter(automatique){
 // quel coin joue le rôle de haut-gauche. Rien n'est rééchantillonné.
 function _eiPivoter(sens){
   const st = _eiState; if(!st) return;
-  const q = st.quad;
-  st.quad = sens > 0 ? [q[3], q[0], q[1], q[2]] : [q[1], q[2], q[3], q[0]];
+  if(st.outil === 'ellipse' && st.ellipse){
+    // La même région, lue un quart de tour plus loin : les deux rayons
+    // s'échangent et l'axe tourne de 90°.
+    const e = st.ellipse;
+    st.ellipse = { ...e, rx:e.ry, ry:e.rx, a:_eiAngleNorm(e.a + sens*Math.PI/2) };
+  } else if(st.outil === 'baguette' || st.outil === 'objet'){
+    const m = st.outil === 'objet' ? st.obj : st.bag;
+    m.quart = (m.quart + (sens > 0 ? 1 : 3)) % 4;
+  } else {
+    const q = st.quad;
+    st.quad = sens > 0 ? [q[3], q[0], q[1], q[2]] : [q[1], q[2], q[3], q[0]];
+  }
   _eiDessiner();
 }
 
@@ -13667,20 +14354,28 @@ function _eiDessiner(){
   // Les réglages portent sur l'image, pas sur le voile ni sur les poignées :
   // on les applique avant de les dessiner.
   _eiFiltrerToile(cv, st.reglages);
-  const q = st.quad.map(([x,y])=>[x*e, y*e]);
-  ctx.save();
-  ctx.beginPath(); ctx.rect(0,0,cv.width,cv.height);
-  ctx.moveTo(q[0][0],q[0][1]); for(let i=3;i>=1;i--) ctx.lineTo(q[i][0],q[i][1]); ctx.closePath();
-  ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fill('evenodd'); ctx.restore();
-  _tracerCadreTirets(ctx, q);
-  // Un repère discret sur le coin haut-gauche : c'est lui qui décide de
-  // l'orientation du résultat, et les boutons de pivot le font tourner.
-  q.forEach(([x,y],i)=>{
-    ctx.beginPath(); ctx.arc(x,y,11,0,Math.PI*2);
-    ctx.fillStyle = i===0 ? '#e2b86a' : 'rgba(226,184,106,.85)'; ctx.fill();
-    ctx.strokeStyle='#1a1927'; ctx.lineWidth=2; ctx.stroke();
-    if(i===0){ ctx.fillStyle='#1a1927'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('↖', x, y+1); }
-  });
+  if(st.outil === 'ellipse') _eiDessinerEllipse(ctx, e);
+  else if(st.outil === 'baguette') _eiDessinerBaguette(ctx);
+  else if(st.outil === 'objet') _eiDessinerObjet(ctx, e);
+  else {
+    const q = st.quad.map(([x,y])=>[x*e, y*e]);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0,0,cv.width,cv.height);
+    ctx.moveTo(q[0][0],q[0][1]); for(let i=3;i>=1;i--) ctx.lineTo(q[i][0],q[i][1]); ctx.closePath();
+    ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fill('evenodd'); ctx.restore();
+    _tracerCadreTirets(ctx, q);
+    // La poignée de rotation, au-dessus du côté haut.
+    const pr = _eiPoigneeRotQuad(st.quad, e);
+    _eiDessinerPoigneeRot(ctx, pr.base.map(v=>v*e), pr.pt.map(v=>v*e));
+    // Un repère discret sur le coin haut-gauche : c'est lui qui décide de
+    // l'orientation du résultat, et les boutons de pivot le font tourner.
+    q.forEach(([x,y],i)=>{
+      ctx.beginPath(); ctx.arc(x,y,11,0,Math.PI*2);
+      ctx.fillStyle = i===0 ? '#e2b86a' : 'rgba(226,184,106,.85)'; ctx.fill();
+      ctx.strokeStyle='#1a1927'; ctx.lineWidth=2; ctx.stroke();
+      if(i===0){ ctx.fillStyle='#1a1927'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('↖', x, y+1); }
+    });
+  }
   _eiApercu();
 }
 
@@ -13694,51 +14389,1301 @@ function _eiApercu(){
     _eiApercuDemande = false;
     const st = _eiState; if(!st) return;
     const cv = st.ov.querySelector('#eiPreview'); if(!cv) return;
-    const [L,H] = _tailleRedressee(st.quad, 300);
-    const r = redresserQuad(st.source, st.quad, L, H);
-    cv.width = L; cv.height = H;
-    if(r) cv.getContext('2d').drawImage(_eiFiltrerToile(r, st.reglages), 0, 0);
-    const [vl, vh] = _tailleRedressee(st.quad, PHOTO_MAX);
     const d = st.ov.querySelector('#eiDims');
-    if(d) d.textContent = `${vl} × ${vh} px`;
+    let texte = '';
+    if(st.outil === 'cadre'){
+      const [L,H] = _tailleRedressee(st.quad, 300);
+      const r = redresserQuad(st.source, st.quad, L, H);
+      cv.width = L; cv.height = H;
+      if(r) cv.getContext('2d').drawImage(_eiFiltrerToile(r, st.reglages), 0, 0);
+      const [vl, vh] = _tailleRedressee(st.quad, PHOTO_MAX);
+      texte = `${vl} × ${vh} px`;
+    } else {
+      const r = st.outil === 'ellipse' ? _eiRenduEllipse(st, 300) : _eiRenduMasque(st, st.outil === 'objet' ? st.obj : st.bag, 300);
+      cv.width = r ? r.width : 1; cv.height = r ? r.height : 1;
+      const x = cv.getContext('2d'); x.clearRect(0, 0, cv.width, cv.height);
+      if(r) x.drawImage(_eiFiltrerToile(r, st.reglages), 0, 0);
+      const t = _eiTailleSelection(st, PHOTO_MAX);
+      texte = t ? `${t[0]} × ${t[1]} px` : T('Aucune sélection','No selection');
+      if(st.outil === 'objet' && st.obj.enCalcul) texte = T('Analyse…','Analysing…');
+    }
+    cv.classList.toggle('ei-transparent', st.outil !== 'cadre');
+    const ang = _eiAngleSelection(st);
+    if(ang) texte += ` · ↻ ${ang > 0 ? '+' : ''}${ang}°`;
+    if(d) d.textContent = texte;
   });
 }
 
 function _eiBrancher(){
   const st = _eiState, cv = st.canvas;
-  let saisi = -1, cote = null;
+  // Une seule saisie à la fois : coin, côté, rotation, déplacement — du cadre
+  // ou de l'ellipse.
+  let saisie = null;
   const versImage = ev => {
     const r = cv.getBoundingClientRect();
     return [ (ev.clientX - r.left) * (cv.width / r.width)  / st.echelle,
              (ev.clientY - r.top)  * (cv.height / r.height) / st.echelle ];
   };
+  const W = () => st.source.width, H = () => st.source.height;
   cv.addEventListener('pointerdown', ev=>{
     const [x,y] = versImage(ev);
     if(st.pipette){ ev.preventDefault(); _eiBalanceDepuis(x, y); return; }
-    const c = _cadreCible(st.quad, x, y, 30 / st.echelle, 14 / st.echelle);
-    if(!c) return;
-    if(c.type === 'coin') saisi = c.i; else cote = _coteSaisi(st.quad, c.i, x, y);
+    if(st.outil === 'baguette'){
+      ev.preventDefault();
+      _eiBagClic(x, y, ev.shiftKey ? '+' : (ev.altKey ? '-' : '='));
+      return;
+    }
+    if(st.outil === 'objet'){
+      ev.preventDefault();
+      if(st.obj.enCalcul) return;
+      let mode = ev.altKey ? '-' : st.obj.mode;
+      if(!st.obj.rect) mode = 'cadre';               // un cadre d'abord
+      // Maj+clic : un trait droit depuis le dernier point peint, comme dans
+      // Photoshop. Les Maj+clics s'enchaînent, chacun repartant du précédent.
+      const dernier = _eiObjDernierPoint(st);
+      if(ev.shiftKey && mode !== 'cadre' && dernier){
+        const r = Math.round(st.obj.taille / 2 / st.echelle * 10) / 10;
+        st.obj.apercuLigne = null;
+        st.obj.traits.push({ m:mode, r, pts:[[...dernier], [Math.round(x), Math.round(y)]] });
+        _eiObjCalculer();
+        return;
+      }
+      saisie = mode === 'cadre' ? { type:'objCadre', x0:x, y0:y }
+        : { type:'objTrait', trait:{ m:mode, r:Math.round(st.obj.taille / 2 / st.echelle * 10) / 10, pts:[[Math.round(x), Math.round(y)]] } };
+      if(saisie.type === 'objTrait') st.obj.traitEnCours = saisie.trait;
+      cv.setPointerCapture(ev.pointerId);
+      _eiDessiner();
+      return;
+    }
+    saisie = st.outil === 'ellipse' ? _eiEllipseCible(st, x, y) : _eiQuadCible(st, x, y);
+    if(!saisie) return;
     cv.setPointerCapture(ev.pointerId); ev.preventDefault();
   });
   cv.addEventListener('pointermove', ev=>{
-    if(st.pipette){ const [x,y] = versImage(ev); _eiLire(x, y, ev); return; }
     const [x,y] = versImage(ev);
-    if(cote){ _coteDeplacer(st.quad, cote, x, y, st.source.width, st.source.height); _eiDessiner(); return; }
-    if(saisi<0){ cv.style.cursor = _cadreCurseur(st.quad, _cadreCible(st.quad, x, y, 30 / st.echelle, 14 / st.echelle)); return; }
-    st.quad[saisi] = [ Math.max(0, Math.min(st.source.width, x)), Math.max(0, Math.min(st.source.height, y)) ];
-    _eiDessiner();
+    if(st.pipette){ _eiLire(x, y, ev); return; }
+    if(st.outil === 'baguette'){ cv.style.cursor = 'crosshair'; return; }
+    if(st.outil === 'objet'){
+      if(!saisie){
+        cv.style.cursor = st.obj.enCalcul ? 'progress' : 'crosshair';
+        // Maj enfoncée : on montre le trait droit que donnerait un clic.
+        const dernier = _eiObjDernierPoint(st);
+        const avant = st.obj.apercuLigne;
+        st.obj.apercuLigne = (ev.shiftKey && dernier && st.obj.rect && st.obj.mode !== 'cadre' && !st.obj.enCalcul)
+          ? { a:dernier, b:[x, y], m: ev.altKey ? '-' : st.obj.mode } : null;
+        if(avant || st.obj.apercuLigne) _eiDessiner();
+        return;
+      }
+      const cx = Math.max(0, Math.min(W(), x)), cy = Math.max(0, Math.min(H(), y));
+      if(saisie.type === 'objCadre') st.obj.trace = { x0:saisie.x0, y0:saisie.y0, x1:cx, y1:cy };
+      else {
+        const pts = saisie.trait.pts, [px,py] = pts[pts.length-1];
+        // Points entiers dès la saisie : la recette les garde tels quels, et
+        // la réouverture refait exactement le même calcul.
+        if(Math.hypot(cx-px, cy-py) >= 3 / st.echelle) pts.push([Math.round(cx), Math.round(cy)]);
+      }
+      _eiDessiner(); return;
+    }
+    if(!saisie){
+      const c = st.outil === 'ellipse' ? _eiEllipseCible(st, x, y) : _eiQuadCible(st, x, y);
+      cv.style.cursor = !c ? '' : c.type === 'rot' ? 'grab' : c.type === 'deplacer' ? 'move'
+        : c.type === 'cote' ? _cadreCurseur(st.quad, c.cible) : c.type === 'axe' ? 'pointer' : 'move';
+      return;
+    }
+    if(saisie.type === 'rot'){
+      cv.style.cursor = 'grabbing';
+      let delta = Math.atan2(y - saisie.cy, x - saisie.cx) - saisie.ang0;
+      if(ev.shiftKey){ const pas = Math.PI/12; delta = Math.round((saisie.base + delta) / pas) * pas - saisie.base; }
+      if(st.outil === 'ellipse'){
+        st.ellipse.a = _eiAngleNorm(saisie.a0 + delta);
+      } else {
+        const co = Math.cos(delta), si = Math.sin(delta);
+        const q = saisie.quad0.map(([px,py])=>[ saisie.cx + (px-saisie.cx)*co - (py-saisie.cy)*si,
+                                                saisie.cy + (px-saisie.cx)*si + (py-saisie.cy)*co ]);
+        // Un cadre qui sortirait de l'image rendrait du noir : on s'arrête au bord.
+        if(q.every(([px,py])=>px >= 0 && py >= 0 && px <= W() && py <= H())) st.quad = q;
+      }
+      _eiDessiner(); return;
+    }
+    if(saisie.type === 'deplacer'){
+      let dx = x - saisie.x0, dy = y - saisie.y0;
+      if(st.outil === 'ellipse'){
+        st.ellipse.cx = Math.max(0, Math.min(W(), saisie.e0.cx + dx));
+        st.ellipse.cy = Math.max(0, Math.min(H(), saisie.e0.cy + dy));
+      } else {
+        const xs = saisie.quad0.map(p=>p[0]), ys = saisie.quad0.map(p=>p[1]);
+        dx = Math.max(-Math.min(...xs), Math.min(W() - Math.max(...xs), dx));
+        dy = Math.max(-Math.min(...ys), Math.min(H() - Math.max(...ys), dy));
+        st.quad = saisie.quad0.map(([px,py])=>[px+dx, py+dy]);
+      }
+      _eiDessiner(); return;
+    }
+    if(saisie.type === 'axe'){
+      const e = st.ellipse, co = Math.cos(e.a), si = Math.sin(e.a);
+      const u = (x - e.cx)*co + (y - e.cy)*si, v = -(x - e.cx)*si + (y - e.cy)*co;
+      const mini = 6 / st.echelle;
+      if(saisie.axe === 'x') e.rx = Math.max(mini, Math.abs(u)); else e.ry = Math.max(mini, Math.abs(v));
+      if(ev.shiftKey){ if(saisie.axe === 'x') e.ry = e.rx; else e.rx = e.ry; }
+      _eiDessiner(); return;
+    }
+    if(saisie.type === 'cote'){ _coteDeplacer(st.quad, saisie.c, x, y, W(), H()); _eiDessiner(); return; }
+    if(saisie.type === 'coin'){
+      st.quad[saisie.i] = [ Math.max(0, Math.min(W(), x)), Math.max(0, Math.min(H(), y)) ];
+      _eiDessiner();
+    }
   });
   cv.addEventListener('pointerleave', ()=>{ const l = st.ov.querySelector('#eiLecture'); if(l) l.style.display = 'none'; });
-  const fin = ev=>{ if(saisi<0 && !cote) return; saisi=-1; cote=null; try{ cv.releasePointerCapture(ev.pointerId); }catch(e){} };
+  const fin = ev=>{
+    if(!saisie) return;
+    const s = saisie; saisie = null; cv.style.cursor = '';
+    try{ cv.releasePointerCapture(ev.pointerId); }catch(e){}
+    if(s.type === 'objCadre'){
+      const t = st.obj.trace; st.obj.trace = null;
+      if(t && Math.abs(t.x1 - t.x0) * st.echelle > 8 && Math.abs(t.y1 - t.y0) * st.echelle > 8){
+        st.obj.rect = { x0:Math.round(Math.min(t.x0,t.x1)), y0:Math.round(Math.min(t.y0,t.y1)), x1:Math.round(Math.max(t.x0,t.x1)), y1:Math.round(Math.max(t.y0,t.y1)) };
+        st.obj.traits = []; st.obj.quart = 0;
+        _eiObjMode('+', true);                      // la suite se corrige au pinceau
+        _eiObjCalculer();
+      } else _eiDessiner();
+    } else if(s.type === 'objTrait'){
+      st.obj.traitEnCours = null;
+      st.obj.traits.push(s.trait);
+      _eiObjCalculer();
+    }
+  };
   cv.addEventListener('pointerup', fin);
   cv.addEventListener('pointercancel', fin);
   // Comme dans Photoshop : un double-clic dans l'image valide le recadrage.
   cv.addEventListener('dblclick', ev=>{
     ev.preventDefault();
     if(st.pipette) return;                 // en pipette, deux clics sont deux lectures
+    if(st.outil === 'baguette' || st.outil === 'objet') return;    // à la baguette ou au pinceau aussi
     const p = st.boutons.find(b=>b.principal);
     if(p) _eiFin(p.id);
   });
+}
+
+// ═══ Outils de sélection : cadre, ellipse, baguette magique ═══════════════
+// Le cadre redresse et rend un rectangle opaque (JPEG). L'ellipse et la
+// baguette détourent : ce qui est hors sélection devient transparent (PNG,
+// puis WebP à l'envoi en ligne — les deux gardent la transparence).
+const _EI_CONSEILS = {
+  cadre: ['Posez les quatre coins sur ceux de la couverture, ou faites glisser un côté pour déplacer ses deux coins à la fois. Glissez l’intérieur pour déplacer le cadre, la poignée ↻ pour le faire pivoter (Maj : pas de 15°). Un double-clic valide.',
+          'Put the four corners on those of the cover, or drag a side to move both its corners. Drag inside to move the frame, the ↻ handle to rotate it (Shift: 15° steps). Double-click to confirm.'],
+  ellipse: ['Glissez l’intérieur pour déplacer l’ellipse, une poignée pour l’étirer (Maj : cercle parfait), la poignée ↻ pour la faire pivoter (Maj : pas de 15°). L’extérieur devient transparent. Un double-clic valide.',
+            'Drag inside to move the ellipse, a handle to stretch it (Shift: perfect circle), the ↻ handle to rotate it (Shift: 15° steps). The outside becomes transparent. Double-click to confirm.'],
+  objet: ['Encadrez le sujet, même approximativement : le cadre le désigne, et la sélection suit son vrai bord, au-delà du cadre s’il le faut. Corrigez ensuite au pinceau — « Ajouter » sur ce qui manque, « Retirer » (ou Alt (⌥)+glisser) sur ce qui déborde. Maj+clic trace un trait droit depuis le dernier point peint ; un contour « Ajouter » fermé sélectionne tout son intérieur. L’extérieur devient transparent.',
+           'Box the subject, even roughly: the box points at it, and the selection follows its real edge, beyond the box if needed. Then fix it with the brush — “Add” on what is missing, “Remove” (or Alt (⌥)+drag) on what spills over. Shift+click draws a straight line from the last painted point; a closed “Add” outline selects everything inside it. The outside becomes transparent.'],
+  baguette: ['Cliquez une zone : les pixels voisins de couleur proche sont sélectionnés. Maj+clic ajoute, Alt (⌥)+clic retire. Pour détourer un objet sur un fond uni, cliquez le fond puis « Inverser ». La tolérance règle le dernier clic.',
+             'Click an area: neighbouring pixels of similar colour are selected. Shift+click adds, Alt (⌥)+click removes. To cut out an object on a plain background, click the background then “Invert”. Tolerance adjusts the last click.'],
+};
+function _eiOutil(nom, silencieux){
+  const st = _eiState; if(!st) return;
+  if(!['cadre','ellipse','baguette','objet'].includes(nom)) nom = 'cadre';
+  if(st.pipette) _eiPipetteBasculer(false);
+  st.outil = nom;
+  if(nom === 'ellipse' && !st.ellipse) st.ellipse = _eiEllipseDuQuad(st.quad);
+  ['cadre','ellipse','baguette','objet'].forEach(o=>st.ov.querySelector('#eiOutil-'+o)?.classList.toggle('ei-actif', o === nom));
+  st.ov.querySelector('#eiBaguette')?.classList.toggle('ei-on', nom === 'baguette');
+  st.ov.querySelector('#eiObjet')?.classList.toggle('ei-on', nom === 'objet');
+  const c = st.ov.querySelector('#eiConseils'); if(c) c.textContent = T(..._EI_CONSEILS[nom]);
+  // « Image entière », « Portrait » : utiles au cadre et à l'ellipse, pas à la baguette.
+  st.ov.querySelectorAll('.ei-bar button[onclick^="_eiCadre"]').forEach(b=>b.disabled = nom === 'baguette' || nom === 'objet');
+  if(nom === 'objet'){
+    _eiObjMode(st.obj.rect ? st.obj.mode : 'cadre', true);
+    const t = st.ov.querySelector('#eiObjTaille'); if(t) t.value = st.obj.taille;
+    const o = st.ov.querySelector('#eiObjTailleVal'); if(o) o.textContent = st.obj.taille;
+    st.ov.querySelector('#eiObjIA')?.classList.toggle('ei-actif', !!st.obj.ia);
+    if(st.obj.rect && !st.obj.masque) _eiObjCalculer();
+  }
+  if(nom === 'baguette'){
+    const t = st.ov.querySelector('#eiBagTol'); if(t) t.value = st.bag.tol;
+    const o = st.ov.querySelector('#eiBagTolVal'); if(o) o.textContent = st.bag.tol;
+    st.ov.querySelector('#eiBagInv')?.classList.toggle('ei-actif', st.bag.inverse);
+    _eiBagCalculer();
+  }
+  if(!silencieux) _eiDessiner();
+}
+function _eiAngleNorm(a){ a = a % (2*Math.PI); if(a > Math.PI) a -= 2*Math.PI; if(a <= -Math.PI) a += 2*Math.PI; return a; }
+// L'angle de la sélection, en degrés entiers, pour l'en-tête (0 = droite).
+function _eiAngleSelection(st){
+  let a = 0;
+  if(st.outil === 'ellipse' && st.ellipse) a = st.ellipse.a;
+  else if(st.outil === 'cadre'){ const [p,q] = st.quad; a = Math.atan2(q[1]-p[1], q[0]-p[0]); }
+  else return 0;
+  // Ramené à ±45° : un quart de tour est une orientation, pas une inclinaison.
+  let d = a * 180 / Math.PI; d = ((d + 45) % 90 + 90) % 90 - 45;
+  return Math.round(d);
+}
+
+// ── Cadre : rotation et déplacement ──────────────────────────────────────
+function _eiCentre(quad){ return [ quad.reduce((s,p)=>s+p[0],0)/4, quad.reduce((s,p)=>s+p[1],0)/4 ]; }
+// La poignée de rotation : 34 px d'écran au-delà du milieu du côté haut, vers l'extérieur.
+function _eiPoigneeRotQuad(quad, echelle){
+  const [cx,cy] = _eiCentre(quad);
+  const m = [ (quad[0][0]+quad[1][0])/2, (quad[0][1]+quad[1][1])/2 ];
+  let nx = m[0]-cx, ny = m[1]-cy; const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
+  const d = 34 / echelle;
+  return { base:m, pt:[ m[0] + nx*d, m[1] + ny*d ] };
+}
+function _eiDessinerPoigneeRot(ctx, base, pt){
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(base[0], base[1]); ctx.lineTo(pt[0], pt[1]);
+  ctx.strokeStyle = 'rgba(226,184,106,.85)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(pt[0], pt[1], 10, 0, Math.PI*2);
+  ctx.fillStyle = '#1a1927'; ctx.fill(); ctx.strokeStyle = '#e2b86a'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#e2b86a'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('↻', pt[0], pt[1]+1);
+  ctx.restore();
+}
+function _eiDansQuad(quad, x, y){
+  let dedans = false;
+  for(let i=0, j=3; i<4; j=i++){
+    const [xi,yi] = quad[i], [xj,yj] = quad[j];
+    if(((yi > y) !== (yj > y)) && (x < (xj-xi)*(y-yi)/(yj-yi) + xi)) dedans = !dedans;
+  }
+  return dedans;
+}
+function _eiQuadCible(st, x, y){
+  const e = st.echelle;
+  const pr = _eiPoigneeRotQuad(st.quad, e);
+  if(Math.hypot(x - pr.pt[0], y - pr.pt[1]) <= 14 / e){
+    const [cx,cy] = _eiCentre(st.quad), ang0 = Math.atan2(y-cy, x-cx);
+    const [p,q] = st.quad;
+    return { type:'rot', cx, cy, ang0, base:Math.atan2(q[1]-p[1], q[0]-p[0]), quad0:st.quad.map(pt=>[...pt]) };
+  }
+  const c = _cadreCible(st.quad, x, y, 30 / e, 14 / e);
+  if(c && c.type === 'coin') return { type:'coin', i:c.i };
+  if(c) return { type:'cote', cible:c, c:_coteSaisi(st.quad, c.i, x, y) };
+  if(_eiDansQuad(st.quad, x, y)) return { type:'deplacer', x0:x, y0:y, quad0:st.quad.map(pt=>[...pt]) };
+  return null;
+}
+
+// ── Ellipse ──────────────────────────────────────────────────────────────
+// Centre, deux demi-axes et un angle, en pixels de l'image d'origine.
+function _eiEllipseDuQuad(quad){
+  const xs = quad.map(p=>p[0]), ys = quad.map(p=>p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  return { cx:(x0+x1)/2, cy:(y0+y1)/2, rx:Math.max(8,(x1-x0)/2), ry:Math.max(8,(y1-y0)/2), a:0 };
+}
+// Les quatre poignées d'axe (E, S, O, N) et celle de rotation, au-delà du nord.
+function _eiEllipsePoignees(el, echelle){
+  const co = Math.cos(el.a), si = Math.sin(el.a);
+  const pt = (u, v) => [ el.cx + u*co - v*si, el.cy + u*si + v*co ];
+  return { axes:[ { axe:'x', p:pt(el.rx,0) }, { axe:'y', p:pt(0,el.ry) }, { axe:'x', p:pt(-el.rx,0) }, { axe:'y', p:pt(0,-el.ry) } ],
+           rotBase: pt(0,-el.ry), rot: pt(0, -el.ry - 34/echelle) };
+}
+function _eiEllipseCible(st, x, y){
+  const el = st.ellipse, e = st.echelle; if(!el) return null;
+  const P = _eiEllipsePoignees(el, e);
+  if(Math.hypot(x - P.rot[0], y - P.rot[1]) <= 14 / e)
+    return { type:'rot', cx:el.cx, cy:el.cy, ang0:Math.atan2(y-el.cy, x-el.cx), a0:el.a, base:el.a };
+  for(const h of P.axes) if(Math.hypot(x - h.p[0], y - h.p[1]) <= 16 / e) return { type:'axe', axe:h.axe };
+  const co = Math.cos(el.a), si = Math.sin(el.a);
+  const u = (x-el.cx)*co + (y-el.cy)*si, v = -(x-el.cx)*si + (y-el.cy)*co;
+  if((u*u)/(el.rx*el.rx) + (v*v)/(el.ry*el.ry) <= 1) return { type:'deplacer', x0:x, y0:y, e0:{ ...el } };
+  return null;
+}
+function _eiDessinerEllipse(ctx, e){
+  const st = _eiState, el = st.ellipse; if(!el) return;
+  const cv = ctx.canvas;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, cv.width, cv.height);
+  ctx.ellipse(el.cx*e, el.cy*e, el.rx*e, el.ry*e, el.a, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fill('evenodd');
+  const contour = () => { ctx.beginPath(); ctx.ellipse(el.cx*e, el.cy*e, el.rx*e, el.ry*e, el.a, 0, Math.PI*2); };
+  ctx.setLineDash([9,7]);
+  contour(); ctx.strokeStyle = 'rgba(20,18,28,.75)'; ctx.lineWidth = 3.5; ctx.stroke();
+  contour(); ctx.strokeStyle = '#e2b86a'; ctx.lineWidth = 1.6; ctx.stroke();
+  ctx.restore();
+  const P = _eiEllipsePoignees(el, e);
+  _eiDessinerPoigneeRot(ctx, P.rotBase.map(v=>v*e), P.rot.map(v=>v*e));
+  P.axes.forEach(h=>{
+    ctx.beginPath(); ctx.arc(h.p[0]*e, h.p[1]*e, 9, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(226,184,106,.9)'; ctx.fill(); ctx.strokeStyle = '#1a1927'; ctx.lineWidth = 2; ctx.stroke();
+  });
+  // Le centre, pour viser un médaillon.
+  ctx.beginPath(); ctx.arc(el.cx*e, el.cy*e, 3, 0, Math.PI*2); ctx.fillStyle = '#e2b86a'; ctx.fill();
+}
+// Le rendu : la boîte de l'ellipse redressée (l'angle annulé), l'extérieur transparent.
+function _eiRenduEllipse(st, plafond){
+  const el = st.ellipse; if(!el) return null;
+  let L = 2*el.rx, H = 2*el.ry;
+  const k = Math.min(1, plafond / Math.max(L, H));
+  L = Math.max(16, Math.round(L*k)); H = Math.max(16, Math.round(H*k));
+  const c = document.createElement('canvas'); c.width = L; c.height = H;
+  const x = c.getContext('2d', {willReadFrequently:true});
+  x.save();
+  x.beginPath(); x.ellipse(L/2, H/2, L/2, H/2, 0, 0, Math.PI*2); x.clip();
+  x.translate(L/2, H/2); x.scale(L/(2*el.rx), H/(2*el.ry)); x.rotate(-el.a);
+  x.imageSmoothingQuality = 'high';
+  x.drawImage(st.source, -el.cx, -el.cy);
+  x.restore();
+  return c;
+}
+function _eiTailleSelection(st, plafond){
+  let L, H;
+  if(st.outil === 'ellipse' && st.ellipse){ L = 2*st.ellipse.rx; H = 2*st.ellipse.ry; }
+  else if(st.outil === 'baguette' || st.outil === 'objet'){
+    const m = st.outil === 'objet' ? st.obj : st.bag, b = m.boite; if(!b) return null;
+    L = b.x1 - b.x0 + 1; H = b.y1 - b.y0 + 1;
+    if(m.quart % 2) [L, H] = [H, L];
+  } else return null;
+  const k = Math.min(1, plafond / Math.max(L, H));
+  return [ Math.max(1, Math.round(L*k)), Math.max(1, Math.round(H*k)) ];
+}
+
+// ═══ Sélection d'objet : GrabCut (coupe de graphe + mélanges gaussiens) ═══
+// Le principe de l'outil « Sélection d'objet » : on encadre le sujet ; tout
+// ce qui est hors du cadre est du fond, le reste est « probablement l'objet ».
+// Deux modèles de couleur (objet, fond) s'affinent à tour de rôle avec une
+// coupe minimale dans le graphe des pixels, qui préfère passer là où l'image
+// change de couleur. Des traits de pinceau imposent ensuite des pixels.
+// Référence : Rother, Kolmogorov, Blake, « GrabCut », SIGGRAPH 2004 ; flot
+// maximal de Boykov-Kolmogorov (2004).
+
+// ── Flot maximal de Boykov-Kolmogorov ──────────────────────────────────────
+// Capacités entières : l'égalité à zéro reste exacte, sans dérive flottante.
+function _gcGraphe(nNoeuds, nArcsMax){
+  return {
+    n: nNoeuds, m: 0,
+    premier: new Int32Array(nNoeuds).fill(-1),
+    tete: new Int32Array(nArcsMax), suivant: new Int32Array(nArcsMax), cap: new Int32Array(nArcsMax),
+    term: new Int32Array(nNoeuds),           // > 0 : vers la source ; < 0 : vers le puits
+  };
+}
+// Une arête entre i et j : deux arcs jumeaux (a, a^1).
+function _gcArete(g, i, j, cij, cji){
+  let a = g.m;
+  g.tete[a] = j; g.cap[a] = cij; g.suivant[a] = g.premier[i]; g.premier[i] = a; a++;
+  g.tete[a] = i; g.cap[a] = cji; g.suivant[a] = g.premier[j]; g.premier[j] = a; a++;
+  g.m = a;
+}
+function _gcTerminal(g, i, versSource, versPuits){
+  // Seule la différence compte pour la coupe ; le reste passe d'office.
+  g.term[i] += versSource - versPuits;
+}
+// Rend un tableau : 1 pour les nœuds du côté source (l'objet), 0 sinon.
+function _gcFlotMax(g){
+  const N = g.n, tete = g.tete, suiv = g.suivant, cap = g.cap, prem = g.premier, tr = g.term;
+  const LIBRE = -1, TERMINAL = -2, ORPHELIN = -3;
+  const parent = new Int32Array(N).fill(LIBRE);
+  const puits = new Uint8Array(N);
+  const ts = new Int32Array(N), dist = new Int32Array(N);
+  // File des actifs, circulaire, avec marque de présence.
+  const file = new Int32Array(N + 1); let fd = 0, ff = 0; const dansFile = new Uint8Array(N);
+  const activer = i => { if(!dansFile[i]){ dansFile[i] = 1; file[ff] = i; ff = ff === N ? 0 : ff + 1; } };
+  const orphelins = []; let temps = 0;
+  for(let i=0;i<N;i++){
+    if(tr[i] > 0){ parent[i] = TERMINAL; puits[i] = 0; dist[i] = 1; activer(i); }
+    else if(tr[i] < 0){ parent[i] = TERMINAL; puits[i] = 1; dist[i] = 1; activer(i); }
+  }
+  const orphelin = i => { parent[i] = ORPHELIN; orphelins.push(i); };
+
+  while(fd !== ff){
+    const i = file[fd]; fd = fd === N ? 0 : fd + 1; dansFile[i] = 0;
+    if(parent[i] === LIBRE) continue;
+    // ── Croissance ──
+    let milieu = -1;
+    if(!puits[i]){
+      for(let a = prem[i]; a !== -1; a = suiv[a]){
+        if(cap[a] <= 0) continue;
+        const j = tete[a];
+        if(parent[j] === LIBRE){ puits[j] = 0; parent[j] = a ^ 1; ts[j] = ts[i]; dist[j] = dist[i] + 1; activer(j); }
+        else if(puits[j]){ milieu = a; break; }
+        else if(ts[j] <= ts[i] && dist[j] > dist[i]){ parent[j] = a ^ 1; ts[j] = ts[i]; dist[j] = dist[i] + 1; }
+      }
+    } else {
+      for(let a = prem[i]; a !== -1; a = suiv[a]){
+        if(cap[a ^ 1] <= 0) continue;
+        const j = tete[a];
+        if(parent[j] === LIBRE){ puits[j] = 1; parent[j] = a ^ 1; ts[j] = ts[i]; dist[j] = dist[i] + 1; activer(j); }
+        else if(!puits[j]){ milieu = a ^ 1; break; }
+        else if(ts[j] <= ts[i] && dist[j] > dist[i]){ parent[j] = a ^ 1; ts[j] = ts[i]; dist[j] = dist[i] + 1; }
+      }
+    }
+    if(milieu < 0) continue;
+    // Le nœud a peut-être d'autres voisins à explorer : il reste actif.
+    activer(i);
+    temps++;
+    // ── Augmentation le long du chemin source → milieu → puits ──
+    const u = tete[milieu ^ 1], v = tete[milieu];
+    let b = cap[milieu];
+    for(let k = u; ; ){ const p = parent[k]; if(p === TERMINAL){ if(tr[k] < b) b = tr[k]; break; } if(cap[p ^ 1] < b) b = cap[p ^ 1]; k = tete[p]; }
+    for(let k = v; ; ){ const p = parent[k]; if(p === TERMINAL){ if(-tr[k] < b) b = -tr[k]; break; } if(cap[p] < b) b = cap[p]; k = tete[p]; }
+    cap[milieu ^ 1] += b; cap[milieu] -= b;
+    for(let k = u; ; ){ const p = parent[k];
+      if(p === TERMINAL){ tr[k] -= b; if(tr[k] === 0) orphelin(k); break; }
+      cap[p] += b; cap[p ^ 1] -= b; if(cap[p ^ 1] === 0) orphelin(k); k = tete[p]; }
+    for(let k = v; ; ){ const p = parent[k];
+      if(p === TERMINAL){ tr[k] += b; if(tr[k] === 0) orphelin(k); break; }
+      cap[p ^ 1] += b; cap[p] -= b; if(cap[p] === 0) orphelin(k); k = tete[p]; }
+    // ── Adoption des orphelins ──
+    while(orphelins.length){
+      const o = orphelins.pop(), cotePuits = puits[o];
+      let meilleur = -1, dmin = 1e9;
+      for(let a = prem[o]; a !== -1; a = suiv[a]){
+        if(cotePuits ? cap[a] <= 0 : cap[a ^ 1] <= 0) continue;
+        const j = tete[a];
+        if(puits[j] !== cotePuits || parent[j] === LIBRE) continue;
+        // Remonter jusqu'à un terminal pour vérifier que j y est bien relié.
+        let d = 0, k = j;
+        for(;;){
+          if(ts[k] === temps){ d += dist[k]; break; }
+          const p = parent[k]; d++;
+          if(p === TERMINAL){ ts[k] = temps; dist[k] = 1; break; }
+          if(p === ORPHELIN || p === LIBRE){ d = 1e9; break; }
+          k = tete[p];
+        }
+        if(d < 1e9){
+          if(d < dmin){ meilleur = a; dmin = d; }
+          for(let k2 = j; ts[k2] !== temps; k2 = tete[parent[k2]]){ ts[k2] = temps; dist[k2] = d; d--; }
+        }
+      }
+      if(meilleur >= 0){ parent[o] = meilleur; ts[o] = temps; dist[o] = dmin + 1; continue; }
+      // Pas de nouveau parent : o redevient libre, ses enfants deviennent orphelins.
+      ts[o] = 0;
+      for(let a = prem[o]; a !== -1; a = suiv[a]){
+        const j = tete[a];
+        if(puits[j] !== cotePuits || parent[j] === LIBRE) continue;
+        if(cotePuits ? cap[a ^ 1] > 0 : cap[a] > 0) activer(j);
+        const pj = parent[j];
+        if(pj !== TERMINAL && pj !== ORPHELIN && tete[pj] === o) orphelin(j);
+      }
+      parent[o] = LIBRE;
+    }
+  }
+  const res = new Uint8Array(N);
+  for(let i=0;i<N;i++) res[i] = (parent[i] !== LIBRE && !puits[i]) ? 1 : 0;
+  return res;
+}
+
+// ── Mélanges gaussiens de couleur (5 composantes, covariance pleine) ───────
+const _GC_K = 5;
+function _gcGmmVide(){ return { w:new Float64Array(_GC_K), mu:new Float64Array(_GC_K*3), inv:new Float64Array(_GC_K*9), lnorm:new Float64Array(_GC_K) }; }
+// Apprend le mélange à partir des pixels (indices) et de leur composante.
+function _gcGmmApprendre(gmm, px, indices, comp){
+  const s = new Float64Array(_GC_K*3), p = new Float64Array(_GC_K*9), n = new Float64Array(_GC_K);
+  for(let t=0;t<indices.length;t++){
+    const i = indices[t], k = comp[i], q = i*4, r = px[q], g = px[q+1], b = px[q+2];
+    n[k]++; s[k*3]+=r; s[k*3+1]+=g; s[k*3+2]+=b;
+    const P = k*9;
+    p[P]+=r*r; p[P+1]+=r*g; p[P+2]+=r*b; p[P+4]+=g*g; p[P+5]+=g*b; p[P+8]+=b*b;
+  }
+  const total = indices.length || 1;
+  for(let k=0;k<_GC_K;k++){
+    const nk = n[k];
+    if(nk < 1){ gmm.w[k] = 0; continue; }
+    gmm.w[k] = nk / total;
+    const m0 = s[k*3]/nk, m1 = s[k*3+1]/nk, m2 = s[k*3+2]/nk;
+    gmm.mu[k*3]=m0; gmm.mu[k*3+1]=m1; gmm.mu[k*3+2]=m2;
+    const P = k*9, e = 0.01;
+    const c00 = p[P]/nk - m0*m0 + e, c01 = p[P+1]/nk - m0*m1, c02 = p[P+2]/nk - m0*m2;
+    const c11 = p[P+4]/nk - m1*m1 + e, c12 = p[P+5]/nk - m1*m2, c22 = p[P+8]/nk - m2*m2 + e;
+    let det = c00*(c11*c22 - c12*c12) - c01*(c01*c22 - c12*c02) + c02*(c01*c12 - c11*c02);
+    if(!(det > 1e-6)){ det = 1e-6; }
+    const I = gmm.inv;
+    I[P]   =  (c11*c22 - c12*c12)/det; I[P+1] = -(c01*c22 - c02*c12)/det; I[P+2] =  (c01*c12 - c02*c11)/det;
+    I[P+3] = I[P+1];                   I[P+4] =  (c00*c22 - c02*c02)/det; I[P+5] = -(c00*c12 - c01*c02)/det;
+    I[P+6] = I[P+2];                   I[P+7] = I[P+5];                   I[P+8] =  (c00*c11 - c01*c01)/det;
+    gmm.lnorm[k] = Math.log(gmm.w[k]) - 0.5*Math.log(det);
+  }
+}
+// −log de la vraisemblance d'une couleur (constantes communes omises).
+function _gcGmmCout(gmm, r, g, b){
+  let somme = 0;
+  for(let k=0;k<_GC_K;k++){
+    if(!gmm.w[k]) continue;
+    const P = k*9, I = gmm.inv, d0 = r - gmm.mu[k*3], d1 = g - gmm.mu[k*3+1], d2 = b - gmm.mu[k*3+2];
+    const q = d0*(I[P]*d0 + I[P+1]*d1 + I[P+2]*d2) + d1*(I[P+3]*d0 + I[P+4]*d1 + I[P+5]*d2) + d2*(I[P+6]*d0 + I[P+7]*d1 + I[P+8]*d2);
+    somme += Math.exp(gmm.lnorm[k] - 0.5*q);
+  }
+  return -Math.log(somme + 1e-300);
+}
+function _gcComposante(gmm, r, g, b){
+  let meilleur = 0, vmax = -Infinity;
+  for(let k=0;k<_GC_K;k++){
+    if(!gmm.w[k]) continue;
+    const P = k*9, I = gmm.inv, d0 = r - gmm.mu[k*3], d1 = g - gmm.mu[k*3+1], d2 = b - gmm.mu[k*3+2];
+    const q = d0*(I[P]*d0 + I[P+1]*d1 + I[P+2]*d2) + d1*(I[P+3]*d0 + I[P+4]*d1 + I[P+5]*d2) + d2*(I[P+6]*d0 + I[P+7]*d1 + I[P+8]*d2);
+    const v = gmm.lnorm[k] - 0.5*q;
+    if(v > vmax){ vmax = v; meilleur = k; }
+  }
+  return meilleur;
+}
+// Composantes initiales : k-moyennes déterministes (départ sur la luminance
+// triée), sur un échantillon pour rester rapide.
+function _gcKMoyennes(px, indices, comp){
+  const n = indices.length; if(!n) return;
+  const pas = Math.max(1, Math.floor(n / 20000));
+  const ech = []; for(let t=0;t<n;t+=pas) ech.push(indices[t]);
+  const lum = i => px[i*4]*0.299 + px[i*4+1]*0.587 + px[i*4+2]*0.114;
+  const tri = ech.slice().sort((a,b)=>lum(a)-lum(b));
+  const c = new Float64Array(_GC_K*3);
+  for(let k=0;k<_GC_K;k++){ const i = tri[Math.min(tri.length-1, Math.floor((k+0.5)*tri.length/_GC_K))]; c[k*3]=px[i*4]; c[k*3+1]=px[i*4+1]; c[k*3+2]=px[i*4+2]; }
+  const proche = i => { let m = 0, dm = Infinity; const r=px[i*4], g=px[i*4+1], b=px[i*4+2];
+    for(let k=0;k<_GC_K;k++){ const d=(r-c[k*3])**2+(g-c[k*3+1])**2+(b-c[k*3+2])**2; if(d<dm){dm=d;m=k;} } return m; };
+  for(let it=0; it<8; it++){
+    const s = new Float64Array(_GC_K*3), nb = new Float64Array(_GC_K);
+    for(const i of ech){ const k = proche(i); nb[k]++; s[k*3]+=px[i*4]; s[k*3+1]+=px[i*4+1]; s[k*3+2]+=px[i*4+2]; }
+    for(let k=0;k<_GC_K;k++) if(nb[k]){ c[k*3]=s[k*3]/nb[k]; c[k*3+1]=s[k*3+1]/nb[k]; c[k*3+2]=s[k*3+2]/nb[k]; }
+  }
+  for(let t=0;t<n;t++) comp[indices[t]] = proche(indices[t]);
+}
+
+// ── GrabCut sur une petite image ───────────────────────────────────────────
+// px : RGBA ; w, h ; etiq : 0 inconnu (probablement objet), 1 objet imposé,
+// 2 fond imposé, 3 fond (hors zone), 5 inconnu (probablement fond). Rend { masque, gmmObjet, gmmFond }.
+function _gcSegmenter(px, w, h, etiq, iterations, biais){
+  const N = w*h, comp = new Uint8Array(N);
+  let masque = new Uint8Array(N);
+  for(let i=0;i<N;i++) masque[i] = (etiq[i] === 0 || etiq[i] === 1) ? 1 : 0;
+  // Liens entre voisins : 8-connexité, poids selon l'écart de couleur.
+  const dirs = [[1,0],[0,1],[1,1],[-1,1]];
+  let somme = 0, nb = 0;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const i = y*w+x;
+    for(const [dx,dy] of dirs){
+      const X = x+dx, Y = y+dy; if(X<0||X>=w||Y>=h) continue;
+      const j = Y*w+X, a=i*4, b=j*4;
+      somme += (px[a]-px[b])**2 + (px[a+1]-px[b+1])**2 + (px[a+2]-px[b+2])**2; nb++;
+    }
+  }
+  const beta = nb && somme ? 1 / (2 * somme / nb) : 0;
+  const gamma = 50, ECH = 100;                      // capacités ×100, arrondies
+  const fort = Math.round(9 * gamma * ECH);
+  const voisins = [];                                // poids pré-calculés
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const i = y*w+x;
+    for(const [dx,dy] of dirs){
+      const X = x+dx, Y = y+dy; if(X<0||X>=w||Y>=h) continue;
+      const j = Y*w+X, a=i*4, b=j*4;
+      const d2 = (px[a]-px[b])**2 + (px[a+1]-px[b+1])**2 + (px[a+2]-px[b+2])**2;
+      const poids = gamma / Math.hypot(dx,dy) * Math.exp(-beta * d2);
+      voisins.push(i, j, Math.max(1, Math.round(poids * ECH)));
+    }
+  }
+  const gO = _gcGmmVide(), gF = _gcGmmVide();
+  const listes = () => { const o=[], f=[]; for(let i=0;i<N;i++) (masque[i] ? o : f).push(i); return [o, f]; };
+  let [lo, lf] = listes();
+  if(!lo.length || !lf.length) return { masque, gmmObjet:null, gmmFond:null };
+  // Premier apprentissage du fond : sur le fond sûr seulement. Le « fond
+  // probable » autour du cadre contient souvent la suite de l'objet — l'y
+  // apprendre comme du fond empêcherait la sélection de déborder du cadre.
+  { const sur = lf.filter(i => etiq[i] === 2 || etiq[i] === 3);
+    if(sur.length >= 30) lf = sur; }
+  _gcKMoyennes(px, lo, comp); _gcKMoyennes(px, lf, comp);
+  for(let it=0; it<iterations; it++){
+    if(it){ for(const i of lo) comp[i] = _gcComposante(gO, px[i*4], px[i*4+1], px[i*4+2]);
+            for(const i of lf) comp[i] = _gcComposante(gF, px[i*4], px[i*4+1], px[i*4+2]); }
+    _gcGmmApprendre(gO, px, lo, comp); _gcGmmApprendre(gF, px, lf, comp);
+    const g = _gcGraphe(N, voisins.length/3*2);
+    for(let t=0;t<voisins.length;t+=3) _gcArete(g, voisins[t], voisins[t+1], voisins[t+2], voisins[t+2]);
+    for(let i=0;i<N;i++){
+      const e = etiq[i];
+      if(e === 1) _gcTerminal(g, i, fort, 0);
+      else if(e === 2 || e === 3) _gcTerminal(g, i, 0, fort);
+      else {
+        const r = px[i*4], gg = px[i*4+1], b = px[i*4+2];
+        let cF = Math.min(_gcGmmCout(gF, r, gg, b), 60), cO = Math.min(_gcGmmCout(gO, r, gg, b), 60);
+        // Un avis extérieur (l'IA) s'ajoute à la couleur sans l'écraser : là où
+        // la couleur tranche nettement, elle l'emporte ; là où elle hésite, l'avis décide.
+        if(biais){ const v = biais[i]; if(v > 0) cF += v; else cO -= v; }
+        // Source = objet : le lien vers la source coûte ce que coûterait « fond ».
+        _gcTerminal(g, i, Math.round(cF * ECH), Math.round(cO * ECH));
+      }
+    }
+    const nouveau = _gcFlotMax(g);
+    let change = 0; for(let i=0;i<N;i++) if(nouveau[i] !== masque[i]) change++;
+    masque = nouveau;
+    [lo, lf] = listes();
+    if(!lo.length || !lf.length) break;
+    if(it > 0 && change < N * 0.001) break;
+  }
+  return { masque, gmmObjet:gO, gmmFond:gF };
+}
+
+// Nettoyage : îlots d'objet minuscules retirés, petits trous de fond bouchés.
+function _gcNettoyer(m, w, h, seuilIlot, seuilTrou){
+  const N = w*h, vu = new Int32Array(N).fill(-1);
+  const pile = [];
+  for(const cible of [1, 0]){
+    const seuil = cible ? seuilIlot : seuilTrou;
+    vu.fill(-1);
+    for(let s=0;s<N;s++){
+      if(m[s] !== cible || vu[s] >= 0) continue;
+      const comp = []; pile.push(s); vu[s] = s; let bord = false;
+      while(pile.length){
+        const i = pile.pop(); comp.push(i);
+        const x = i % w, y = (i / w) | 0;
+        if(x===0||y===0||x===w-1||y===h-1) bord = true;
+        if(x>0   && m[i-1]===cible && vu[i-1]<0){ vu[i-1]=s; pile.push(i-1); }
+        if(x<w-1 && m[i+1]===cible && vu[i+1]<0){ vu[i+1]=s; pile.push(i+1); }
+        if(y>0   && m[i-w]===cible && vu[i-w]<0){ vu[i-w]=s; pile.push(i-w); }
+        if(y<h-1 && m[i+w]===cible && vu[i+w]<0){ vu[i+w]=s; pile.push(i+w); }
+      }
+      // Un trou de fond relié au bord n'est pas un trou : c'est le fond.
+      if(comp.length < seuil && !(cible === 0 && bord)) for(const i of comp) m[i] = cible ? 0 : 1;
+    }
+  }
+  return m;
+}
+
+// ── De la photo entière au masque : recadrage, réduction, affinage du bord ──
+// pix : RGBA de la source ; rect : {x0,y0,x1,y1} ; traits : [{m:'+'|'-', r, pts:[[x,y]…]}]
+// Rend { masque:Uint8Array(W*H), boite } ou null si rien n'a pu être isolé.
+const _GC_TAILLE = 360;                 // côté de travail du graphe
+// Comme la sélection d'objet de Photoshop, le cadre DÉSIGNE l'objet : il n'en
+// est pas la limite. L'intérieur du cadre part « objet probable », l'alentour
+// « fond probable », et la coupe suit le bord là où l'image change nettement —
+// au-delà du cadre s'il le faut. Si l'objet touche encore le bord de la zone
+// étudiée, on recommence sur une zone plus large.
+function _gcSelectionObjet(pix, W, H, rect, traits, apriori){
+  let r = _gcSelectionZone(pix, W, H, rect, traits, apriori, 0.5);
+  // Rien trouvé (un petit cadre posé au milieu d'un grand objet n'a vu que
+  // l'objet, même dans sa couronne « fond »), ou un objet qui touche le bord
+  // de la zone : on recommence plus large.
+  if(!r || r.touche) r = _gcSelectionZone(pix, W, H, rect, traits, apriori, 1.5) || r;
+  return r;
+}
+function _gcSelectionZone(pix, W, H, rect, traits, apriori, extension){
+  traits = traits || [];
+  let rx0 = Math.max(0, Math.min(rect.x0, rect.x1)), rx1 = Math.min(W-1, Math.max(rect.x0, rect.x1));
+  let ry0 = Math.max(0, Math.min(rect.y0, rect.y1)), ry1 = Math.min(H-1, Math.max(rect.y0, rect.y1));
+  if(rx1 - rx0 < 6 || ry1 - ry0 < 6) return null;
+  // Ce qui désigne l'objet : le cadre et les traits « + ».
+  let zx0 = rx0, zy0 = ry0, zx1 = rx1, zy1 = ry1;
+  for(const t of traits) if(t.m === '+') for(const [x,y] of t.pts){
+    zx0 = Math.min(zx0, x - t.r); zy0 = Math.min(zy0, y - t.r); zx1 = Math.max(zx1, x + t.r); zy1 = Math.max(zy1, y + t.r); }
+  // La zone de recherche, bien plus large : l'objet peut déborder le cadre.
+  const ext = Math.round(Math.max(extension * Math.max(zx1 - zx0, zy1 - zy0), extension * 0.2 * Math.max(W, H)));
+  const sx0 = Math.max(0, Math.floor(zx0 - ext)), sy0 = Math.max(0, Math.floor(zy0 - ext));
+  const sx1 = Math.min(W-1, Math.ceil(zx1 + ext)), sy1 = Math.min(H-1, Math.ceil(zy1 + ext));
+  // Une couronne de fond sûr autour, pour apprendre ses couleurs.
+  const marge = Math.max(8, Math.round(0.05 * Math.max(sx1 - sx0, sy1 - sy0)));
+  const cx0 = Math.max(0, sx0 - marge), cy0 = Math.max(0, sy0 - marge);
+  const cx1 = Math.min(W-1, sx1 + marge), cy1 = Math.min(H-1, sy1 + marge);
+  const cw = cx1 - cx0 + 1, ch = cy1 - cy0 + 1;
+  const s = Math.min(1, _GC_TAILLE / Math.max(cw, ch));
+  const w = Math.max(8, Math.round(cw * s)), h = Math.max(8, Math.round(ch * s));
+  const sx = cw / w, sy = ch / h;                       // pixels source par pixel réduit
+  // Réduction par moyenne de zone : les couleurs restent fidèles.
+  const petit = new Uint8ClampedArray(w*h*4);
+  for(let y=0;y<h;y++){
+    const ya = cy0 + Math.floor(y*sy), yb = Math.max(ya+1, cy0 + Math.floor((y+1)*sy));
+    for(let x=0;x<w;x++){
+      const xa = cx0 + Math.floor(x*sx), xb = Math.max(xa+1, cx0 + Math.floor((x+1)*sx));
+      let r=0,g=0,b=0,n=0;
+      for(let Y=ya;Y<yb;Y++){ let q=(Y*W+xa)*4; for(let X=xa;X<xb;X++,q+=4){ r+=pix[q]; g+=pix[q+1]; b+=pix[q+2]; n++; } }
+      const o=(y*w+x)*4; petit[o]=r/n; petit[o+1]=g/n; petit[o+2]=b/n; petit[o+3]=255;
+    }
+  }
+  // Étiquettes : dans le cadre, objet probable ; autour, fond probable ;
+  // hors de la zone de recherche, fond sûr. Les traits font foi.
+  const etiq = new Uint8Array(w*h), graine = new Uint8Array(w*h);
+  for(let y=0;y<h;y++){ const Y = cy0 + (y+0.5)*sy;
+    for(let x=0;x<w;x++){ const X = cx0 + (x+0.5)*sx, i = y*w+x;
+      if(X < sx0 || X > sx1 || Y < sy0 || Y > sy1) etiq[i] = 3;
+      else if(X < rx0 || X > rx1 || Y < ry0 || Y > ry1) etiq[i] = 5;
+      else graine[i] = 1; } }
+  // Hors du cadre, un léger penchant « fond », qui croît avec l'éloignement :
+  // un bord net franchit sans peine ce penchant, une surface de même couleur
+  // qui s'étend au loin (un fond uni du dessin) ne le franchit pas.
+  var biais = new Float32Array(w*h);
+  { const taille = Math.max(rx1 - rx0, ry1 - ry0);
+    for(let y=0;y<h;y++){ const Y = cy0 + (y+0.5)*sy;
+      for(let x=0;x<w;x++){ const X = cx0 + (x+0.5)*sx;
+        const d = Math.max(rx0 - X, X - rx1, ry0 - Y, Y - ry1, 0);
+        biais[y*w+x] = -2.5 * Math.min(1, d / (0.5*taille)); } } }
+  const sousTrait = _gcTracer(traits, w, h, (X,Y)=>[(X - cx0)/sx, (Y - cy0)/sy], 1/sx);
+  for(let i=0;i<w*h;i++) if(sousTrait[i]){
+    if(sousTrait[i] === 4) biais[i] = 0;
+    etiq[i] = sousTrait[i] === 4 ? 0 : sousTrait[i];
+    if(sousTrait[i] === 4 || sousTrait[i] === 1) graine[i] = 1;
+  }
+  // Un a priori (le masque de l'IA) : son cœur devient de l'objet sûr, ce qui en
+  // est loin du fond sûr ; seule une bande autour de son bord reste à trancher,
+  // à la couleur. L'IA donne la forme, la coupe de graphe donne le bord net.
+  if(apriori){
+    const pm = new Float32Array(w*h);
+    for(let y=0;y<h;y++){
+      const ya = cy0 + Math.floor(y*sy), yb = Math.max(ya+1, cy0 + Math.floor((y+1)*sy));
+      for(let x=0;x<w;x++){
+        const xa = cx0 + Math.floor(x*sx), xb = Math.max(xa+1, cx0 + Math.floor((x+1)*sx));
+        let n=0, t=0; for(let Y=ya;Y<yb;Y+=2) for(let X=xa;X<xb;X+=2){ n++; t += apriori[Y*W+X]; }
+        pm[y*w+x] = n ? t/n : 0;
+      }
+    }
+    // L'avis de l'IA devient un penchant, case par case, et le point de départ.
+    for(let i=0;i<w*h;i++){
+      if(etiq[i] !== 0 && etiq[i] !== 5) continue;
+      biais[i] += 3 * (2*pm[i] - 1);
+      etiq[i] = pm[i] >= 0.5 ? 0 : 5;
+    }
+  }
+  const seg = _gcSegmenter(petit, w, h, etiq, apriori ? 3 : (traits.length ? 3 : 4), biais);
+  const m = seg.masque;
+  const aire = Math.max((rx1-rx0)*(ry1-ry0), (zx1-zx0)*(zy1-zy0)) / (sx*sy);
+  _gcNettoyer(m, w, h, Math.max(4, aire*0.003), Math.max(3, aire*0.001));
+  for(let i=0;i<w*h;i++){ if(sousTrait[i] === 1) m[i] = 1; else if(sousTrait[i] === 2) m[i] = 0; }
+  // On ne garde que ce qui touche l'objet désigné : une tache de même couleur
+  // ailleurs dans la zone n'est pas « l'objet ».
+  {
+    const garde = new Uint8Array(w*h), pile = [];
+    for(let i=0;i<w*h;i++) if(m[i] && graine[i]){ garde[i] = 1; pile.push(i); }
+    if(pile.length){
+      while(pile.length){
+        const i = pile.pop(), x = i % w, y = (i / w) | 0;
+        for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++){
+          const X = x+dx, Y = y+dy; if(X<0||Y<0||X>=w||Y>=h) continue;
+          const j = Y*w+X; if(m[j] && !garde[j]){ garde[j] = 1; pile.push(j); }
+        }
+      }
+      for(let i=0;i<w*h;i++) if(!garde[i]) m[i] = 0;
+    }
+  }
+  // L'objet touche-t-il le bord de la zone (hors bord de l'image) ? Il continue
+  // peut-être au-delà : l'appelant élargira.
+  let touche = false;
+  for(let y=0;y<h && !touche;y++) for(let x=0;x<w;x++){
+    if(!m[y*w+x]) continue;
+    const X = cx0 + (x+0.5)*sx, Y = cy0 + (y+0.5)*sy, d = 1.5*Math.max(sx, sy);
+    if((sx0 > 0 && X - sx0 < d) || (sy0 > 0 && Y - sy0 < d) || (sx1 < W-1 && sx1 - X < d) || (sy1 < H-1 && sy1 - Y < d)){ touche = true; break; }
+  }
+  // Pleine définition : à l'intérieur, la forme agrandie ; sur le bord, chaque
+  // pixel est jugé sur sa propre couleur, avec les modèles appris.
+  const masque = new Uint8Array(W*H);
+  const fort = _gcTracer(traits, W, H, (X,Y)=>[X, Y], 1);
+  let bx0 = W, by0 = H, bx1 = -1, by1 = -1;
+  for(let Y=cy0; Y<=cy1; Y++){
+    const fy = (Y - cy0)/sy - 0.5, y0 = Math.max(0, Math.min(h-1, Math.floor(fy))), y1 = Math.min(h-1, y0+1), ty = Math.max(0, Math.min(1, fy - y0));
+    for(let X=cx0; X<=cx1; X++){
+      const i = Y*W + X;
+      let v;
+      if(fort[i] === 1 || fort[i] === 2) v = fort[i] === 1 ? 1 : 0;
+      else {
+        const fx = (X - cx0)/sx - 0.5, x0 = Math.max(0, Math.min(w-1, Math.floor(fx))), x1 = Math.min(w-1, x0+1), tx = Math.max(0, Math.min(1, fx - x0));
+        const doux = (m[y0*w+x0]*(1-tx) + m[y0*w+x1]*tx)*(1-ty) + (m[y1*w+x0]*(1-tx) + m[y1*w+x1]*tx)*ty;
+        if(doux <= 0.02) v = 0;
+        else if(doux >= 0.98 || !seg.gmmObjet) v = doux >= 0.5 ? 1 : 0;
+        else {
+          const q = i*4;
+          const ecart = _gcGmmCout(seg.gmmFond, pix[q], pix[q+1], pix[q+2]) - _gcGmmCout(seg.gmmObjet, pix[q], pix[q+1], pix[q+2]);
+          v = (Math.max(-8, Math.min(8, ecart)) + 12*(doux - 0.5)) > 0 ? 1 : 0;
+        }
+      }
+      if(v){ masque[i] = 1; if(X<bx0) bx0=X; if(X>bx1) bx1=X; if(Y<by0) by0=Y; if(Y>by1) by1=Y; }
+    }
+  }
+  return bx1 < 0 ? null : { masque, boite:{ x0:bx0, y0:by0, x1:bx1, y1:by1 }, touche };
+}
+// Les traits de pinceau, rastérisés : 1 = objet imposé, 2 = fond imposé,
+// 4 = zone de recherche (lasso « + » refermé et son intérieur).
+// vers(X,Y) convertit un point source en coordonnées de la grille ; k, l'échelle.
+function _gcTracer(traits, w, h, vers, k){
+  const out = new Uint8Array(w*h);
+  for(const t of traits){
+    const val = t.m === '+' ? 1 : 2, r = Math.max(0.6, t.r * k), pts = t.pts.map(([X,Y])=>vers(X,Y));
+    const disque = (cx, cy) => {
+      const x0 = Math.max(0, Math.floor(cx - r)), x1 = Math.min(w-1, Math.ceil(cx + r));
+      const y0 = Math.max(0, Math.floor(cy - r)), y1 = Math.min(h-1, Math.ceil(cy + r));
+      for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++) if((x+0.5-cx)**2 + (y+0.5-cy)**2 <= r*r) out[y*w+x] = val;
+    };
+    for(let n=0;n<pts.length;n++){
+      const [ax,ay] = pts[n], [bx,by] = pts[Math.min(n+1, pts.length-1)];
+      const pas = Math.max(1, Math.ceil(Math.hypot(bx-ax, by-ay) / Math.max(0.5, r*0.5)));
+      for(let u=0;u<=pas;u++) disque(ax + (bx-ax)*u/pas, ay + (by-ay)*u/pas);
+    }
+  }
+  return _gcRemplirFermes(out, w, h);
+}
+// Un contour fermé peint en « + » est un lasso : il dit « l'objet est là-dedans »,
+// comme le lasso de la sélection d'objet de Photoshop. Son intérieur et son
+// tracé deviennent une zone de recherche (4) où le calcul décide pixel par
+// pixel — et non de l'objet imposé : sinon le fond pris entre le trait et le
+// sujet, et le trait lui-même, finiraient dans la sélection. Un gribouillis
+// « + » posé sur le sujet (qui ne referme rien) reste, lui, de l'objet imposé.
+// Un trait « − » garde toujours la priorité.
+function _gcRemplirFermes(out, w, h){
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for(let y=0;y<h;y++){ const l = y*w;
+    for(let x=0;x<w;x++) if(out[l+x] === 1){ if(x<x0) x0=x; if(x>x1) x1=x; if(y<y0) y0=y; if(y>y1) y1=y; } }
+  if(x1 - x0 < 2 || y1 - y0 < 2) return out;
+  // La boîte des traits, élargie d'une case : son pourtour est forcément dehors.
+  const bw = x1 - x0 + 3, bh = y1 - y0 + 3, dehors = new Uint8Array(bw*bh);
+  const val = (bx, by) => { const X = bx + x0 - 1, Y = by + y0 - 1;
+    return (X >= 0 && Y >= 0 && X < w && Y < h) ? out[Y*w + X] : 0; };
+  const pile = [0]; dehors[0] = 1;
+  while(pile.length){
+    const i = pile.pop(), bx = i % bw, by = (i / bw) | 0;
+    if(bx > 0    && !dehors[i-1]  && val(bx-1, by) !== 1){ dehors[i-1] = 1;  pile.push(i-1); }
+    if(bx < bw-1 && !dehors[i+1]  && val(bx+1, by) !== 1){ dehors[i+1] = 1;  pile.push(i+1); }
+    if(by > 0    && !dehors[i-bw] && val(bx, by-1) !== 1){ dehors[i-bw] = 1; pile.push(i-bw); }
+    if(by < bh-1 && !dehors[i+bw] && val(bx, by+1) !== 1){ dehors[i+bw] = 1; pile.push(i+bw); }
+  }
+  // Intérieurs : ce que l'extérieur n'atteint pas.
+  const dedans = new Uint8Array(bw*bh); let rien = true;
+  for(let by=1; by<bh-1; by++) for(let bx=1; bx<bw-1; bx++){
+    const i = by*bw+bx; if(!dehors[i] && val(bx, by) !== 1){ dedans[i] = 1; rien = false; } }
+  if(rien) return out;
+  // Les tracés « + » qui touchent à la fois un intérieur et l'extérieur sont des lassos.
+  const vu = new Uint8Array(bw*bh);
+  for(let by=1; by<bh-1; by++) for(let bx=1; bx<bw-1; bx++){
+    const s0 = by*bw+bx;
+    if(vu[s0] || val(bx, by) !== 1) continue;
+    const comp = [], p2 = [s0]; vu[s0] = 1; let touchDedans = false, touchDehors = false;
+    while(p2.length){
+      const i = p2.pop(); comp.push(i);
+      const cx = i % bw, cy = (i / bw) | 0;
+      for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++){
+        if(!dx && !dy) continue;
+        const nx = cx+dx, ny = cy+dy; if(nx<0||ny<0||nx>=bw||ny>=bh) continue;
+        const j = ny*bw+nx;
+        if(dedans[j]) touchDedans = true;
+        if(dehors[j]) touchDehors = true;
+        if(!vu[j] && val(nx, ny) === 1){ vu[j] = 1; p2.push(j); }
+      }
+    }
+    if(touchDedans && touchDehors) for(const i of comp){ const X = (i % bw) + x0 - 1, Y = ((i / bw) | 0) + y0 - 1; out[Y*w + X] = 4; }
+  }
+  for(let by=1; by<bh-1; by++) for(let bx=1; bx<bw-1; bx++){
+    if(!dedans[by*bw+bx]) continue;
+    const i = (by + y0 - 1)*w + (bx + x0 - 1);
+    if(out[i] === 0) out[i] = 4;
+  }
+  return out;
+}
+
+// ── Sélection d'objet : l'outil dans l'éditeur ───────────────────────────
+function _eiObjMode(m, silencieux){
+  const st = _eiState; if(!st) return;
+  if(!['cadre','+','-'].includes(m)) m = 'cadre';
+  if(m !== 'cadre' && !st.obj.rect){
+    if(!silencieux) toast(T('Tracez d’abord un cadre autour du sujet.','Draw a box around the subject first.'));
+    m = 'cadre';
+  }
+  st.obj.mode = m;
+  [['cadre','cadre'],['+','plus'],['-','moins']].forEach(([v,id])=>st.ov.querySelector('#eiObjMode-'+id)?.classList.toggle('ei-actif', v === m));
+}
+// Le dernier point peint : l'origine d'un trait droit au Maj+clic.
+function _eiObjDernierPoint(st){
+  const t = st.obj.traits[st.obj.traits.length - 1];
+  return t && t.pts.length ? t.pts[t.pts.length - 1] : null;
+}
+function _eiObjTaille(v){
+  const st = _eiState; if(!st) return;
+  st.obj.taille = Math.max(4, Math.min(80, Math.round(+v || 18)));
+  const o = st.ov.querySelector('#eiObjTailleVal'); if(o) o.textContent = st.obj.taille;
+}
+function _eiObjEffacer(){
+  const st = _eiState; if(!st) return;
+  Object.assign(st.obj, { rect:null, traits:[], quart:0, masque:null, boite:null, trace:null, traitEnCours:null, masqueGC:null });
+  st.obj.version++; st.obj.affiche = null;
+  _eiObjMode('cadre', true);
+  _eiDessiner();
+}
+// Le calcul prend une fraction de seconde : on laisse d'abord l'écran annoncer
+// « Analyse… », et un calcul dépassé par un nouveau geste est abandonné.
+function _eiObjCalculer(){
+  const st = _eiState; if(!st || !st.obj.rect) return;
+  const o = st.obj, jeton = (o.jeton || 0) + 1;
+  o.jeton = jeton; o.enCalcul = true;
+  st.canvas.style.cursor = 'progress';
+  _eiDessiner();
+  setTimeout(()=>{
+    if(_eiState !== st || o.jeton !== jeton) return;
+    let r = null;
+    try { r = _gcSelectionObjet(_eiBagPixels(st), st.source.width, st.source.height, o.rect, o.traits); }
+    catch(e){ console.error('[sélection d’objet]', e); }
+    o.masqueGC = r;
+    // L'IA part de ce premier détourage (elle y prend ses points d'appui).
+    if(o.ia){ _eiObjIA(st, jeton); return; }
+    o.enCalcul = false; st.canvas.style.cursor = '';
+    o.masque = r ? r.masque : null; o.boite = r ? r.boite : null;
+    o.version++; o.affiche = null; o.rendu = null;
+    if(!r) toast(T('Aucun objet isolé dans ce cadre : élargissez-le, ou peignez le sujet avec « Ajouter ».',
+                   'No object found in this box: enlarge it, or paint the subject with “Add”.'), 'error');
+    _eiDessiner();
+  }, 40);
+}
+// ── Option IA : Segment Anything (SlimSAM), exécuté dans le navigateur ──────
+// Tout est servi depuis le dossier « ia/ » de l'application : la bibliothèque
+// (Transformers.js et son moteur ONNX) et le modèle. Rien ne vient d'un tiers ;
+// le premier usage télécharge une quarantaine de Mo, que le navigateur garde
+// ensuite en cache. Ouvert comme simple fichier (sans serveur), le navigateur
+// refuse ce chargement : l'outil reste alors sur le détourage classique.
+const IA_DOSSIER = 'ia/', IA_MODELE = 'slimsam-77-uniform';
+let _iaSamPromesse = null;
+function _iaUrl(chemin){ return new URL(IA_DOSSIER + chemin, location.href).href; }
+function _iaChargerSam(progres){
+  if(_iaSamPromesse) return _iaSamPromesse;
+  if(!/^https?:$/.test(location.protocol))
+    return Promise.reject(new Error(T('la page est ouverte comme fichier : l’IA demande la version en ligne, ou l’app servie en local (localhost)',
+                                      'the page is opened as a file: AI needs the online version, or the app served locally (localhost)')));
+  _iaSamPromesse = (async ()=>{
+    const tf = await import(_iaUrl('transformers.min.js'));
+    tf.env.allowRemoteModels = false;
+    tf.env.allowLocalModels = true;
+    tf.env.localModelPath = _iaUrl('modeles/');
+    const w = tf.env.backends.onnx.wasm;
+    w.wasmPaths = { mjs:_iaUrl('ort-wasm-simd-threaded.jsep.js'), wasm:_iaUrl('ort-wasm-simd-threaded.jsep.wasm') };
+    w.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 1) : 1;
+    const opts = { dtype:'q8', device:'wasm', progress_callback:progres };
+    const [model, processor] = await Promise.all([
+      tf.SamModel.from_pretrained(IA_MODELE, opts),
+      tf.AutoProcessor.from_pretrained(IA_MODELE, { progress_callback:progres }),
+    ]);
+    return { tf, model, processor, ip: processor.image_processor || processor };
+  })();
+  _iaSamPromesse.catch(()=>{ _iaSamPromesse = null; });
+  return _iaSamPromesse;
+}
+function _eiObjIABasculer(){
+  const st = _eiState; if(!st || st.obj.enCalcul) return;
+  st.obj.ia = !st.obj.ia;
+  st.ov.querySelector('#eiObjIA')?.classList.toggle('ei-actif', st.obj.ia);
+  _eiObjIAEtat(st, st.obj.ia ? (st.obj.rect ? '' : T('IA activée : tracez un cadre autour du sujet.','AI on: draw a box around the subject.')) : '');
+  if(st.obj.rect) _eiObjCalculer();
+}
+function _eiObjIAEtat(st, texte, erreur){
+  const e = st.ov.querySelector('#eiObjIAEtat'); if(!e) return;
+  e.textContent = texte || ''; e.classList.toggle('ei-erreur', !!erreur);
+}
+// Les points d'appui donnés au modèle : des points « dans l'objet » pris au
+// cœur du premier détourage (les plus éloignés de son bord), ceux des traits
+// « + », et des points « hors de l'objet » sur les traits « − ».
+function _eiObjPointsIA(st){
+  const o = st.obj, W = st.source.width, pos = [], neg = [];
+  const echant = (pts, n) => { const r = []; const pas = Math.max(1, Math.floor(pts.length / n)); for(let i=0;i<pts.length;i+=pas) r.push(pts[i]); return r.slice(0, n); };
+  // Un trait « + » ne fournit des points « objet » que s'il est posé sur le
+  // sujet : un lasso court sur le fond, ses points tromperaient le modèle.
+  const forces = st.obj.forcesIA;
+  for(const t of o.traits){
+    const pts = t.m === '+' && forces ? t.pts.filter(([x,y])=>forces[Math.round(y)*W + Math.round(x)] === 1) : t.pts;
+    (t.m === '+' ? pos : neg).push(...echant(pts, 5));
+  }
+  const gc = o.masqueGC;
+  if(gc && gc.boite){
+    // Carte de distance au bord, sur une grille d'au plus 64 cases de côté.
+    const b = gc.boite, l = b.x1 - b.x0 + 1, h = b.y1 - b.y0 + 1, k = Math.max(1, Math.max(l, h) / 64);
+    const gw = Math.max(1, Math.round(l / k)), gh = Math.max(1, Math.round(h / k));
+    const d = new Float32Array(gw*gh);
+    for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){
+      const X = Math.min(W-1, Math.round(b.x0 + (x+0.5)*k)), Y = Math.round(b.y0 + (y+0.5)*k);
+      d[y*gw+x] = gc.masque[Y*W + X] ? 1e6 : 0;
+    }
+    for(let y=0;y<gh;y++) for(let x=0;x<gw;x++){ const i=y*gw+x; if(!d[i]) continue;
+      d[i] = Math.min(d[i], x ? d[i-1]+1 : 1, y ? d[i-gw]+1 : 1); }
+    for(let y=gh-1;y>=0;y--) for(let x=gw-1;x>=0;x--){ const i=y*gw+x; if(!d[i]) continue;
+      d[i] = Math.min(d[i], x<gw-1 ? d[i+1]+1 : 1, y<gh-1 ? d[i+gw]+1 : 1); }
+    for(let n=0; n<3; n++){
+      let im = -1, dm = 1.5;
+      for(let i=0;i<d.length;i++) if(d[i] > dm){ dm = d[i]; im = i; }
+      if(im < 0) break;
+      const x = im % gw, y = (im / gw) | 0;
+      pos.push([Math.round(b.x0 + (x+0.5)*k), Math.round(b.y0 + (y+0.5)*k)]);
+      // On écarte les cases voisines : les points suivants iront ailleurs.
+      const r = Math.max(2, dm * 1.5);
+      for(let yy=Math.max(0,Math.floor(y-r)); yy<=Math.min(gh-1,Math.ceil(y+r)); yy++)
+        for(let xx=Math.max(0,Math.floor(x-r)); xx<=Math.min(gw-1,Math.ceil(x+r)); xx++) d[yy*gw+xx] = 0;
+    }
+  }
+  if(!pos.length){ const r = o.rect; pos.push([Math.round((r.x0+r.x1)/2), Math.round((r.y0+r.y1)/2)]); }
+  return { pos: pos.slice(0, 16), neg: neg.slice(0, 16) };
+}
+async function _eiObjIA(st, jeton){
+  const o = st.obj;
+  const encore = () => _eiState === st && o.jeton === jeton;
+  const finir = (r) => {
+    o.enCalcul = false; st.canvas.style.cursor = '';
+    o.masque = r ? r.masque : null; o.boite = r ? r.boite : null;
+    o.version++; o.affiche = null; o.rendu = null;
+    _eiDessiner();
+  };
+  try {
+    _eiObjIAEtat(st, T('Chargement du modèle…','Loading the model…'));
+    const sam = await _iaChargerSam(p=>{
+      if(encore() && p && p.status === 'progress' && /\.onnx$/.test(p.file || ''))
+        _eiObjIAEtat(st, T(`Chargement du modèle… ${Math.round(p.progress||0)} %`,`Loading the model… ${Math.round(p.progress||0)} %`));
+    });
+    if(!encore()) return;
+    const W = st.source.width, H = st.source.height, N = W*H, r0 = o.rect;
+    const forces = _gcTracer(o.traits, W, H, (X,Y)=>[X, Y], 1);
+    o.forcesIA = forces;
+    // La zone d'étude : le cadre, les lassos et traits « + », avec une marge.
+    let zx0 = r0.x0, zy0 = r0.y0, zx1 = r0.x1, zy1 = r0.y1;
+    for(const t of o.traits) if(t.m === '+') for(const [x,y] of t.pts){ zx0=Math.min(zx0,x-t.r); zy0=Math.min(zy0,y-t.r); zx1=Math.max(zx1,x+t.r); zy1=Math.max(zy1,y+t.r); }
+    // Le cadre désigne l'objet sans le borner : le modèle cadre sur l'objet
+    // tel que le premier détourage l'a trouvé (au-delà du cadre s'il déborde),
+    // avec une marge — assez large pour corriger, assez serrée pour la finesse.
+    const gb = o.masqueGC && o.masqueGC.boite;
+    if(gb){ zx0 = Math.min(zx0, gb.x0); zy0 = Math.min(zy0, gb.y0); zx1 = Math.max(zx1, gb.x1); zy1 = Math.max(zy1, gb.y1); }
+    const mg = Math.round(0.12 * Math.max(zx1-zx0, zy1-zy0));
+    const cx0 = Math.max(0, Math.floor(zx0-mg)), cy0 = Math.max(0, Math.floor(zy0-mg));
+    const cx1 = Math.min(W-1, Math.ceil(zx1+mg)), cy1 = Math.min(H-1, Math.ceil(zy1+mg));
+    const cw = cx1-cx0+1, ch = cy1-cy0+1;
+    // Le modèle travaille sur l'image recadrée : le sujet y occupe toute la
+    // définition qu'il voit (1024 px), au lieu d'une fraction de la photo.
+    const cle = `${cx0},${cy0},${cw},${ch}`;
+    if(!o.iaEmb || o.iaEmb.de !== st.source || o.iaEmb.cle !== cle){
+      _eiObjIAEtat(st, T('Analyse de l’image…','Analysing the image…'));
+      await new Promise(r=>setTimeout(r, 20));
+      const px = _eiBagPixels(st), rec = new Uint8ClampedArray(cw*ch*4);
+      for(let y=0;y<ch;y++) rec.set(px.subarray(((cy0+y)*W + cx0)*4, ((cy0+y)*W + cx0 + cw)*4), y*cw*4);
+      const image = new sam.tf.RawImage(rec, cw, ch, 4).rgb();
+      const entree = await sam.processor(image);
+      const emb = await sam.model.get_image_embeddings(entree);
+      o.iaEmb = { de:st.source, cle, entree, emb };
+      if(!encore()) return;
+    }
+    _eiObjIAEtat(st, T('Détourage…','Cutting out…'));
+    const { entree, emb } = o.iaEmb, ip = sam.ip;
+    const { pos, neg } = _eiObjPointsIA(st);
+    const loc = ([x,y]) => [x - cx0, y - cy0];
+    const points = [[...pos.map(loc), ...neg.map(loc)]], labels = [[...pos.map(()=>1), ...neg.map(()=>0)]];
+    const prompt = { input_points: ip.reshape_input_points(points, entree.original_sizes, entree.reshaped_input_sizes) };
+    prompt.input_labels = ip.add_input_labels(labels, prompt.input_points);
+    const noms = sam.model.sessions?.prompt_encoder_mask_decoder?.inputNames || [];
+    if(noms.includes('input_boxes'))
+      prompt.input_boxes = ip.reshape_input_points([[[r0.x0-cx0, r0.y0-cy0, r0.x1-cx0, r0.y1-cy0]]], entree.original_sizes, entree.reshaped_input_sizes, true);
+    const sortie = await sam.model({ ...emb, ...prompt });
+    const [masques] = await ip.post_process_masks(sortie.pred_masks, entree.original_sizes, entree.reshaped_input_sizes);
+    if(!encore()) return;
+    // Trois propositions (le sujet, une partie, un ensemble plus large). Le
+    // cadre ne borne plus rien : on retient celle qui s'accorde le mieux avec
+    // le premier détourage, et l'avis du modèle départage les ex aequo.
+    const md = masques.data, n = cw*ch, sc = sortie.iou_scores.data, gc = o.masqueGC && o.masqueGC.masque;
+    let k = 0, meilleur = -1;
+    for(let c=0; c<sc.length; c++){
+      let accord = sc[c];
+      if(gc){
+        let inter = 0, union = 0;
+        for(let y=0;y<ch;y++){ const l = (cy0+y)*W + cx0, lm = c*n + y*cw;
+          for(let x=0;x<cw;x++){ const a1 = md[lm+x], a2 = gc[l+x]; if(a1 && a2) inter++; if(a1 || a2) union++; } }
+        accord = (union ? inter/union : 0) + 0.05*sc[c];
+      }
+      if(accord > meilleur){ meilleur = accord; k = c; }
+    }
+    // Aucune proposition ne ressemble à l'objet désigné : on n'impose pas
+    // une forme fausse, le détourage classique reste.
+    if(gc && meilleur < 0.5){
+      _eiObjIAEtat(st, T('L’IA n’a pas reconnu l’objet désigné : détourage classique conservé.','AI did not recognise the object: classic cut-out kept.'), true);
+      finir(o.masqueGC); return;
+    }
+    // L'a priori, en pleine image, limité à la zone de recherche (cadre, lassos, traits).
+    const apriori = new Uint8Array(N);
+    for(let y=0;y<ch;y++) for(let x=0;x<cw;x++){
+      const X = cx0+x, Y = cy0+y, i = Y*W+X, f = forces[i];
+      if(f !== 2 && md[k*n + y*cw + x]) apriori[i] = 1;
+    }
+    // Le bord est repris à la couleur, en pleine définition.
+    _eiObjIAEtat(st, T('Affinage du bord…','Refining the edge…'));
+    await new Promise(r=>setTimeout(r, 10));
+    let r = null;
+    try { r = _gcSelectionObjet(_eiBagPixels(st), W, H, r0, o.traits, apriori); } catch(e){ console.warn('[IA] affinage', e); }
+    if(!r){
+      let bx0 = W, by0 = H, bx1 = -1, by1 = -1;
+      for(let i=0;i<N;i++){ const f = forces[i]; const v = f === 1 ? 1 : f === 2 ? 0 : apriori[i];
+        apriori[i] = v; if(v){ const X = i % W, Y = (i / W) | 0; if(X<bx0) bx0=X; if(X>bx1) bx1=X; if(Y<by0) by0=Y; if(Y>by1) by1=Y; } }
+      r = bx1 < 0 ? null : { masque:apriori, boite:{ x0:bx0, y0:by0, x1:bx1, y1:by1 } };
+    }
+    _eiObjIAEtat(st, T('Détouré par l’IA, bord affiné.','Cut out by AI, edge refined.'));
+    finir(r);
+  } catch(e){
+    console.error('[IA]', e);
+    if(!encore()) return;
+    // L'IA indisponible n'empêche rien : on garde le détourage classique.
+    const absent = /not found locally|404|Failed to fetch/i.test(String(e && e.message || e));
+    _eiObjIAEtat(st, absent
+      ? T('IA indisponible : modèle absent du dossier « ia/modeles » (voir ia/LISEZMOI.txt). Détourage classique conservé.',
+          'AI unavailable: model missing from the “ia/modeles” folder (see ia/LISEZMOI.txt). Classic cut-out kept.')
+      : T(`IA indisponible (${e.message || e}). Détourage classique conservé.`,
+          `AI unavailable (${e.message || e}). Classic cut-out kept.`), true);
+    finir(o.masqueGC);
+  }
+}
+function _eiDessinerObjet(ctx, e){
+  const st = _eiState, o = st.obj, cv = ctx.canvas;
+  if(o.masque) _eiDessinerMasque(ctx, o);
+  const r = o.trace || o.rect;
+  if(r){
+    const q = [[r.x0,r.y0],[r.x1,r.y0],[r.x1,r.y1],[r.x0,r.y1]].map(([x,y])=>[x*e, y*e]);
+    if(!o.masque){
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, cv.width, cv.height);
+      ctx.moveTo(q[0][0],q[0][1]); for(let i=3;i>=1;i--) ctx.lineTo(q[i][0],q[i][1]); ctx.closePath();
+      ctx.fillStyle = o.trace ? 'rgba(0,0,0,.45)' : 'rgba(0,0,0,.6)'; ctx.fill('evenodd'); ctx.restore();
+    }
+    _tracerCadreTirets(ctx, q);
+  }
+  const traits = o.traitEnCours ? [...o.traits, o.traitEnCours] : o.traits;
+  if(o.apercuLigne){
+    const { a, b, m } = o.apercuLigne;
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineWidth = Math.max(2, o.taille);
+    ctx.strokeStyle = m === '-' ? 'rgba(232,88,88,.3)' : 'rgba(96,206,128,.3)';
+    ctx.beginPath(); ctx.moveTo(a[0]*e, a[1]*e); ctx.lineTo(b[0]*e, b[1]*e); ctx.stroke();
+    ctx.setLineDash([6,5]); ctx.lineWidth = 1.5; ctx.strokeStyle = '#e2b86a'; ctx.stroke();
+    ctx.restore();
+  }
+  for(const t of traits){
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(2, t.r * 2 * e);
+    ctx.strokeStyle = t.m === '+' ? 'rgba(96,206,128,.5)' : 'rgba(232,88,88,.5)';
+    ctx.beginPath();
+    t.pts.forEach(([x,y], i)=> i ? ctx.lineTo(x*e, y*e) : ctx.moveTo(x*e, y*e));
+    if(t.pts.length === 1) ctx.lineTo(t.pts[0][0]*e + 0.01, t.pts[0][1]*e);
+    ctx.stroke(); ctx.restore();
+  }
+}
+
+// ── Baguette magique ─────────────────────────────────────────────────────
+// Remplissage par lignes depuis le point cliqué : un pixel voisin entre s'il
+// ne s'écarte pas de plus de « tolérance » de la couleur cliquée, sur chacun
+// des trois canaux. Les clics s'enchaînent (nouvelle sélection, ajout,
+// retrait) et sont gardés dans la recette : on les rejoue à la réouverture.
+function _eiBagPixels(st){
+  const b = st.bag;
+  if(b.pixDe !== st.source){
+    b.pix = st.source.getContext('2d', {willReadFrequently:true}).getImageData(0, 0, st.source.width, st.source.height).data;
+    b.pixDe = st.source;
+  }
+  return b.pix;
+}
+function _eiBagRemplir(px, W, H, sx, sy, tol){
+  const r = new Uint8Array(W*H);
+  const i0 = (sy*W + sx)*4, R0 = px[i0], G0 = px[i0+1], B0 = px[i0+2];
+  const ok = p => { const i = p*4;
+    return Math.abs(px[i]-R0) <= tol && Math.abs(px[i+1]-G0) <= tol && Math.abs(px[i+2]-B0) <= tol; };
+  const pile = [sy*W + sx];
+  while(pile.length){
+    const p = pile.pop(); if(r[p]) continue;
+    const y = (p / W) | 0, ligne = y*W;
+    let xg = p - ligne, xd = xg;
+    while(xg > 0 && !r[ligne+xg-1] && ok(ligne+xg-1)) xg--;
+    while(xd < W-1 && !r[ligne+xd+1] && ok(ligne+xd+1)) xd++;
+    let h = false, b = false;
+    for(let x=xg; x<=xd; x++){
+      r[ligne+x] = 1;
+      if(y > 0){ const q = ligne - W + x; const v = !r[q] && ok(q); if(v && !h) pile.push(q); h = v; }
+      if(y < H-1){ const q = ligne + W + x; const v = !r[q] && ok(q); if(v && !b) pile.push(q); b = v; }
+    }
+  }
+  return r;
+}
+function _eiBagCalculer(){
+  const st = _eiState; if(!st) return;
+  const b = st.bag, W = st.source.width, H = st.source.height;
+  b.version++; b.affiche = null;
+  if(!b.ops.length){ b.masque = null; b.boite = null; return; }
+  const px = _eiBagPixels(st);
+  let m = null;
+  for(const o of b.ops){
+    const x = Math.max(0, Math.min(W-1, Math.round(o.x))), y = Math.max(0, Math.min(H-1, Math.round(o.y)));
+    const r = _eiBagRemplir(px, W, H, x, y, o.tol);
+    if(o.m === '=' || !m) m = o.m === '-' ? new Uint8Array(W*H) : r;
+    else if(o.m === '+'){ for(let i=0;i<m.length;i++) if(r[i]) m[i] = 1; }
+    else { for(let i=0;i<m.length;i++) if(r[i]) m[i] = 0; }
+  }
+  if(b.inverse) for(let i=0;i<m.length;i++) m[i] = m[i] ? 0 : 1;
+  // La boîte englobante : c'est elle qui sera rendue.
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for(let y=0; y<H; y++){ const l = y*W;
+    for(let x=0; x<W; x++) if(m[l+x]){ if(x<x0) x0=x; if(x>x1) x1=x; if(y<y0) y0=y; if(y>y1) y1=y; } }
+  b.masque = m; b.boite = x1 >= 0 ? { x0, y0, x1, y1 } : null;
+}
+function _eiBagClic(x, y, mode){
+  const st = _eiState; if(!st) return;
+  const W = st.source.width, H = st.source.height;
+  if(x < 0 || y < 0 || x >= W || y >= H) return;
+  const op = { x:Math.round(x), y:Math.round(y), tol:st.bag.tol, m:mode };
+  if(mode === '='){ st.bag.ops = [op]; st.bag.inverse = false; st.ov.querySelector('#eiBagInv')?.classList.remove('ei-actif'); }
+  else st.bag.ops.push(op);
+  _eiBagCalculer(); _eiDessiner();
+}
+let _eiBagMinuterie = null;
+function _eiBagTolerance(v){
+  const st = _eiState; if(!st) return;
+  st.bag.tol = Math.max(0, Math.min(128, Math.round(+v || 0)));
+  const o = st.ov.querySelector('#eiBagTolVal'); if(o) o.textContent = st.bag.tol;
+  if(!st.bag.ops.length) return;
+  st.bag.ops[st.bag.ops.length-1].tol = st.bag.tol;
+  // Regroupé : le curseur bouge plus vite qu'un remplissage sur une grande photo.
+  clearTimeout(_eiBagMinuterie);
+  _eiBagMinuterie = setTimeout(()=>{ if(_eiState === st){ _eiBagCalculer(); _eiDessiner(); } }, 60);
+}
+function _eiBagInverser(){
+  const st = _eiState; if(!st || !st.bag.ops.length) return;
+  st.bag.inverse = !st.bag.inverse;
+  st.ov.querySelector('#eiBagInv')?.classList.toggle('ei-actif', st.bag.inverse);
+  _eiBagCalculer(); _eiDessiner();
+}
+function _eiBagEffacer(){
+  const st = _eiState; if(!st) return;
+  st.bag.ops = []; st.bag.inverse = false; st.bag.quart = 0;
+  st.ov.querySelector('#eiBagInv')?.classList.remove('ei-actif');
+  _eiBagCalculer(); _eiDessiner();
+}
+// Affichage : un voile sur ce qui n'est pas sélectionné, et un liseré doré à
+// la frontière. Calculé à la taille de la toile, gardé tant que rien ne change.
+function _eiDessinerBaguette(ctx){ _eiDessinerMasque(ctx, _eiState.bag); }
+function _eiDessinerMasque(ctx, b){
+  const st = _eiState, cv = ctx.canvas;
+  if(!b.masque) return;
+  const cle = `${b.version}|${cv.width}|${cv.height}`;
+  if(!b.affiche || b.affiche.cle !== cle){
+    const W = st.source.width, H = st.source.height, l = cv.width, h = cv.height;
+    const sel = new Uint8Array(l*h);
+    for(let y=0; y<h; y++){ const sy = Math.min(H-1, (y * H / h) | 0) * W;
+      for(let x=0; x<l; x++) sel[y*l+x] = b.masque[sy + Math.min(W-1, (x * W / l) | 0)]; }
+    const c = document.createElement('canvas'); c.width = l; c.height = h;
+    const cx = c.getContext('2d'), im = cx.createImageData(l, h), d = im.data;
+    for(let y=0; y<h; y++) for(let x=0; x<l; x++){
+      const i = y*l + x, v = sel[i], k = i*4;
+      const bord = (x < l-1 && sel[i+1] !== v) || (y < h-1 && sel[i+l] !== v) || (x > 0 && sel[i-1] !== v) || (y > 0 && sel[i-l] !== v);
+      if(bord && v){ d[k]=226; d[k+1]=184; d[k+2]=106; d[k+3]=255; }
+      else if(!v){ d[k+3] = 150; }
+    }
+    cx.putImageData(im, 0, 0);
+    b.affiche = { cle, toile:c };
+  }
+  ctx.drawImage(b.affiche.toile, 0, 0);
+}
+// Le rendu : la boîte de la sélection, pixels hors masque transparents, puis
+// le quart de tour demandé.
+function _eiRenduBaguette(st, plafond){ return _eiRenduMasque(st, st.bag, plafond); }
+function _eiRenduMasque(st, b, plafond){
+  if(!b.masque || !b.boite) return null;
+  const { x0, y0, x1, y1 } = b.boite, W = st.source.width;
+  const l = x1 - x0 + 1, h = y1 - y0 + 1;
+  if(!b.rendu || b.rendu.version !== b.version || b.rendu.de !== st.source){
+    const c = document.createElement('canvas'); c.width = l; c.height = h;
+    const x = c.getContext('2d', {willReadFrequently:true});
+    x.drawImage(st.source, x0, y0, l, h, 0, 0, l, h);
+    const im = x.getImageData(0, 0, l, h), d = im.data;
+    for(let y=0; y<h; y++){ const ls = (y0+y)*W + x0;
+      for(let i=0; i<l; i++) if(!b.masque[ls+i]) d[(y*l+i)*4+3] = 0; }
+    // Le bord seul est adouci (moyenne 3×3 de l'opacité) : un détourage net
+    // au pixel montrerait des marches d'escalier sur une diagonale.
+    const a0 = new Uint8Array(l*h); for(let i=0;i<l*h;i++) a0[i] = d[i*4+3];
+    for(let y=0; y<h; y++) for(let x2=0; x2<l; x2++){
+      const i = y*l + x2, v = a0[i];
+      const g = x2 > 0 ? a0[i-1] : 0, dr = x2 < l-1 ? a0[i+1] : 0, hh = y > 0 ? a0[i-l] : 0, bb = y < h-1 ? a0[i+l] : 0;
+      if(g === v && dr === v && hh === v && bb === v) continue;
+      let t = 0, n = 0;
+      for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++){
+        const X = x2+dx, Y = y+dy; t += (X<0||Y<0||X>=l||Y>=h) ? 0 : a0[Y*l+X]; n++; }
+      d[i*4+3] = Math.round(t / n);
+    }
+    x.putImageData(im, 0, 0);
+    b.rendu = { version:b.version, de:st.source, toile:c };
+  }
+  const k = Math.min(1, plafond / Math.max(l, h));
+  const L = Math.max(1, Math.round(l*k)), Hh = Math.max(1, Math.round(h*k));
+  const q = b.quart % 4, tourne = q % 2;
+  const c = document.createElement('canvas'); c.width = tourne ? Hh : L; c.height = tourne ? L : Hh;
+  const x = c.getContext('2d', {willReadFrequently:true});
+  x.imageSmoothingQuality = 'high';
+  x.translate(c.width/2, c.height/2); x.rotate(q * Math.PI/2);
+  x.drawImage(b.rendu.toile, -L/2, -Hh/2, L, Hh);
+  return c;
 }
 
 // ── La balance de série ───────────────────────────────────────────────────
@@ -13891,7 +15836,20 @@ async function _eiFin(id){
     id = nonPrincipaux.length ? nonPrincipaux[nonPrincipaux.length-1].id : 'annuler';
   }
   let data = null;
-  if(id === 'valider'){
+  if(id === 'valider' && st.outil !== 'cadre'){
+    // Ellipse et baguette : un détourage, donc un PNG pour garder la transparence.
+    if((st.outil === 'baguette' && !st.bag.boite) || (st.outil === 'objet' && !st.obj.boite)){
+      toast(T('Sélection vide : cliquez d’abord une zone de l’image.','Empty selection: click an area of the image first.'), 'error');
+      return;
+    }
+    st.occupe = true;
+    const b = st.ov.querySelector('#eiBtn-valider');
+    if(b){ b.disabled = true; b.textContent = T('Traitement…','Processing…'); }
+    await new Promise(r=>setTimeout(r, 30));
+    const toile = st.outil === 'ellipse' ? _eiRenduEllipse(st, PHOTO_MAX) : _eiRenduMasque(st, st.outil === 'objet' ? st.obj : st.bag, PHOTO_MAX);
+    data = toile ? _eiFiltrerToile(toile, st.reglages).toDataURL('image/png') : null;
+  }
+  else if(id === 'valider'){
     st.occupe = true;
     const b = st.ov.querySelector('#eiBtn-valider');
     if(b){ b.disabled = true; b.textContent = T('Traitement…','Processing…'); }
@@ -16964,6 +18922,11 @@ function generateRecoveryCode(){
 }
 
 function showLoginPanel(){
+  if(CLOUD){
+    _panneauConnexion('loginFields', T('Connectez-vous à votre collection en ligne','Sign in to your online collection'));
+    setTimeout(()=>document.getElementById('loginUser')?.focus(),50);
+    return;
+  }
   document.getElementById('loginFields').style.display='block';
   document.getElementById('setupFields').style.display='none';
   document.getElementById('forgotFields').style.display='none';
@@ -18541,7 +20504,7 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
   // Section Conservation
   const conservation = F(T('État','Condition'), it.etat)
     + (it.prixAchat?F(T("Prix d'achat",'Purchase price'), it.prixAchat.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:'currency',currency:'EUR'})):'')
-    + (it.cote?F('Cote', it.cote.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:'currency',currency:'EUR'})):'')
+    + (it.cote?F('Cote', it.cote.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:'currency',currency:'EUR'}) + ((it.coteSource||it.coteDate)?' — '+[it.coteSource, _dateCote(it.coteDate)].filter(Boolean).join(', '):'')):'')
     + F(T('Acquisition','Acquired'), it.dateAcquisition)
     + F(T('Provenance','Source'), it.lieuAcquisition)
     + (glued
@@ -18703,7 +20666,7 @@ function renderItemDetail(id, pushHistory=true){
     ${_gradeDetailHTML(it)}
     ${(it.etat||it.etatDetail)?`<dt>${t('detail.condition_label')}</dt><dd>${escapeHTML(it.etat||'')}${it.etatDetail?`${it.etat?' — ':''}<span class="muted">${escapeHTML(it.etatDetail)}</span>`:''}</dd>`:""}
     ${it.prixAchat?`<dt>${t('detail.price_buy_label')}</dt><dd>${it.prixAchat.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:"currency",currency:"EUR"})}</dd>`:""}
-    ${it.cote?`<dt>${t('detail.price_curr_label')}</dt><dd>${it.cote.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:"currency",currency:"EUR"})}</dd>`:""}
+    ${it.cote?`<dt>${t('detail.price_curr_label')}</dt><dd>${it.cote.toLocaleString(_lang==='en'?'en-GB':'fr-FR',{style:"currency",currency:"EUR"})}${(it.coteSource||it.coteDate)?` <span class="muted">— ${escapeHTML([it.coteSource, _dateCote(it.coteDate)].filter(Boolean).join(', '))}</span>`:''}</dd>`:""}
     ${it.dateAcquisition?`<dt>${t('detail.acq_date_label')}</dt><dd>${escapeHTML(it.dateAcquisition)}</dd>`:""}
     ${it.lieuAcquisition?`<dt>${t('detail.source_label')}</dt><dd>${escapeHTML(it.lieuAcquisition)}</dd>`:""}
     ${it.localisation?`<dt>${t('detail.location_label')}</dt><dd>${escapeHTML(friendlyLocation(it.localisation))}</dd>`:""}
@@ -18806,7 +20769,7 @@ function renderItemDetail(id, pushHistory=true){
         ? `<div class="panel"><h3>${t('detail.includes')}</h3><dl>${inclRows.map(_dtdd).join("")}</dl></div>`
         : "";
       const carRows = [];
-      if(it.emboitageFourreau||it.emboitageCoffret||it.emboitageChemise||it.finitionCarton||it.finitionBristol||it.finitionDecoupeLaser||it.emboitagePleineToile||it.finitionPlexiglas||it.emboitageEmbossageFroid) carRows.push({k:t('caract.emboitage'),v:[it.emboitageFourreau?(_lang==='en'?'Slipcase':'Étui'):"",it.emboitageCoffret?(_lang==='en'?'Box set':'Coffret'):"",it.emboitageChemise?(_lang==='en'?'Folder':'Chemise'):"",it.finitionCarton?'Carton':"",it.emboitagePleineToile?(_lang==='en'?'Full cloth':'Pleine toile'):"",it.finitionBristol?'Bristol':"",it.finitionDecoupeLaser?(_lang==='en'?'Laser cut':'Découpe laser'):"",it.finitionPlexiglas?'Plexiglas':"",it.emboitageEmbossageFroid?(_lang==='en'?'Blind embossing':'Embossage à froid'):""].filter(Boolean).join(" + ")});
+      if(it.emboitageFourreau||it.emboitageCoffret||it.emboitageChemise||it.emboitageEnveloppe||it.finitionCarton||it.finitionBristol||it.finitionDecoupeLaser||it.emboitagePleineToile||it.finitionPlexiglas||it.emboitageTyvek||it.emboitageMarquageChaud||it.emboitageEmbossageFroid) carRows.push({k:t('caract.emboitage'),v:[it.emboitageFourreau?(_lang==='en'?'Slipcase':'Étui'):"",it.emboitageCoffret?(_lang==='en'?'Box set':'Coffret'):"",it.emboitageChemise?(_lang==='en'?'Folder':'Chemise'):"",it.emboitageEnveloppe?(_lang==='en'?'Envelope':'Enveloppe'):"",it.finitionCarton?'Carton':"",it.emboitagePleineToile?(_lang==='en'?'Full cloth':'Pleine toile'):"",it.finitionBristol?'Bristol':"",it.finitionDecoupeLaser?(_lang==='en'?'Laser cut':'Découpe laser'):"",it.finitionPlexiglas?'Plexiglas':"",it.emboitageTyvek?'Tyvek':"",it.emboitageMarquageChaud?(_lang==='en'?'Hot foil stamping':'Marquage à chaud'):"",it.emboitageEmbossageFroid?(_lang==='en'?'Blind embossing':'Embossage à froid'):""].filter(Boolean).join(" + ")});
       if(it.emboitageQualite) carRows.push({k:(_lang==='en'?'Slipcase quality':"Qualité de l'emboîtage"),v:escapeHTML(it.emboitageQualite)});
       if(it.relie||it.relieTranchefile||it.bradel||it.broche||it.cousu||it.dosCarreColle||it.dosAgrafe||it.dosSpiral||it.anneaux||it.aLaSuisse) carRows.push({k:t('caract.reliure'),v:[it.relie?(_lang==='en'?'Hardcover':'Relié'):"",it.relieTranchefile?(_lang==='en'?'Hardcover with headband':'Relié avec tranchefile'):"",it.bradel?(_lang==='en'?'Bradel binding':'Bradel'):"",it.broche?(_lang==='en'?'Paperback':'Broché'):"",it.cousu?(_lang==='en'?'Sewn':'Cousu'):"",it.dosCarreColle?(_lang==='en'?'Perfect bound':'Dos carré collé'):"",it.dosAgrafe?(_lang==='en'?'Staple-bound':'Agrafé'):"",it.dosSpiral?(_lang==='en'?'Spiral-bound':'Spirale'):"",it.anneaux?(_lang==='en'?'Ring binder':'À anneaux'):"",it.aLaSuisse?(_lang==='en'?'Swiss-bound':'À la Suisse'):""].filter(Boolean).join(" + ")});
       if(it.couvertureCartonnee||it.couvertureSouple||it.rabats) carRows.push({k:t('caract.couverture'),v:[it.couvertureCartonnee?(_lang==='en'?'Hardcover':'Cartonnée'):"",it.couvertureSouple?(_lang==='en'?'Softcover':'Souple'):"",it.rabats?(_lang==='en'?'Softcover with flaps':'Souple avec rabats'):""].filter(Boolean).join(" + ")});
@@ -19125,6 +21088,16 @@ async function _embedAllImages(items, authors, meta){
       catch(e){ failed.push(`${it.titre||'?'} (image ${i+1})`); }
     }
   }
+  // Les photos d'origine des visuels retouchés : sans elles, une retouche ne
+  // se rouvre plus depuis la sauvegarde. Même traitement que les visuels.
+  for(const it of items){
+    if(!Array.isArray(it.imagesOriginales)) continue;
+    for(let i=0;i<it.imagesOriginales.length;i++){
+      if(!isRemote(it.imagesOriginales[i])) continue;
+      try { it.imagesOriginales[i] = await _embedImage(it.imagesOriginales[i]); done++; }
+      catch(e){ failed.push(`${it.titre||'?'} (photo d'origine ${i+1})`); }
+    }
+  }
   for(const a of authors){
     if(!isRemote(a.photoUrl)) continue;
     try { a.photoUrl = await _embedImage(a.photoUrl); done++; }
@@ -19321,8 +21294,10 @@ async function exportJSON(){
   const authors = JSON.parse(JSON.stringify(cache.authors||[]));
   meta = JSON.parse(JSON.stringify(meta));
 
-  const nRemote = items.reduce((n,it)=>n+(it.images||[]).filter(u=>/^https?:\/\//i.test(u||'')).length,0)
-                + authors.filter(a=>/^https?:\/\//i.test(a.photoUrl||'')).length;
+  const distante = u => /^https?:\/\//i.test(u||'');
+  const nRemote = items.reduce((n,it)=>n+(it.images||[]).filter(distante).length+(it.imagesOriginales||[]).filter(distante).length,0)
+                + authors.filter(a=>distante(a.photoUrl)).length
+                + ((meta.find(m=>m.key==='wishlist')||{}).value||[]).filter(w=>w && distante(w.image)).length;
   if(nRemote) toast(T(`Préparation de la sauvegarde : ${nRemote} image(s) à intégrer…`,
                       `Preparing backup: embedding ${nRemote} image(s)…`));
   let res = { done:0, failed:[] };
@@ -26078,7 +28053,7 @@ const VENTE_RELIURE = [
   ['bradel','Reliure bradel','Bradel binding'],['anneaux','Anneaux','Ring binding'],['rabats','Rabats','Flaps'],['jaquette','Jaquette','Dust jacket'],
   ['rhodoid','Rhodoïd','Acetate jacket'],['bandeau','Bandeau','Belly band'],['rubanMarquePage','Ruban marque-page','Ribbon bookmark'],
   ['vernisSelectif','Vernis sélectif','Spot varnish'],['marquageChaud','Marquage à chaud','Hot-foil stamping'],['embossageFroid','Embossage à froid','Blind embossing'],
-  ['emboitageFourreau','Fourreau','Slipcase'],['emboitageCoffret','Coffret','Box set'],['emboitageChemise','Chemise','Folder case'],
+  ['emboitageFourreau','Fourreau','Slipcase'],['emboitageCoffret','Coffret','Box set'],['emboitageChemise','Chemise','Folder case'],['emboitageEnveloppe','Enveloppe','Envelope'],['emboitageTyvek','Emboîtage Tyvek','Tyvek case'],
   ['formatCarre','Format carré','Square format'],['formatFrancaise','Format à la française','Portrait format'],['formatItalienne','Format à l’italienne','Landscape format'],
   ['formatManga','Format manga','Manga format'],['formatComics','Format comics','Comics format'],
 ];
@@ -27020,6 +28995,7 @@ applyTheme(localStorage.getItem('bdapp_theme') || 'dark');
   _detecterPageInvite();
   if (CLOUD) { try { await ensureSupabaseLib(); } catch(e){ console.error(e); }
     const _c=document.getElementById('sbCfgArea'); if(_c && !SB.getCfg()) _c.style.display='block'; }
+  if(CLOUD && _LIEN_AUTH && await _traiterLienAuth()) return;
   if(isSessionActive()){
     window._appInitialized = true;
     showApp();
