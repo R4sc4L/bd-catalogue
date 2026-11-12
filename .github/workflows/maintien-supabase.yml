@@ -1,0 +1,42 @@
+# Maintien en activité du projet Supabase (offre gratuite).
+# Supabase met en pause un projet gratuit sans activité de base de données pendant 7 jours.
+# Deux fois par semaine, cette tâche fait une lecture anonyme : les règles d'accès (RLS)
+# ne renvoient aucune ligne, mais la requête atteint bien la base.
+# L'adresse et la clé publique sont lues dans index.html : rien à configurer, aucun secret.
+# Si la base ne répond pas (projet en pause, clé changée…), la tâche échoue et GitHub
+# vous prévient par e-mail.
+name: Maintien Supabase
+
+on:
+  schedule:
+    - cron: "17 6 * * 1,4"    # lundi et jeudi, 6 h 17 UTC
+  workflow_dispatch:           # bouton « Run workflow » pour un essai à la main
+
+permissions:
+  contents: read
+
+jobs:
+  lecture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: index.html
+          sparse-checkout-cone-mode: false
+
+      - name: Lecture dans la base
+        run: |
+          URL=$(grep -o 'SB_URL_DEFAULT *= *"[^"]*"' index.html | head -1 | cut -d'"' -f2)
+          CLE=$(grep -o 'SB_KEY_DEFAULT *= *"[^"]*"' index.html | head -1 | cut -d'"' -f2)
+          if [ -z "$URL" ] || [ -z "$CLE" ]; then
+            echo "::error::Adresse ou clé Supabase introuvable dans index.html"; exit 1
+          fi
+          CODE=$(curl -sS -o reponse.json -w '%{http_code}' --max-time 30 \
+            -H "apikey: $CLE" -H "Accept: application/json" \
+            "$URL/rest/v1/profiles?select=user_id&limit=1")
+          echo "Réponse HTTP $CODE : $(head -c 200 reponse.json)"
+          if [ "$CODE" != "200" ]; then
+            echo "::error::La base n'a pas répondu normalement (HTTP $CODE). Projet en pause ? Voir le tableau de bord Supabase."
+            exit 1
+          fi
