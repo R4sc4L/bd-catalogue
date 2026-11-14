@@ -2703,6 +2703,10 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <span data-en="📦 Import JSON (replaces everything)">📦 Importer JSON (remplace tout)</span>
             <input type="file" accept=".json" onchange="importJSON(event)" style="display:none">
           </label>
+          <label class="secondary" style="display:block;cursor:pointer;padding:8px 16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg-panel);color:var(--ink);text-align:center" title="N’ajoute que les œuvres absentes d’ici ; rien n’est remplacé ni supprimé" data-en-title="Only adds works missing here; nothing is replaced or deleted">
+            <span data-en="➕ Add missing works from a JSON backup">➕ Ajouter les œuvres manquantes (JSON)</span>
+            <input type="file" accept=".json" onchange="importJSONFusion(event)" style="display:none">
+          </label>
           <label class="secondary" style="display:block;cursor:pointer;padding:8px 16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg-panel);color:var(--ink);text-align:center">
             <span data-en="📊 Add from CSV (collection)">📊 Ajouter depuis CSV (collection)</span>
             <input type="file" accept=".csv" onchange="importCSV(event,'items')" style="display:none">
@@ -21549,6 +21553,73 @@ async function importJSON(e){
     toast(T("Erreur d'import : ","Import error: ")+err.message, "error");
   }
   e.target.value = "";
+}
+
+// Fusion : ajoute seulement les œuvres absentes d'ici (même identifiant), avec
+// leurs auteurs. Rien n'est remplacé ni supprimé ; les réglages du fichier sont
+// ignorés. Sert à rapatrier quelques fiches saisies ailleurs (autre navigateur,
+// Supabase local…) sans écraser la base de référence comme le fait importJSON.
+async function importJSONFusion(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  e.target.value = "";
+  try {
+    const data = JSON.parse(await file.text());
+    if(!data || !Array.isArray(data.items) || !Array.isArray(data.authors)){
+      throw new Error(T("Format invalide (items/authors attendus sous forme de listes)","Invalid format (items/authors lists expected)"));
+    }
+    const ici = new Set((cache.items||[]).map(i=>String(i.id)));
+    const nouvelles = data.items.map(_sanitizeImportedItem).filter(it=>it && it.id && !ici.has(String(it.id)));
+    if(!nouvelles.length){
+      toast(T("Rien à ajouter : toutes les œuvres du fichier sont déjà présentes.","Nothing to add: every work in the file is already here."));
+      return;
+    }
+    const titres = nouvelles.slice(0, 12).map(it=>'• ' + (it.titre || T('Sans titre','Untitled'))).join('\n')
+                 + (nouvelles.length > 12 ? '\n' + T(`… et ${nouvelles.length-12} autre(s)`, `… and ${nouvelles.length-12} more`) : '');
+    if(!confirm(T(`Ajouter ${nouvelles.length} œuvre(s) absente(s) d’ici ?\n\n${titres}\n\nLes œuvres déjà présentes ne sont pas modifiées.`,
+                  `Add ${nouvelles.length} work(s) missing here?\n\n${titres}\n\nWorks already here are left unchanged.`))) return;
+
+    // Auteurs : celui qui existe déjà ici (même identifiant, ou même nom dans la même
+    // collection) est réutilisé ; les autres sont créés, AVANT les œuvres (clé étrangère).
+    const fichierAuteurs = new Map(data.authors.map(_sanitizeImportedAuthor).filter(Boolean).map(a=>[String(a.id), a]));
+    const parId = new Set((cache.authors||[]).map(a=>String(a.id)));
+    const cleNom = a => (a.collectionType||'bd') + '|' + _normCat(authorDisplay(a));
+    const parNom = new Map((cache.authors||[]).map(a=>[cleNom(a), a.id]));
+    const correspondance = new Map();
+    let auteursCrees = 0, liensPerdus = 0;
+    for(const it of nouvelles){
+      if(!Array.isArray(it.auteurs)) continue;
+      for(const lien of it.auteurs){
+        const id = String(lien && lien.auteurId);
+        if(parId.has(id) || correspondance.has(id)) continue;
+        const a = fichierAuteurs.get(id);
+        if(!a){ correspondance.set(id, null); continue; }
+        const existant = parNom.get(cleNom(a));
+        if(existant){ correspondance.set(id, existant); continue; }
+        await dbPut("authors", a);
+        parId.add(id); parNom.set(cleNom(a), a.id); correspondance.set(id, a.id); auteursCrees++;
+      }
+    }
+    for(const it of nouvelles){
+      if(Array.isArray(it.auteurs)){
+        const avant = it.auteurs.length;
+        it.auteurs = it.auteurs
+          .map(l=>{ const id = String(l && l.auteurId); if(parId.has(id)) return l;
+                    const c = correspondance.get(id); return c ? { ...l, auteurId:c } : null; })
+          .filter(Boolean);
+        liensPerdus += avant - it.auteurs.length;
+      }
+      await dbPut("items", it);
+    }
+    await reloadCache();
+    refreshCurrentView();
+    toast(T(`Ajouté : ${nouvelles.length} œuvre(s), ${auteursCrees} auteur(s) créé(s)`,
+            `Added: ${nouvelles.length} work(s), ${auteursCrees} author(s) created`));
+    if(liensPerdus) setTimeout(()=>toast(T(`⚠️ ${liensPerdus} lien(s) auteur ignoré(s) : auteur absent du fichier.`,
+                                           `⚠️ ${liensPerdus} author link(s) skipped: author missing from the file.`),'error'), 1400);
+  } catch(err){
+    toast(T("Erreur d'import : ","Import error: ") + err.message, "error");
+  }
 }
 
 async function importCSV(e, type){
