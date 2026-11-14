@@ -2027,7 +2027,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   .hub-tile .hub-icon{font-size:34px;line-height:1}
   .hub-tile .hub-name{font-family:"Orbitron",sans-serif;font-weight:700;font-size:17px;color:var(--ink);letter-spacing:.03em}
   .hub-tile .hub-desc{font-size:12px;color:var(--ink-soft)}
-  .hub-tile .hub-count{margin-top:6px;font-size:13px;color:var(--mod-accent,var(--gold));font-weight:700}
+  .hub-tile .hub-count{margin-top:auto;padding-top:6px;font-size:13px;color:var(--mod-accent,var(--gold));font-weight:700}
   .hub-tile.global{--mod-accent:var(--gold)}
   .hub-tile .hub-disable{position:absolute;top:10px;right:10px;font-size:10px;background:var(--surface-tint);border:1px solid var(--border);color:var(--ink-soft);padding:2px 8px;border-radius:999px;opacity:0;transition:opacity .12s;z-index:4}
   .hub-tile:hover .hub-disable{opacity:1}
@@ -2524,7 +2524,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <button data-view="stats" role="menuitem">Statistiques</button>
         <button data-view="categories" role="menuitem">Catégories</button>
         <button data-view="import-export" role="menuitem">Import / Export</button>
-        <button type="button" role="menuitem" id="navNuageBtn" data-en="☁️ Cover cloud" onclick="closeNavMore();ouvrirNuage(true)">☁️ Nuage de couvertures</button>
+        <button type="button" role="menuitem" id="navNuageBtn" data-en="☁️ Album cloud" onclick="closeNavMore();ouvrirNuage(true)">☁️ Nuage d’albums</button>
         <button type="button" role="menuitem" id="navTableauBtn" data-en="✨ Light board" onclick="closeNavMore();ouvrirTableau(true)">✨ Tableau lumineux</button>
       </div>
     </div>
@@ -3246,7 +3246,7 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
               </div>
             </div>
             <div><label data-en="Country of publication">Pays d'édition</label><input type="text" id="itemCountry" list="dl-countries" onchange="_proposerTradition()"></div>
-            <div><div class="aide-titre aide-titre-champ"><label data-en="ISBN / Reference">ISBN / Référence</label><button type="button" class="aide-btn aide-mini" id="itemUpcLexique" hidden onclick="ouvrirLexiqueCodesComics()" title="Lexique des codes-barres de comics" data-en-title="Comic book barcode glossary" aria-label="Lexique des codes-barres de comics">?</button></div>
+            <div id="formFieldIsbn"><div class="aide-titre aide-titre-champ"><label data-en="ISBN / Reference">ISBN / Référence</label><button type="button" class="aide-btn aide-mini" id="itemUpcLexique" hidden onclick="ouvrirLexiqueCodesComics()" title="Lexique des codes-barres de comics" data-en-title="Comic book barcode glossary" aria-label="Lexique des codes-barres de comics">?</button></div>
               <div class="author-pick">
                 <input type="text" id="itemIsbn" oninput="_majLienFiche()">
                 <a class="lien-ext" id="itemIsbnLien" href="#" target="_blank" rel="noopener noreferrer" hidden onclick="_avantOuvertureLienFiche(this)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-link"></use></svg></a>
@@ -3536,10 +3536,14 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div class="checkbox-row"><input type="checkbox" id="itemCartePostale"><label for="itemCartePostale" style="margin:0" data-en="Postcard">Carte postale</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemPoster"><label for="itemPoster" style="margin:0" data-en="Poster">Poster</label></div>
             <div class="checkbox-row"><input type="checkbox" id="itemSupplementRedactionnel"><label for="itemSupplementRedactionnel" style="margin:0" data-en="Editorial supplement">Supplément rédactionnel</label></div>
-            <div class="span-3" style="display:flex;align-items:center;gap:10px">
+            <div class="span-2" style="display:flex;align-items:center;gap:10px">
               <input type="checkbox" id="itemObjet" style="flex-shrink:0;width:auto">
               <label for="itemObjet" style="margin:0;white-space:nowrap;flex-shrink:0" data-en="Other">Autre</label>
-              <input type="text" id="itemObjetDesc" placeholder="ex: figurine, badge, jeu de cartes…" data-en-ph="e.g. figurine, badge, card game…" style="flex:1">
+              <input type="text" id="itemObjetDesc" placeholder="ex: figurine, badge, jeu de cartes…" data-en-ph="e.g. figurine, badge, card game…" style="flex:1;min-width:0">
+            </div>
+            <div class="span-3" style="display:flex;align-items:center;gap:10px">
+              <label for="itemContenuDetail" style="margin:0;white-space:nowrap;flex-shrink:0" data-en="Details">Précisions</label>
+              <input type="text" id="itemContenuDetail" maxlength="300" placeholder="ex : 3 tirages numérotés, 2 timbres, poster en trois volets…" data-en-ph="e.g. 3 numbered prints, 2 stamps, three-panel poster…" style="flex:1;min-width:0">
             </div>
           </div>
         </div>
@@ -5145,8 +5149,9 @@ const _ARCH_FIELDS = {
   serieNum:   { id:'formFieldSerieNum',     mode:'self'   },
   collection: { id:'itemCollection',        mode:'parent' },
   mois:       { id:'itemMonth',             mode:'parent' },
-  isbn:       { id:'itemIsbn',              mode:'parent' },
+  isbn:       { id:'formFieldIsbn',         mode:'self'   },
   pages:      { id:'itemPages',             mode:'parent' },
+  papier:     { id:'formFieldPaperQuality', mode:'self'   },
   reliure:    { id:'formReliure',           mode:'self'   },
   couverture: { id:'formCouverture',        mode:'self'   },
   finitionsCouverture: { id:'formFinitionCouverture', mode:'self' },
@@ -5288,6 +5293,14 @@ const FICHE_ARCHETYPES = {
   // Éphémères : petit imprimé non relié (ex-libris, invitations, marque-pages,
   // flyers, coupures de presse…). Fiche épurée + section « Éphémère » dédiée
   // dont le sous-bloc dépend du champ « type de document » (voir adaptEphemereType).
+  // Pin's : fiche d'objet. Les champs propres au livre sont masqués ; la section
+  // « Caractéristiques du Pin's » (marque, matière, forme, série…) les remplace.
+  pin: {
+    id:'pin', label:"Pin's", labelEn:'Pin', icon:'📌',
+    hidden:['univers','serie','serieNum','collection','mois','isbn','pages','papier','reliure','couverture',
+            'emboitage','rubanJaquette','contenu','formatManga','formatComics'],
+    sectionTitles:{ edition:{fr:'Informations générales',en:'General information'} },
+  },
   ephemere: {
     id:'ephemere', label:'Éphémère (imprimé non relié)', labelEn:'Ephemera (unbound print)', icon:'🗂️',
     hidden:['univers','serie','serieNum','collection','mois','isbn','pages','reliure','couverture','emboitage','contenu'],
@@ -5592,7 +5605,7 @@ const ETAT_DETAIL_DEFAUT = {
 };
 // Champs dont un archétype peut réécrire le libellé (voir `fieldLabels`).
 const _ARCH_LABEL_FIELDS = ['itemPublisher','itemIsbn','itemCountry','itemCondition','itemFormat'];
-const _ARCH_EDITION_TITLES = ['Édition et impression','Edition and printing','Édition','Edition','Caractéristiques','Characteristics','Réalisation','Creation','Identité','Identity','Label et parution','Label and release'];
+const _ARCH_EDITION_TITLES = ['Informations générales','General information','Édition et impression','Edition and printing','Édition','Edition','Caractéristiques','Characteristics','Réalisation','Creation','Identité','Identity','Label et parution','Label and release'];
 const _ARCH_ACQ_TITLES     = ['Acquisition et valeur','Acquisition and value','Localisation','Location','Conservation'];
 const _ARCH_AUTH_TITLES    = ['Artistes','Artists','Auteurs et contributeurs','Authors and contributors','Artistes et contributeurs','Artists and contributors'];
 
@@ -6580,9 +6593,11 @@ function _gradeDetailHTML(it){
 function adaptFormToCategory(cat){
   _majChampsComics(cat);
   const coll = _collectionDeLaFiche(cat);
-  const arch = coll === 'dvd' ? _archetypeDansCollection('dvd', cat)
+  const arch = coll === 'pins' ? FICHE_ARCHETYPES.pin
+             : coll === 'dvd' ? _archetypeDansCollection('dvd', cat)
              : ((!cat && _archetypeParDefautCollection()) || archetypeForCategory(cat));
   applyArchetype(arch);
+  _majFichePin(coll === 'pins');
   // Suivi personnel : « Lu » sur un album, « Écouté » sur un disque, « Vu » sur un film.
   const t = arch.id==='video' ? TERMES_SUIVI.video : termesSuivi(cat || (arch.id==='disque' ? 'CD' : ''));
   const luLbl = document.querySelector('label[for="itemLu"]');
@@ -6590,6 +6605,21 @@ function adaptFormToCategory(cat){
   const dtLbl = document.querySelector('#formFieldDateLecture label');
   if(dtLbl){ dtLbl.textContent = T(t.date.fr, t.date.en); dtLbl.setAttribute('data-en', t.date.en); }
   _majChampIsbnComics(cat);
+}
+
+// Fiche pin's : ce que l'archétype ne couvre pas. Auteurs, éditeur (remplacé par
+// « Marque / Éditeur » de la section pin's), sous-titre, langue, format, précisions
+// d'édition, EO et suivi de lecture n'ont pas de sens pour un objet.
+function _majFichePin(estPin){
+  const montrer = (el, oui) => { if(el) el.style.display = oui ? '' : 'none'; };
+  const parent = id => document.getElementById(id)?.parentElement;
+  montrer(document.getElementById('formSection-pins'), estPin);
+  montrer(document.getElementById('formSection-authors'), !estPin);
+  ['itemPublisher','itemSubtitle','itemFormat','itemEditionInfo'].forEach(id => montrer(parent(id), !estPin));
+  ['formFieldLangue','formFieldFirstEdition'].forEach(id => montrer(document.getElementById(id), !estPin));
+  const lu = document.getElementById('itemLu')?.closest('.checkbox-row')?.parentElement;
+  const dateLu = document.getElementById('formFieldDateLecture');
+  montrer(lu, !estPin); montrer(dateLu, !estPin); montrer(dateLu?.nextElementSibling, !estPin);
 }
 
 function adaptAuthorFormToCollection(){
@@ -9165,7 +9195,7 @@ const SB = (() => {
     'editionsEcartees'];
   const CONTENU_KEYS = ['exlibris','exlibrisColle','exlibrisSigne','exlibrisNumerote','exlibrisTirage',
     'tirageInclus','serigraphie','marquePage','timbre','carnetCroquis','autocollant','decalcomanie',
-    'cartePostale','poster','supplementRedactionnel','objet','objetDesc','objetsAssocies',
+    'cartePostale','poster','supplementRedactionnel','objet','objetDesc','contenuDetail','objetsAssocies',
     // Éphémères — synchronisés dans le JSONB « contenus » (aucune colonne SQL à créer)
     'typeDocument','technique','evenement','dateEvenement','lieuEvenement','hote',
     // Affiches et tirages d'art — même sac JSONB, aucune colonne SQL à créer
@@ -11527,6 +11557,7 @@ function openItemForm(id=null, opts={}){
     document.getElementById("itemSupplementRedactionnel").checked = !!it.supplementRedactionnel;
     document.getElementById("itemObjet").checked = !!it.objet;
     document.getElementById("itemObjetDesc").value = it.objetDesc||"";
+    document.getElementById("itemContenuDetail").value = it.contenuDetail||"";
     document.getElementById("itemDedication").value = it.dedicace||"";
     document.getElementById("itemEmboitageFourreau").checked = !!it.emboitageFourreau;
     document.getElementById("itemEmboitageCoffret").checked = !!it.emboitageCoffret;
@@ -11631,7 +11662,7 @@ function openItemForm(id=null, opts={}){
     _setD("itemVideoRef", it.videoRef);
     _setD("itemVideoBonus", it.videoBonus);
     // Pin's specific fields
-    if(document.getElementById("itemPinsMarque")) document.getElementById("itemPinsMarque").value = it.pinsMarque||"";
+    if(document.getElementById("itemPinsMarque")) document.getElementById("itemPinsMarque").value = it.pinsMarque || (it.collectionType==='pins' ? (it.editeur||"") : "");
     if(document.getElementById("itemPinsTheme"))  document.getElementById("itemPinsTheme").value  = it.pinsTheme||"";
     if(document.getElementById("itemPinsMatiere"))document.getElementById("itemPinsMatiere").value= it.pinsMatiere||"";
     if(document.getElementById("itemPinsForme"))  document.getElementById("itemPinsForme").value  = it.pinsForme||"";
@@ -11880,6 +11911,7 @@ async function _saveItemCore(e){
       jaquetteEtat:       document.getElementById("itemJaquetteEtat").value.trim(),
       dedicace:           document.getElementById("itemDedication").value.trim(),
       objetDesc:          document.getElementById("itemObjetDesc").value.trim(),
+      contenuDetail:      document.getElementById("itemContenuDetail").value.trim(),
       lieuAcquisition:    document.getElementById("itemAcquisitionSource").value.trim(),
       coteSource:         document.getElementById("itemCoteSource").value.trim(),
       localisation:       document.getElementById("itemLocation").value.trim(),
@@ -12012,7 +12044,7 @@ async function _saveItemCore(e){
     univers: document.getElementById("itemUnivers").value.trim(),
     categorie: document.getElementById("itemCategory").value,
     categoriesSecondaires: [..._catSecondaires],
-    serie: (_activeCollection==='pins'
+    serie: ((_activeCollection==='pins' || _collectionDeLaFiche(document.getElementById("itemCategory").value)==='pins')
       ? (document.getElementById("itemPinsSerie")?.value.trim()||"")
       : document.getElementById("itemSerie").value.trim()),
     numeroSerie: document.getElementById("itemSerieNum").value.trim(),
@@ -12067,6 +12099,7 @@ async function _saveItemCore(e){
     supplementRedactionnel: document.getElementById("itemSupplementRedactionnel").checked,
     objet: document.getElementById("itemObjet").checked,
     objetDesc: document.getElementById("itemObjetDesc").value.trim(),
+    contenuDetail: document.getElementById("itemContenuDetail").value.trim(),
     dedicace: document.getElementById("itemDedication").value.trim(),
     emboitageFourreau: document.getElementById("itemEmboitageFourreau").checked,
     emboitageCoffret: document.getElementById("itemEmboitageCoffret").checked,
@@ -17527,7 +17560,7 @@ function _migrationCandidates(){
     if(cur !== 'bd') return;
     const labels = [it.categorie, ...(it.categoriesSecondaires||[])].filter(Boolean);
     for(const lbl of labels){
-      const t = _detectCrossCollection(lbl);
+      const t = _collectionDeCategorie(lbl) || _detectCrossCollection(lbl);
       if(t && t !== cur){ out.push({id:it.id, titre:it.titre||'Sans titre', from:cur, to:t, via:lbl}); break; }
     }
   });
@@ -17932,7 +17965,19 @@ async function appliquerRepriseGroupes(){
 // (CD, Vinyle, DVD…), avec la bande dessinée pour seul recours.
 function _collPourNouvelleFiche(categorie){
   if(!isAllCollection()) return _activeCollection;
-  return _detectCrossCollection(categorie||'') || 'bd';
+  return _collectionDeCategorie(categorie) || _detectCrossCollection(categorie||'') || 'bd';
+}
+// Dans « Mes Collections », la liste des catégories est l'union de toutes les
+// collections. Une catégorie qui n'existe que dans une seule collection active
+// (ex. « Émaillé » chez les pin's) désigne cette collection : sans cela, la fiche
+// partait en BD dès que son nom ne contenait pas « pin », « badge »…
+function _collectionDeCategorie(cat){
+  const n = _normCat(cat||'');
+  if(!n) return null;
+  const ids = [...new Set(['bd','pins', ...Object.keys(_modCats||{})])]
+    .filter(id => id === 'bd' || isModuleEnabled(id));
+  const qui = ids.filter(id => (categoriesForCollection(id)||[]).some(c => _normCat(c) === n));
+  return qui.length === 1 ? qui[0] : null;
 }
 
 // ===== Prêts en cours =====
@@ -18188,8 +18233,9 @@ async function applyMigration(){
     const to = cb.dataset.to, via = cb.dataset.via;
     vias.add(via);
     it.collectionType = to;
-    if(it.categorie === via) it.categorie = '';
-    if(Array.isArray(it.categoriesSecondaires)) it.categoriesSecondaires = it.categoriesSecondaires.filter(c=>c!==via);
+    const viaDansCible = (categoriesForCollection(to)||[]).includes(via);
+    if(it.categorie === via && !viaDansCible) it.categorie = '';
+    if(Array.isArray(it.categoriesSecondaires) && !viaDansCible) it.categoriesSecondaires = it.categoriesSecondaires.filter(c=>c!==via);
     it.updatedAt = new Date().toISOString();
     await dbPut('items', it);
   }
@@ -19429,6 +19475,7 @@ const STRINGS = {
     'content.poster': 'Poster',
     'content.editorial': 'Supplément rédactionnel',
     'content.other': 'Autre',
+    'content.details': 'Précisions',
     // Caract detail
     'caract.emboitage': 'Emboîtage',
     'caract.reliure': 'Reliure',
@@ -19667,6 +19714,7 @@ const STRINGS = {
     'content.poster': 'Poster',
     'content.editorial': 'Editorial supplement',
     'content.other': 'Other',
+    'content.details': 'Details',
     // Caract detail
     'caract.emboitage': 'Slipcase',
     'caract.reliure': 'Binding',
@@ -20644,14 +20692,28 @@ function renderItemDetail(id, pushHistory=true){
     [T('Bonus et suppléments','Extras'),           it.videoBonus],
   ].filter(([,v])=>v!==null && v!==undefined && v!=='')
    .map(([l,v])=>`<dt>${escapeHTML(l)}</dt><dd>${escapeHTML(String(v))}</dd>`).join('');
+  // Pin's : ses propres rubriques ; ni auteurs, ni éditeur/collection de livre.
+  const isPin = (it.collectionType||'bd') === 'pins';
+  const pinDl = !isPin ? '' : [
+    [T('Marque / Éditeur','Brand / Publisher'), it.pinsMarque || it.editeur],
+    [T('Série','Series'),                       it.serie],
+    [T('Thème','Theme'),                        it.pinsTheme],
+    [T('Matière','Material'),                   it.pinsMatiere],
+    [T('Forme','Shape'),                        it.pinsForme],
+    [T('Diamètre','Diameter'),                  it.pinsDiametre ? it.pinsDiametre + ' mm' : ''],
+    [T('Référence éditeur','Publisher reference'), it.pinsReference],
+    [T("Événement d'origine",'Original event'), it.pinsEvenement],
+    [T('Édition limitée','Limited edition'),    it.pinsEditionLimitee ? T('oui','yes') : ''],
+  ].filter(([,v])=>v!==null && v!==undefined && v!=='')
+   .map(([l,v])=>`<dt>${escapeHTML(l)}</dt><dd>${escapeHTML(String(v))}</dd>`).join('');
   const hasDiaporama = !!(it.diaporama ?? isPortfolio); // rétrocompat : Portfolio = diapo par défaut
   // Init carousel state si diaporama activé
   if(hasDiaporama){ _pcImgs = imgs; _pcNames = imgNames; _pcIdx = 0; }
 
   const infoMeta = `<span class="tag cat">${escapeHTML(it.categorie||"")}</span>${(!isDisque && TRADITIONS[it.tradition])?`<span class="tag" title="${T('Tradition','Tradition')}">${escapeHTML(traditionLibelle(it.tradition))}</span>`:""}${(it.categoriesSecondaires||[]).map(c=>`<span class="tag cat-sec">${escapeHTML(c)}</span>`).join("")}${it.editionOriginale?`<span class="badge-eo">${_lang==='en'?'Original Edition':'Édition Originale'}</span>`:""}${_badgeRemasterHTML(it)}${it.signe?`<span class="badge-signed">${_lang==='en'?'Signed':'Signé'}</span>`:""}${(it.dedicaceSignature||it.dedicaceCheck)?`<span class="badge-signed">${_lang==='en'?'Dedication sig.':'Dédicace sig.'}</span>`:""}${it.dedicaceDessin?`<span class="badge-signed">${_lang==='en'?'Dedication draw.':'Dédicace dessin'}</span>`:""}`;
   const infoDl = `
-    ${disqueDl}${filmDl}
-    ${it.editeur?`<dt>${isDisque?T('Label','Label'):isFilm?T('Éditeur vidéo','Video publisher'):t('detail.publisher_label')}</dt><dd>${escapeHTML(it.editeur)}${it.collection?` — ${escapeHTML(it.collection)}`:""}</dd>`:""}
+    ${disqueDl}${filmDl}${pinDl}
+    ${it.editeur && !isPin?`<dt>${isDisque?T('Label','Label'):isFilm?T('Éditeur vidéo','Video publisher'):t('detail.publisher_label')}</dt><dd>${escapeHTML(it.editeur)}${it.collection?` — ${escapeHTML(it.collection)}`:""}</dd>`:""}
     ${it.anneeEdition?`<dt>${t('detail.release_label')}</dt><dd>${it.moisEdition?t('month.'+it.moisEdition)+" ":""}${it.anneeEdition}</dd>`:""}
     ${itemLangues(it).length?`<dt>${t('detail.lang_label')}</dt><dd>${itemLangues(it).map(l=>{const f=languageFlag(l);return (f?f+' ':'')+escapeHTML(l)}).join(', ')}</dd>`:""}
     ${it.paysEdition?`<dt>${t('detail.country_label')}</dt><dd>${escapeHTML(it.paysEdition)}</dd>`:""}
@@ -20695,7 +20757,7 @@ function renderItemDetail(id, pushHistory=true){
                  </div>
                </div>`
             : `<img id="detailMainImg" src="${_safeUrl(imgs[0])}" data-imgs="${escapeHTML(JSON.stringify(imgs))}" data-idx="0"${hasDiaporama?` style="cursor:pointer" title="${_lang==='en'?'Open slideshow':'Ouvrir le diaporama'}" onclick="pcOpenLightbox(0)"`:imgs.length>1?` class="cycable" title="${_lang==='en'?'Click to cycle images':'Cliquer pour passer à l\'image suivante'}" onclick="cycleDetailImg()"`:''}>`)
-          : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:60px;color:var(--ink-soft)">${isDisque?'💿':'📖'}</div>`
+          : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:60px;color:var(--ink-soft)">${isPin?iconeColl(moduleById('pins')):isDisque?'💿':'📖'}</div>`
         }</div>
         ${!imagesLocked && imgs.length>1?`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${imgs.map((s,idx2)=>{const n=imgNames[idx2]||"";const tl=n?escapeHTML(n):(_lang==='en'?`Visual ${idx2+1}`:`Visuel ${idx2+1}`);return`<div class="detail-thumb${idx2===0?' active':''}" data-idx="${idx2}" title="${tl}" style="width:60px;height:90px;border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg-panel);cursor:pointer" onclick="${hasDiaporama?`pcOpenLightbox(${idx2})`:`jumpDetailImg(${idx2})`}"><img src="${_safeUrl(s)}" style="max-width:100%;max-height:100%;object-fit:contain;pointer-events:none"></div>`}).join("")}</div>`:""}
       </div>
@@ -20704,10 +20766,10 @@ function renderItemDetail(id, pushHistory=true){
         <h2>${escapeHTML(it.titre||(_lang==='en'?'Untitled':'Sans titre'))}</h2>
         ${it.sousTitre?`<p class="muted" style="font-size:18px;margin-top:-8px">${escapeHTML(it.sousTitre)}</p>`:""}
         ${isPortfolio&&it.univers?`<p class="muted" style="font-size:14px;margin-top:-4px">${t('detail.univers_label')} : <strong>${escapeHTML(it.univers)}</strong></p>`:""}
-        ${!isPortfolio&&it.serie?`<p class="muted">${t('detail.cycle_label')} : ${escapeHTML(it.serie)}${it.numeroSerie?` — N°${escapeHTML(it.numeroSerie)}`:""}</p>`:""}
+        ${!isPortfolio&&!isPin&&it.serie?`<p class="muted">${t('detail.cycle_label')} : ${escapeHTML(it.serie)}${it.numeroSerie?` — N°${escapeHTML(it.numeroSerie)}`:""}</p>`:""}
         <div style="margin:12px 0">${authors
           || (isDisque && _grpNom ? `<span class="author-badge">${escapeHTML(_grpNom)}</span>` : '')
-          || `<span class="muted">${t('detail.no_author')}</span>`}</div>
+          || (isPin ? '' : `<span class="muted">${t('detail.no_author')}</span>`)}</div>
         <dl>${infoDl}</dl>
         ${it.tags&&it.tags.length?`<div style="margin-top:12px">${it.tags.map(tg=>`<span class="tag">${escapeHTML(tg)}</span>`).join(" ")}</div>`:""}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
@@ -20765,6 +20827,7 @@ function renderItemDetail(id, pushHistory=true){
       if(it.poster) inclRows.push({k:t('content.poster'),p:true});
       if(it.supplementRedactionnel) inclRows.push({k:t('content.editorial'),p:true});
       if(it.objet) inclRows.push(it.objetDesc?{k:t('content.other'),v:escapeHTML(it.objetDesc)}:{k:t('content.other'),p:true});
+      if(it.contenuDetail) inclRows.push({k:t('content.details'),v:escapeHTML(it.contenuDetail)});
       const inclPanel = inclRows.length
         ? `<div class="panel"><h3>${t('detail.includes')}</h3><dl>${inclRows.map(_dtdd).join("")}</dl></div>`
         : "";
@@ -28231,7 +28294,7 @@ function venteDescription(it, lang){
     add(L('Papier','Paper'), it.paperQuality);
     const cont = VENTE_CONTENUS.filter(([k]) => it[k]).map(([,a,b]) => L(a,b));
     if(it.objet) cont.push(v(it.objetDesc) ? v(it.objetDesc) : L('Objet associé','Associated object'));
-    add(L('Joint à cet exemplaire','Included with this copy'), cont.join(', '));
+    add(L('Joint à cet exemplaire','Included with this copy'), cont.join(', ') + (v(it.contenuDetail) ? (cont.length ? ' — ' : '') + v(it.contenuDetail) : ''));
     if(it.gradeUS || it.gradeNote) add(L('Grade (échelle US)','Grade (US scale)'), [it.gradeUS, it.gradeNote ? it.gradeNote + '/10' : ''].filter(Boolean).join(' — '));
   }
   const sign = VENTE_SIGNATURES.filter(([k]) => it[k]).map(([,a,b]) => L(a,b));
