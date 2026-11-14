@@ -21586,7 +21586,8 @@ async function importJSONFusion(e){
     const cleNom = a => (a.collectionType||'bd') + '|' + _normCat(authorDisplay(a));
     const parNom = new Map((cache.authors||[]).map(a=>[cleNom(a), a.id]));
     const correspondance = new Map();
-    let auteursCrees = 0, liensPerdus = 0;
+    let auteursCrees = 0, liensPerdus = 0, ajoutees = 0;
+    const echecs = [];
     for(const it of nouvelles){
       if(!Array.isArray(it.auteurs)) continue;
       for(const lien of it.auteurs){
@@ -21609,12 +21610,22 @@ async function importJSONFusion(e){
           .filter(Boolean);
         liensPerdus += avant - it.auteurs.length;
       }
-      await dbPut("items", it);
+      // Une œuvre refusée (image trop lourde, réseau…) n'arrête pas les suivantes ;
+      // on la nomme à la fin. Relancer la fusion ne reprend que les absentes.
+      try { await dbPut("items", it); ajoutees++; }
+      catch(err){ echecs.push({ titre: it.titre || T('Sans titre','Untitled'), message: String((err && err.message) || err) });
+                  console.error('[Fusion] œuvre refusée', it.titre, err); }
     }
     await reloadCache();
     refreshCurrentView();
-    toast(T(`Ajouté : ${nouvelles.length} œuvre(s), ${auteursCrees} auteur(s) créé(s)`,
-            `Added: ${nouvelles.length} work(s), ${auteursCrees} author(s) created`));
+    toast(T(`Ajouté : ${ajoutees} œuvre(s) sur ${nouvelles.length}, ${auteursCrees} auteur(s) créé(s)`,
+            `Added: ${ajoutees} of ${nouvelles.length} work(s), ${auteursCrees} author(s) created`), echecs.length ? 'error' : undefined);
+    if(echecs.length){
+      alert(T(`${echecs.length} œuvre(s) n’ont pas pu être ajoutées :\n\n`, `${echecs.length} work(s) could not be added:\n\n`)
+        + echecs.map(e=>`• ${e.titre} — ${e.message}`).join('\n')
+        + T('\n\nRelancez la même importation : seules les œuvres encore absentes seront reprises.',
+            '\n\nRun the same import again: only the works still missing will be retried.'));
+    }
     if(liensPerdus) setTimeout(()=>toast(T(`⚠️ ${liensPerdus} lien(s) auteur ignoré(s) : auteur absent du fichier.`,
                                            `⚠️ ${liensPerdus} author link(s) skipped: author missing from the file.`),'error'), 1400);
   } catch(err){
