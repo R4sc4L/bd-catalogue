@@ -781,6 +781,24 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   svg .lx-pt{fill:var(--ink-soft)}
   svg .lx-txt{fill:var(--ink-soft);font-size:8.5px;font-family:"Nunito",sans-serif}
   @media (max-width:700px){.lx-grille,.lx-anatomie{grid-template-columns:1fr}}
+  /* Lexique des attaches de pin's */
+  svg .lx-at-email{fill:var(--accent);stroke:color-mix(in srgb,var(--accent) 55%,#000);stroke-width:.6}
+  svg .lx-at-revers{fill:var(--gold-bg);stroke:color-mix(in srgb,var(--gold-bg) 55%,#000);stroke-width:.6}
+  svg .lx-at-rebord{fill:none;stroke:color-mix(in srgb,var(--gold-bg) 60%,#000);stroke-width:.6;opacity:.6}
+  svg .lx-at-tissu{fill:var(--ink-soft);opacity:.16}
+  svg .lx-at-trame{fill:none;stroke:var(--ink-soft);stroke-width:.8;stroke-dasharray:4 3}
+  svg .lx-at-tige{fill:none;stroke:#b9bec4;stroke-width:2.2;stroke-linecap:round}
+  svg .lx-at-pointe{fill:#b9bec4}
+  svg .lx-at-sillon{fill:none;stroke:#000;stroke-opacity:.55;stroke-width:.8}
+  svg .lx-at-filet{fill:none;stroke:#7d838a;stroke-width:.8}
+  svg .lx-at-laiton{fill:var(--gold-bg);stroke:color-mix(in srgb,var(--gold-bg) 50%,#000);stroke-width:.6}
+  svg .lx-at-ressort{fill:none;stroke:var(--gold-bg);stroke-width:2.4;stroke-linecap:round}
+  svg .lx-at-ressort-fin{fill:none;stroke:#5c6268;stroke-width:.9;stroke-linejoin:round}
+  svg .lx-at-acier{fill:#c9cdd2;stroke:#7d838a;stroke-width:.6}
+  svg .lx-at-caout{fill:#2b2b2e;stroke:#000;stroke-width:.6}
+  svg .lx-at-aimant{fill:#454b53;stroke:#111;stroke-width:.6}
+  svg .lx-at-maille{fill:none;stroke:var(--gold-bg);stroke-width:1.1}
+  .lx-carte.lx-actif{outline:2px solid var(--accent);outline-offset:2px}
   .lx-carte,.lx-anatomie{--lx-papier:#d8cfbd;--lx-ligne:#766d5d;--lx-couv:color-mix(in srgb,var(--accent) 50%,var(--bg-alt))}
   body.theme-light .lx-carte,body.theme-light .lx-anatomie{--lx-papier:#f3eee3;--lx-ligne:#a59b88;--lx-couv:color-mix(in srgb,var(--accent) 55%,#fff)}
   svg .lx-f{stroke:color-mix(in srgb,var(--ink) 35%,transparent);stroke-width:.45;stroke-linejoin:round}
@@ -3294,14 +3312,19 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
         <div class="form-section" id="formSection-pins" style="display:none">
           <h3>Caractéristiques du Pin's</h3>
           <div class="form-grid three">
-            <div><label data-en="Brand / Publisher">Marque / Éditeur</label><input type="text" id="itemPinsMarque" placeholder="ex: ABY Style, Funko..."></div>
+            <div><label for="itemPinsMarque" data-en="Publisher / Brand">Éditeur / Marque</label><input type="text" id="itemPinsMarque" list="dl-pins-editeurs" placeholder="ex: Démons et Merveilles, Funko…" data-en-ph="e.g. Démons et Merveilles, Funko…"></div>
+            <div><label for="itemPinsFabricant" data-en="Manufacturer">Fabricant</label><input type="text" id="itemPinsFabricant" list="dl-pins-fabricants" placeholder="si différent de l’éditeur" data-en-ph="if different from the publisher"></div>
+            <div><label for="itemPinsCollection" data-en="Publisher’s collection">Collection</label><input type="text" id="itemPinsCollection" list="dl-pins-collections" placeholder="collection de l’éditeur" data-en-ph="publisher’s collection"></div>
             <div><label data-en="Theme">Thème</label><select id="itemPinsTheme"><option value="" data-en="— Choose —">— Choisir —</option><option>BD / Comics</option><option>Cinéma</option><option>Animé / Manga</option><option>Jeu vidéo</option><option>Musique</option><option>Sport</option><option>Mode / Lifestyle</option><option>Gastronomie</option><option>Voyage</option><option>Événementiel</option><option>Autre</option></select></div>
             <div><label data-en="Material">Matière</label><select id="itemPinsMatiere"><option value="" data-en="— Choose —">— Choisir —</option><option>Émail cloisonné</option><option>Émail dur</option><option>Émail souple</option><option>Plastique</option><option>Métal</option><option>Tissu</option><option>Résine</option><option>Autre</option></select></div>
             <div><label data-en="Shape">Forme</label><select id="itemPinsForme"><option value="" data-en="— Choose —">— Choisir —</option><option>Ronde</option><option>Carrée</option><option>Rectangulaire</option><option>Personnage / custom</option><option>Autre</option></select></div>
             <div><label data-en="Diameter (mm)">Diamètre (mm)</label><input type="number" id="itemPinsDiametre" min="5" max="200" placeholder="ex: 25"></div>
+            <div><div class="aide-titre aide-titre-champ"><label for="itemPinsAttache" data-en="Clasp type">Type d’attache</label><button type="button" class="aide-btn aide-mini" onclick="ouvrirLexiqueAttaches(document.getElementById('itemPinsAttache').value)" title="Les attaches de pin’s, illustrées" data-en-title="Illustrated pin clasps" aria-label="Lexique des attaches">?</button></div><select id="itemPinsAttache"><option value="" data-en="— Choose —">— Choisir —</option><option value="Attache papillon" data-en="Butterfly clutch">Attache papillon</option><option value="Attache caoutchouc / plastique" data-en="Rubber / plastic clutch">Attache caoutchouc / plastique</option><option value="Attache à pompe (deluxe)" data-en="Locking (deluxe) clutch">Attache à pompe (deluxe)</option><option value="Attache à vis" data-en="Screw back">Attache à vis</option><option value="Épingle de sûreté" data-en="Safety pin">Épingle de sûreté</option><option value="Épingle droite" data-en="Stick pin">Épingle droite</option><option value="Pince à cravate avec chaîne" data-en="Tie tack with chain">Pince à cravate avec chaîne</option><option value="Aimant" data-en="Magnet">Aimant</option><option value="Deux accroches rainurées" data-en="Two grooved posts">Deux accroches rainurées</option><option value="Accroche cisaillée à dent d'ancrage" data-en="Notched post with anchor tooth">Accroche cisaillée à dent d'ancrage</option><option value="Autre" data-en="Other">Autre</option></select></div>
             <div><label data-en="Publisher reference">Référence éditeur</label><input type="text" id="itemPinsReference" placeholder="ex: BP-AY-1234"></div>
             <div class="span-3"><label data-en="Original event">Événement d'origine</label><input type="text" id="itemPinsEvenement" placeholder="ex: Japan Expo 2023, Comic Con Paris..."></div>
-            <div class="span-3"><label data-en="Pin series / collection">Série / Collection de pin's</label><input type="text" id="itemPinsSerie" list="dl-series" placeholder="ex: Astérix, Marvel icons..." data-en-ph="e.g. Astérix, Marvel icons..."></div>
+            <div class="span-3"><label data-en="Series">Série</label><input type="text" id="itemPinsSerie" list="dl-series" placeholder="ex: Astérix, Marvel icons..." data-en-ph="e.g. Astérix, Marvel icons..."></div>
+            <div class="span-3"><label for="itemPinsVerso" data-en="Back stamp / text on the back">Texte au verso</label><input type="text" id="itemPinsVerso" placeholder="marquage au dos : fabricant, numérotation, copyright… ex : Arthus-Bertrand Paris — 120/500" data-en-ph="back stamp: maker, numbering, copyright…"></div>
+            <datalist id="dl-pins-editeurs"></datalist><datalist id="dl-pins-fabricants"></datalist><datalist id="dl-pins-collections"></datalist>
             <div class="span-3" style="padding-bottom:4px">
               <div class="checkbox-row"><input type="checkbox" id="itemPinsEditionLimitee"><label for="itemPinsEditionLimitee" style="margin:0"><strong data-en="Limited edition">Édition limitée</strong></label></div>
             </div>
@@ -6614,6 +6637,18 @@ function adaptFormToCategory(cat){
 // Fiche pin's : ce que l'archétype ne couvre pas. Auteurs, éditeur (remplacé par
 // « Marque / Éditeur » de la section pin's), sous-titre, langue, format, précisions
 // d'édition, EO et suivi de lecture n'ont pas de sens pour un objet.
+function _majListesPins(){
+  const pins = (cache.items||[]).filter(i=>(i.collectionType||'bd')==='pins');
+  const remplir = (id, valeurs) => {
+    const dl = document.getElementById(id); if(!dl) return;
+    const uniques = [...new Set(valeurs.map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+    dl.innerHTML = uniques.map(v=>`<option value="${escapeHTML(v)}">`).join('');
+  };
+  const fichesEditeurs = (cache.authors||[]).filter(a=>(a.collectionType||'bd')==='pins').map(a=>authorDisplay(a));
+  remplir('dl-pins-editeurs', [...pins.map(i=>i.pinsMarque||i.editeur), ...fichesEditeurs]);
+  remplir('dl-pins-fabricants', pins.map(i=>i.pinsFabricant));
+  remplir('dl-pins-collections', pins.map(i=>i.pinsCollection));
+}
 function _majFichePin(estPin){
   const montrer = (el, oui) => { if(el) el.style.display = oui ? '' : 'none'; };
   const parent = id => document.getElementById(id)?.parentElement;
@@ -7112,6 +7147,137 @@ function ouvrirLexiqueReliures(){
     </div></div>`;
   openModal('lexiqueReliuresModal');
   bd.scrollTop = 0;
+}
+// ── Lexique des attaches de pin's ─────────────────────────────────────────
+// Même maquette que les lexiques des reliures et des finitions : une coupe
+// légendée, puis une carte par type. Croquis vus de profil — le pin's en haut,
+// le vêtement en pointillés, l'attache dessous — sauf l'épingle de sûreté,
+// vue de dos. Les noms suivent la liste « Type d'attache » de la fiche.
+function _atProfil(o={}){
+  const g = o.largeur ? (260 - o.largeur)/2 : 70, L = o.largeur || 120;
+  let s = '';
+  if(!o.sansTissu) s += `<rect class="lx-at-tissu" x="22" y="47" width="216" height="8"/>`
+                     + `<path class="lx-at-trame" d="M22 47H238M22 55H238"/>`;
+  s += `<rect class="lx-at-revers" x="${g-2}" y="37" width="${L+4}" height="5" rx="2"/>`
+     + `<rect class="lx-at-email" x="${g}" y="30" width="${L}" height="8" rx="3.5"/>`;
+  return s;
+}
+const _atTige = (x, y2, y1=42) => `<path class="lx-at-tige" d="M${x} ${y1}V${y2}"/><path class="lx-at-pointe" d="M${x-1.4} ${y2}L${x} ${y2+4}L${x+1.4} ${y2}Z"/>`;
+const _atRainures = (x, y1, y2, pas=4) => { let d=''; for(let y=y1; y<=y2; y+=pas) d += `M${x-2.2} ${y}H${x+2.2}`; return `<path class="lx-at-sillon" d="${d}"/>`; };
+function _atPapillon(x=130, y=62){
+  return `<rect class="lx-at-laiton" x="${x-14}" y="${y}" width="28" height="3.5" rx="1"/>`
+       + `<path class="lx-at-ressort" d="M${x-14} ${y+1.5}C${x-26} ${y+1.5} ${x-26} ${y+15} ${x-11} ${y+15}M${x+14} ${y+1.5}C${x+26} ${y+1.5} ${x+26} ${y+15} ${x+11} ${y+15}"/>`;
+}
+function _atEntrees(){
+  return [
+    { nom:T(`Attache papillon`,`Butterfly clutch`),
+      def:T(`Une petite pièce de laiton dont les deux ailettes, recourbées, pincent la tige. On appuie sur les ailettes pour l’ôter. C’est l’attache la plus répandue, mais elle peut se perdre.`,
+            `A small brass piece whose two curled wings grip the post. Squeeze the wings to remove it. The most common clasp, but easy to lose.`),
+      repere:T(`la grande majorité des pin’s des années 1980-1990.`,`most pins from the 1980s and 1990s.`),
+      dessin:_atProfil() + _atTige(130, 80) + _atPapillon() + _lxRep(112,74,86,110,T(`ailettes à pincer`,`wings to squeeze`),'end') + _lxRep(130,84,176,112,T(`pointe`,`point`)) },
+    { nom:T(`Attache caoutchouc / plastique`,`Rubber / plastic clutch`),
+      def:T(`Un embout souple que l’on enfonce sur la tige. Il ne rouille pas, tient bien et ne blesse pas ; il peut durcir ou se fendre avec le temps. Existe en couleurs.`,
+            `A soft cap pushed onto the post. It does not rust, holds well and is safe; it can harden or split over time. Comes in colours.`),
+      repere:T(`pin’s récents, productions de goodies, Disney.`,`recent pins, merchandise, Disney.`),
+      dessin:_atProfil() + _atTige(130, 70)
+        + `<path class="lx-at-caout" d="M115 80Q115 60 130 60Q145 60 145 80Z"/><rect class="lx-at-caout" x="110" y="78" width="40" height="5" rx="2.5"/>`
+        + _lxRep(141,68,190,104,T(`embout souple`,`soft cap`)) },
+    { nom:T(`Attache à pompe (deluxe)`,`Locking (deluxe) clutch`),
+      def:T(`Un fermoir métallique à ressort qui se verrouille dans une gorge de la tige : il ne se détache pas par accident. On le libère en actionnant son piston. Appelée aussi « locking pin back ».`,
+            `A spring-loaded metal back that locks into a groove on the post, so it cannot come off by accident. Release it by working its plunger. Also called a locking pin back.`),
+      repere:T(`pin’s de valeur, à porter sur un sac ou une veste.`,`valuable pins worn on bags or jackets.`),
+      dessin:_atProfil() + _atTige(130, 76) + _atRainures(130, 66, 66)
+        + `<rect class="lx-at-acier" x="118" y="58" width="24" height="24" rx="4"/><path class="lx-at-ressort-fin" d="M124 64L136 67L124 70L136 73L124 76"/><rect class="lx-at-acier" x="125" y="82" width="10" height="7" rx="2"/>`
+        + _lxRep(118,66,84,100,T(`verrou à ressort`,`spring lock`),'end') + _lxRep(135,86,184,116,T(`piston`,`plunger`)) },
+    { nom:T(`Attache à vis`,`Screw back`),
+      def:T(`La tige est filetée et l’on visse dessus un écrou moleté. Très sûre, mais plus longue à poser ; la tige ne doit pas forcer le tissu.`,
+            `The post is threaded and a knurled nut screws onto it. Very secure but slower to fit; the post must not strain the fabric.`),
+      repere:T(`insignes officiels, décorations, pin’s de clubs.`,`official insignia, decorations, club pins.`),
+      dessin:_atProfil() + _atTige(130, 84)
+        + `<path class="lx-at-filet" d="M128 58L132 60M128 62L132 64M128 66L132 68M128 70L132 72M128 74L132 76M128 78L132 80"/>`
+        + `<rect class="lx-at-laiton" x="116" y="62" width="28" height="9" rx="2"/><path class="lx-at-sillon" d="M120 62V71M124 62V71M128 62V71M132 62V71M136 62V71M140 62V71"/>`
+        + _lxRep(131,77,182,104,T(`tige filetée`,`threaded post`)) + _lxRep(117,67,64,98,T(`écrou moleté`,`knurled nut`),'end') },
+    { nom:T(`Épingle de sûreté`,`Safety pin`),
+      def:T(`Au dos, une aiguille montée sur charnière se referme dans un crochet, comme une broche. Pas d’embout à perdre ; elle laisse un trou plus large dans le tissu. Vue de dos ci-dessus.`,
+            `On the back, a hinged needle closes into a catch, like a brooch. No clutch to lose; it leaves a wider hole in the fabric. Seen from the back above.`),
+      repere:T(`badges à bouton, broches, insignes anciens.`,`button badges, brooches, old insignia.`),
+      dessin:`<circle class="lx-at-revers" cx="130" cy="84" r="58"/><circle class="lx-at-rebord" cx="130" cy="84" r="52"/>`
+        + `<rect class="lx-at-acier" x="78" y="79" width="10" height="11" rx="2"/><path class="lx-at-tige" d="M88 84L172 82"/>`
+        + `<path class="lx-at-acier" d="M170 76H180Q184 76 184 80V88Q184 92 180 92H172V88H178V80H170Z"/>`
+        + _lxRep(83,90,58,134,T(`charnière`,`hinge`),'end') + _lxRep(130,83,130,26,T(`aiguille`,`needle`),'middle') + _lxRep(182,90,206,134,T(`fermoir`,`catch`)) },
+    { nom:T(`Épingle droite`,`Stick pin`),
+      def:T(`Une longue aiguille, sans fermoir, que l’on pique dans le tissu ; un embout de protection en couvre la pointe. Élégante, mais peu sûre sur un vêtement qui bouge.`,
+            `A long needle with no clasp, pushed through the fabric; a guard covers the point. Elegant, but not very secure on clothing that moves.`),
+      repere:T(`épingles de revers, de cravate ou de chapeau.`,`lapel, tie and hat pins.`),
+      dessin:_atProfil({largeur:70}) + `<path class="lx-at-tige" d="M130 42V136"/>`
+        + `<rect class="lx-at-acier" x="124" y="128" width="12" height="28" rx="6"/>`
+        + _lxRep(130,92,180,96,T(`aiguille longue`,`long needle`)) + _lxRep(136,146,160,152,T(`embout de protection`,`point guard`)) },
+    { nom:T(`Pince à cravate avec chaîne`,`Tie tack with chain`),
+      def:T(`Un fermoir sur tige, prolongé d’une chaînette terminée par une barrette que l’on glisse dans une boutonnière : même s’il se défait, le bijou ne tombe pas.`,
+            `A clasp on a post, extended by a small chain ending in a bar slipped through a buttonhole: even if it comes undone, the piece does not fall.`),
+      repere:T(`pins de cravate, insignes portés en tenue de cérémonie.`,`tie pins, insignia worn with formal dress.`),
+      dessin:_atProfil({largeur:70}) + _atTige(130, 74)
+        + `<rect class="lx-at-laiton" x="122" y="58" width="16" height="13" rx="3"/><rect class="lx-at-laiton" x="108" y="70" width="44" height="3" rx="1.5"/>`
+        + Array.from({length:13},(_,i)=>{ const t=i/12, x=(1-t)*(1-t)*150+2*(1-t)*t*196+t*t*214, y=(1-t)*(1-t)*72+2*(1-t)*t*84+t*t*124;
+            return `<circle class="lx-at-maille" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.3"/>`; }).join('')
+        + `<rect class="lx-at-laiton" x="196" y="124" width="40" height="4" rx="2"/>`
+        + _lxRep(122,64,66,96,T(`fermoir`,`clasp`),'end') + _lxRep(192,94,206,70,T(`chaînette`,`chain`)) + _lxRep(216,128,166,150,T(`barrette`,`bar`),'end') },
+    { nom:T(`Aimant`,`Magnet`),
+      def:T(`Ni tige ni trou : un aimant fixé au revers du pin’s et une barrette aimantée placée sous le tissu se tiennent l’un l’autre. Idéal pour les vêtements fragiles ; à éviter près des cartes bancaires et des montres mécaniques.`,
+            `No post, no hole: a magnet on the back of the pin and a magnetic bar under the fabric hold each other. Ideal for delicate clothing; keep away from bank cards and mechanical watches.`),
+      repere:T(`badges nominatifs, salons, uniformes.`,`name badges, trade shows, uniforms.`),
+      dessin:_atProfil() + `<rect class="lx-at-aimant" x="108" y="42" width="44" height="5" rx="1.5"/><rect class="lx-at-aimant" x="102" y="56" width="56" height="10" rx="3"/>`
+        + _lxRep(108,45,16,22,T(`aimant au revers`,`magnet on the back`)) + _lxRep(150,64,236,100,T(`barrette aimantée`,`magnetic bar`),'end') + _lxRep(56,51,52,130,T(`tissu intact`,`fabric untouched`),'middle') },
+    { nom:T(`Deux accroches rainurées`,`Two grooved posts`),
+      def:T(`Deux tiges, chacune avec sa rainure et son attache. Le pin’s ne peut pas pivoter : utile pour un motif large ou allongé qui doit rester droit.`,
+            `Two posts, each with its groove and clutch. The pin cannot rotate: useful for a wide or elongated design that must stay level.`),
+      repere:T(`pin’s larges, logos horizontaux, plaques.`,`wide pins, horizontal logos, plates.`),
+      dessin:_atProfil({largeur:170}) + _atTige(95, 80) + _atTige(165, 80) + _atRainures(95, 66, 66) + _atRainures(165, 66, 66)
+        + _atPapillon(95) + _atPapillon(165)
+        + _lxRep(97,66,130,104,T(`rainure`,`groove`),'middle') + _lxRep(165,84,250,128,T(`deux tiges : pas de rotation`,`two posts: no rotation`),'end') },
+    { nom:T(`Accroche cisaillée à dent d’ancrage`,`Notched post with anchor tooth`),
+      def:T(`Une tige entaillée de plusieurs rainures, qui permettent de régler le serrage selon l’épaisseur du tissu, et une courte dent voisine qui se plante dans l’étoffe pour empêcher le pin’s de tourner.`,
+            `A post cut with several grooves, so the grip can be adjusted to the thickness of the fabric, and a short nearby tooth that bites into the cloth to stop the pin turning.`),
+      repere:T(`pin’s d’une seule tige qui doivent rester orientés.`,`single-post pins that must stay upright.`),
+      dessin:_atProfil() + _atTige(130, 84) + _atRainures(130, 58, 78)
+        + `<path class="lx-at-tige" d="M152 42V49"/><path class="lx-at-pointe" d="M150.6 49L152 53L153.4 49Z"/>` + _atPapillon(130, 70)
+        + _lxRep(131,60,96,104,T(`rainures multiples`,`multiple grooves`),'end') + _lxRep(152,51,248,96,T(`dent d’ancrage`,`anchor tooth`),'end') },
+  ];
+}
+function ouvrirLexiqueAttaches(selection){
+  let bd = document.getElementById('lexiqueAttachesModal');
+  if(!bd){ bd = document.createElement('div'); bd.className='modal-backdrop'; bd.id='lexiqueAttachesModal'; document.body.appendChild(bd); }
+  const svg = (inner, l=260) => `<svg viewBox="0 0 ${l} 172" aria-hidden="true" focusable="false">${inner}</svg>`;
+  const coupe = `<g transform="translate(20 0)">${_atProfil() + _atTige(130, 80) + _atPapillon()}</g>`
+    + _lxRep(170,33,214,16,T(`avers (face émaillée)`,`front (enamelled face)`))
+    + _lxRep(92,40,16,18,T(`revers (verso)`,`back`))
+    + _lxRep(42,51,30,128,T(`vêtement`,`garment`),'middle')
+    + _lxRep(150,72,196,112,T(`tige`,`post`))
+    + _lxRep(134,76,92,150,T(`attache`,`clutch`),'end');
+  const termes = [
+    [T(`Avers`,`Front`),           T(`la face décorée, émaillée ou imprimée.`,`the decorated face, enamelled or printed.`)],
+    [T(`Revers`,`Back`),           T(`le dos du pin’s : on y lit souvent le fabricant, un numéro ou un copyright (champ « Texte au verso »).`,`the back of the pin, often stamped with the maker, a number or a copyright (“Back stamp” field).`)],
+    [T(`Tige`,`Post`),             T(`la pointe soudée au revers, qui traverse le tissu.`,`the point soldered to the back, which goes through the fabric.`)],
+    [T(`Attache`,`Clutch`),        T(`la pièce qui retient la tige de l’autre côté du tissu.`,`the piece that holds the post on the other side of the fabric.`)],
+    [T(`Rainure`,`Groove`),        T(`l’entaille de la tige où l’attache vient se bloquer.`,`the notch in the post where the clutch locks.`)],
+  ].map(([t,d])=>`<dt>${t}</dt><dd>${d}</dd>`).join('');
+  const choix = _normCat(selection||'');
+  const cartes = _atEntrees().map(e=>{
+    const actif = choix && _normCat(e.nom) === choix;
+    return `<article class="lx-carte${actif?' lx-actif':''}">${svg(e.dessin)}<h3>${e.nom}</h3><p>${e.def}</p><p class="lx-repere"><b>${T(`Repère :`,`Typically:`)}</b> ${e.repere}</p></article>`;
+  }).join('');
+  bd.innerHTML = `<div class="modal">
+    <div class="modal-header"><h2>${T(`Les attaches de pin’s`,`Pin clasps`)}</h2>
+      <button type="button" class="ghost" onclick="closeModal('lexiqueAttachesModal')" aria-label="${T(`Fermer`,`Close`)}">✕</button></div>
+    <div class="modal-body">
+      <p class="lx-intro">${T(`Chaque croquis montre le pin’s de profil : la face en haut, le vêtement en pointillés, l’attache en dessous. Seule l’épingle de sûreté est vue de dos.`,`Each sketch shows the pin from the side: the face at the top, the garment dotted, the clasp below. Only the safety pin is seen from the back.`)}</p>
+      <section class="lx-anatomie">${svg(coupe, 300)}<div><h3>${T(`Les parties d’un pin’s`,`Parts of a pin`)}</h3><dl>${termes}</dl></div></section>
+      <div class="lx-grille">${cartes}</div>
+    </div></div>`;
+  openModal('lexiqueAttachesModal');
+  bd.scrollTop = 0;
+  const actif = bd.querySelector('.lx-actif');
+  if(actif) setTimeout(()=>actif.scrollIntoView({block:'center'}), 60);
 }
 // ── Lexique des codes-barres de comics ───────────────────────────────────
 // Même maquette que les lexiques des reliures et des finitions. Les codes
@@ -9223,7 +9389,7 @@ const SB = (() => {
     // Tradition (franco-belge, comics, fumetti, manga…) — même sac JSONB
     'tradition'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
-    'pinsReference','pinsEditionLimitee'];
+    'pinsReference','pinsEditionLimitee','pinsFabricant','pinsCollection','pinsAttache','pinsVerso'];
   // [cléLegacy, colonne, type] — s:texte(''), n:nombre(null), z:nombre(0), b:bool, d:date('')
   const COLS = [
     ['titre','titre','s'],['sousTitre','sous_titre','s'],['univers','univers','s'],
@@ -11411,6 +11577,7 @@ function openItemForm(id=null, opts={}){
   document.getElementById("itemDeleteBtn").style.display = "none";
   resetAuthorsScope();
   adaptFormToCollection();
+  _majListesPins();
 
   // Restaurer required sur titre et catégorie
   document.getElementById("itemTitle").setAttribute("required","");
@@ -11674,6 +11841,8 @@ function openItemForm(id=null, opts={}){
     if(document.getElementById("itemPinsEvenement"))document.getElementById("itemPinsEvenement").value=it.pinsEvenement||"";
     if(document.getElementById("itemPinsReference"))document.getElementById("itemPinsReference").value=it.pinsReference||"";
     if(document.getElementById("itemPinsEditionLimitee"))document.getElementById("itemPinsEditionLimitee").checked=!!it.pinsEditionLimitee;
+    ["Fabricant","Collection","Attache","Verso"].forEach(k=>{ const el=document.getElementById("itemPins"+k); if(el) el.value = it["pins"+k] || ""; });
+    _majListesPins();
     document.getElementById("itemCouvertureAdulte").checked = !!(it.couvertureAdulte || it.contenuAdulte);
     document.getElementById("itemImagesAdultes").checked   = !!(it.imagesAdultes   || it.contenuAdulte);
     const diaEl = document.getElementById("itemDiaporama");
@@ -12218,6 +12387,10 @@ async function _saveItemCore(e){
     pinsEvenement:     document.getElementById("itemPinsEvenement")?.value.trim()||"",
     pinsReference:     document.getElementById("itemPinsReference")?.value.trim()||"",
     pinsEditionLimitee:!!document.getElementById("itemPinsEditionLimitee")?.checked,
+    pinsFabricant:     document.getElementById("itemPinsFabricant")?.value.trim()||"",
+    pinsCollection:    document.getElementById("itemPinsCollection")?.value.trim()||"",
+    pinsAttache:       document.getElementById("itemPinsAttache")?.value||"",
+    pinsVerso:         document.getElementById("itemPinsVerso")?.value.trim()||"",
     couvertureAdulte: !!document.getElementById("itemCouvertureAdulte")?.checked,
     imagesAdultes:   !!document.getElementById("itemImagesAdultes")?.checked,
     diaporama:       !!document.getElementById("itemDiaporama")?.checked,
@@ -20699,12 +20872,16 @@ function renderItemDetail(id, pushHistory=true){
   // Pin's : ses propres rubriques ; ni auteurs, ni éditeur/collection de livre.
   const isPin = (it.collectionType||'bd') === 'pins';
   const pinDl = !isPin ? '' : [
-    [T('Marque / Éditeur','Brand / Publisher'), it.pinsMarque || it.editeur],
+    [T('Éditeur / Marque','Publisher / Brand'), it.pinsMarque || it.editeur],
+    [T('Fabricant','Manufacturer'),             it.pinsFabricant],
+    [T('Collection','Collection'),              it.pinsCollection],
     [T('Série','Series'),                       it.serie],
     [T('Thème','Theme'),                        it.pinsTheme],
     [T('Matière','Material'),                   it.pinsMatiere],
     [T('Forme','Shape'),                        it.pinsForme],
     [T('Diamètre','Diameter'),                  it.pinsDiametre ? it.pinsDiametre + ' mm' : ''],
+    [T("Type d'attache",'Clasp type'),         it.pinsAttache],
+    [T('Texte au verso','Back stamp'),          it.pinsVerso],
     [T('Référence éditeur','Publisher reference'), it.pinsReference],
     [T("Événement d'origine",'Original event'), it.pinsEvenement],
     [T('Édition limitée','Limited edition'),    it.pinsEditionLimitee ? T('oui','yes') : ''],
