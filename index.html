@@ -14430,11 +14430,11 @@ function _eiRecette(st){
     ...(st.outil === 'ellipse' && st.ellipse ? { outil:'ellipse',
       ellipse:{ cx:arr(st.ellipse.cx), cy:arr(st.ellipse.cy), rx:arr(st.ellipse.rx), ry:arr(st.ellipse.ry), a:+st.ellipse.a.toFixed(4) } } : {}),
     ...(st.outil === 'baguette' ? { outil:'baguette',
-      baguette:{ ops: st.bag.ops.map(o=>({ x:Math.round(o.x), y:Math.round(o.y), tol:o.tol, m:o.m })), inverse: st.bag.inverse, quart: st.bag.quart } } : {}),
+      baguette:{ ops: st.bag.ops.map(o=>({ x:Math.round(o.x), y:Math.round(o.y), tol:o.tol, m:o.m })), inverse: st.bag.inverse, quart: st.bag.quart, ...(st.bag.angle ? { angle:+st.bag.angle.toFixed(4) } : {}) } } : {}),
     ...(st.outil === 'objet' && st.obj.rect ? { outil:'objet',
       objet:{ rect:{ x0:Math.round(st.obj.rect.x0), y0:Math.round(st.obj.rect.y0), x1:Math.round(st.obj.rect.x1), y1:Math.round(st.obj.rect.y1) },
               traits: st.obj.traits.map(t=>({ m:t.m, r:arr(t.r), pts:t.pts.map(([x,y])=>[Math.round(x), Math.round(y)]) })),
-              quart: st.obj.quart, ...(st.obj.ia ? { ia:true } : {}) } } : {}),
+              quart: st.obj.quart, ...(st.obj.angle ? { angle:+st.obj.angle.toFixed(4) } : {}), ...(st.obj.ia ? { ia:true } : {}) } } : {}),
   };
 }
 // …et la relecture, prudente : une recette venue d'ailleurs ne doit pas
@@ -14463,7 +14463,7 @@ function _eiRecetteLue(r, L, H){
       .filter(t=>t && ['+','-'].includes(t.m) && fini(t.r) && t.r > 0 && Array.isArray(t.pts))
       .map(t=>({ m:t.m, r:Math.min(400, t.r), pts:t.pts.slice(0, 600).filter(p=>Array.isArray(p) && fini(p[0]) && fini(p[1])).map(([x,y])=>[x,y]) }))
       .filter(t=>t.pts.length),
-    quart: ((Math.round(Number(ob.quart))||0) % 4 + 4) % 4, ia: ob.ia === true } : null;
+    quart: ((Math.round(Number(ob.quart))||0) % 4 + 4) % 4, angle: _eiAngleBorne(ob.angle), ia: ob.ia === true } : null;
   const el = r.ellipse;
   const ellipse = el && ['cx','cy','rx','ry','a'].every(k=>Number.isFinite(el[k])) && el.rx > 0 && el.ry > 0
     ? { cx:Math.max(0, Math.min(L, el.cx)), cy:Math.max(0, Math.min(H, el.cy)), rx:Math.min(L*2, el.rx), ry:Math.min(H*2, el.ry), a:el.a } : null;
@@ -14472,7 +14472,7 @@ function _eiRecetteLue(r, L, H){
       && Number.isFinite(o.tol) && ['=','+','-'].includes(o.m))
       .map(o=>({ x:Math.max(0, Math.min(L-1, Math.round(o.x))), y:Math.max(0, Math.min(H-1, Math.round(o.y))),
                  tol:Math.max(0, Math.min(255, Math.round(o.tol))), m:o.m })) : [];
-  const baguette = ops.length ? { ops, inverse:!!bg.inverse, quart:((Math.round(Number(bg.quart))||0) % 4 + 4) % 4 } : null;
+  const baguette = ops.length ? { ops, inverse:!!bg.inverse, quart:((Math.round(Number(bg.quart))||0) % 4 + 4) % 4, angle:_eiAngleBorne(bg.angle) } : null;
   return (q || b || !_eiReglagesNeutres(g) || ellipse || baguette || objet)
     ? { quad:q, balance:b, reglages:g,
         outil: (outil==='ellipse' && !ellipse) || (outil==='baguette' && !baguette) || (outil==='objet' && !objet) ? 'cadre' : outil,
@@ -14571,6 +14571,7 @@ async function ouvrirEditeurImage(src, opts){
         <div class="ei-grp"><span class="ei-grp-lbl">${T('Pivoter','Rotate')}</span>
           <button type="button" class="secondary ei-ico" aria-label="${T('Un quart de tour à gauche','Quarter turn left')}" title="${T('Un quart de tour à gauche','Quarter turn left')}" onclick="_eiPivoter(-1)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-rot-gauche"></use></svg></button>
           <button type="button" class="secondary ei-ico" aria-label="${T('Un quart de tour à droite','Quarter turn right')}" title="${T('Un quart de tour à droite','Quarter turn right')}" onclick="_eiPivoter(1)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#ic-rot-droite"></use></svg></button>
+          <button type="button" class="secondary ei-ico" id="eiRegle" aria-label="${T('Règle : redresser','Ruler: straighten')}" title="${T('Règle : tracez un trait le long d’un bord qui devrait être droit (horizontal ou vertical) — l’image est redressée d’autant. Double-clic sur le bouton : remettre à 0°.','Ruler: draw a line along an edge that should be straight (horizontal or vertical) — the image is straightened to match. Double-click the button: back to 0°.')}" onclick="_eiRegleBasculer()" ondblclick="_eiRedresser(0, true)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16.5L16.5 3 21 7.5 7.5 21z"/><path d="M7 12.5l2 2M10 9.5l2 2M13 6.5l2 2"/></svg></button>
         </div>
       </div>
       <div class="ei-zone ei-droite">
@@ -14594,8 +14595,9 @@ async function ouvrirEditeurImage(src, opts){
                balanceDeSerie: !recette && !!heritee,
                quad:null, canvas:ov.querySelector('#eiCanvas'), echelle:1,
                outil:'cadre', ellipse:null,
-               bag:{ tol:32, ops:[], inverse:false, quart:0, masque:null, version:0 },
-               obj:{ rect:null, traits:[], quart:0, masque:null, boite:null, version:0, mode:'cadre', taille:18, ia:false },
+               bag:{ tol:32, ops:[], inverse:false, quart:0, angle:0, masque:null, version:0 },
+               obj:{ rect:null, traits:[], quart:0, angle:0, masque:null, boite:null, version:0, mode:'cadre', taille:18, ia:false },
+               regle:null,
                reglages: recette ? { ...recette.reglages } : { ...EI_REGLAGES_ZERO },
                boutons, onFin: opts.onFin || (()=>{}), occupe:false };
   // Un fichier importé est en général déjà cadré : on part de l'image entière,
@@ -14606,12 +14608,12 @@ async function ouvrirEditeurImage(src, opts){
   if(recette && recette.ellipse) _eiState.ellipse = { ...recette.ellipse };
   if(recette && recette.baguette){
     const b = _eiState.bag;
-    b.ops = recette.baguette.ops.map(o=>({ ...o })); b.inverse = recette.baguette.inverse; b.quart = recette.baguette.quart;
+    b.ops = recette.baguette.ops.map(o=>({ ...o })); b.inverse = recette.baguette.inverse; b.quart = recette.baguette.quart; b.angle = recette.baguette.angle || 0;
     if(b.ops.length) b.tol = b.ops[b.ops.length-1].tol;
   }
   if(recette && recette.objet){
     const o = _eiState.obj, r = recette.objet;
-    o.rect = { ...r.rect }; o.traits = r.traits.map(t=>({ m:t.m, r:t.r, pts:t.pts.map(p=>[...p]) })); o.quart = r.quart;
+    o.rect = { ...r.rect }; o.traits = r.traits.map(t=>({ m:t.m, r:t.r, pts:t.pts.map(p=>[...p]) })); o.quart = r.quart; o.angle = r.angle || 0;
     o.mode = '+';                                   // le cadre est posé : on reprend au pinceau
     o.ia = !!r.ia;
   }
@@ -14642,7 +14644,7 @@ function fermerEditeurImage(){
 
 function _eiClavier(e){
   if(!_eiState) return;
-  if(e.key === 'Escape'){ e.preventDefault(); if(_eiState.pipette) _eiPipetteBasculer(false); else _eiFin('__echap'); }
+  if(e.key === 'Escape'){ e.preventDefault(); if(_eiState.regle) _eiRegleBasculer(false); else if(_eiState.pipette) _eiPipetteBasculer(false); else _eiFin('__echap'); }
   else if(e.key === 'Enter' && !(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))){
     const p = _eiState.boutons.find(b=>b.principal);
     if(p){ e.preventDefault(); _eiFin(p.id); }
@@ -14694,6 +14696,112 @@ function _eiDetecter(automatique){
   return true;
 }
 
+
+// ── La règle : redresser d'après un bord (comme la règle de Photoshop) ──────
+// On trace un trait le long d'un bord qui devrait être horizontal ou vertical
+// (le haut d'une carte, le côté d'un ex-libris…). L'écart de ce trait à l'axe
+// le plus proche donne l'angle de redressement, appliqué à l'outil en cours :
+//   • détourage (objet, baguette) : le résultat tourne d'autant, marges rognées ;
+//   • cadre : le cadre pivote pour s'aligner sur le bord, la perspective suit ;
+//   • ellipse : son axe s'aligne sur le bord.
+// Plafonné à ±45° : au-delà, c'est un quart de tour (boutons ↺ ↻).
+function _eiAngleBorne(v){ v = Number(v); return Number.isFinite(v) ? Math.max(-Math.PI/4, Math.min(Math.PI/4, v)) : 0; }
+function _eiRegleBasculer(etat, silencieux){
+  const st = _eiState; if(!st) return;
+  const on = etat === undefined ? !st.regle : !!etat;
+  st.regle = on ? { a:null, b:null } : null;
+  if(on && st.pipette) _eiPipetteBasculer(false);
+  st.ov.querySelector('#eiRegle')?.classList.toggle('ei-actif', on);
+  st.canvas.style.cursor = on ? 'crosshair' : '';
+  const c = st.ov.querySelector('#eiConseils');
+  if(c) c.textContent = on
+    ? T('Règle : tracez un trait le long d’un bord qui devrait être droit, horizontal ou vertical. Au relâchement, l’image est redressée d’autant. Échap pour ranger la règle.',
+        'Ruler: draw a line along an edge that should be straight, horizontal or vertical. On release, the image is straightened to match. Esc to put the ruler away.')
+    : T(..._EI_CONSEILS[st.outil]);
+  if(!silencieux) _eiDessiner();
+}
+// Écart du trait à l'axe le plus proche, dans ]-45°, 45°].
+function _eiEcartAxe(a, b){
+  const ang = Math.atan2(b[1]-a[1], b[0]-a[0]);
+  let d = ang % (Math.PI/2);
+  if(d > Math.PI/4) d -= Math.PI/2; else if(d <= -Math.PI/4) d += Math.PI/2;
+  return d;
+}
+function _eiRegleAppliquer(){
+  const st = _eiState; if(!st || !st.regle) return;
+  const { a, b } = st.regle;
+  if(!a || !b || Math.hypot(b[0]-a[0], b[1]-a[1]) * st.echelle < 12){ st.regle.a = st.regle.b = null; _eiDessiner(); return; }
+  const ecart = _eiEcartAxe(a, b);
+  _eiRegleBasculer(false, true);
+  _eiRedresser(ecart);
+}
+// ecart : inclinaison (radians) du bord dans l'image, 0 = droit.
+function _eiRedresser(ecart, remiseAZero){
+  const st = _eiState; if(!st) return;
+  if(st.outil === 'objet' || st.outil === 'baguette'){
+    const m = st.outil === 'objet' ? st.obj : st.bag;
+    m.angle = remiseAZero ? 0 : _eiAngleBorne(-ecart);
+  } else if(st.outil === 'ellipse' && st.ellipse){
+    // L'axe garde son orientation de quart de tour ; seule l'inclinaison change.
+    const quart = Math.round(st.ellipse.a / (Math.PI/2)) * Math.PI/2;
+    st.ellipse.a = _eiAngleNorm(quart + (remiseAZero ? 0 : ecart));
+  } else {
+    const q0 = st.quad, [cx, cy] = _eiCentre(q0);
+    const actuel = _eiEcartAxe(q0[0], q0[1]);
+    const delta = (remiseAZero ? 0 : ecart) - actuel;
+    const co = Math.cos(delta), si = Math.sin(delta);
+    const q = q0.map(([px,py])=>[ cx + (px-cx)*co - (py-cy)*si, cy + (px-cx)*si + (py-cy)*co ]);
+    const L = st.source.width, H = st.source.height;
+    if(!q.every(([px,py])=>px >= 0 && py >= 0 && px <= L && py <= H)){
+      // Le cadre tourné sortirait de l'image : on le réduit autour de son centre.
+      let k = 1;
+      for(const [px,py] of q){
+        const dx = px - cx, dy = py - cy;
+        if(dx < 0) k = Math.min(k, (cx - 0) / -dx); if(dx > 0) k = Math.min(k, (L - cx) / dx);
+        if(dy < 0) k = Math.min(k, (cy - 0) / -dy); if(dy > 0) k = Math.min(k, (H - cy) / dy);
+      }
+      st.quad = q.map(([px,py])=>[ cx + (px-cx)*k*0.999, cy + (py-cy)*k*0.999 ]);
+    } else st.quad = q;
+  }
+  _eiDessiner();
+  const d = Math.round(-ecart * 1800 / Math.PI) / 10;
+  if(!remiseAZero) toast(T(`Redressé de ${d > 0 ? '+' : ''}${d}°`, `Straightened by ${d > 0 ? '+' : ''}${d}°`));
+  else toast(T('Inclinaison remise à 0°','Tilt reset to 0°'));
+}
+function _eiDessinerRegle(ctx, e){
+  const { a, b } = _eiState.regle; if(!a || !b) return;
+  const A = [a[0]*e, a[1]*e], B = [b[0]*e, b[1]*e];
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke();
+  ctx.strokeStyle = '#e2b86a'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke();
+  for(const P of [A, B]){ ctx.beginPath(); ctx.arc(P[0], P[1], 4, 0, Math.PI*2); ctx.fillStyle = '#e2b86a'; ctx.fill(); }
+  if(Math.hypot(B[0]-A[0], B[1]-A[1]) > 12){
+    const d = Math.round(_eiEcartAxe(a, b) * 1800 / Math.PI) / 10;
+    const txt = `${d > 0 ? '+' : ''}${d}°`;
+    ctx.font = 'bold 12px sans-serif';
+    const w = ctx.measureText(txt).width + 12, x = B[0] + 10, y = B[1] - 22;
+    ctx.fillStyle = 'rgba(20,20,28,.85)'; ctx.fillRect(x, y, w, 20);
+    ctx.fillStyle = '#e2b86a'; ctx.textBaseline = 'middle'; ctx.fillText(txt, x + 6, y + 10);
+  }
+  ctx.restore();
+}
+// Rogne les marges entièrement transparentes d'une toile.
+function _eiRognerTransparent(c){
+  const W = c.width, H = c.height;
+  const d = c.getContext('2d', {willReadFrequently:true}).getImageData(0, 0, W, H).data;
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for(let y=0; y<H; y++){ const l = y*W;
+    for(let x=0; x<W; x++) if(d[(l+x)*4+3] > 8){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; y1 = y; } }
+  if(x1 < 0) return c;
+  if(x0 === 0 && y0 === 0 && x1 === W-1 && y1 === H-1) return c;
+  const r = document.createElement('canvas'); r.width = x1 - x0 + 1; r.height = y1 - y0 + 1;
+  r.getContext('2d').drawImage(c, x0, y0, r.width, r.height, 0, 0, r.width, r.height);
+  return r;
+}
+
 // Le même tour de passe-passe que la prise de vue : pivoter, c'est changer
 // quel coin joue le rôle de haut-gauche. Rien n'est rééchantillonné.
 function _eiPivoter(sens){
@@ -14714,6 +14822,11 @@ function _eiPivoter(sens){
 }
 
 function _eiDessiner(){
+  const st = _eiState; if(!st) return;
+  _eiDessinerBase();
+  if(st.regle && st.regle.a) _eiDessinerRegle(st.canvas.getContext('2d'), st.echelle);
+}
+function _eiDessinerBase(){
   const st = _eiState; if(!st) return;
   const cv = st.canvas, ctx = cv.getContext('2d', {willReadFrequently:true}), e = st.echelle;
   ctx.drawImage(st.source, 0, 0, cv.width, cv.height);
@@ -14769,7 +14882,15 @@ function _eiApercu(){
       cv.width = r ? r.width : 1; cv.height = r ? r.height : 1;
       const x = cv.getContext('2d'); x.clearRect(0, 0, cv.width, cv.height);
       if(r) x.drawImage(_eiFiltrerToile(r, st.reglages), 0, 0);
-      const t = _eiTailleSelection(st, PHOTO_MAX);
+      let t = _eiTailleSelection(st, PHOTO_MAX);
+      const m = st.outil === 'objet' ? st.obj : st.outil === 'baguette' ? st.bag : null;
+      if(r && m && m.angle && m.boite){
+        // Rogné après rotation, le détourage n'a pas la taille de sa boîte tournée :
+        // on remonte de l'aperçu à la taille réelle.
+        const cote = Math.max(m.boite.x1 - m.boite.x0 + 1, m.boite.y1 - m.boite.y0 + 1);
+        const k = Math.min(1, PHOTO_MAX / cote) / Math.min(1, 300 / cote);
+        t = [Math.round(r.width * k), Math.round(r.height * k)];
+      }
       texte = t ? `${t[0]} × ${t[1]} px` : T('Aucune sélection','No selection');
       if(st.outil === 'objet' && st.obj.enCalcul) texte = T('Analyse…','Analysing…');
     }
@@ -14794,6 +14915,13 @@ function _eiBrancher(){
   cv.addEventListener('pointerdown', ev=>{
     const [x,y] = versImage(ev);
     if(st.pipette){ ev.preventDefault(); _eiBalanceDepuis(x, y); return; }
+    if(st.regle){
+      ev.preventDefault();
+      st.regle.a = [x, y]; st.regle.b = [x, y];
+      saisie = { type:'regle' };
+      cv.setPointerCapture(ev.pointerId);
+      _eiDessiner(); return;
+    }
     if(st.outil === 'baguette'){
       ev.preventDefault();
       _eiBagClic(x, y, ev.shiftKey ? '+' : (ev.altKey ? '-' : '='));
@@ -14828,6 +14956,11 @@ function _eiBrancher(){
   cv.addEventListener('pointermove', ev=>{
     const [x,y] = versImage(ev);
     if(st.pipette){ _eiLire(x, y, ev); return; }
+    if(st.regle){
+      cv.style.cursor = 'crosshair';
+      if(saisie && saisie.type === 'regle'){ st.regle.b = [x, y]; _eiDessiner(); }
+      return;
+    }
     if(st.outil === 'baguette'){ cv.style.cursor = 'crosshair'; return; }
     if(st.outil === 'objet'){
       if(!saisie){
@@ -14903,11 +15036,12 @@ function _eiBrancher(){
     if(!saisie) return;
     const s = saisie; saisie = null; cv.style.cursor = '';
     try{ cv.releasePointerCapture(ev.pointerId); }catch(e){}
+    if(s.type === 'regle'){ _eiRegleAppliquer(); return; }
     if(s.type === 'objCadre'){
       const t = st.obj.trace; st.obj.trace = null;
       if(t && Math.abs(t.x1 - t.x0) * st.echelle > 8 && Math.abs(t.y1 - t.y0) * st.echelle > 8){
         st.obj.rect = { x0:Math.round(Math.min(t.x0,t.x1)), y0:Math.round(Math.min(t.y0,t.y1)), x1:Math.round(Math.max(t.x0,t.x1)), y1:Math.round(Math.max(t.y0,t.y1)) };
-        st.obj.traits = []; st.obj.quart = 0;
+        st.obj.traits = []; st.obj.quart = 0; st.obj.angle = 0;
         _eiObjMode('+', true);                      // la suite se corrige au pinceau
         _eiObjCalculer();
       } else _eiDessiner();
@@ -14947,6 +15081,7 @@ function _eiOutil(nom, silencieux){
   const st = _eiState; if(!st) return;
   if(!['cadre','ellipse','baguette','objet'].includes(nom)) nom = 'cadre';
   if(st.pipette) _eiPipetteBasculer(false);
+  if(st.regle) _eiRegleBasculer(false, true);
   st.outil = nom;
   if(nom === 'ellipse' && !st.ellipse) st.ellipse = _eiEllipseDuQuad(st.quad);
   ['cadre','ellipse','baguette','objet'].forEach(o=>st.ov.querySelector('#eiOutil-'+o)?.classList.toggle('ei-actif', o === nom));
@@ -14976,6 +15111,10 @@ function _eiAngleSelection(st){
   let a = 0;
   if(st.outil === 'ellipse' && st.ellipse) a = st.ellipse.a;
   else if(st.outil === 'cadre'){ const [p,q] = st.quad; a = Math.atan2(q[1]-p[1], q[0]-p[0]); }
+  else if(st.outil === 'objet' || st.outil === 'baguette'){
+    const m = st.outil === 'objet' ? st.obj : st.bag;
+    return Math.round(-(m.angle || 0) * 1800 / Math.PI) / 10;
+  }
   else return 0;
   // Ramené à ±45° : un quart de tour est une orientation, pas une inclinaison.
   let d = a * 180 / Math.PI; d = ((d + 45) % 90 + 90) % 90 - 45;
@@ -15094,6 +15233,7 @@ function _eiTailleSelection(st, plafond){
     const m = st.outil === 'objet' ? st.obj : st.bag, b = m.boite; if(!b) return null;
     L = b.x1 - b.x0 + 1; H = b.y1 - b.y0 + 1;
     if(m.quart % 2) [L, H] = [H, L];
+    if(m.angle){ const co = Math.abs(Math.cos(m.angle)), si = Math.abs(Math.sin(m.angle)); [L, H] = [L*co + H*si, L*si + H*co]; }
   } else return null;
   const k = Math.min(1, plafond / Math.max(L, H));
   return [ Math.max(1, Math.round(L*k)), Math.max(1, Math.round(H*k)) ];
@@ -15643,7 +15783,7 @@ function _eiObjTaille(v){
 }
 function _eiObjEffacer(){
   const st = _eiState; if(!st) return;
-  Object.assign(st.obj, { rect:null, traits:[], quart:0, masque:null, boite:null, trace:null, traitEnCours:null, masqueGC:null });
+  Object.assign(st.obj, { rect:null, traits:[], quart:0, angle:0, masque:null, boite:null, trace:null, traitEnCours:null, masqueGC:null });
   st.obj.version++; st.obj.affiche = null;
   _eiObjMode('cadre', true);
   _eiDessiner();
@@ -15983,7 +16123,7 @@ function _eiBagInverser(){
 }
 function _eiBagEffacer(){
   const st = _eiState; if(!st) return;
-  st.bag.ops = []; st.bag.inverse = false; st.bag.quart = 0;
+  st.bag.ops = []; st.bag.inverse = false; st.bag.quart = 0; st.bag.angle = 0;
   st.ov.querySelector('#eiBagInv')?.classList.remove('ei-actif');
   _eiBagCalculer(); _eiDessiner();
 }
@@ -16043,13 +16183,17 @@ function _eiRenduMasque(st, b, plafond){
   }
   const k = Math.min(1, plafond / Math.max(l, h));
   const L = Math.max(1, Math.round(l*k)), Hh = Math.max(1, Math.round(h*k));
-  const q = b.quart % 4, tourne = q % 2;
-  const c = document.createElement('canvas'); c.width = tourne ? Hh : L; c.height = tourne ? L : Hh;
+  const q = b.quart % 4, a = b.angle || 0, tot = q * Math.PI/2 + a;
+  const co = Math.abs(Math.cos(tot)), si = Math.abs(Math.sin(tot));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.ceil(L*co + Hh*si)); c.height = Math.max(1, Math.ceil(L*si + Hh*co));
   const x = c.getContext('2d', {willReadFrequently:true});
   x.imageSmoothingQuality = 'high';
-  x.translate(c.width/2, c.height/2); x.rotate(q * Math.PI/2);
+  x.translate(c.width/2, c.height/2); x.rotate(tot);
   x.drawImage(b.rendu.toile, -L/2, -Hh/2, L, Hh);
-  return c;
+  // Redressé d'un angle fin, le détourage flotte dans un cadre plus grand :
+  // on rogne les marges transparentes, comme le ferait un recadrage.
+  return a ? _eiRognerTransparent(c) : c;
 }
 
 // ── La balance de série ───────────────────────────────────────────────────
@@ -16099,6 +16243,7 @@ function majBandeauBalance(){
 function _eiPipetteBasculer(etat){
   const st = _eiState; if(!st) return;
   st.pipette = etat === undefined ? !st.pipette : !!etat;
+  if(st.pipette && st.regle) _eiRegleBasculer(false, true);
   st.canvas.classList.toggle('pipette', st.pipette);
   st.ov.querySelector('#eiPipette')?.classList.toggle('ei-actif', st.pipette);
   const l = st.ov.querySelector('#eiLecture'); if(l && !st.pipette) l.style.display = 'none';
