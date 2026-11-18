@@ -3460,15 +3460,14 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
           <div class="form-grid three">
             <div><label for="itemPinsMarque" data-en="Publisher / Brand">Éditeur / Marque</label><input type="text" id="itemPinsMarque" list="dl-pins-editeurs" placeholder="ex: Démons et Merveilles, Funko…" data-en-ph="e.g. Démons et Merveilles, Funko…"></div>
             <div><label for="itemPinsFabricant" data-en="Manufacturer">Fabricant</label><input type="text" id="itemPinsFabricant" list="dl-pins-fabricants" placeholder="si différent de l’éditeur" data-en-ph="if different from the publisher"></div>
-            <div><label for="itemPinsCollection" data-en="Publisher’s collection">Collection</label><input type="text" id="itemPinsCollection" list="dl-pins-collections" placeholder="collection de l’éditeur" data-en-ph="publisher’s collection"></div>
             <div><label data-en="Theme">Thème</label><select id="itemPinsTheme"><option value="" data-en="— Choose —">— Choisir —</option><option>BD / Comics</option><option>Cinéma</option><option>Animé / Manga</option><option>Jeu vidéo</option><option>Musique</option><option>Sport</option><option>Mode / Lifestyle</option><option>Gastronomie</option><option>Voyage</option><option>Événementiel</option><option>Autre</option></select></div>
+            <div class="span-3"><label for="itemPinsCollection" data-en="Collection / Series">Collection / Série</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><input type="text" id="itemPinsCollection" list="dl-pins-collections" placeholder="collection de l’éditeur — ex : Marvel" data-en-ph="publisher’s collection — e.g. Marvel"><input type="text" id="itemPinsSerie" list="dl-series" placeholder="série ou personnage — ex : Moebius, Astérix" data-en-ph="series or character — e.g. Moebius, Astérix" aria-label="Série"></div></div>
             <div><label data-en="Material">Matière</label><select id="itemPinsMatiere"><option value="" data-en="— Choose —">— Choisir —</option><option>Émail cloisonné</option><option>Émail dur</option><option>Émail souple</option><option>Plastique</option><option>Métal</option><option>Tissu</option><option>Résine</option><option>Autre</option></select></div>
             <div><label data-en="Shape">Forme</label><select id="itemPinsForme"><option value="" data-en="— Choose —">— Choisir —</option><option>Ronde</option><option>Carrée</option><option>Rectangulaire</option><option>Personnage / custom</option><option>Autre</option></select></div>
             <div><label for="itemPinsDimensions" data-en="Dimensions">Dimensions</label><input type="text" id="itemPinsDimensions" placeholder="ex : 25 mm, 30 × 18 mm" data-en-ph="e.g. 25 mm, 30 × 18 mm"></div>
             <div><div class="aide-titre aide-titre-champ"><label for="itemPinsAttache" data-en="Clasp type">Type d’attache</label><button type="button" class="aide-btn aide-mini" onclick="ouvrirLexiqueAttaches(document.getElementById('itemPinsAttache').value)" title="Les attaches de pin’s, illustrées" data-en-title="Illustrated pin clasps" aria-label="Lexique des attaches">?</button></div><select id="itemPinsAttache"><option value="" data-en="— Choose —">— Choisir —</option><option value="Attache papillon" data-en="Butterfly clutch">Attache papillon</option><option value="Attache caoutchouc / plastique" data-en="Rubber / plastic clutch">Attache caoutchouc / plastique</option><option value="Attache à pompe (deluxe)" data-en="Locking (deluxe) clutch">Attache à pompe (deluxe)</option><option value="Attache à vis" data-en="Screw back">Attache à vis</option><option value="Épingle de sûreté" data-en="Safety pin">Épingle de sûreté</option><option value="Épingle droite" data-en="Stick pin">Épingle droite</option><option value="Pince à cravate avec chaîne" data-en="Tie tack with chain">Pince à cravate avec chaîne</option><option value="Aimant" data-en="Magnet">Aimant</option><option value="Deux accroches rainurées" data-en="Two grooved posts">Deux accroches rainurées</option><option value="Accroche cisaillée à dent d'ancrage" data-en="Notched post with anchor tooth">Accroche cisaillée à dent d'ancrage</option><option value="Autre" data-en="Other">Autre</option></select></div>
             <div><label data-en="Publisher reference">Référence éditeur</label><input type="text" id="itemPinsReference" placeholder="ex: BP-AY-1234"></div>
             <div class="span-3"><label data-en="Original event">Événement d'origine</label><input type="text" id="itemPinsEvenement" placeholder="ex: Japan Expo 2023, Comic Con Paris..."></div>
-            <div class="span-3"><label data-en="Series">Série</label><input type="text" id="itemPinsSerie" list="dl-series" placeholder="ex: Astérix, Marvel icons..." data-en-ph="e.g. Astérix, Marvel icons..."></div>
             <div class="span-3"><label for="itemPinsVerso" data-en="Back stamp / text on the back">Texte au verso</label><input type="text" id="itemPinsVerso" placeholder="marquage au dos : fabricant, numérotation, copyright… ex : Arthus-Bertrand Paris — 120/500" data-en-ph="back stamp: maker, numbering, copyright…"></div>
             <datalist id="dl-pins-editeurs"></datalist><datalist id="dl-pins-fabricants"></datalist><datalist id="dl-pins-collections"></datalist>
             <div class="span-3" style="display:none">
@@ -6813,6 +6812,7 @@ function _auteurProposable(a, refs){
 }
 function _majFichePin(estPin){
   _ficheEstPin = !!estPin;
+  if(typeof _majBedetheque === 'function') setTimeout(_majBedetheque, 0);   // Bédéthèque et tradition : BD seulement
   const montrer = (el, oui) => { if(el) el.style.display = oui ? '' : 'none'; };
   const parent = id => document.getElementById(id)?.parentElement;
   montrer(document.getElementById('formSection-pins'), estPin);
@@ -11020,6 +11020,15 @@ async function reloadCache(){
   cache.items = await dbAll("items");
   // Migrate legacy items: ensure all have a collectionType
   cache.items.forEach(it=>{ if(!it.collectionType) it.collectionType='bd'; });
+  // Réparation : un pin's rangé par erreur en BD (clone fait depuis la mauvaise collection)
+  // se reconnaît à ses caractéristiques de pin's, que seule la fiche pin's sait remplir.
+  const _clesPin = ['pinsMarque','pinsFabricant','pinsCollection','pinsAttache','pinsForme','pinsMatiere','pinsVerso','pinsTheme','pinsDimensions'];
+  const _egares = cache.items.filter(it => it.collectionType === 'bd' && _clesPin.some(k => it[k]));
+  _egares.forEach(it => { it.collectionType = 'pins'; });
+  if(_egares.length && !GUEST){
+    console.info('[Réparation] pin\'s ramenés dans leur collection :', _egares.map(i=>i.titre));
+    (async()=>{ for(const it of _egares){ try{ await dbPut('items', it); }catch(e){ console.warn('[Réparation] échec', it.titre, e); } } })();
+  }
   // Migration : langue (string) → langues (array)
   cache.items.forEach(it=>{ if(!Array.isArray(it.langues)) it.langues = it.langue ? [it.langue] : []; });
   cache.authors = await dbAll("authors");
@@ -11759,6 +11768,7 @@ function openBulkEditForm(){
 }
 
 function openItemForm(id=null, opts={}){
+  _collDuplication = null;
   if(GUEST) return;                 // page invité : aucune écriture possible
   _syncScanDirectBtn();             // bouton de scan accolé à « Remplir automatiquement »
   _syncPhotoBtn();                  // prise de vue : HTTPS seulement
@@ -12543,7 +12553,7 @@ async function _saveItemCore(e){
     imageNames: [...currentItemImageNames],
     ..._retouchesVersFiche(),
     exlibrisImageIdx: (_exlibrisImgIdx>=0 && _exlibrisImgIdx < currentItemImages.length) ? _exlibrisImgIdx : null,
-    collectionType: existing?.collectionType || _collPourNouvelleFiche(document.getElementById("itemCategory").value),
+    collectionType: existing?.collectionType || _collDuplication || _collPourNouvelleFiche(document.getElementById("itemCategory").value),
     // Disque (CD / Vinyle / DVD)
     disqueSupport:      document.getElementById("itemDisqueSupport")?.value||"",
     disqueNb:           parseInt(document.getElementById("itemDisqueNb")?.value)||null,
@@ -13000,7 +13010,7 @@ function _majBedetheque(depuisUrl){
   const champId  = document.getElementById('itemBdtId');
   if(!bloc || !champUrl || !champId) return;
   const cat = document.getElementById('itemCategory')?.value || '';
-  const pourBD = !archetypeForCategory(cat).showDisque && _collPourNouvelleFiche(cat) === 'bd';
+  const pourBD = !_ficheEstPin && !archetypeForCategory(cat).showDisque && _collPourNouvelleFiche(cat) === 'bd';
   bloc.style.display = pourBD ? '' : 'none';
   const trad = document.getElementById('formFieldTradition');
   if(trad) trad.style.display = pourBD ? '' : 'none';
@@ -16973,9 +16983,11 @@ function hideCardContextMenu(){
   if(m) m.remove();
   if(_cardCtxOutside){ document.removeEventListener("mousedown", _cardCtxOutside); _cardCtxOutside = null; }
 }
+let _collDuplication = null;   // collection de l'original pendant une duplication
 function duplicateItem(id){
   hideCardContextMenu();
   openItemForm(id);                                          // remplit tous les champs
+  _collDuplication = cache.items.find(i=>i.id===id)?.collectionType || null;
   document.getElementById("itemId").value = "";             // pas d'id → nouvel item
   document.getElementById("itemModalTitle").textContent = T("Dupliquer l'œuvre","Duplicate work");
   document.getElementById("itemDeleteBtn").style.display = "none";
@@ -21147,6 +21159,12 @@ function renderEphemereDetail(it, imgs, imgNames, authors, pushHistory){
 function renderItemDetail(id, pushHistory=true){
   const it = cache.items.find(i=>i.id===id);
   if(!it) return;
+  // La collection active suit l'œuvre affichée. Sans cela, une page rechargée sur
+  // « #item/… » montrait un pin's sous l'en-tête BD, et « Dupliquer » ou « Modifier »
+  // repartaient de la BD — c'est ainsi qu'un clone de pin's atterrissait en BD.
+  const _collIt = it.collectionType || 'bd';
+  if(!isAllCollection() && _collIt !== _activeCollection && typeof switchCollection === 'function')
+    switchCollection(_collIt, { sansNuage:true });
   // Le retour au classeur ne vaut que pour la fiche ouverte depuis la liseuse : dès qu'on
   // navigue vers une autre œuvre, le contexte tombe.
   if(_fbFromBinder && _fbFromBinder.itemId !== id) _fbFromBinder = null;
