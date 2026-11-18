@@ -3464,14 +3464,14 @@ m35 -1215 c130 -66 192 -194 192 -395 0 -88 -4 -123 -22 -175 -49 -145 -147
             <div><label data-en="Theme">Thème</label><select id="itemPinsTheme"><option value="" data-en="— Choose —">— Choisir —</option><option>BD / Comics</option><option>Cinéma</option><option>Animé / Manga</option><option>Jeu vidéo</option><option>Musique</option><option>Sport</option><option>Mode / Lifestyle</option><option>Gastronomie</option><option>Voyage</option><option>Événementiel</option><option>Autre</option></select></div>
             <div><label data-en="Material">Matière</label><select id="itemPinsMatiere"><option value="" data-en="— Choose —">— Choisir —</option><option>Émail cloisonné</option><option>Émail dur</option><option>Émail souple</option><option>Plastique</option><option>Métal</option><option>Tissu</option><option>Résine</option><option>Autre</option></select></div>
             <div><label data-en="Shape">Forme</label><select id="itemPinsForme"><option value="" data-en="— Choose —">— Choisir —</option><option>Ronde</option><option>Carrée</option><option>Rectangulaire</option><option>Personnage / custom</option><option>Autre</option></select></div>
-            <div><label data-en="Diameter (mm)">Diamètre (mm)</label><input type="number" id="itemPinsDiametre" min="5" max="200" placeholder="ex: 25"></div>
+            <div><label for="itemPinsDimensions" data-en="Dimensions">Dimensions</label><input type="text" id="itemPinsDimensions" placeholder="ex : 25 mm, 30 × 18 mm" data-en-ph="e.g. 25 mm, 30 × 18 mm"></div>
             <div><div class="aide-titre aide-titre-champ"><label for="itemPinsAttache" data-en="Clasp type">Type d’attache</label><button type="button" class="aide-btn aide-mini" onclick="ouvrirLexiqueAttaches(document.getElementById('itemPinsAttache').value)" title="Les attaches de pin’s, illustrées" data-en-title="Illustrated pin clasps" aria-label="Lexique des attaches">?</button></div><select id="itemPinsAttache"><option value="" data-en="— Choose —">— Choisir —</option><option value="Attache papillon" data-en="Butterfly clutch">Attache papillon</option><option value="Attache caoutchouc / plastique" data-en="Rubber / plastic clutch">Attache caoutchouc / plastique</option><option value="Attache à pompe (deluxe)" data-en="Locking (deluxe) clutch">Attache à pompe (deluxe)</option><option value="Attache à vis" data-en="Screw back">Attache à vis</option><option value="Épingle de sûreté" data-en="Safety pin">Épingle de sûreté</option><option value="Épingle droite" data-en="Stick pin">Épingle droite</option><option value="Pince à cravate avec chaîne" data-en="Tie tack with chain">Pince à cravate avec chaîne</option><option value="Aimant" data-en="Magnet">Aimant</option><option value="Deux accroches rainurées" data-en="Two grooved posts">Deux accroches rainurées</option><option value="Accroche cisaillée à dent d'ancrage" data-en="Notched post with anchor tooth">Accroche cisaillée à dent d'ancrage</option><option value="Autre" data-en="Other">Autre</option></select></div>
             <div><label data-en="Publisher reference">Référence éditeur</label><input type="text" id="itemPinsReference" placeholder="ex: BP-AY-1234"></div>
             <div class="span-3"><label data-en="Original event">Événement d'origine</label><input type="text" id="itemPinsEvenement" placeholder="ex: Japan Expo 2023, Comic Con Paris..."></div>
             <div class="span-3"><label data-en="Series">Série</label><input type="text" id="itemPinsSerie" list="dl-series" placeholder="ex: Astérix, Marvel icons..." data-en-ph="e.g. Astérix, Marvel icons..."></div>
             <div class="span-3"><label for="itemPinsVerso" data-en="Back stamp / text on the back">Texte au verso</label><input type="text" id="itemPinsVerso" placeholder="marquage au dos : fabricant, numérotation, copyright… ex : Arthus-Bertrand Paris — 120/500" data-en-ph="back stamp: maker, numbering, copyright…"></div>
             <datalist id="dl-pins-editeurs"></datalist><datalist id="dl-pins-fabricants"></datalist><datalist id="dl-pins-collections"></datalist>
-            <div class="span-3" style="padding-bottom:4px">
+            <div class="span-3" style="display:none">
               <div class="checkbox-row"><input type="checkbox" id="itemPinsEditionLimitee"><label for="itemPinsEditionLimitee" style="margin:0"><strong data-en="Limited edition">Édition limitée</strong></label></div>
             </div>
           </div>
@@ -5257,7 +5257,8 @@ function switchCollection(id, opts){
 }
 
 // Sections hidden per collection
-const _BD_ONLY_SECTIONS = ['formSection-authors','formSection-signatures','formSection-caracteristiques','formSection-contenu'];
+// « Auteurs » reste visible pour les pin's : on y cite les créateurs de l'œuvre représentée.
+const _BD_ONLY_SECTIONS = ['formSection-signatures','formSection-caracteristiques','formSection-contenu'];
 const _PINS_ONLY_SECTIONS = ['formSection-pins'];
 // Shared with adapted labels: formSection-signatures always visible
 // formSection-edition visible always but some fields hidden
@@ -6797,11 +6798,34 @@ function _majListesPins(){
   remplir('dl-pins-fabricants', pins.map(i=>i.pinsFabricant));
   remplir('dl-pins-collections', pins.map(i=>i.pinsCollection));
 }
+// Dimensions d'un pin's : texte libre ; les anciennes fiches n'avaient qu'un diamètre en mm.
+function _pinsDimensions(it){
+  if(it?.pinsDimensions) return it.pinsDimensions;
+  return it?.pinsDiametre ? it.pinsDiametre + ' mm' : '';
+}
+// Vrai pendant qu'une fiche de pin's est ouverte : ses « auteurs » sont les créateurs
+// de l'œuvre représentée (dessinateurs, illustrateurs…), pas les éditeurs de pin's.
+let _ficheEstPin = false;
+function _auteurProposable(a, refs){
+  if(_ficheEstPin)   // ces menus n'existent que dans la fiche d'œuvre
+    return (a.collectionType || 'bd') !== 'pins';
+  return authorInActiveCollection(a, refs);
+}
 function _majFichePin(estPin){
+  _ficheEstPin = !!estPin;
   const montrer = (el, oui) => { if(el) el.style.display = oui ? '' : 'none'; };
   const parent = id => document.getElementById(id)?.parentElement;
   montrer(document.getElementById('formSection-pins'), estPin);
-  montrer(document.getElementById('formSection-authors'), !estPin);
+  montrer(document.getElementById('formFieldCatSec'), !estPin);
+  const tAut = document.getElementById('formSection-authors-title');
+  if(tAut){
+    const pinFr = 'Créateurs de l’œuvre représentée', pinEn = 'Creators of the depicted work';
+    if(estPin) tAut.textContent = T(pinFr, pinEn);
+    else if([pinFr, pinEn].includes(tAut.textContent.trim())) tAut.textContent = T('Auteurs et contributeurs','Authors and contributors');
+  }
+  // Les menus déjà posés dans la fiche suivent la nouvelle liste (artistes et non éditeurs).
+  if(typeof _rebuildAuthorSelects === 'function') _rebuildAuthorSelects();
+  document.querySelectorAll('#itemAuthorsList .author-row > div > div:first-child > label').forEach(l => l.textContent = _libelleAuteurFiche());
   ['itemPublisher','itemSubtitle','itemFormat','itemEditionInfo'].forEach(id => montrer(parent(id), !estPin));
   ['formFieldLangue','formFieldFirstEdition'].forEach(id => montrer(document.getElementById(id), !estPin));
   const lu = document.getElementById('itemLu')?.closest('.checkbox-row')?.parentElement;
@@ -6834,7 +6858,9 @@ function _libellePin(el, estPin, fr, en){
 }
 
 function adaptAuthorFormToCollection(){
-  const isPins = _activeCollection === 'pins';
+  // La fiche suit la collection choisie dans le formulaire : depuis un pin's, on crée
+  // l'artiste de l'œuvre représentée (fiche de personne), pas une marque.
+  const isPins = (document.getElementById('authorCollection')?.value || _activeCollection) === 'pins';
   // Champs à masquer en mode pins
   const hide = ['authorFieldPrenom','authorFieldPseudo'];
   hide.forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display = isPins?'none':''; });
@@ -9569,7 +9595,7 @@ const SB = (() => {
     // Tradition (franco-belge, comics, fumetti, manga…) — même sac JSONB
     'tradition'];
   const PINS_KEYS = ['pinsMarque','pinsTheme','pinsMatiere','pinsForme','pinsDiametre','pinsEvenement',
-    'pinsReference','pinsEditionLimitee','pinsFabricant','pinsCollection','pinsAttache','pinsVerso'];
+    'pinsReference','pinsEditionLimitee','pinsFabricant','pinsCollection','pinsAttache','pinsVerso','pinsDimensions'];
   // [cléLegacy, colonne, type] — s:texte(''), n:nombre(null), z:nombre(0), b:bool, d:date('')
   const COLS = [
     ['titre','titre','s'],['sousTitre','sous_titre','s'],['univers','univers','s'],
@@ -12017,7 +12043,7 @@ function openItemForm(id=null, opts={}){
     if(document.getElementById("itemPinsTheme"))  document.getElementById("itemPinsTheme").value  = it.pinsTheme||"";
     if(document.getElementById("itemPinsMatiere"))document.getElementById("itemPinsMatiere").value= it.pinsMatiere||"";
     if(document.getElementById("itemPinsForme"))  document.getElementById("itemPinsForme").value  = it.pinsForme||"";
-    if(document.getElementById("itemPinsDiametre"))document.getElementById("itemPinsDiametre").value=it.pinsDiametre||"";
+    if(document.getElementById("itemPinsDimensions"))document.getElementById("itemPinsDimensions").value=_pinsDimensions(it);
     if(document.getElementById("itemPinsEvenement"))document.getElementById("itemPinsEvenement").value=it.pinsEvenement||"";
     if(document.getElementById("itemPinsReference"))document.getElementById("itemPinsReference").value=it.pinsReference||"";
     if(document.getElementById("itemPinsEditionLimitee"))document.getElementById("itemPinsEditionLimitee").checked=!!it.pinsEditionLimitee;
@@ -12048,11 +12074,15 @@ function openItemForm(id=null, opts={}){
 // proposés — la liste complète devient vite ingérable. L'entrée « Tous les
 // auteurs » ouvre la liste entière pour la fiche en cours.
 let _authorsCollectedOnly = true;
+function _libelleAuteurFiche(){
+  return _ficheEstPin ? T('Auteur / artiste','Author / artist')
+                      : T(_capitaliser(currentModule().terms?.creator || 'auteur'),"Author");
+}
 function _authorOptionsHTML(selectedId, applyFilter=true){
   // Un menu d'auteurs ne doit proposer que ceux de la collection active : choisir un
   // dessinateur de bande dessinée pour un disque n'aurait aucun sens.
   const _refs = authorsReferencedInActiveCollection();
-  let auths = cache.authors.filter(a=>authorInActiveCollection(a, _refs) || String(a.id)===String(selectedId));
+  let auths = cache.authors.filter(a=>_auteurProposable(a, _refs) || String(a.id)===String(selectedId));
   if(applyFilter && _authorsCollectedOnly) auths = auths.filter(a=>a.estCollectionne || String(a.id)===String(selectedId));
   // Classement alphabétique par NOM DE FAMILLE (pseudonyme s'il en tient lieu),
   // et affichage « Nom, Prénom » pour que l'ordre soit lisible d'un coup d'œil.
@@ -12063,7 +12093,7 @@ function _authorOptionsHTML(selectedId, applyFilter=true){
 // Entêtes communes à tous les menus d'auteur (création + bascule de portée)
 function _authorSelectHeader(){
   const _refs = authorsReferencedInActiveCollection();
-  const nTot = cache.authors.filter(a=>authorInActiveCollection(a, _refs)).length;
+  const nTot = cache.authors.filter(a=>_auteurProposable(a, _refs)).length;
   return `<option value="">${T("— Choisir un auteur —","— Choose an author —")}</option>
     <option value="__new__">${T("+ Créer un nouvel auteur","+ Create a new author")}</option>`
     + (_authorsCollectedOnly
@@ -12136,7 +12166,7 @@ function addAuthorRow(auteurId="", roles=[]){
   row.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start">
       <div>
-        <label>${T(_capitaliser(currentModule().terms?.creator || 'auteur'),"Author")}</label>
+        <label>${_libelleAuteurFiche()}</label>
         <div class="author-pick">
           <select class="item-author-select">
             ${_authorSelectHeader()}
@@ -12174,7 +12204,7 @@ function addAuthorRow(auteurId="", roles=[]){
       openAuthorForm(null,(newId)=>{
         sel.innerHTML = _authorSelectHeader() + _authorOptionsHTML(newId, true);
         sel.value = newId;
-      }, { collection: _collPourNouvelleFiche(document.getElementById('itemCategory')?.value) });
+      }, { collection: _ficheEstPin ? 'bd' : _collPourNouvelleFiche(document.getElementById('itemCategory')?.value) });
     }
   });
 }
@@ -12563,7 +12593,8 @@ async function _saveItemCore(e){
     pinsTheme:         document.getElementById("itemPinsTheme")?.value||"",
     pinsMatiere:       document.getElementById("itemPinsMatiere")?.value||"",
     pinsForme:         document.getElementById("itemPinsForme")?.value||"",
-    pinsDiametre:      parseFloat(document.getElementById("itemPinsDiametre")?.value)||null,
+    pinsDimensions:    (document.getElementById("itemPinsDimensions")?.value||"").trim(),
+    pinsDiametre:      null,   // remplacé par « Dimensions » (texte libre), repris à l'ouverture
     pinsEvenement:     document.getElementById("itemPinsEvenement")?.value.trim()||"",
     pinsReference:     document.getElementById("itemPinsReference")?.value.trim()||"",
     pinsEditionLimitee:!!document.getElementById("itemPinsEditionLimitee")?.checked,
@@ -13134,6 +13165,7 @@ function _surChoixCollectionArtiste(){
   const champType = document.getElementById('authorFieldType');
   if(champType) champType.style.display = permet ? '' : 'none';
   if(!permet && _authorEstGroupe) setAuthorTypeGroupe(false);
+  adaptAuthorFormToCollection();
 }
 function _collectionChoisieArtiste(existing){
   const sel = document.getElementById('authorCollection');
@@ -13300,6 +13332,8 @@ function openAuthorForm(id=null, callback=null, opts={}){
   _surChoixCollectionArtiste();
   adaptAuthorFormToCollection();
   document.getElementById("authorModalTitle").textContent = libelleAjoutCreateur().replace(/^\+\s*/,'');
+  if(!id && _activeCollection === 'pins' && opts.collection && opts.collection !== 'pins')
+    document.getElementById("authorModalTitle").textContent = T('Nouvel auteur / artiste','New author / artist');
   if(id){
     const a = cache.authors.find(x=>x.id===id);
     if(!a) return;
@@ -21204,7 +21238,7 @@ function renderItemDetail(id, pushHistory=true){
     [T('Thème','Theme'),                        it.pinsTheme],
     [T('Matière','Material'),                   it.pinsMatiere],
     [T('Forme','Shape'),                        it.pinsForme],
-    [T('Diamètre','Diameter'),                  it.pinsDiametre ? it.pinsDiametre + ' mm' : ''],
+    [T('Dimensions','Dimensions'),              _pinsDimensions(it)],
     [T("Type d'attache",'Clasp type'),         it.pinsAttache],
     [T('Texte au verso','Back stamp'),          it.pinsVerso],
     [T('Référence éditeur','Publisher reference'), it.pinsReference],
