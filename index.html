@@ -6807,6 +6807,30 @@ function _majFichePin(estPin){
   const lu = document.getElementById('itemLu')?.closest('.checkbox-row')?.parentElement;
   const dateLu = document.getElementById('formFieldDateLecture');
   montrer(lu, !estPin); montrer(dateLu, !estPin); montrer(dateLu?.nextElementSibling, !estPin);
+  // Onglet « Édition & contenu » d'un pin's : ni remplissage automatique (pas d'ISBN),
+  // ni tirage / dédicace, ni diaporama, ni protection des couvertures adultes.
+  montrer(document.querySelector('#itemModal .autofill-duo'), !estPin);
+  ['formSection-signatures','itemDiaporamaRow','itemAdultBlock'].forEach(id => montrer(document.getElementById(id), !estPin));
+  const photo = document.querySelector('#itemPhotoRow button');
+  _libellePin(photo, estPin, '📷 Photographier votre objet', '📷 Photograph your item');
+  _libellePin(photo?.nextElementSibling, estPin, 'Puis le redresser : quatre coins à faire glisser', 'Then straighten it: four corners to drag');
+  const notes = document.getElementById('itemNotes');
+  _libellePin(notes?.closest('.form-section')?.querySelector('h3'), estPin, 'Descriptif et mots-clés', 'Description and keywords');
+  _libellePin(notes?.parentElement.querySelector('label'), estPin, 'Descriptif', 'Description');
+  if(notes){
+    if(notes.dataset.pinPh === undefined) notes.dataset.pinPh = notes.getAttribute('placeholder') || '';
+    notes.placeholder = estPin ? T('Description de l’objet, histoire, particularités…','Description of the item, history, special features…') : notes.dataset.pinPh;
+  }
+}
+// Libellé propre aux pin's, réversible : le texte d'origine (français et anglais)
+// est gardé à part et reposé dès qu'on revient à une fiche d'une autre collection.
+function _libellePin(el, estPin, fr, en){
+  if(!el) return;
+  if(el.dataset.pinFr === undefined){ el.dataset.pinFr = el.dataset.frSrc ?? el.innerHTML; el.dataset.pinEn = el.dataset.en ?? ''; }
+  const f = estPin ? fr : el.dataset.pinFr, e = estPin ? en : el.dataset.pinEn;
+  el.dataset.frSrc = f;
+  if(e) el.dataset.en = e;
+  el.innerHTML = (_lang === 'en' && e) ? e : f;
 }
 
 function adaptAuthorFormToCollection(){
