@@ -4850,8 +4850,8 @@ const MODULES = [
   {
     id:'pins', label:"Pin's", labelEn:'Pins', icon:'🌍', iconImg:PINS_ICONE_IMG, desc:"Pin's & badges", descEn:'Pins & badges',
     accent:'#7a9fc8', core:false, status:'ready',
-    terms:{ item:'fiche', itemPlural:'fiches', creator:'éditeur', creatorsTab:'Éditeurs',
-            addItem:'Ajouter une fiche', addCreator:'Ajouter un éditeur' },
+    terms:{ item:'fiche', itemPlural:'fiches', creator:'auteur', creatorsTab:'Auteurs',
+            addItem:'Ajouter une fiche', addCreator:'Ajouter un auteur' },
     formSections:['pins','edition'],
     categoriesMetaKey:'pins_categories',
     tabs:{ wishlist:false, library:false },
@@ -6792,8 +6792,7 @@ function _majListesPins(){
     const uniques = [...new Set(valeurs.map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
     dl.innerHTML = uniques.map(v=>`<option value="${escapeHTML(v)}">`).join('');
   };
-  const fichesEditeurs = (cache.authors||[]).filter(a=>(a.collectionType||'bd')==='pins').map(a=>authorDisplay(a));
-  remplir('dl-pins-editeurs', [...pins.map(i=>i.pinsMarque||i.editeur), ...fichesEditeurs]);
+  remplir('dl-pins-editeurs', pins.map(i=>i.pinsMarque||i.editeur));
   remplir('dl-pins-fabricants', pins.map(i=>i.pinsFabricant));
   remplir('dl-pins-collections', pins.map(i=>i.pinsCollection));
 }
@@ -6806,8 +6805,10 @@ function _pinsDimensions(it){
 // de l'œuvre représentée (dessinateurs, illustrateurs…), pas les éditeurs de pin's.
 let _ficheEstPin = false;
 function _auteurProposable(a, refs){
+  // Collections cloisonnées : une fiche pin's ne propose que les auteurs créés dans
+  // la collection Pin's (ni ceux de la BD, ni les artistes musicaux).
   if(_ficheEstPin)   // ces menus n'existent que dans la fiche d'œuvre
-    return (a.collectionType || 'bd') !== 'pins';
+    return (a.collectionType || 'bd') === 'pins';
   return authorInActiveCollection(a, refs);
 }
 function _majFichePin(estPin){
@@ -6860,7 +6861,9 @@ function _libellePin(el, estPin, fr, en){
 function adaptAuthorFormToCollection(){
   // La fiche suit la collection choisie dans le formulaire : depuis un pin's, on crée
   // l'artiste de l'œuvre représentée (fiche de personne), pas une marque.
-  const isPins = (document.getElementById('authorCollection')?.value || _activeCollection) === 'pins';
+  // Les auteurs des pin's sont désormais des personnes (créateurs de l'œuvre représentée) :
+  // la fiche « marque » n'a plus cours, l'éditeur se saisit sur la fiche du pin's.
+  const isPins = false;
   // Champs à masquer en mode pins
   const hide = ['authorFieldPrenom','authorFieldPseudo'];
   hide.forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display = isPins?'none':''; });
@@ -6925,7 +6928,7 @@ function _adaptCollectionLabels(){
   const vTitle = document.getElementById('authorsViewTitle');
   if(vTitle){
     const countSpan = document.getElementById('authorsCount');
-    const icone = isPins ? '🏷️' : (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : _activeCollection === 'dvd' ? '🎬' : '✒️');
+    const icone = (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : _activeCollection === 'dvd' ? '🎬' : '✒️');
     vTitle.innerHTML = `${icone} ${libelleCreateurs()} ` + (countSpan ? countSpan.outerHTML : '<span class="muted" id="authorsCount"></span>');
   }
   // "Souhaités" nav tab: hide in non-BD collections
@@ -12214,7 +12217,7 @@ function addAuthorRow(auteurId="", roles=[]){
       openAuthorForm(null,(newId)=>{
         sel.innerHTML = _authorSelectHeader() + _authorOptionsHTML(newId, true);
         sel.value = newId;
-      }, { collection: _ficheEstPin ? 'bd' : _collPourNouvelleFiche(document.getElementById('itemCategory')?.value) });
+      }, { collection: _ficheEstPin ? 'pins' : _collPourNouvelleFiche(document.getElementById('itemCategory')?.value) });
     }
   });
 }
@@ -13342,8 +13345,6 @@ function openAuthorForm(id=null, callback=null, opts={}){
   _surChoixCollectionArtiste();
   adaptAuthorFormToCollection();
   document.getElementById("authorModalTitle").textContent = libelleAjoutCreateur().replace(/^\+\s*/,'');
-  if(!id && _activeCollection === 'pins' && opts.collection && opts.collection !== 'pins')
-    document.getElementById("authorModalTitle").textContent = T('Nouvel auteur / artiste','New author / artist');
   if(id){
     const a = cache.authors.find(x=>x.id===id);
     if(!a) return;
@@ -13412,7 +13413,7 @@ async function saveAuthor(e){
   await reloadCache();
   const estUnGroupe = _authorEstGroupe;
   toast(estUnGroupe ? (existing ? T("Groupe mis à jour","Band updated") : T("Groupe ajouté","Band added"))
-    : existing ? (isPins ? T("Éditeur mis à jour","Publisher updated") : T("Auteur mis à jour","Author updated")) : (isPins ? T("Éditeur ajouté","Publisher added") : T("Auteur ajouté","Author added")));
+    : existing ? T("Auteur mis à jour","Author updated") : T("Auteur ajouté","Author added"));
   closeModal("authorModal");
   if(authorFormCallback){
     const cb = authorFormCallback;
@@ -17877,8 +17878,7 @@ function _majInfobullesNav(){
 function _majIconeNavCreateurs(){
   const b = document.getElementById('navAuthorsBtn');
   if(!b) return;
-  b.dataset.icone = _activeCollection === 'pins' ? '🏷️'
-                  : (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : _activeCollection === 'dvd' ? '🎬' : '✒️');
+  b.dataset.icone = (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : _activeCollection === 'dvd' ? '🎬' : '✒️');
 }
 
 function libelleCreateurs(){
@@ -17896,8 +17896,7 @@ function libelleAjoutCreateur(){
 }
 
 function libelleNationalite(){
-  return _activeCollection === 'pins' ? T("Pays d'origine",'Country of origin')
-                                      : T('Nationalité','Nationality');
+  return T('Nationalité','Nationality');
 }
 
 function nationaliteFlag(nat){
@@ -19426,7 +19425,7 @@ function applyAuthorFilters(){
   document.getElementById("authorsCount").textContent = `(${list.length})`;
   const container = document.getElementById("authorsContainer");
   if(!list.length){
-    const isPins = _activeCollection === 'pins';
+    const isPins = false;   // les pin's ont maintenant des auteurs, comme la BD
     container.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">${isPins?'🏷️':'✒️'}</div>${isPins ? T("Aucun éditeur. Associez un éditeur à un pin's pour le voir apparaître ici.","No publishers. Link a publisher to a pin to see it appear here.") : T("Aucun auteur.","No authors.")}</div>`;
     return;
   }
@@ -19435,8 +19434,8 @@ function applyAuthorFilters(){
   const cartes = list.map(a=>{
     const c = counts[a.id]||0;
     const countLabel = _isPinsAuthors ? `${c} pin${c>1?"s":""}` : `${c} ${T(`œuvre${c>1?"s":""}`,`work${c>1?"s":""}`)}`;
-    const editTitle  = _isPinsAuthors ? T("Modifier cet éditeur","Edit this publisher") : T("Modifier cet auteur","Edit this author");
-    const starTitle  = _isPinsAuthors ? T("Éditeur collectionné","Collected publisher") : T("Auteur collectionné","Collected author");
+    const editTitle  = T("Modifier cet auteur","Edit this author");
+    const starTitle  = T("Auteur collectionné","Collected author");
     // L'ordre d'affichage suit celui de la collection active : sur une fiche
     // d'artiste, « Artiste principal » doit primer, pas « Dessinateur ».
     const ROLE_ORDER = rolesActifs();
@@ -20462,7 +20461,7 @@ function applyLang() {
   };
   const _isPinsLang = _activeCollection === 'pins';
   setH2WithSpan(document.querySelector('#view-collection .toolbar h2'), S('coll.title'));
-  setH2WithSpan(document.querySelector('#view-authors h2'), _isPinsLang ? T('🏷️ Éditeurs','🏷️ Publishers') : S('authors.title'));
+  setH2WithSpan(document.querySelector('#view-authors h2'), S('authors.title'));
   setH2WithSpan(document.querySelector('#view-souhaites h2'), S('wish.title'));
   setText('#view-stats h2', S('stats.title'));
   setText('#view-categories h2', S('cats.title'));
