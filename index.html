@@ -4850,8 +4850,8 @@ const MODULES = [
   {
     id:'pins', label:"Pin's", labelEn:'Pins', icon:'🌍', iconImg:PINS_ICONE_IMG, desc:"Pin's & badges", descEn:'Pins & badges',
     accent:'#7a9fc8', core:false, status:'ready',
-    terms:{ item:'fiche', itemPlural:'fiches', creator:'auteur', creatorsTab:'Auteurs',
-            addItem:'Ajouter une fiche', addCreator:'Ajouter un auteur' },
+    terms:{ item:'fiche', itemPlural:'fiches', creator:'éditeur', creatorsTab:'Éditeurs',
+            addItem:'Ajouter une fiche', addCreator:'Ajouter un éditeur' },
     formSections:['pins','edition'],
     categoriesMetaKey:'pins_categories',
     tabs:{ wishlist:false, library:false },
@@ -5160,6 +5160,20 @@ async function loadGroupes(){
   return _groupes;
 }
 async function saveGroupes(){ await dbPut('meta',{ key:'groupes', value:_groupes||{} }); }
+// Pin's : deux sortes de fiches dans la même collection. Les éditeurs (marques), listés
+// dans l'onglet « Éditeurs », et les artistes qui ont réalisé le motif, choisis sur la
+// fiche du pin's. Les seconds sont repérés ici, hors de la table « auteurs ».
+let _artistesPins = {};
+async function loadArtistesPins(){
+  try { const r = await dbGet('meta','pins_artistes'); _artistesPins = (r && r.value) || {}; }
+  catch(e){ _artistesPins = {}; }
+}
+async function saveArtistesPins(){ await dbPut('meta',{ key:'pins_artistes', value:_artistesPins||{} }); }
+function estArtistePin(a){
+  const id = (a && a.id) || a;
+  return !!(id && _artistesPins && _artistesPins[id]);
+}
+let _authorFormArtistePin = false;   // la fiche auteur ouverte est-elle celle d'un artiste du motif ?
 function estGroupe(a){
   const id = (a && a.id) || a;
   return !!(id && _groupes && _groupes[id]);
@@ -6792,7 +6806,8 @@ function _majListesPins(){
     const uniques = [...new Set(valeurs.map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
     dl.innerHTML = uniques.map(v=>`<option value="${escapeHTML(v)}">`).join('');
   };
-  remplir('dl-pins-editeurs', pins.map(i=>i.pinsMarque||i.editeur));
+  const fichesEditeurs = (cache.authors||[]).filter(a=>(a.collectionType||'bd')==='pins' && !estArtistePin(a)).map(a=>authorDisplay(a));
+  remplir('dl-pins-editeurs', [...pins.map(i=>i.pinsMarque||i.editeur), ...fichesEditeurs]);
   remplir('dl-pins-fabricants', pins.map(i=>i.pinsFabricant));
   remplir('dl-pins-collections', pins.map(i=>i.pinsCollection));
 }
@@ -6805,10 +6820,10 @@ function _pinsDimensions(it){
 // de l'œuvre représentée (dessinateurs, illustrateurs…), pas les éditeurs de pin's.
 let _ficheEstPin = false;
 function _auteurProposable(a, refs){
-  // Collections cloisonnées : une fiche pin's ne propose que les auteurs créés dans
-  // la collection Pin's (ni ceux de la BD, ni les artistes musicaux).
+  // Collections cloisonnées : une fiche pin's ne propose que les artistes du motif
+  // créés dans la collection Pin's — ni la BD, ni la musique, ni les éditeurs.
   if(_ficheEstPin)   // ces menus n'existent que dans la fiche d'œuvre
-    return (a.collectionType || 'bd') === 'pins';
+    return (a.collectionType || 'bd') === 'pins' && estArtistePin(a);
   return authorInActiveCollection(a, refs);
 }
 function _majFichePin(estPin){
@@ -6820,7 +6835,7 @@ function _majFichePin(estPin){
   montrer(document.getElementById('formFieldCatSec'), !estPin);
   const tAut = document.getElementById('formSection-authors-title');
   if(tAut){
-    const pinFr = 'Créateurs de l’œuvre représentée', pinEn = 'Creators of the depicted work';
+    const pinFr = 'Artiste(s) du motif', pinEn = 'Pin design artist(s)';
     if(estPin) tAut.textContent = T(pinFr, pinEn);
     else if([pinFr, pinEn].includes(tAut.textContent.trim())) tAut.textContent = T('Auteurs et contributeurs','Authors and contributors');
   }
@@ -6861,9 +6876,7 @@ function _libellePin(el, estPin, fr, en){
 function adaptAuthorFormToCollection(){
   // La fiche suit la collection choisie dans le formulaire : depuis un pin's, on crée
   // l'artiste de l'œuvre représentée (fiche de personne), pas une marque.
-  // Les auteurs des pin's sont désormais des personnes (créateurs de l'œuvre représentée) :
-  // la fiche « marque » n'a plus cours, l'éditeur se saisit sur la fiche du pin's.
-  const isPins = false;
+  const isPins = (document.getElementById('authorCollection')?.value || _activeCollection) === 'pins' && !_authorFormArtistePin;
   // Champs à masquer en mode pins
   const hide = ['authorFieldPrenom','authorFieldPseudo'];
   hide.forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display = isPins?'none':''; });
@@ -6928,7 +6941,7 @@ function _adaptCollectionLabels(){
   const vTitle = document.getElementById('authorsViewTitle');
   if(vTitle){
     const countSpan = document.getElementById('authorsCount');
-    const icone = (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : _activeCollection === 'dvd' ? '🎬' : '✒️');
+    const icone = isPins ? '🏷️' : (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : _activeCollection === 'dvd' ? '🎬' : '✒️');
     vTitle.innerHTML = `${icone} ${libelleCreateurs()} ` + (countSpan ? countSpan.outerHTML : '<span class="muted" id="authorsCount"></span>');
   }
   // "Souhaités" nav tab: hide in non-BD collections
@@ -12088,7 +12101,7 @@ function openItemForm(id=null, opts={}){
 // auteurs » ouvre la liste entière pour la fiche en cours.
 let _authorsCollectedOnly = true;
 function _libelleAuteurFiche(){
-  return _ficheEstPin ? T('Auteur / artiste','Author / artist')
+  return _ficheEstPin ? T('Artiste','Artist')
                       : T(_capitaliser(currentModule().terms?.creator || 'auteur'),"Author");
 }
 function _authorOptionsHTML(selectedId, applyFilter=true){
@@ -12107,8 +12120,11 @@ function _authorOptionsHTML(selectedId, applyFilter=true){
 function _authorSelectHeader(){
   const _refs = authorsReferencedInActiveCollection();
   const nTot = cache.authors.filter(a=>_auteurProposable(a, _refs)).length;
-  return `<option value="">${T("— Choisir un auteur —","— Choose an author —")}</option>
-    <option value="__new__">${T("+ Créer un nouvel auteur","+ Create a new author")}</option>`
+  return (_ficheEstPin
+      ? `<option value="">${T("— Choisir un artiste —","— Choose an artist —")}</option>
+    <option value="__new__">${T("+ Créer un artiste du motif","+ Create a pin design artist")}</option>`
+      : `<option value="">${T("— Choisir un auteur —","— Choose an author —")}</option>
+    <option value="__new__">${T("+ Créer un nouvel auteur","+ Create a new author")}</option>`)
     + (_authorsCollectedOnly
         ? `<option value="__all__">${T(`👥 Tous les auteurs (${nTot})`,`👥 All authors (${nTot})`)}</option>`
         : `<option value="__collected__">${T("⭐ Revenir aux collectionnés","⭐ Back to collected")}</option>`);
@@ -12217,7 +12233,8 @@ function addAuthorRow(auteurId="", roles=[]){
       openAuthorForm(null,(newId)=>{
         sel.innerHTML = _authorSelectHeader() + _authorOptionsHTML(newId, true);
         sel.value = newId;
-      }, { collection: _ficheEstPin ? 'pins' : _collPourNouvelleFiche(document.getElementById('itemCategory')?.value) });
+      }, _ficheEstPin ? { collection:'pins', artistePin:true }
+          : { collection: _collPourNouvelleFiche(document.getElementById('itemCategory')?.value) });
     }
   });
 }
@@ -13340,17 +13357,21 @@ function openAuthorForm(id=null, callback=null, opts={}){
   // La bascule n'apparaît que là où un groupe a un sens (collections musicales).
   // `opts.collection` : la collection imposée par l'appelant — le formulaire
   // d'œuvre qui crée un artiste à la volée sait à quelle collection il appartient.
+  _authorFormArtistePin = !!opts.artistePin || (!!id && estArtistePin(id));
   _majListeCollectionsArtiste(opts.collection);
   setAuthorTypeGroupe(false);
   _surChoixCollectionArtiste();
   adaptAuthorFormToCollection();
   document.getElementById("authorModalTitle").textContent = libelleAjoutCreateur().replace(/^\+\s*/,'');
+  if(!id && _authorFormArtistePin)
+    document.getElementById("authorModalTitle").textContent = T('Nouvel artiste du motif','New pin design artist');
   if(id){
     const a = cache.authors.find(x=>x.id===id);
     if(!a) return;
     const _mot = libelleCreateur();
-    document.getElementById("authorModalTitle").textContent =
-      T(`Modifier ${/^[aeiouéèê]/i.test(_mot)?"l'":'le '}${_mot}`, `Edit ${_mot}`);
+    document.getElementById("authorModalTitle").textContent = _authorFormArtistePin
+      ? T("Modifier l'artiste du motif","Edit pin design artist")
+      : T(`Modifier ${/^[aeiouéèê]/i.test(_mot)?"l'":'le '}${_mot}`, `Edit ${_mot}`);
     document.getElementById("authorDeleteBtn").style.display = "inline-block";
     document.getElementById("authorId").value = a.id;
     _majListeCollectionsArtiste(a.collectionType || 'bd');
@@ -13382,7 +13403,7 @@ async function saveAuthor(e){
   e.preventDefault();
   const id = document.getElementById("authorId").value || uuid();
   const existing = cache.authors.find(a=>a.id===id);
-  const isPins = _activeCollection === 'pins';
+  const isPins = _activeCollection === 'pins' && !_authorFormArtistePin;
   const obj = {
     id,
     // La collection est choisie explicitement — y compris pour une fiche
@@ -13404,6 +13425,10 @@ async function saveAuthor(e){
     updatedAt: new Date().toISOString()
   };
   await dbPut("authors", obj);
+  if(_authorFormArtistePin && obj.collectionType === 'pins' && !estArtistePin(id)){
+    _artistesPins[id] = true;
+    try { await saveArtistesPins(); } catch(err){ console.warn('[Pin\'s] artiste non mémorisé', err); }
+  }
   // La nature de la fiche et ses membres vivent hors de la table « auteurs ».
   if(collectionAvecGroupes() || estGroupe(id)){
     if(_authorEstGroupe) definirGroupe(id, _lireMembresDuFormulaire());
@@ -13413,7 +13438,7 @@ async function saveAuthor(e){
   await reloadCache();
   const estUnGroupe = _authorEstGroupe;
   toast(estUnGroupe ? (existing ? T("Groupe mis à jour","Band updated") : T("Groupe ajouté","Band added"))
-    : existing ? T("Auteur mis à jour","Author updated") : T("Auteur ajouté","Author added"));
+    : existing ? (isPins ? T("Éditeur mis à jour","Publisher updated") : T("Auteur mis à jour","Author updated")) : (isPins ? T("Éditeur ajouté","Publisher added") : T("Auteur ajouté","Author added")));
   closeModal("authorModal");
   if(authorFormCallback){
     const cb = authorFormCallback;
@@ -17878,7 +17903,8 @@ function _majInfobullesNav(){
 function _majIconeNavCreateurs(){
   const b = document.getElementById('navAuthorsBtn');
   if(!b) return;
-  b.dataset.icone = (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : _activeCollection === 'dvd' ? '🎬' : '✒️');
+  b.dataset.icone = _activeCollection === 'pins' ? '🏷️'
+                  : (_activeCollection === 'vinyle-cd-dvd' ? '🎤' : _activeCollection === 'dvd' ? '🎬' : '✒️');
 }
 
 function libelleCreateurs(){
@@ -17896,7 +17922,8 @@ function libelleAjoutCreateur(){
 }
 
 function libelleNationalite(){
-  return T('Nationalité','Nationality');
+  return _activeCollection === 'pins' ? T("Pays d'origine",'Country of origin')
+                                      : T('Nationalité','Nationality');
 }
 
 function nationaliteFlag(nat){
@@ -19369,6 +19396,7 @@ function applyAuthorFilters(){
   // explicitement créé dans la collection active, ou référencé dans ses items
   // mais sans collectionType différent.
   let list = cache.authors.filter(a=>{
+    if(_activeCollection === 'pins' && estArtistePin(a)) return false;   // artistes du motif : sur la fiche du pin's
     return authorInActiveCollection(a, authorsInColl);
   });
   const s = document.getElementById("authorSearch").value.trim().toLowerCase();
@@ -19425,7 +19453,7 @@ function applyAuthorFilters(){
   document.getElementById("authorsCount").textContent = `(${list.length})`;
   const container = document.getElementById("authorsContainer");
   if(!list.length){
-    const isPins = false;   // les pin's ont maintenant des auteurs, comme la BD
+    const isPins = _activeCollection === 'pins';
     container.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">${isPins?'🏷️':'✒️'}</div>${isPins ? T("Aucun éditeur. Associez un éditeur à un pin's pour le voir apparaître ici.","No publishers. Link a publisher to a pin to see it appear here.") : T("Aucun auteur.","No authors.")}</div>`;
     return;
   }
@@ -19434,8 +19462,8 @@ function applyAuthorFilters(){
   const cartes = list.map(a=>{
     const c = counts[a.id]||0;
     const countLabel = _isPinsAuthors ? `${c} pin${c>1?"s":""}` : `${c} ${T(`œuvre${c>1?"s":""}`,`work${c>1?"s":""}`)}`;
-    const editTitle  = T("Modifier cet auteur","Edit this author");
-    const starTitle  = T("Auteur collectionné","Collected author");
+    const editTitle  = _isPinsAuthors ? T("Modifier cet éditeur","Edit this publisher") : T("Modifier cet auteur","Edit this author");
+    const starTitle  = _isPinsAuthors ? T("Éditeur collectionné","Collected publisher") : T("Auteur collectionné","Collected author");
     // L'ordre d'affichage suit celui de la collection active : sur une fiche
     // d'artiste, « Artiste principal » doit primer, pas « Dessinateur ».
     const ROLE_ORDER = rolesActifs();
@@ -20461,7 +20489,7 @@ function applyLang() {
   };
   const _isPinsLang = _activeCollection === 'pins';
   setH2WithSpan(document.querySelector('#view-collection .toolbar h2'), S('coll.title'));
-  setH2WithSpan(document.querySelector('#view-authors h2'), S('authors.title'));
+  setH2WithSpan(document.querySelector('#view-authors h2'), _isPinsLang ? T('🏷️ Éditeurs','🏷️ Publishers') : S('authors.title'));
   setH2WithSpan(document.querySelector('#view-souhaites h2'), S('wish.title'));
   setText('#view-stats h2', S('stats.title'));
   setText('#view-categories h2', S('cats.title'));
@@ -21571,7 +21599,7 @@ function renderAuthorDetail(id, pushHistory=true){
         <h2>${escapeHTML(authorDisplay(a))}${grp?` <span title="${T('Groupe / formation','Band / line-up')}" style="font-size:18px;vertical-align:middle;opacity:.85">👥</span>`:""}${a.estCollectionne?` <span title="${T(`Auteur collectionné`,`Collected author`)}" style="font-size:18px;vertical-align:middle;opacity:.85">⭐</span>`:""}</h2>
         ${a.pseudonyme && (a.nom||a.prenom)?`<p class="muted" style="font-size:16px">${escapeHTML([a.prenom,a.nom].filter(Boolean).join(" "))}</p>`:""}
         <div class="meta-row">
-          ${a.nationalite?`<span>🌍 ${escapeHTML(libelleNationalite())} : ${escapeHTML(a.nationalite)}</span>`:""}
+          ${a.nationalite?`<span>🌍 ${escapeHTML(estArtistePin(a) ? T('Nationalité','Nationality') : libelleNationalite())} : ${escapeHTML(a.nationalite)}</span>`:""}
           ${lifeSpan?`<span>📅 ${lifeSpan}</span>`:""}
           ${a.siteWeb&&_safeHref(a.siteWeb)?`<span>🔗 <a href="${_safeHref(a.siteWeb)}" target="_blank" rel="noopener noreferrer">Site web</a></span>`:""}
         </div>
@@ -28615,6 +28643,7 @@ async function _initApp(){
     await openDB();
     await loadEntityColl();     // avant toute lecture de la bibliothèque ou des souhaits
     await loadGroupes();        // fiches de groupe : lues avant le premier rendu des artistes
+    await loadArtistesPins();   // artistes du motif des pin's (≠ éditeurs)
     await reloadCache();
     chargerDroits().catch(()=>{});   // quotas : sans effet tant que droits-quotas-supabase.sql n'est pas exécuté
     // Migration : corriger les catégories mal capitalisées
